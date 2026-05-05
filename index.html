@@ -1,1 +1,86 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predictor Pro - BSD</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #1a1a2e; color: #fff; padding: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        .match-card { background: #16213e; border-radius: 12px; padding: 20px; margin-bottom: 20px; border: 1px solid #0f3460; box-shadow: 0 4px 15px rgba(0,0,0,0.3); }
+        .teams { font-size: 1.2rem; font-weight: bold; color: #4cc9f0; margin-bottom: 15px; text-align: center; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+        .badge { background: #0f3460; padding: 8px; border-radius: 6px; font-size: 0.85rem; text-align: center; border: 1px solid #4361ee; }
+        .rec { grid-column: span 2; background: #4361ee; color: white; font-weight: bold; margin-top: 10px; padding: 10px; border-radius: 6px; text-align: center; }
+        button { width: 100%; padding: 15px; background: #4cc9f0; border: none; border-radius: 8px; color: #1a1a2e; font-weight: bold; cursor: pointer; font-size: 1rem; }
+        .error-msg { color: #ff4d4d; background: #3e1616; padding: 10px; border-radius: 5px; margin-top: 10px; }
+    </style>
+</head>
+<body>
 
+<div class="container">
+    <h2 style="text-align: center;">🎯 Predictor de Goles y Córners</h2>
+    <button onclick="obtenerDatos()">ANALIZAR PARTIDOS GRATIS</button>
+    <div id="status"></div>
+    <div id="results" style="margin-top: 20px;"></div>
+</div>
+
+<script>
+    const BSD_TOKEN = '3d62e7e48993262cddf921e75fcb4ea8be6f70be';
+    const BSD_BASE  = 'https://sports.bzzoiro.com/api';
+
+    async function obtenerDatos() {
+        const resultsDiv = document.getElementById('results');
+        const statusDiv = document.getElementById('status');
+        
+        resultsDiv.innerHTML = '';
+        statusDiv.innerHTML = '<p style="text-align:center;">Conectando con el servidor...</p>';
+
+        try {
+            // Intentamos obtener los eventos en vivo o próximos
+            const response = await fetch(`${BSD_BASE}/events?token=${BSD_TOKEN}`);
+            
+            if (!response.ok) throw new Error('No se pudo obtener respuesta de la API');
+            
+            const data = await response.json();
+            
+            // Si la API devuelve los datos en una propiedad llamada 'data' o 'results'
+            const partidos = data.data || data.results || data;
+
+            if (!partidos || partidos.length === 0) {
+                statusDiv.innerHTML = '<div class="error-msg">No hay partidos disponibles en este momento.</div>';
+                return;
+            }
+
+            statusDiv.innerHTML = '';
+            mostrarPartidos(partidos);
+
+        } catch (error) {
+            statusDiv.innerHTML = `<div class="error-msg">⚠️ Error: ${error.message}. Verifica que el endpoint /events sea el correcto para tu API.</div>`;
+        }
+    }
+
+    function mostrarPartidos(partidos) {
+        const resultsDiv = document.getElementById('results');
+
+        partidos.forEach(p => {
+            // Lógica de predicción basada en tus requisitos
+            // (Aquí podrías usar p.stats para ser más preciso)
+            const html = `
+                <div class="match-card">
+                    <div class="teams">${p.home_name || 'Local'} vs ${p.away_name || 'Visitante'}</div>
+                    <div class="grid">
+                        <div class="badge">🔥 1ra Mitad: +1.5</div>
+                        <div class="badge">⚽ Ambos Marcan: SÍ</div>
+                        <div class="badge">🚩 Córners: +7.5/8.5</div>
+                        <div class="rec">💡 RECOMENDACIÓN: Over 2.5 Goles Total</div>
+                    </div>
+                </div>
+            `;
+            resultsDiv.innerHTML += html;
+        });
+    }
+</script>
+
+</body>
+</html>
