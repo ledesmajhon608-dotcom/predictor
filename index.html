@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predictor BSD - Inteligencia Deportiva</title>
+    <title>Predictor BSD Premium - v3.0</title>
     <style>
         :root {
             --bg: #050810;
@@ -11,20 +11,17 @@
             --accent: #00f2ff;
             --success: #10b981;
             --warning: #f59e0b;
-            --danger: #ef4444;
         }
 
         body {
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg);
             color: white;
             margin: 0;
             padding: 15px;
-            display: flex;
-            justify-content: center;
         }
 
-        .container { width: 100%; max-width: 450px; }
+        .container { width: 100%; max-width: 450px; margin: auto; }
 
         .header {
             text-align: center;
@@ -33,9 +30,6 @@
             border-radius: 20px;
             margin-bottom: 20px;
         }
-
-        .header h1 { margin: 0; font-size: 1.5rem; letter-spacing: 2px; }
-        .header p { color: var(--accent); font-size: 0.8rem; margin: 5px 0 0; font-weight: bold; }
 
         .main-button {
             width: 100%;
@@ -48,11 +42,8 @@
             font-size: 1rem;
             cursor: pointer;
             box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
-            transition: 0.3s;
             margin-bottom: 20px;
         }
-
-        .main-button:active { transform: scale(0.98); }
 
         .match-card {
             background: var(--card);
@@ -60,27 +51,18 @@
             padding: 18px;
             margin-bottom: 15px;
             border: 1px solid #1f2937;
-            position: relative;
-            overflow: hidden;
+            border-left: 5px solid var(--success);
         }
-
-        /* Indicador de Confianza Lateral */
-        .conf-high { border-left: 5px solid var(--success); }
-        .conf-mid { border-left: 5px solid var(--warning); }
-        .conf-low { border-left: 5px solid var(--danger); }
 
         .league-name { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; margin-bottom: 10px; display: block; }
         
         .teams {
             display: flex;
             justify-content: space-between;
-            align-items: center;
             font-weight: bold;
             font-size: 1.1rem;
             margin-bottom: 15px;
         }
-
-        .vs { color: #4b5563; font-size: 0.7rem; padding: 0 10px; }
 
         .grid {
             display: grid;
@@ -93,10 +75,11 @@
             padding: 10px;
             border-radius: 12px;
             text-align: center;
+            border: 1px solid #1f2937;
         }
 
         .stat-label { font-size: 0.6rem; color: #9ca3af; display: block; margin-bottom: 4px; }
-        .stat-value { font-weight: bold; font-size: 0.9rem; }
+        .stat-value { font-weight: bold; font-size: 0.9rem; color: var(--accent); }
 
         .recommendation {
             grid-column: span 2;
@@ -106,24 +89,9 @@
             text-align: center;
             font-weight: 800;
             font-size: 0.85rem;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-
-        /* Colores de recomendación */
-        .rec-high { background: rgba(16, 185, 129, 0.15); color: #34d399; }
-        .rec-mid { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
-
-        .conf-pill {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            font-size: 0.6rem;
-            padding: 3px 8px;
-            border-radius: 50px;
-            background: #1f2937;
+            background: rgba(16, 185, 129, 0.15);
+            color: #34d399;
+            border: 1px border solid #10b981;
         }
 
         #status { text-align: center; font-size: 0.8rem; color: #6b7280; margin-bottom: 10px; }
@@ -133,86 +101,63 @@
 
 <div class="container">
     <div class="header">
-        <h1>PREDICTOR BSD v2.0</h1>
-        <p>LÓGICA DE ALTO ACIERTO ACTIVADA</p>
+        <h1>PREDICTOR BSD v3.0</h1>
+        <p>Goles | BTTS | Córners</p>
     </div>
 
-    <button class="main-button" onclick="analizarMercados()">ANALIZAR MERCADOS AHORA</button>
+    <button class="main-button" onclick="analizarApp()">⚡ ANALIZAR PRÓXIMOS PARTIDOS</button>
     <div id="status"></div>
     <div id="results"></div>
 </div>
 
 <script>
-    const BSD_TOKEN = '3d62e7e48993262cddf921e75fcb4ea8be6f70be';
-    
-    // Lista de partidos para simular la lógica de análisis inteligente
     const database = [
-        { liga: 'PREMIER LEAGUE', h: 'Man. City', a: 'Liverpool', ht_p: 88, btts_p: 76, corn_p: 10.2, conf: 'alta' },
-        { liga: 'BUNDESLIGA', h: 'Bayern', a: 'Leipzig', ht_p: 82, btts_p: 81, corn_p: 9.8, conf: 'alta' },
-        { liga: 'LA LIGA', h: 'Real Madrid', a: 'Atlético', ht_p: 45, btts_p: 55, corn_p: 8.1, conf: 'media' },
-        { liga: 'SERIE A', h: 'Napoli', a: 'Juventus', ht_p: 30, btts_p: 40, corn_p: 7.5, conf: 'media' },
-        { liga: 'EREDIVISIE', h: 'PSV', a: 'Ajax', ht_p: 91, btts_p: 85, corn_p: 11.2, conf: 'alta' }
+        { liga: 'Champions League', h: 'Man. City', a: 'Liverpool', ht: '+1.5', ft: '+1.5', btts: 'SÍ', corn: '10.5', conf: '96%' },
+        { liga: 'Premier League', h: 'Arsenal', a: 'Chelsea', ht: '+0.5', ft: '+1.5', btts: 'SÍ', corn: '9.0', conf: '89%' },
+        { liga: 'Bundesliga', h: 'Dortmund', a: 'Bayern', ht: '+1.5', ft: '+2.5', btts: 'SÍ', corn: '11.0', conf: '94%' }
     ];
 
-    async function analizarMercados() {
+    function analizarApp() {
         const results = document.getElementById('results');
         const status = document.getElementById('status');
         results.innerHTML = '';
-        status.innerHTML = "Escaneando promedios de goles y córners...";
+        status.innerHTML = "Escaneando estadísticas de goles totales...";
 
-        // Simulación de carga para dar realismo al análisis
         setTimeout(() => {
-            status.innerHTML = "Mostrando mejores oportunidades filtradas:";
-            database.forEach(match => {
+            status.innerHTML = "Análisis completado para mercado Over 1.5:";
+            database.forEach(m => {
                 const card = document.createElement('div');
-                
-                // Lógica de colores según confianza
-                const confClass = match.conf === 'alta' ? 'conf-high' : 'conf-mid';
-                const recClass = match.conf === 'alta' ? 'rec-high' : 'rec-mid';
-                const recText = match.conf === 'alta' ? '🔥 RECO: +1.5 HT & BTTS' : '⚠️ RECO: +0.5 HT & +7.5 Córners';
-
-                card.className = `match-card ${confClass}`;
+                card.className = 'match-card';
                 card.innerHTML = `
-                    <span class="conf-pill">${match.conf.toUpperCase()}</span>
-                    <span class="league-name">${match.liga}</span>
+                    <span class="league-name">${m.liga}</span>
                     <div class="teams">
-                        <span>${match.h}</span>
-                        <span class="vs">VS</span>
-                        <span>${match.a}</span>
+                        <span>${m.h}</span> <span>VS</span> <span>${m.a}</span>
                     </div>
                     <div class="grid">
                         <div class="stat-box">
-                            <span class="stat-label">GOLES 1.5 HT</span>
-                            <span class="stat-value" style="color:${match.ht_p > 80 ? '#10b981' : '#f59e0b'}">
-                                ${match.ht_p}%
-                            </span>
+                            <span class="stat-label">1ra MITAD</span>
+                            <span class="stat-value">${m.ht}</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-label">TOTAL PARTIDO</span>
+                            <span class="stat-value" style="color:#10b981">${m.ft} GOLES</span>
                         </div>
                         <div class="stat-box">
                             <span class="stat-label">AMBOS MARCAN</span>
-                            <span class="stat-value" style="color:${match.btts_p > 70 ? '#10b981' : '#f59e0b'}">
-                                ${match.btts_p}%
-                            </span>
+                            <span class="stat-value">${m.btts}</span>
                         </div>
                         <div class="stat-box">
-                            <span class="stat-label">EST. CÓRNERS</span>
-                            <span class="stat-value" style="color:var(--accent)">
-                                ${match.corn_p}
-                            </span>
+                            <span class="stat-label">CÓRNERS</span>
+                            <span class="stat-value">${m.corn}</span>
                         </div>
-                        <div class="stat-box">
-                            <span class="stat-label">CONFIANZA</span>
-                            <span class="stat-value">
-                                ${match.conf === 'alta' ? '9.5/10' : '7.0/10'}
-                            </span>
-                        </div>
-                        <div class="recommendation ${recClass}">
-                            ${recText}
+                        <div class="recommendation">
+                            🎯 RECO: Over 1.5 Total + BTTS (Confianza: ${m.conf})
                         </div>
                     </div>
                 `;
                 results.appendChild(card);
             });
-        }, 1200);
+        }, 1000);
     }
 </script>
 
