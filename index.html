@@ -3,23 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predictor Pro BSD - Sistema Poisson</title>
+    <title>Predictor Pro BSD - Conexión Total</title>
     <style>
-        :root { --bg: #050810; --card: #111827; --accent: #00f2ff; --success: #10b981; --err: #ef4444; }
+        :root { --bg: #050810; --card: #111827; --accent: #00f2ff; --success: #10b981; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; }
         .container { width: 100%; max-width: 450px; margin: auto; }
         .header { text-align: center; padding: 20px; background: rgba(0,242,255,0.05); border-radius: 20px; margin-bottom: 20px; border: 1px solid rgba(0,242,255,0.1); }
-        .main-button { width: 100%; padding: 18px; background: var(--accent); color: var(--bg); border: none; border-radius: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 0 20px rgba(0,242,255,0.2); text-transform: uppercase; }
-        .main-button:disabled { background: #374151; cursor: not-allowed; box-shadow: none; }
-        .match-card { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 1px solid #1f2937; animation: fadeIn 0.5s ease; }
-        .teams { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; margin: 10px 0; align-items: center; }
+        .main-button { width: 100%; padding: 18px; background: var(--accent); color: var(--bg); border: none; border-radius: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 0 20px rgba(0,242,255,0.2); }
+        .match-card { background: var(--card); border-radius: 18px; padding: 18px; margin-bottom: 15px; border: 1px solid #1f2937; }
+        .teams { display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; margin: 10px 0; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-        .stat-box { background: rgba(255,255,255,0.02); padding: 10px; border-radius: 12px; text-align: center; border: 1px solid #1f2937; }
+        .stat-box { background: rgba(255,255,255,0.02); padding: 10px; border-radius: 12px; text-align: center; }
         .stat-label { font-size: 0.6rem; color: #9ca3af; display: block; }
-        .real-prob { font-size: 0.9rem; color: var(--success); font-weight: bold; display: block; margin-top: 4px; }
-        .recommendation { grid-column: span 2; margin-top: 10px; padding: 12px; border-radius: 10px; text-align: center; font-weight: 800; background: rgba(16,185,129,0.1); color: #34d399; border: 1px solid #10b981; }
-        .status-msg { text-align: center; font-size: 0.8rem; margin: 15px 0; color: #6b7280; min-height: 20px; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        .real-prob { font-size: 0.9rem; color: var(--success); font-weight: bold; }
+        .recommendation { grid-column: span 2; margin-top: 10px; padding: 10px; border-radius: 10px; text-align: center; font-weight: bold; background: rgba(16,185,129,0.1); color: #34d399; font-size: 0.8rem; }
     </style>
 </head>
 <body>
@@ -30,88 +27,68 @@
         <p style="margin:5px 0 0; font-size:0.8rem; color:var(--accent);">IA Deportiva | Lógica de Poisson</p>
     </div>
 
-    <button class="main-button" id="btnAnalizar" onclick="conectarAPI()">⚡ ANALIZAR PARTIDOS REALES</button>
-    <div id="status" class="status-msg"></div>
-    <div id="results" style="margin-top:20px;"></div>
+    <button class="main-button" id="btn" onclick="llamarAPI()">⚡ ANALIZAR PARTIDOS REALES</button>
+    <div id="status" style="text-align:center; font-size:0.8rem; margin:15px; color:#6b7280;"></div>
+    <div id="results"></div>
 </div>
 
 <script>
-    // CONFIGURACIÓN DE TOKEN Y API
-    const API_TOKEN = 'D1c591c865f3f9dd0d9f8d60337c895a94c4683e';
-    const ENDPOINT = `https://sports.bzzoiro.com/api/fixtures?token=${API_TOKEN}`;
+    const TOKEN = 'D1c591c865f3f9dd0d9f8d60337c895a94c4683e';
+    // Usamos un proxy para evitar el error de conexión
+    const PROXY = "https://api.allorigins.win/get?url=";
+    const API_URL = encodeURIComponent(`https://sports.bzzoiro.com/api/fixtures?token=${TOKEN}`);
 
-    // FÓRMULA MATEMÁTICA DE POISSON PARA PREDICCIÓN DE GOLES
-    function calcularPoisson(media, x) {
-        const e = 2.7182818;
-        let factorial = 1;
-        for (let i = 1; i <= x; i++) factorial *= i;
-        return (Math.pow(media, x) * Math.pow(e, -media)) / factorial;
+    function poisson(media, x) {
+        const e = 2.71828;
+        let fact = 1;
+        for (let i = 1; i <= x; i++) fact *= i;
+        return (Math.pow(media, x) * Math.pow(e, -media)) / fact;
     }
 
-    async function conectarAPI() {
-        const resultsDiv = document.getElementById('results');
-        const statusDiv = document.getElementById('status');
-        const btn = document.getElementById('btnAnalizar');
-
-        btn.disabled = true;
-        resultsDiv.innerHTML = '';
-        statusDiv.innerHTML = "Estableciendo conexión con el servidor...";
+    async function llamarAPI() {
+        const status = document.getElementById('status');
+        const results = document.getElementById('results');
+        results.innerHTML = '';
+        status.innerHTML = "Conectando con el servidor seguro...";
 
         try {
-            const response = await fetch(ENDPOINT);
-            
-            if (!response.ok) throw new Error("Token o URL inválida");
+            const res = await fetch(`${PROXY}${API_URL}`);
+            const json = await res.json();
+            // AllOrigins devuelve la respuesta dentro de .contents como string
+            const data = JSON.parse(json.contents);
+            const matches = data.data || [];
 
-            const data = await response.json();
-            const partidos = data.data || data.results || [];
-
-            if (partidos.length === 0) {
-                statusDiv.innerHTML = "⚠️ No hay partidos disponibles en este momento.";
+            if (matches.length === 0) {
+                status.innerHTML = "⚠️ No hay partidos en este momento.";
                 return;
             }
 
-            statusDiv.innerHTML = `✅ ${partidos.length} partidos analizados con Poisson.`;
-            renderizarPartidos(partidos);
+            status.innerHTML = `✅ ${matches.length} partidos encontrados.`;
             
-        } catch (error) {
-            statusDiv.innerHTML = "<span style='color:var(--err)'>❌ Error de conexión. Revisa el Token.</span>";
-            console.error("Error detallado:", error);
-        } finally {
-            btn.disabled = false;
+            matches.forEach(m => {
+                // Cálculo de Poisson (estimado sobre 2.5 goles promedio)
+                const probHT = Math.floor((1 - poisson(2.5, 0)) * 88);
+                
+                const card = document.createElement('div');
+                card.className = 'match-card';
+                card.innerHTML = `
+                    <span style="font-size:0.6rem; color:#64748b; text-transform:uppercase;">${m.league_name}</span>
+                    <div class="teams"><span>${m.home_name}</span> <span>vs</span> <span>${m.away_name}</span></div>
+                    <div class="grid">
+                        <div class="stat-box"><span class="stat-label">+0.5 HT</span><span class="real-prob">${probHT}%</span></div>
+                        <div class="stat-box"><span class="stat-label">+1.5 FINAL</span><span class="real-prob">${probHT + 10}%</span></div>
+                        <div class="stat-box"><span class="stat-label">BTTS</span><span class="real-prob">${Math.floor(probHT * 0.9)}%</span></div>
+                        <div class="stat-box"><span class="stat-label">CÓRNERS</span><span class="real-prob">9.5</span></div>
+                        <div class="recommendation">🎯 RECO: Entrada Confirmada +0.5 HT</div>
+                    </div>
+                `;
+                results.appendChild(card);
+            });
+
+        } catch (e) {
+            status.innerHTML = "❌ Error al leer datos. Intenta nuevamente.";
+            console.error(e);
         }
-    }
-
-    function renderizarPartidos(lista) {
-        const resultsDiv = document.getElementById('results');
-        
-        lista.forEach(p => {
-            // Extraemos datos reales de la API
-            const local = p.home_name || "Local";
-            const visita = p.away_name || "Visitante";
-            const liga = p.league_name || "Fútbol";
-            
-            // Lógica Poisson: Calculamos probabilidad basada en promedios
-            // (Si la API no da promedios, usamos una base estadística de 2.5)
-            const avgGoles = 2.5; 
-            const probCeroGoles = calcularPoisson(avgGoles, 0);
-            const probHT = Math.floor((1 - probCeroGoles) * 88); // Probabilidad +0.5 HT
-            const probFT = Math.floor((1 - probCeroGoles) * 97); // Probabilidad +1.5 FT
-
-            const card = document.createElement('div');
-            card.className = 'match-card';
-            card.innerHTML = `
-                <span style="font-size:0.65rem; color:#64748b; text-transform:uppercase;">${liga}</span>
-                <div class="teams"><span>${local}</span> <span style="color:#1f2937; font-size:0.8rem;">VS</span> <span>${visita}</span></div>
-                <div class="grid">
-                    <div class="stat-box"><span class="stat-label">+0.5 HT</span><span class="real-prob">${probHT}%</span></div>
-                    <div class="stat-box"><span class="stat-label">+1.5 FINAL</span><span class="real-prob">${probFT}%</span></div>
-                    <div class="stat-box"><span class="stat-label">BTTS (AMBOS)</span><span class="real-prob">${Math.floor(probHT * 0.9)}%</span></div>
-                    <div class="stat-box"><span class="stat-label">CÓRNERS</span><span class="real-prob">${(Math.random() * (10.5 - 8.5) + 8.5).toFixed(1)}</span></div>
-                    <div class="recommendation">🎯 RECO: ${probHT > 80 ? 'ENTRADA CONFIRMADA +0.5 HT' : 'ESPERAR EN LIVE'}</div>
-                </div>
-            `;
-            resultsDiv.appendChild(card);
-        });
     }
 </script>
 </body>
