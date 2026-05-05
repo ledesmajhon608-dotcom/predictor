@@ -3,12 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predictor Pro - Base de Datos Full</title>
+    <title>Predictor Pro - Temporada 2025/2026</title>
     <style>
         :root { --bg: #050810; --card: #111827; --accent: #00f2ff; --success: #10b981; --border: #1f2937; }
         body { font-family: 'Segoe UI', sans-serif; background: var(--bg); color: white; margin: 0; padding: 15px; }
         .container { width: 100%; max-width: 450px; margin: auto; }
         .header { text-align: center; padding: 20px; background: rgba(0,242,255,0.05); border-radius: 20px; margin-bottom: 20px; border: 1px solid rgba(0,242,255,0.1); }
+        .badge-2026 { background: var(--accent); color: var(--bg); padding: 3px 8px; border-radius: 5px; font-size: 0.7rem; font-weight: bold; margin-bottom: 10px; display: inline-block; }
         .selector-box { background: var(--card); border-radius: 18px; padding: 18px; border: 1px solid var(--border); margin-bottom: 20px; }
         label { font-size: 0.7rem; color: #9ca3af; display: block; margin-bottom: 5px; text-transform: uppercase; font-weight: bold; }
         select { width: 100%; padding: 12px; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 10px; color: white; margin-bottom: 15px; font-size: 0.9rem; cursor: pointer; }
@@ -30,8 +31,9 @@
 
 <div class="container">
     <div class="header">
+        <span class="badge-2026">TEMPORADA 2025/2026</span>
         <h1 style="margin:0; font-size:1.4rem;">📊 PREDICTOR PRO</h1>
-        <p style="margin:5px 0 0; font-size:0.8rem; color:var(--accent);">IA Deportiva | Base de Datos Completa</p>
+        <p style="margin:5px 0 0; font-size:0.8rem; color:#9ca3af;">Base de Datos Actualizada</p>
     </div>
 
     <div class="selector-box">
@@ -56,35 +58,41 @@
 </div>
 
 <script>
-    // BASE DE DATOS COMPLETA (Actualizada con los equipos reales de 1ra División)
+    // BASE DE DATOS ACTUALIZADA A 2025/2026 (Plantillas Completas)
     const datosLigas = {
-        "Premier League (Inglaterra)": ["Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", "Burnley", "Chelsea", "Crystal Palace", "Everton", "Fulham", "Liverpool", "Luton Town", "Manchester City", "Manchester United", "Newcastle", "Nottingham Forest", "Sheffield United", "Tottenham", "West Ham", "Wolves"],
-        "La Liga (España)": ["Alavés", "Almería", "Athletic Club", "Atlético de Madrid", "Barcelona", "Betis", "Cádiz", "Celta de Vigo", "Getafe", "Girona", "Granada", "Las Palmas", "Mallorca", "Osasuna", "Rayo Vallecano", "Real Madrid", "Real Sociedad", "Sevilla", "Valencia", "Villarreal"],
-        "Serie A (Italia)": ["Atalanta", "Bologna", "Cagliari", "Empoli", "Fiorentina", "Frosinone", "Genoa", "Hellas Verona", "Inter de Milán", "Juventus", "Lazio", "Lecce", "Milan", "Monza", "Napoli", "Roma", "Salernitana", "Sassuolo", "Torino", "Udinese"],
-        "Bundesliga (Alemania)": ["Augsburg", "Bayer Leverkusen", "Bayern Munich", "Bochum", "Dortmund", "Mönchengladbach", "Darmstadt 98", "Eintracht Frankfurt", "Freiburg", "Heidenheim", "Hoffenheim", "Köln", "Mainz 05", "RB Leipzig", "Stuttgart", "Union Berlin", "Werder Bremen", "Wolfsburg"],
-        "Ligue 1 (Francia)": ["Brest", "Clermont", "Le Havre", "Lens", "Lille", "Lorient", "Lyon", "Marseille", "Metz", "Monaco", "Montpellier", "Nantes", "Nice", "PSG", "Reims", "Rennes", "Strasbourg", "Toulouse"],
+        "Premier League (Inglaterra)": ["Arsenal", "Aston Villa", "Bournemouth", "Brentford", "Brighton", "Chelsea", "Crystal Palace", "Everton", "Fulham", "Ipswich Town", "Leicester City", "Liverpool", "Manchester City", "Manchester United", "Newcastle", "Nottingham Forest", "Southampton", "Tottenham", "West Ham", "Wolves"],
+        
+        "La Liga (España)": ["Alavés", "Athletic Club", "Atlético de Madrid", "Barcelona", "Celta de Vigo", "Espanyol", "Getafe", "Girona", "Las Palmas", "Leganés", "Mallorca", "Osasuna", "Rayo Vallecano", "Real Betis", "Real Madrid", "Real Sociedad", "Sevilla", "Valencia", "Valladolid", "Villarreal"],
+        
+        "Serie A (Italia)": ["Atalanta", "Bologna", "Cagliari", "Como", "Empoli", "Fiorentina", "Genoa", "Hellas Verona", "Inter de Milán", "Juventus", "Lazio", "Lecce", "Milan", "Monza", "Napoli", "Parma", "Roma", "Torino", "Udinese", "Venezia"],
+        
+        "Bundesliga (Alemania)": ["Augsburg", "Bayer Leverkusen", "Bayern Munich", "Bochum", "Dortmund", "Eintracht Frankfurt", "Freiburg", "Heidenheim", "Hoffenheim", "Holstein Kiel", "Mainz 05", "Mönchengladbach", "RB Leipzig", "St. Pauli", "Stuttgart", "Union Berlin", "Werder Bremen", "Wolfsburg"],
+        
+        "Ligue 1 (Francia)": ["Angers", "Auxerre", "Brest", "Le Havre", "Lens", "Lille", "Lyon", "Marseille", "Monaco", "Montpellier", "Nantes", "Nice", "PSG", "Reims", "Rennes", "Saint-Étienne", "Strasbourg", "Toulouse"],
+        
         "Liga MX (México)": ["América", "Atlas", "Atlético San Luis", "Cruz Azul", "Chivas", "Juárez", "León", "Mazatlán", "Monterrey", "Necaxa", "Pachuca", "Puebla", "Pumas UNAM", "Querétaro", "Santos Laguna", "Tigres UANL", "Tijuana", "Toluca"],
+        
         "Brasileirão Serie A": ["Athletico Paranaense", "Atlético Goianiense", "Atlético Mineiro", "Bahia", "Botafogo", "Bragantino", "Corinthians", "Criciúma", "Cruzeiro", "Cuiabá", "Flamengo", "Fluminense", "Fortaleza", "Grêmio", "Internacional", "Juventude", "Palmeiras", "São Paulo", "Vasco da Gama", "Vitória"],
-        "Liga Portugal": ["Arouca", "Benfica", "Boavista", "Braga", "Casa Pia", "Chaves", "Estoril", "Estrela", "Famalicao", "Farense", "Gil Vicente", "Moreirense", "Portimonense", "Porto", "Rio Ave", "Sporting CP", "Vitória SC", "Vizela"],
-        "Eredivisie (Países Bajos)": ["Ajax", "Almere City", "AZ Alkmaar", "Excelsior", "Feyenoord", "Fortuna Sittard", "Go Ahead Eagles", "Heerenveen", "Heracles", "NEC", "PEC Zwolle", "PSV", "RKC Waalwijk", "Sparta Rotterdam", "Twente", "Utrecht", "Vitesse", "Volendam"],
-        "Saudi Pro League": ["Abha", "Al Ahli", "Al Ettifaq", "Al Fateh", "Al Fayha", "Al Hazem", "Al Hilal", "Al Ittihad", "Al Khaleej", "Al Nassr", "Al Okhdood", "Al Raed", "Al Riyadh", "Al Shabab", "Al Taawoun", "Al Tai", "Al Wehda", "Damac"],
-        "MLS (EE.UU)": ["Atlanta Utd", "Austin FC", "Charlotte", "Chicago Fire", "Cincinnati", "Colorado Rapids", "Columbus Crew", "FC Dallas", "DC United", "Houston Dynamo", "Inter Miami", "LA Galaxy", "LAFC", "Minnesota Utd", "Montreal", "Nashville", "New England", "NYCFC", "NY Red Bulls", "Orlando City", "Philadelphia", "Portland", "Real Salt Lake", "San Jose", "Seattle Sounders", "Sporting KC", "St. Louis City", "Toronto FC", "Vancouver"],
-        "Liga profesional (Bélgica)": ["Anderlecht", "Antwerp", "Cercle Brugge", "Charleroi", "Club Brujas", "Eupen", "Genk", "Gent", "Kortrijk", "Mechelen", "OH Leuven", "RWDM", "Sint-Truiden", "Standard Lieja", "Union SG", "Westerlo"],
-        "Superliga (Grecia)": ["AEK Atenas", "Aris", "Asteras Tripolis", "Atromitos", "Kifisia", "Lamia", "OFI Creta", "Olympiacos", "Panathinaikos", "Panetolikos", "Panserraikos", "PAOK", "PAS Giannina", "Volos"],
-        "Copa Libertadores": ["River Plate", "Flamengo", "Palmeiras", "Fluminense", "Atlético Mineiro", "São Paulo", "Botafogo", "Grêmio", "Peñarol", "Nacional", "Colo Colo", "Huachipato", "Talleres", "Rosario Central", "Estudiantes", "San Lorenzo", "Bolívar", "The Strongest", "Universitario", "Alianza Lima", "LDU Quito", "Ind. del Valle", "Barcelona SC", "Millonarios", "Junior", "Caracas", "Táchira", "Libertad", "Cerro Porteño"],
-        "Copa Sudamericana": ["Boca Juniors", "Racing Club", "Athletico Paranaense", "Cruzeiro", "Fortaleza", "Internacional", "Corinthians", "Defensa y Justicia", "Lanús", "Argentinos Jrs", "Belgrano", "Nacional Potosí", "Always Ready", "DIM", "U. Católica", "Delfín", "Sportivo Luqueño", "Ameliano", "César Vallejo", "Danubio", "Racing URU"],
-        "UEFA Champions League": ["Real Madrid", "Bayern Munich", "PSG", "Dortmund", "Man City", "Arsenal", "Barcelona", "Atlético Madrid", "Inter", "Napoli", "Lazio", "Real Sociedad", "PSV", "Copenhagen", "Porto", "RB Leipzig", "Galatasaray", "Man United", "Sevilla", "Milan", "Newcastle", "Lens", "Benfica", "Braga", "Union Berlin", "Salzburg", "Feyenoord", "Celtic"],
-        "UEFA Europa League": ["Bayer Leverkusen", "Atalanta", "Roma", "Liverpool", "West Ham", "Milan", "Benfica", "Marseille", "Sporting CP", "Freiburg", "Sparta Prague", "Brighton", "Qarabag", "Rennes", "Toulouse", "Villarreal", "Ajax", "Real Betis", "Rangers"]
+        
+        "Copa Libertadores (2026)": ["River Plate", "Flamengo", "Palmeiras", "Fluminense", "Atlético Mineiro", "São Paulo", "Botafogo", "Grêmio", "Peñarol", "Nacional (URU)", "Colo Colo", "Huachipato", "Talleres", "Rosario Central", "Estudiantes", "San Lorenzo", "Bolívar", "The Strongest", "Universitario", "Alianza Lima", "LDU Quito", "Ind. del Valle", "Barcelona SC", "Millonarios", "Junior", "Caracas", "Deportivo Táchira", "Libertad", "Cerro Porteño", "Cobresal", "Palestino", "Melgar"],
+        
+        "Copa Sudamericana (2026)": ["Boca Juniors", "Racing Club", "Athletico Paranaense", "Cruzeiro", "Fortaleza", "Internacional", "Corinthians", "Defensa y Justicia", "Lanús", "Argentinos Jrs", "Belgrano", "Nacional Potosí", "Always Ready", "DIM", "U. Católica", "Delfín", "Sportivo Luqueño", "Ameliano", "César Vallejo", "Danubio", "Racing URU", "Bragantino", "Cuiabá", "Coquimbo Unido", "Nacional (PAR)", "Sportivo Trinidense", "Real Tomayapo", "Metropolitanos", "Rayo Zuliano"],
+
+        "Saudi Pro League": ["Al Ahli", "Al Ettifaq", "Al Fateh", "Al Fayha", "Al Hilal", "Al Ittihad", "Al Khaleej", "Al Kholood", "Al Nassr", "Al Okhdood", "Al Qadsiah", "Al Raed", "Al Riyadh", "Al Shabab", "Al Taawoun", "Al Wehda", "Damac", "Al Orobah"],
+        
+        "MLS (EE.UU)": ["Atlanta Utd", "Austin FC", "Charlotte", "Chicago Fire", "Cincinnati", "Colorado Rapids", "Columbus Crew", "FC Dallas", "DC United", "Houston Dynamo", "Inter Miami", "LA Galaxy", "LAFC", "Minnesota Utd", "Montreal", "Nashville", "New England", "NYCFC", "NY Red Bulls", "Orlando City", "Philadelphia", "Portland", "Real Salt Lake", "San Diego FC", "San Jose", "Seattle Sounders", "Sporting KC", "St. Louis City", "Toronto FC", "Vancouver"],
+        
+        "UEFA Champions League": ["Real Madrid", "Bayern Munich", "PSG", "Dortmund", "Man City", "Arsenal", "Barcelona", "Atlético Madrid", "Inter", "Juventus", "Milan", "Atalanta", "Bologna", "Bayer Leverkusen", "Stuttgart", "RB Leipzig", "Aston Villa", "Liverpool", "Brest", "Monaco", "Girona", "PSV", "Feyenoord", "Sporting CP", "Benfica", "Club Brujas", "Shakhtar Donetsk", "Celtic", "Sturm Graz", "Galatasaray", "Sporting", "Monaco"],
+        
+        "UEFA Europa League": ["Roma", "Man United", "Tottenham", "Porto", "Ajax", "Rangers", "Eintracht Frankfurt", "Lazio", "Real Sociedad", "AZ Alkmaar", "Olympiacos", "Lyon", "Athletic Club", "Hoffenheim", "Nice", "Twente", "Fenerbahçe", "Galatasaray", "Besiktas", "Bodo/Glimt", "Anderlecht", "Braga", "Qarabag", "Malmö", "PAOK", "Midtjylland"]
     };
 
-    // 1. Cargar el Menú de Ligas
     const ligaSel = document.getElementById('liga');
     Object.keys(datosLigas).forEach(l => {
         let opt = document.createElement('option');
         opt.value = l; opt.text = l; ligaSel.add(opt);
     });
 
-    // 2. Actualizar los Equipos cuando cambia la Liga
     function actualizarEquipos() {
         const l = ligaSel.value;
         const el = document.getElementById('equipoL');
@@ -93,7 +101,6 @@
         el.innerHTML = ""; 
         ev.innerHTML = "";
         
-        // Ordenar equipos alfabéticamente para facilitar la búsqueda
         const equiposOrdenados = datosLigas[l].sort();
         
         equiposOrdenados.forEach(eq => {
@@ -101,16 +108,13 @@
             let o2 = document.createElement('option'); o2.value = eq; o2.text = eq; ev.add(o2);
         });
         
-        // Seleccionar por defecto un rival distinto al local
         if (equiposOrdenados.length > 1) {
             ev.selectedIndex = 1;
         }
     }
 
-    // Inicializar el primer listado
     actualizarEquipos();
 
-    // 3. Generar la Predicción (Algoritmo IA Local)
     function predecir() {
         const local = document.getElementById('equipoL').value;
         const visita = document.getElementById('equipoV').value;
@@ -121,14 +125,12 @@
             return;
         }
 
-        // Simulación lógica basada en Distribución de Poisson Adaptativa
         const probGanaL = Math.floor(Math.random() * (68 - 32) + 32);
         const probHT = Math.floor(Math.random() * (92 - 76) + 76);
         const probBTTS = Math.floor(Math.random() * (85 - 55) + 55);
         const prob15 = Math.min(98, probHT + Math.floor(Math.random() * 12 + 4));
         const prob25 = Math.max(40, prob15 - Math.floor(Math.random() * 20 + 10));
         
-        // Recomendación dinámica basada en los cálculos
         let recoTexto = "ESTRATEGIA LIVE (ESPERAR MINUTO 15)";
         if (probHT > 85) recoTexto = "ENTRADA FUERTE: +0.5 GOLES 1ER TIEMPO";
         else if (prob15 > 88) recoTexto = "APUESTA SEGURA: +1.5 GOLES FINAL";
