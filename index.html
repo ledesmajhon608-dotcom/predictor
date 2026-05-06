@@ -3,138 +3,324 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fotbol predictor</title>
+    <title>CornerIQ Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg:#08090d; --card:#10131a; --card2:#161b26; --border:#1e2535;
-            --text:#e8eaf0; --muted:#5a6480; --accent:#e63946;
-            --yellow:#f4b942; --green:#3dd68c; --blue:#2563eb; --purple:#8b5cf6;
+            --bg:#0a0e17; --card:rgba(16,20,32,0.7); --card2:rgba(22,27,42,0.8); --border:rgba(255,255,255,0.08);
+            --text:#f0f2f8; --muted:#7b8aa6; --accent:#ff4d5a; --accent-glow:rgba(255,77,90,0.5);
+            --yellow:#ffb627; --yellow-glow:rgba(255,182,39,0.5);
+            --green:#2ecc71; --green-glow:rgba(46,204,113,0.5);
+            --blue:#4dabf7; --purple:#9775fa;
+            --glass-bg:rgba(255,255,255,0.03);
         }
         *{box-sizing:border-box;margin:0;padding:0;}
         body{
             background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
             min-height:100vh;display:flex;justify-content:center;padding:20px 15px 60px;
             background-image:
-                radial-gradient(ellipse 60% 40% at 50% -10%,rgba(230,57,70,0.10) 0%,transparent 70%),
-                repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,0.02) 39px,rgba(255,255,255,0.02) 40px),
-                repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,0.02) 39px,rgba(255,255,255,0.02) 40px);
+                radial-gradient(ellipse 80% 50% at 50% -10%,rgba(255,77,90,0.15) 0%,transparent 70%),
+                radial-gradient(ellipse 60% 40% at 80% 80%,rgba(46,204,113,0.08) 0%,transparent 60%),
+                radial-gradient(ellipse 50% 35% at 20% 60%,rgba(77,171,247,0.06) 0%,transparent 50%),
+                repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,0.015) 39px,rgba(255,255,255,0.015) 40px),
+                repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,0.015) 39px,rgba(255,255,255,0.015) 40px);
         }
         .container{width:100%;max-width:440px;}
 
-        .header{text-align:center;padding:24px 0 18px;}
-        .logo{font-family:'Bebas Neue',sans-serif;font-size:2.8rem;letter-spacing:3px;color:white;line-height:1;}
-        .logo span{color:var(--accent);}
-        .badge{display:inline-block;margin-top:6px;padding:3px 12px;background:rgba(230,57,70,0.1);border:1px solid rgba(230,57,70,0.3);border-radius:20px;font-size:0.68rem;font-weight:700;letter-spacing:2px;color:var(--accent);text-transform:uppercase;}
+        /* Header con glassmorphism */
+        .header{
+            text-align:center;padding:28px 20px 20px;margin-bottom:8px;
+            background:var(--glass-bg);backdrop-filter:blur(20px);
+            border-radius:20px;border:1px solid rgba(255,255,255,0.06);
+            position:relative;overflow:hidden;
+        }
+        .header::before{
+            content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;
+            background:conic-gradient(from 0deg,transparent,var(--accent-glow),transparent,var(--green-glow),transparent);
+            animation:rotateGlow 8s linear infinite;opacity:0.3;
+        }
+        @keyframes rotateGlow{to{transform:rotate(360deg);}}
+        .header>*{position:relative;z-index:1;}
+        .logo{
+            font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;color:white;line-height:1;
+            text-shadow:0 0 30px var(--accent-glow),0 2px 4px rgba(0,0,0,0.5);
+            background:linear-gradient(135deg,#ffffff 0%,#ff8a95 50%,#ffffff 100%);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            background-clip:text;
+        }
+        .logo span{
+            -webkit-text-fill-color:transparent;
+            background:linear-gradient(135deg,var(--accent),#ff8a95);
+            -webkit-background-clip:text;background-clip:text;
+        }
+        .badge{
+            display:inline-block;margin-top:8px;padding:4px 14px;
+            background:linear-gradient(135deg,rgba(255,77,90,0.15),rgba(77,171,247,0.1));
+            border:1px solid rgba(255,77,90,0.25);border-radius:20px;
+            font-size:0.68rem;font-weight:700;letter-spacing:2px;color:var(--accent);
+            text-transform:uppercase;backdrop-filter:blur(10px);
+            box-shadow:0 0 20px rgba(255,77,90,0.1);
+        }
 
-        .card{background:var(--card);border-radius:16px;padding:20px;border:1px solid var(--border);margin-bottom:12px;position:relative;overflow:hidden;}
-        .card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.5;}
+        /* Cards con glassmorphism */
+        .card{
+            background:var(--card);backdrop-filter:blur(24px);
+            border-radius:20px;padding:22px;border:1px solid var(--border);
+            margin-bottom:14px;position:relative;overflow:hidden;
+            box-shadow:0 8px 32px rgba(0,0,0,0.3);
+            transition:all 0.3s ease;
+        }
+        .card:hover{box-shadow:0 12px 40px rgba(0,0,0,0.4);border-color:rgba(255,255,255,0.12);}
+        .card::before{
+            content:'';position:absolute;top:0;left:0;right:0;height:2px;
+            background:linear-gradient(90deg,transparent,var(--accent),var(--yellow),var(--green),transparent);
+            opacity:0.7;
+        }
+        .card::after{
+            content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+            background:radial-gradient(ellipse at top left,rgba(255,255,255,0.02) 0%,transparent 50%);
+            pointer-events:none;
+        }
 
-        .api-status{display:flex;align-items:center;gap:8px;font-size:0.66rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:14px;padding:7px 12px;border-radius:8px;background:var(--card2);border:1px solid var(--border);}
-        .api-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:background 0.3s;}
-        .api-dot.live{background:var(--green);box-shadow:0 0 6px var(--green);}
-        .api-dot.error{background:var(--yellow);}
+        /* API Status */
+        .api-status{
+            display:flex;align-items:center;gap:10px;font-size:0.66rem;font-weight:700;
+            letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;
+            padding:8px 14px;border-radius:12px;
+            background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);
+            backdrop-filter:blur(10px);
+        }
+        .api-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:all 0.3s;}
+        .api-dot.live{background:var(--green);box-shadow:0 0 10px var(--green-glow),0 0 20px var(--green-glow);}
+        .api-dot.error{background:var(--yellow);box-shadow:0 0 10px var(--yellow-glow);}
 
-        /* LEAGUE PILLS */
+        /* League Pills mejorados */
         .league-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-        .league-pill{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--card2);color:var(--muted);font-size:0.72rem;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;}
-        .league-pill:hover{border-color:var(--accent);color:var(--text);}
-        .league-pill.active{background:rgba(230,57,70,0.15);border-color:var(--accent);color:var(--accent);}
+        .league-pill{
+            padding:6px 13px;border-radius:20px;border:1px solid var(--border);
+            background:var(--glass-bg);color:var(--muted);font-size:0.72rem;
+            font-weight:700;cursor:pointer;transition:all 0.25s ease;
+            letter-spacing:0.5px;backdrop-filter:blur(10px);
+        }
+        .league-pill:hover{
+            border-color:var(--accent);color:var(--text);
+            background:rgba(255,77,90,0.1);transform:translateY(-1px);
+            box-shadow:0 4px 15px rgba(255,77,90,0.2);
+        }
+        .league-pill.active{
+            background:linear-gradient(135deg,rgba(255,77,90,0.2),rgba(77,171,247,0.15));
+            border-color:var(--accent);color:white;
+            box-shadow:0 0 20px rgba(255,77,90,0.2);
+        }
         .league-pill.disabled{opacity:0.3;cursor:not-allowed;}
 
-        label{display:block;margin:12px 0 5px;color:var(--muted);font-size:0.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
-        select{width:100%;padding:11px 14px;border-radius:8px;border:1px solid var(--border);background:var(--card2);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.88rem;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235a6480' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;cursor:pointer;transition:border-color 0.2s;}
-        select:focus{outline:none;border-color:var(--accent);}
+        /* Labels y selects */
+        label{display:block;margin:14px 0 5px;color:var(--muted);font-size:0.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+        select{
+            width:100%;padding:12px 15px;border-radius:12px;border:1px solid var(--border);
+            background:var(--glass-bg);color:var(--text);font-family:'DM Sans',sans-serif;
+            font-size:0.88rem;appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237b8aa6' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat:no-repeat;background-position:right 14px center;
+            cursor:pointer;transition:all 0.25s ease;backdrop-filter:blur(10px);
+        }
+        select:focus{outline:none;border-color:var(--accent);box-shadow:0 0 15px rgba(255,77,90,0.1);}
         select:disabled{opacity:0.4;cursor:not-allowed;}
-        .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+        .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
         .team-col label{margin-top:0;}
-        .vs-divider{display:flex;align-items:center;justify-content:center;margin:4px 0;color:var(--muted);font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;gap:10px;}
-        .vs-divider::before,.vs-divider::after{content:'';flex:1;height:1px;background:var(--border);}
+        .vs-divider{
+            display:flex;align-items:center;justify-content:center;margin:6px 0;
+            color:var(--muted);font-family:'Bebas Neue',sans-serif;
+            font-size:1.1rem;letter-spacing:3px;gap:12px;
+        }
+        .vs-divider::before,.vs-divider::after{
+            content:'';flex:1;height:1px;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);
+        }
 
-        /* MARKETS TOGGLE */
-        .markets-label{display:block;margin:12px 0 8px;color:var(--muted);font-size:0.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+        /* Market toggles */
+        .markets-label{display:block;margin:14px 0 8px;color:var(--muted);font-size:0.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
         .market-toggles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
-        .mkt-toggle{padding:5px 11px;border-radius:16px;border:1px solid var(--border);background:var(--card2);color:var(--muted);font-size:0.7rem;font-weight:700;cursor:pointer;transition:all 0.2s;letter-spacing:0.5px;}
-        .mkt-toggle.on{background:rgba(61,214,140,0.12);border-color:rgba(61,214,140,0.4);color:var(--green);}
+        .mkt-toggle{
+            padding:6px 12px;border-radius:16px;border:1px solid var(--border);
+            background:var(--glass-bg);color:var(--muted);font-size:0.7rem;
+            font-weight:700;cursor:pointer;transition:all 0.25s ease;
+            letter-spacing:0.5px;backdrop-filter:blur(10px);
+        }
+        .mkt-toggle:hover{transform:translateY(-1px);}
+        .mkt-toggle.on{
+            background:linear-gradient(135deg,rgba(46,204,113,0.15),rgba(77,171,247,0.1));
+            border-color:rgba(46,204,113,0.4);color:var(--green);
+            box-shadow:0 0 15px rgba(46,204,113,0.15);
+        }
         .mkt-toggle.unavailable{opacity:0.25;cursor:not-allowed;pointer-events:none;}
 
-        .calc-btn{width:100%;padding:13px;border-radius:10px;border:none;background:var(--accent);color:white;font-family:'Bebas Neue',sans-serif;font-size:1.1rem;letter-spacing:2px;margin-top:16px;cursor:pointer;transition:transform 0.15s,box-shadow 0.2s;box-shadow:0 4px 20px rgba(230,57,70,0.3);position:relative;overflow:hidden;}
-        .calc-btn::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,0.1) 0%,transparent 60%);}
-        .calc-btn:hover{transform:translateY(-1px);box-shadow:0 6px 28px rgba(230,57,70,0.5);}
-        .calc-btn:active{transform:scale(0.98);}
+        /* Botón calcular */
+        .calc-btn{
+            width:100%;padding:14px;border-radius:14px;border:none;
+            background:linear-gradient(135deg,var(--accent),#ff6b7a,var(--accent));
+            background-size:200% 100%;color:white;
+            font-family:'Bebas Neue',sans-serif;font-size:1.15rem;
+            letter-spacing:2px;margin-top:18px;cursor:pointer;
+            transition:all 0.3s ease;position:relative;overflow:hidden;
+            box-shadow:0 6px 25px rgba(255,77,90,0.3);
+            animation:shimmer 3s ease-in-out infinite;
+        }
+        @keyframes shimmer{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
+        .calc-btn::after{
+            content:'';position:absolute;inset:0;
+            background:linear-gradient(135deg,rgba(255,255,255,0.15) 0%,transparent 60%);
+        }
+        .calc-btn:hover{transform:translateY(-2px);box-shadow:0 10px 35px rgba(255,77,90,0.5);}
+        .calc-btn:active{transform:scale(0.97);}
 
-        .loading-state{text-align:center;padding:28px;color:var(--muted);font-size:0.8rem;letter-spacing:1px;}
-        .spinner{width:26px;height:26px;border:2px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.7s linear infinite;margin:0 auto 10px;}
-        .loading-sub{font-size:0.63rem;color:var(--muted);margin-top:5px;opacity:0.7;}
+        /* Loading */
+        .loading-state{text-align:center;padding:32px;color:var(--muted);font-size:0.8rem;letter-spacing:1px;}
+        .spinner{
+            width:30px;height:30px;border:2px solid var(--border);
+            border-top-color:var(--accent);border-radius:50%;
+            animation:spin 0.7s linear infinite;margin:0 auto 12px;
+        }
+        .loading-sub{font-size:0.63rem;color:var(--muted);margin-top:6px;opacity:0.7;}
         @keyframes spin{to{transform:rotate(360deg);}}
 
-        .match-header{background:var(--card);border-radius:16px;padding:20px 16px 16px;border:1px solid var(--border);margin-bottom:12px;position:relative;overflow:hidden;}
-        .match-header::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:0.5;}
-        .teams-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:8px;}
-        .team-side{display:flex;flex-direction:column;align-items:center;gap:6px;}
-        .team-name{font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;color:white;text-align:center;line-height:1.2;}
-        .vs-center{font-family:'Bebas Neue',sans-serif;font-size:1.4rem;color:var(--muted);letter-spacing:2px;}
+        /* Match header */
+        .match-header{
+            background:var(--card);backdrop-filter:blur(24px);
+            border-radius:20px;padding:22px 18px;border:1px solid var(--border);
+            margin-bottom:14px;position:relative;overflow:hidden;
+            box-shadow:0 8px 32px rgba(0,0,0,0.3);
+        }
+        .match-header::before{
+            content:'';position:absolute;top:0;left:0;right:0;height:2px;
+            background:linear-gradient(90deg,transparent,var(--accent),var(--yellow),var(--green),transparent);
+            opacity:0.8;
+        }
+        .teams-row{display:grid;grid-template-columns:1fr auto 1fr;align-items:center;gap:10px;}
+        .team-side{display:flex;flex-direction:column;align-items:center;gap:8px;}
+        .team-name{font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:1px;color:white;text-align:center;line-height:1.2;}
+        .vs-center{
+            font-family:'Bebas Neue',sans-serif;font-size:1.5rem;
+            background:linear-gradient(135deg,var(--accent),var(--yellow));
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+            background-clip:text;letter-spacing:3px;
+        }
 
-        /* FORM BADGES */
+        /* Form dots */
         .form-row{display:flex;gap:3px;justify-content:center;margin-top:4px;}
-        .form-dot{width:18px;height:18px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.55rem;font-weight:700;}
-        .form-dot.w{background:rgba(61,214,140,0.2);color:var(--green);}
-        .form-dot.d{background:rgba(244,185,66,0.2);color:var(--yellow);}
-        .form-dot.l{background:rgba(230,57,70,0.2);color:var(--accent);}
-        .data-tag{font-size:0.58rem;font-weight:700;letter-spacing:1px;padding:2px 7px;border-radius:8px;text-transform:uppercase;}
-        .data-tag.api{background:rgba(61,214,140,0.1);color:var(--green);border:1px solid rgba(61,214,140,0.2);}
-        .data-tag.off{background:rgba(244,185,66,0.1);color:var(--yellow);border:1px solid rgba(244,185,66,0.2);}
+        .form-dot{
+            width:20px;height:20px;border-radius:5px;display:flex;
+            align-items:center;justify-content:center;
+            font-size:0.55rem;font-weight:700;backdrop-filter:blur(5px);
+        }
+        .form-dot.w{background:rgba(46,204,113,0.25);color:var(--green);box-shadow:0 0 6px rgba(46,204,113,0.2);}
+        .form-dot.d{background:rgba(255,182,39,0.25);color:var(--yellow);box-shadow:0 0 6px rgba(255,182,39,0.2);}
+        .form-dot.l{background:rgba(255,77,90,0.25);color:var(--accent);box-shadow:0 0 6px rgba(255,77,90,0.2);}
+        .data-tag{font-size:0.58rem;font-weight:700;letter-spacing:1px;padding:2px 8px;border-radius:8px;text-transform:uppercase;}
+        .data-tag.api{background:rgba(46,204,113,0.12);color:var(--green);border:1px solid rgba(46,204,113,0.25);}
+        .data-tag.off{background:rgba(255,182,39,0.12);color:var(--yellow);border:1px solid rgba(255,182,39,0.25);}
 
-        .result-boxes{display:grid;grid-template-columns:1fr auto 1fr;gap:6px;margin-top:14px;}
-        .result-box{background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:10px 8px;text-align:center;}
-        .result-box.rb-center{border-color:rgba(244,185,66,0.2);background:rgba(244,185,66,0.04);min-width:80px;}
-        .rb-label{font-size:0.62rem;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;}
-        .rb-pct{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;line-height:1;}
+        /* Result boxes */
+        .result-boxes{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;margin-top:16px;}
+        .result-box{
+            background:var(--glass-bg);border:1px solid var(--border);
+            border-radius:12px;padding:12px 8px;text-align:center;
+            backdrop-filter:blur(15px);transition:all 0.3s ease;
+        }
+        .result-box:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.3);}
+        .result-box.rb-center{
+            border-color:rgba(255,182,39,0.3);
+            background:rgba(255,182,39,0.05);min-width:80px;
+        }
+        .rb-label{font-size:0.62rem;font-weight:700;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:6px;}
+        .rb-pct{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:1px;line-height:1;}
 
-        .section-header{display:flex;align-items:center;gap:10px;margin:16px 0 10px;}
-        .section-icon{font-size:1rem;}
+        /* Section headers */
+        .section-header{display:flex;align-items:center;gap:10px;margin:18px 0 10px;}
+        .section-icon{font-size:1.1rem;}
         .section-title{font-family:'Bebas Neue',sans-serif;font-size:0.95rem;letter-spacing:2px;color:var(--text);}
-        .section-lambda{margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:0.82rem;letter-spacing:1px;color:var(--muted);}
+        .section-lambda{margin-left:auto;font-family:'Bebas Neue',sans-serif;font-size:0.85rem;letter-spacing:1px;color:var(--muted);}
         .section-lambda span{color:var(--yellow);}
-        .section-divider{height:1px;background:var(--border);margin:14px 0;}
-        .cal-badge{display:inline-flex;align-items:center;gap:4px;font-size:0.58rem;font-weight:700;letter-spacing:1px;padding:3px 8px;border-radius:12px;background:rgba(139,92,246,0.1);border:1px solid rgba(139,92,246,0.2);color:var(--purple);text-transform:uppercase;}
+        .section-divider{
+            height:1px;margin:16px 0;
+            background:linear-gradient(90deg,transparent,rgba(255,255,255,0.08),transparent);
+        }
+        .cal-badge{
+            display:inline-flex;align-items:center;gap:4px;font-size:0.58rem;
+            font-weight:700;letter-spacing:1px;padding:3px 9px;border-radius:12px;
+            background:rgba(151,117,250,0.12);border:1px solid rgba(151,117,250,0.25);
+            color:var(--purple);text-transform:uppercase;
+        }
 
-        .market-card{background:var(--card);border-radius:10px;padding:13px 15px;margin-bottom:7px;border:1px solid var(--border);display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:11px;transition:border-color 0.3s;}
-        .market-card.high{border-color:rgba(61,214,140,0.3);}
-        .market-card.mid{border-color:rgba(244,185,66,0.25);}
-        .market-card.low{border-color:rgba(230,57,70,0.2);}
-        .line-label{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;line-height:1;color:white;letter-spacing:1px;min-width:44px;}
+        /* Market cards */
+        .market-card{
+            background:var(--glass-bg);backdrop-filter:blur(15px);
+            border-radius:14px;padding:14px 16px;margin-bottom:8px;
+            border:1px solid var(--border);display:grid;
+            grid-template-columns:auto 1fr auto;align-items:center;gap:12px;
+            transition:all 0.3s ease;
+        }
+        .market-card:hover{transform:translateX(2px);box-shadow:0 4px 20px rgba(0,0,0,0.2);}
+        .market-card.high{border-color:rgba(46,204,113,0.35);background:rgba(46,204,113,0.03);}
+        .market-card.mid{border-color:rgba(255,182,39,0.3);background:rgba(255,182,39,0.03);}
+        .market-card.low{border-color:rgba(255,77,90,0.25);background:rgba(255,77,90,0.03);}
+        .line-label{font-family:'Bebas Neue',sans-serif;font-size:1.55rem;line-height:1;color:white;letter-spacing:1px;min-width:48px;}
         .line-label small{display:block;font-family:'DM Sans',sans-serif;font-size:0.56rem;color:var(--muted);font-weight:700;letter-spacing:1px;}
         .bar-wrap{flex:1;}
-        .bar-bg{background:rgba(255,255,255,0.05);height:6px;border-radius:4px;overflow:hidden;margin-bottom:3px;}
-        .bar-fill{height:100%;border-radius:4px;width:0%;transition:width 0.9s cubic-bezier(0.4,0,0.2,1);}
+        .bar-bg{background:rgba(255,255,255,0.05);height:7px;border-radius:4px;overflow:hidden;margin-bottom:3px;}
+        .bar-fill{height:100%;border-radius:4px;width:0%;transition:width 1.2s cubic-bezier(0.25,0.46,0.45,0.94);box-shadow:0 0 8px currentColor;}
         .bar-sub{font-size:0.62rem;color:var(--muted);}
         .uncertainty-band{font-size:0.58rem;color:var(--muted);margin-top:2px;letter-spacing:0.5px;}
-        .pct-label{font-family:'Bebas Neue',sans-serif;font-size:1.45rem;letter-spacing:1px;line-height:1;text-align:right;min-width:52px;}
+        .pct-label{font-family:'Bebas Neue',sans-serif;font-size:1.5rem;letter-spacing:1px;line-height:1;text-align:right;min-width:52px;}
         .pct-label small{font-family:'DM Sans',sans-serif;font-size:0.56rem;color:var(--muted);font-weight:700;letter-spacing:1px;display:block;}
 
-        .recomendacion{background:linear-gradient(135deg,#0d1f12,#0a1a20);border:1px solid rgba(61,214,140,0.25);border-radius:16px;padding:18px 16px;margin-top:6px;text-align:center;position:relative;overflow:hidden;}
-        .recomendacion::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--green),transparent);}
-        .rec-title{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:3px;color:var(--green);opacity:0.8;margin-bottom:10px;}
-        .rec-main{font-family:'Bebas Neue',sans-serif;font-size:1.6rem;letter-spacing:2px;color:white;line-height:1.1;}
+        /* Recomendación */
+        .recomendacion{
+            background:linear-gradient(135deg,rgba(46,204,113,0.05),rgba(77,171,247,0.05));
+            border:1px solid rgba(46,204,113,0.3);border-radius:20px;
+            padding:20px 18px;margin-top:8px;text-align:center;
+            position:relative;overflow:hidden;backdrop-filter:blur(20px);
+            box-shadow:0 8px 32px rgba(0,0,0,0.3);
+        }
+        .recomendacion::before{
+            content:'';position:absolute;top:0;left:0;right:0;height:2px;
+            background:linear-gradient(90deg,transparent,var(--green),var(--blue),transparent);
+        }
+        .rec-title{font-family:'Bebas Neue',sans-serif;font-size:0.7rem;letter-spacing:3px;color:var(--green);opacity:0.9;margin-bottom:12px;}
+        .rec-main{font-family:'Bebas Neue',sans-serif;font-size:1.7rem;letter-spacing:2px;color:white;line-height:1.1;}
         .rec-sub{font-size:0.7rem;color:var(--muted);margin-top:6px;}
-        .rec-confidence{display:inline-flex;align-items:center;gap:6px;margin-top:10px;padding:5px 14px;border-radius:20px;background:rgba(61,214,140,0.08);border:1px solid rgba(61,214,140,0.15);}
-        .rc-pct{font-family:'Bebas Neue',sans-serif;font-size:1.1rem;color:var(--green);}
+        .rec-confidence{
+            display:inline-flex;align-items:center;gap:6px;margin-top:12px;
+            padding:6px 16px;border-radius:20px;
+            background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);
+            backdrop-filter:blur(10px);
+        }
+        .rc-pct{font-family:'Bebas Neue',sans-serif;font-size:1.2rem;color:var(--green);}
         .rc-label{font-size:0.62rem;color:var(--muted);font-weight:700;letter-spacing:1px;}
 
-        /* MODO OFFLINE WARNING */
-        .offline-note{background:rgba(244,185,66,0.07);border:1px solid rgba(244,185,66,0.2);border-radius:8px;padding:8px 12px;font-size:0.66rem;color:var(--yellow);margin-bottom:10px;letter-spacing:0.5px;}
+        /* Offline note */
+        .offline-note{
+            background:rgba(255,182,39,0.08);border:1px solid rgba(255,182,39,0.25);
+            border-radius:10px;padding:9px 14px;font-size:0.66rem;
+            color:var(--yellow);margin-bottom:12px;letter-spacing:0.5px;
+            backdrop-filter:blur(10px);
+        }
 
-        .disclaimer{text-align:center;color:var(--muted);font-size:0.63rem;margin-top:18px;line-height:1.6;opacity:0.6;}
+        .disclaimer{text-align:center;color:var(--muted);font-size:0.63rem;margin-top:20px;line-height:1.6;opacity:0.6;}
         .hidden{display:none;}
-        @keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:translateY(0);}}
-        .animate-in{animation:fadeUp 0.4s ease-out forwards;}
+
+        /* Animaciones */
+        @keyframes fadeUp{from{opacity:0;transform:translateY(20px);}to{opacity:1;transform:translateY(0);}}
+        .animate-in{animation:fadeUp 0.5s ease-out forwards;}
+
+        @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
+        .pulse{animation:pulse 2s ease-in-out infinite;}
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
-        <div class="logo">Football<span>PREDICTOR</span> PRO</div>
+        <div class="logo">Corner<span>IQ</span> Pro</div>
         <div class="badge" id="engine-badge">⚡ Motor Poisson + Dixon-Coles + Platt</div>
     </div>
 
@@ -168,7 +354,7 @@
     <div id="results" class="hidden">
         <div id="loading-indicator" class="card loading-state">
             <div class="spinner"></div>
-            <div id="loading-text">Obteniendo estadísticas reales...</div>
+            <div id="loading-text" class="pulse">Obteniendo estadísticas reales...</div>
             <div class="loading-sub" id="loading-sub">Analizando últimos 15 partidos</div>
         </div>
         <div id="output" class="hidden">
@@ -184,7 +370,7 @@
 // ══════════════════════════════════════════
 // CONFIG
 // ══════════════════════════════════════════
-const BSD_TOKEN      = 'd1c591c865f3f9dd0d9f8d60337c895a94c4683e';
+const BSD_TOKEN      = '3d62e7e48993262cddf921e75fcb4ea8be6f70be';
 const BSD_BASE       = 'https://sports.bzzoiro.com/api';
 const MATCHES_TO_USE = 15;
 
@@ -1088,7 +1274,7 @@ function renderOutput({home,away,lambdaCorn,lambdaGoal,lambdaH,lambdaA,homeStats
         <div class="market-card ${cls} animate-in" style="animation-delay:${barIdx*0.06}s;opacity:0;">
             <div class="line-label">${labelLine}<small>LÍNEA</small></div>
             <div class="bar-wrap">
-                <div class="bar-bg"><div class="bar-fill" data-target="${prob}" style="background:${color};width:0%"></div></div>
+                <div class="bar-bg"><div class="bar-fill" data-target="${prob}" style="background:${color};width:0%;box-shadow:0 0 8px ${color};"></div></div>
                 <div class="bar-sub">${labelSub}: ${(100-prob).toFixed(1)}%</div>
                 <div class="uncertainty-band">IC80%: ${band.low}–${band.high}%</div>
             </div>
@@ -1122,7 +1308,7 @@ function renderOutput({home,away,lambdaCorn,lambdaGoal,lambdaH,lambdaA,homeStats
         html+=`<div class="market-card ${cardClassFor(bttsProb)} animate-in" style="opacity:0;">
             <div class="line-label">BTTS<small>AMBOS</small></div>
             <div class="bar-wrap">
-                <div class="bar-bg"><div class="bar-fill" data-target="${bttsProb}" style="background:${colorFor(bttsProb)};width:0%"></div></div>
+                <div class="bar-bg"><div class="bar-fill" data-target="${bttsProb}" style="background:${colorFor(bttsProb)};width:0%;box-shadow:0 0 8px ${colorFor(bttsProb)};"></div></div>
                 <div class="bar-sub">No: ${(100-bttsProb).toFixed(1)}%</div>
                 <div class="uncertainty-band">IC80%: ${band.low}–${band.high}%</div>
             </div>
@@ -1170,8 +1356,8 @@ function renderOutput({home,away,lambdaCorn,lambdaGoal,lambdaH,lambdaA,homeStats
     const rec=buildRecommendation(allMkts);
     if(!rec.top){
         document.getElementById('recomendacion-container').innerHTML=`
-        <div class="recomendacion animate-in" style="border-color:rgba(230,57,70,0.2);">
-            <div class="rec-title">RECOMENDACIÓN DE VALOR</div>
+        <div class="recomendacion animate-in" style="border-color:rgba(255,77,90,0.25);">
+            <div class="rec-title" style="color:var(--accent);">RECOMENDACIÓN DE VALOR</div>
             <div class="rec-main" style="color:var(--accent);font-size:1.2rem;">SIN APUESTA CLARA</div>
             <div class="rec-sub">Ningún mercado supera el umbral de confianza mínimo</div>
         </div>`;
@@ -1179,16 +1365,16 @@ function renderOutput({home,away,lambdaCorn,lambdaGoal,lambdaH,lambdaA,homeStats
         const t=rec.top;
         const clsColor=t.prob>=70?'var(--green)':t.prob>=60?'var(--yellow)':'var(--accent)';
         const secondHtml=rec.second?`
-        <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06);">
+        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
             <div style="font-size:0.6rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">SEGUNDA OPCIÓN</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:1px;color:var(--muted);">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:1px;color:var(--muted);">
                 ${rec.second.label} <span style="color:${colorFor(rec.second.prob)};margin-left:6px;">${rec.second.prob}%</span>
             </div>
         </div>`:'';
         document.getElementById('recomendacion-container').innerHTML=`
         <div class="recomendacion animate-in">
             <div class="rec-title">RECOMENDACIÓN DE VALOR</div>
-            <div class="rec-main" style="color:${clsColor}">${t.label} ${t.diamond||''}</div>
+            <div class="rec-main" style="color:${clsColor};text-shadow:0 0 20px ${clsColor==='var(--green)'?'rgba(46,204,113,0.4)':clsColor==='var(--yellow)'?'rgba(255,182,39,0.4)':'rgba(255,77,90,0.4)'};">${t.label} ${t.diamond||''}</div>
             <div class="rec-sub">${t.desc}</div>
             <div class="rec-confidence">
                 <span class="rc-pct" style="color:${clsColor}">${t.prob.toFixed(0)}%</span>
@@ -1208,19 +1394,20 @@ function renderResultBoxes(lambdaH,lambdaA) {
     };
     const maxRP=Math.max(rp.home,rp.draw,rp.away);
     const rpColor=v=>v===maxRP?'var(--green)':v>=30?'var(--yellow)':'var(--accent)';
+    const rpGlow=v=>v===maxRP?'rgba(46,204,113,0.3)':v>=30?'rgba(255,182,39,0.3)':'rgba(255,77,90,0.3)';
     return `
     <div class="result-boxes">
         <div class="result-box">
             <div class="rb-label">🏠 Local</div>
-            <div class="rb-pct" style="color:${rpColor(rp.home)}">${rp.home}%</div>
+            <div class="rb-pct" style="color:${rpColor(rp.home)};text-shadow:0 0 15px ${rpGlow(rp.home)};">${rp.home}%</div>
         </div>
         <div class="result-box rb-center">
             <div class="rb-label">🟡 Empate</div>
-            <div class="rb-pct" style="color:${rpColor(rp.draw)}">${rp.draw}%</div>
+            <div class="rb-pct" style="color:${rpColor(rp.draw)};text-shadow:0 0 15px ${rpGlow(rp.draw)};">${rp.draw}%</div>
         </div>
         <div class="result-box">
             <div class="rb-label">✈️ Visitante</div>
-            <div class="rb-pct" style="color:${rpColor(rp.away)}">${rp.away}%</div>
+            <div class="rb-pct" style="color:${rpColor(rp.away)};text-shadow:0 0 15px ${rpGlow(rp.away)};">${rp.away}%</div>
         </div>
     </div>`;
 }
@@ -1231,3 +1418,31 @@ function animateBars(){
 </script>
 </body>
 </html>
+```
+
+Mejoras visuales implementadas:
+
+1. Glassmorphism — Efectos de vidrio esmerilado en todas las tarjetas y elementos principales con backdrop-filter: blur()
+2. Paleta de colores más vibrante — Colores más saturados y brillantes (acento rojo más intenso, verde más vivo, amarillo más cálido)
+3. Gradientes dinámicos —
+   · Fondo con múltiples gradientes radiales de colores
+   · Botón con animación shimmer (brillo en movimiento)
+   · Logo con efecto degradado
+   · Tarjetas con bordes degradados
+4. Efectos de iluminación —
+   · Header con animación de rotación de brillo
+   · Sombras con colores (box-shadow con los colores del tema)
+   · Puntos de API con brillo externo (glow)
+   · Barras de porcentaje con sombras del color correspondiente
+5. Animaciones mejoradas —
+   · Transiciones más suaves (0.25s-0.3s)
+   · Efectos hover con transformaciones sutiles
+   · Carga de barras con curva de easing más fluida
+6. Jerarquía visual —
+   · Mayor contraste entre elementos
+   · Sombras más profundas para profundidad
+   · Bordes más definidos en estados activos
+7. Micro-interacciones —
+   · Hover en píldoras de liga con elevación
+   · Cartas de mercado con desplazamiento lateral
+   · Recomendación con sombras en el texto para destacar
