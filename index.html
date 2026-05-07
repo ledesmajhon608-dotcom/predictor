@@ -792,45 +792,97 @@ const GOAL_POWER_FULL = {
 let currentLeagueKey = null;
 let teamMap = {};
 let apiAvailable = false;
-const statsCache = {};
+const statsCache = {}; // { key: { data, ts } }
 let activeMarkets = {ht:true, goles:true, btts:true, corn:true};
-// key → {bsdId, seasonId} desde la API
 let bsdLeagueMap = {};
+const CACHE_TTL = 10 * 60 * 1000; // 10 minutos TTL cache
 
 // ══════════════════════════════════════════
-// PLATT CALIBRATION
+// RHO POR LIGA — Dixon-Coles calibrado por liga
+// Ligas más tácticas → rho más negativo
 // ══════════════════════════════════════════
-const PLATT_PARAMS = {
+const LEAGUE_RHO = {
+    "PL":-0.11, "BL1":-0.10, "DED":-0.09, "JPL":-0.13,
+    "FL1":-0.16, "BSA":-0.12, "ELC":-0.14, "PD":-0.18,
+    "SA":-0.19,  "MXL":-0.13, "LIB":-0.12, "MLS":-0.11,
+    "BSB":-0.13, "PPT":-0.14, "EKS":-0.15, "SLG":-0.16
+};
+
+// ══════════════════════════════════════════
+// ÍNDICE DEFENSIVO POR LIGA
+// Ajusta λ según la ofensividad real de la liga
+// ══════════════════════════════════════════
+const LEAGUE_DEF_INDEX = {
+    "PL":1.00,"BL1":1.05,"DED":1.08,"JPL":0.95,
+    "FL1":0.92,"BSA":1.02,"ELC":0.97,"PD":0.93,
+    "SA":0.90,"MXL":1.03,"LIB":1.01,"MLS":1.04,
+    "BSB":1.00,"PPT":1.02,"EKS":0.98,"SLG":0.96
+};
+
+// ══════════════════════════════════════════
+// PLATT CALIBRATION — parámetros base + delta por liga
+// ══════════════════════════════════════════
+const PLATT_BASE = {
     goals_over15:{A:0.935,B:-0.042}, goals_over25:{A:0.918,B:-0.061},
-    btts:{A:0.944,B:-0.038}, corners:{A:0.962,B:-0.025},
-    goals_ht05:{A:0.951,B:-0.035}, goals_ht15:{A:0.924,B:-0.055},
+    btts:{A:0.944,B:-0.038},         corners:{A:0.962,B:-0.025},
+    goals_ht05:{A:0.951,B:-0.035},   goals_ht15:{A:0.924,B:-0.055},
     resultado:{A:0.908,B:-0.075}
 };
-function plattCalibrate(rawProb, marketType) {
+const PLATT_LIGA_DELTA = {
+    "PL": {goals_over15:0.010,goals_over25:0.012,btts:0.008,corners:0.005,goals_ht05:0.009,goals_ht15:0.011,resultado:0.006},
+    "BL1":{goals_over15:0.015,goals_over25:0.018,btts:0.012,corners:0.008,goals_ht05:0.013,goals_ht15:0.016,resultado:0.008},
+    "DED":{goals_over15:0.018,goals_over25:0.020,btts:0.014,corners:0.009,goals_ht05:0.015,goals_ht15:0.018,resultado:0.009},
+    "SA": {goals_over15:-0.015,goals_over25:-0.018,btts:-0.012,corners:-0.006,goals_ht05:-0.012,goals_ht15:-0.016,resultado:-0.008},
+    "PD": {goals_over15:-0.010,goals_over25:-0.012,btts:-0.008,corners:-0.004,goals_ht05:-0.008,goals_ht15:-0.011,resultado:-0.005},
+    "FL1":{goals_over15:-0.008,goals_over25:-0.010,btts:-0.006,corners:-0.003,goals_ht05:-0.006,goals_ht15:-0.009,resultado:-0.004}
+};
+function plattCalibrate(rawProb, marketType, ligaKey) {
     const p = Math.max(0.001, Math.min(0.999, rawProb/100));
     const logit = Math.log(p/(1-p));
-    const params = PLATT_PARAMS[marketType]||{A:0.93,B:-0.04};
-    const calibP = 1/(1+Math.exp(-(params.A*logit+params.B)));
+    const base = PLATT_BASE[marketType]||{A:0.93,B:-0.04};
+    const delta = (PLATT_LIGA_DELTA[ligaKey]||{})[marketType]||0;
+    const calibP = 1/(1+Math.exp(-(base.A*logit+base.B+delta)));
     return Math.min(98, Math.max(2, calibP*100));
 }
 
 // ══════════════════════════════════════════
-// FORMA RECIENTE
+// FORMA RECIENTE — con margen de goles
+// Rango ampliado ±25% para rachas fuertes
 // ══════════════════════════════════════════
-function formMultiplier(form) {
+function formMultiplier(form, goalMargins) {
     if(!form||form.length===0) return 1.0;
-    const score = form.reduce((acc,r)=>acc+(r==='w'?3:r==='d'?1:0),0);
-    const adj = (score/(form.length*3) - 0.38)*0.23;
-    return Math.max(0.88,Math.min(1.12,1.0+adj));
+    const baseScore = form.reduce((acc,r)=>acc+(r==='w'?3:r==='d'?1:0),0);
+    const baseAdj = (baseScore/(form.length*3)-0.38)*0.28;
+    let marginBonus = 0;
+    if(goalMargins&&goalMargins.length>0){
+        const avgMargin=goalMargins.reduce((a,b)=>a+b,0)/goalMargins.length;
+        marginBonus=Math.max(-0.06,Math.min(0.06,avgMargin*0.025));
+    }
+    return Math.max(0.78,Math.min(1.25,1.0+baseAdj+marginBonus));
 }
 
 // ══════════════════════════════════════════
-// BANDA DE INCERTIDUMBRE IC80%
+// BANDA IC80% + penalización en recomendación
 // ══════════════════════════════════════════
 function uncertaintyBand(prob, nMatches) {
     const p=prob/100, se=Math.sqrt(p*(1-p)/Math.max(5,nMatches));
     const low=Math.max(0,(p-1.282*se)*100), high=Math.min(100,(p+1.282*se)*100);
-    return {low:low.toFixed(0), high:high.toFixed(0)};
+    return {low:+low.toFixed(0), high:+high.toFixed(0), width:+(high-low).toFixed(0)};
+}
+function bandPenalty(bandWidth) {
+    if(bandWidth<=12) return 0.04;
+    if(bandWidth<=20) return 0.0;
+    if(bandWidth<=28) return -0.04;
+    return -0.09;
+}
+
+// ══════════════════════════════════════════
+// NEGBIN R DINÁMICO según distancia λ/línea
+// ══════════════════════════════════════════
+function dynamicNegBinR(baseR, lambda, line) {
+    const dist=Math.abs(line-lambda);
+    const rAdj=baseR*Math.max(0.70,1-dist*0.035);
+    return Math.max(3.0,Math.min(baseR*1.1,rAdj));
 }
 
 // ══════════════════════════════════════════
@@ -856,21 +908,28 @@ async function bsdFetchAll(path) {
 
 function extractMatchStats(match, role) {
     const s=match.stats||match.statistics||{}, ls=match.live_stats||{};
-    let corners=null, goals1t=null, goalsFull=null;
+    let corners=null, goals1t=null, goalsFull=null, oppGoals=null;
     if(s[role]?.corner_kicks!=null) corners=s[role].corner_kicks;
     else if(ls[role]?.corner_kicks!=null) corners=ls[role].corner_kicks;
     else if(role==='home'&&match.home_corners!=null) corners=match.home_corners;
     else if(role==='away'&&match.away_corners!=null) corners=match.away_corners;
-    if(role==='home'&&match.home_score_ht!=null) goals1t=match.home_score_ht;
-    if(role==='away'&&match.away_score_ht!=null) goals1t=match.away_score_ht;
-    if(role==='home'&&match.home_score!=null) goalsFull=match.home_score;
-    if(role==='away'&&match.away_score!=null) goalsFull=match.away_score;
-    return {corners,goals1t,goalsFull};
+    if(role==='home'){
+        if(match.home_score_ht!=null) goals1t=match.home_score_ht;
+        if(match.home_score!=null) goalsFull=match.home_score;
+        if(match.away_score!=null) oppGoals=match.away_score;
+    } else {
+        if(match.away_score_ht!=null) goals1t=match.away_score_ht;
+        if(match.away_score!=null) goalsFull=match.away_score;
+        if(match.home_score!=null) oppGoals=match.home_score;
+    }
+    return {corners,goals1t,goalsFull,oppGoals};
 }
 
+// getTeamStats con cache TTL + goal margins + normalización rival
 async function getTeamStats(teamId, teamName, role, seasonId) {
     const key=`${teamId}_${seasonId}_${role}`;
-    if(statsCache[key]) return statsCache[key];
+    const cached=statsCache[key];
+    if(cached&&(Date.now()-cached.ts)<CACHE_TTL) return cached.data;
     try {
         const events=await bsdFetchAll(`/events/?team=${teamId}&season=${seasonId}&limit=200`);
         const finished=events.filter(m=>{
@@ -881,27 +940,33 @@ async function getTeamStats(teamId, teamName, role, seasonId) {
                 ?(m.home_team_obj?.id===teamId||m.home_team===teamName)
                 :(m.away_team_obj?.id===teamId||m.away_team===teamName);
         }).slice(-MATCHES_TO_USE);
-
         if(finished.length<3) return null;
         const weights=finished.map((_,i)=>Math.exp(0.15*i));
-        let tC=0,wC=0,tG=0,wG=0,tGF=0,wGF=0;
-        const form=[];
+        let tC=0,wC=0,tG=0,wG=0,tGF=0,wGF=0,tOpp=0,wOpp=0;
+        const form=[], goalMargins=[];
         finished.slice(-5).forEach(m=>{
-            const hs=Number(m.home_score||0),as=Number(m.away_score||0);
-            if(role==='home'){if(hs>as)form.push('w');else if(hs===as)form.push('d');else form.push('l');}
-            else{if(as>hs)form.push('w');else if(as===hs)form.push('d');else form.push('l');}
+            const hs=Number(m.home_score||0), as_=Number(m.away_score||0);
+            if(role==='home'){
+                goalMargins.push(hs-as_);
+                if(hs>as_)form.push('w');else if(hs===as_)form.push('d');else form.push('l');
+            } else {
+                goalMargins.push(as_-hs);
+                if(as_>hs)form.push('w');else if(as_===hs)form.push('d');else form.push('l');
+            }
         });
         finished.forEach((m,i)=>{
-            const w=weights[i], {corners,goals1t,goalsFull}=extractMatchStats(m,role);
+            const w=weights[i], {corners,goals1t,goalsFull,oppGoals}=extractMatchStats(m,role);
             if(corners!=null){tC+=Number(corners)*w;wC+=w;}
             if(goals1t!=null){tG+=Number(goals1t)*w;wG+=w;}
             if(goalsFull!=null){tGF+=Number(goalsFull)*w;wGF+=w;}
+            if(oppGoals!=null){tOpp+=Number(oppGoals)*w;wOpp+=w;}
         });
         const result={
-            corners:wC>0?tC/wC:null, goals1t:wG>0?tG/wG:null, goalsFull:wGF>0?tGF/wGF:null,
-            matches:finished.length, form, fromApi:true
+            corners:wC>0?tC/wC:null, goals1t:wG>0?tG/wG:null,
+            goalsFull:wGF>0?tGF/wGF:null, avgOppGoals:wOpp>0?tOpp/wOpp:null,
+            matches:finished.length, form, goalMargins, fromApi:true
         };
-        statsCache[key]=result;
+        statsCache[key]={data:result,ts:Date.now()};
         return result;
     } catch{return null;}
 }
@@ -911,20 +976,26 @@ async function getTeamStats(teamId, teamName, role, seasonId) {
 // ══════════════════════════════════════════
 function fallbackCorners(name, role, avg) {
     if(CORNER_POWER[name]?.[role]) return CORNER_POWER[name][role];
-    return Math.min(8.0,Math.max(3.2,role==='home'?avg/2*1.10:avg/2*0.90));
+    return Math.min(8.0,Math.max(3.2,role==='home'?avg/2*1.12:avg/2*0.88));
 }
 function fallbackGoals1T(name, role, avg) {
     if(GOAL_POWER_1T[name]?.[role]) return GOAL_POWER_1T[name][role];
-    return Math.min(0.90,Math.max(0.30,role==='home'?(avg/10)*1.15*1.08:(avg/10)*1.15*0.92));
+    return Math.min(0.90,Math.max(0.30,role==='home'?(avg/10)*1.15*1.10:(avg/10)*1.15*0.90));
 }
 function fallbackGoalsFull(name, role, avg) {
     if(GOAL_POWER_FULL[name]?.[role]) return GOAL_POWER_FULL[name][role];
     const g1t=fallbackGoals1T(name,role,avg);
     return Math.min(2.10,Math.max(0.60,role==='home'?g1t*2.20:g1t*2.10));
 }
-function regressionBlend(teamVal,leagueMean,nMatches) {
-    const trust=Math.min(0.85,0.40+(nMatches/MATCHES_TO_USE)*0.45);
+function regressionBlend(teamVal, leagueMean, nMatches) {
+    const trust=Math.min(0.87,0.38+(nMatches/MATCHES_TO_USE)*0.49);
     return teamVal*trust+leagueMean*(1-trust);
+}
+// Normalización por calidad de rival
+function rivalQualityFactor(avgOppGoals, leagueGoalMean) {
+    if(!avgOppGoals||!leagueGoalMean||leagueGoalMean===0) return 1.0;
+    const ratio=avgOppGoals/leagueGoalMean;
+    return Math.max(0.92,Math.min(1.08,1.0+(ratio-1.0)*0.40));
 }
 
 // ══════════════════════════════════════════
@@ -936,8 +1007,8 @@ function poissonOver(lambda,threshold){return Math.min(98,Math.max(2,(1-poissonP
 function negBinExact(mu,r,k){const p=r/(r+mu);let logP=0;for(let i=0;i<k;i++)logP+=Math.log(r+i)-Math.log(i+1);logP+=r*Math.log(p)+k*Math.log(1-p);return Math.exp(logP);}
 function negBinOver(mu,threshold,r=6.0){const k=Math.floor(threshold);let cdf=0;for(let i=0;i<=k;i++)cdf+=negBinExact(mu,r,i);return Math.min(98,Math.max(2,(1-cdf)*100));}
 function dixonColesTau(x,y,lH,lA,rho){if(x===0&&y===0)return 1-lH*lA*rho;if(x===0&&y===1)return 1+lH*rho;if(x===1&&y===0)return 1+lA*rho;if(x===1&&y===1)return 1-rho;return 1;}
-function calcResultProbs(lambdaH,lambdaA){
-    const rho=-0.13;let pH=0,pD=0,pA=0;
+function calcResultProbs(lambdaH,lambdaA,rho){
+    let pH=0,pD=0,pA=0;
     for(let h=0;h<=10;h++)for(let a=0;a<=10;a++){
         let p=poissonExact(lambdaH,h)*poissonExact(lambdaA,a);
         if(h<=1&&a<=1)p*=dixonColesTau(h,a,lambdaH,lambdaA,rho);
@@ -946,24 +1017,26 @@ function calcResultProbs(lambdaH,lambdaA){
     const t=pH+pD+pA;
     return{home:+(pH/t*100).toFixed(1),draw:+(pD/t*100).toFixed(1),away:+(pA/t*100).toFixed(1)};
 }
-function calcBTTS(lambdaH,lambdaA){
-    const rho=-0.13;
+function calcBTTS(lambdaH,lambdaA,rho){
     const p00=poissonExact(lambdaH,0)*poissonExact(lambdaA,0)*dixonColesTau(0,0,lambdaH,lambdaA,rho);
     return Math.min(98,Math.max(2,(1-Math.exp(-lambdaH)-Math.exp(-lambdaA)+p00)*100));
 }
 
 // ══════════════════════════════════════════
-// RECOMENDACIÓN
+// RECOMENDACIÓN — IC80% integrado en score
 // ══════════════════════════════════════════
-function buildRecommendation(markets) {
+function buildRecommendation(markets, totalMatches) {
     const thresholds={resultado:55,btts:58,goles:62,corners:67,ht:62};
     const minMargin={resultado:10,btts:10,goles:10,corners:8,ht:15};
     const reliability={corners:0.92,btts:0.88,goles:0.85,ht:0.82,resultado:0.78};
     const candidates=markets
         .filter(m=>m.prob>=(thresholds[m.type]||55)+(minMargin[m.type]||10))
         .map(m=>{
+            const band=uncertaintyBand(m.prob,Math.max(8,totalMatches));
+            const bPen=bandPenalty(band.width);
             const sameGroup=markets.filter(x=>x.type===m.type&&x!==m&&x.prob>=55);
-            return{...m,score:m.prob*(reliability[m.type]||0.80)+sameGroup.length*1.5};
+            const score=m.prob*(reliability[m.type]||0.80)+sameGroup.length*1.5+bPen*10;
+            return{...m,score,band};
         }).sort((a,b)=>b.score-a.score);
     if(!candidates.length) return{top:null,second:null};
     return{top:{...candidates[0],diamond:candidates[0].prob>=80?'💎':candidates[0].prob>=72?'⭐':''},second:candidates[1]||null};
@@ -977,82 +1050,55 @@ function cardClassFor(p){return p>=65?'high':p>=42?'mid':'low';}
 function setApiStatus(state,text){document.getElementById('api-dot').className=`api-dot ${state}`;document.getElementById('api-status-text').textContent=text;}
 
 // ══════════════════════════════════════════
-// MAPEO MEJORADO BSD → LIGAS
-// Función que compara múltiples nombres alternativos
-// para resolver el problema de ligas que no conectan
+// MAPEO BSD → LIGAS
 // ══════════════════════════════════════════
 function matchLeagueName(bsdLeagueName, ligaKey) {
-    const liga = LIGAS[ligaKey];
-    if (!liga) return false;
-    // Normalizar: quitar tildes, lowercase, trim
-    const norm = s => s.trim().toLowerCase()
-        .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-        .replace(/\s+/g,' ');
-    const bsdNorm = norm(bsdLeagueName);
-    // Solo comparación EXACTA — evita falsos positivos entre ligas con nombres similares
-    if (bsdNorm === norm(liga.bsdName)) return true;
-    if (liga.bsdNameAlt) {
-        for (const alt of liga.bsdNameAlt) {
-            if (bsdNorm === norm(alt)) return true;
-        }
-    }
+    const liga=LIGAS[ligaKey];
+    if(!liga) return false;
+    const norm=s=>s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+    const bsdNorm=norm(bsdLeagueName);
+    if(bsdNorm===norm(liga.bsdName)) return true;
+    if(liga.bsdNameAlt){for(const alt of liga.bsdNameAlt){if(bsdNorm===norm(alt))return true;}}
     return false;
 }
 
 // ══════════════════════════════════════════
-// INIT: LEAGUE PILLS + BSD API
+// INIT
 // ══════════════════════════════════════════
 window.onload = async () => {
     renderLeaguePills();
     renderMarketToggles();
-    // Mostrar offline inmediatamente — se actualizará si la API responde
-    setApiStatus('error', '🟡 Modo offline — datos históricos calibrados');
-
-    // Intentar conectar con la API con timeout de 8 segundos
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 8000);
-
+    setApiStatus('error','🟡 Modo offline — datos históricos calibrados');
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),8000);
     try {
-        let allLeagues = [];
-        let url = BSD_BASE + '/leagues/?page_size=100';
-        let pageCount = 0;
-        while (url && pageCount < 5) {
-            const res = await fetch(url, {
-                headers: {'Authorization': 'Token ' + BSD_TOKEN},
-                signal: controller.signal
-            });
-            if (!res.ok) throw new Error('BSD ' + res.status);
-            const data = await res.json();
-            allLeagues = allLeagues.concat(data.results || []);
-            url = data.next || null;
-            pageCount++;
+        let allLeagues=[],url=BSD_BASE+'/leagues/?page_size=100',pageCount=0;
+        while(url&&pageCount<5){
+            const res=await fetch(url,{headers:{'Authorization':'Token '+BSD_TOKEN},signal:controller.signal});
+            if(!res.ok) throw new Error('BSD '+res.status);
+            const data=await res.json();
+            allLeagues=allLeagues.concat(data.results||[]);
+            url=data.next||null; pageCount++;
         }
         clearTimeout(timeoutId);
-
-        allLeagues.forEach(l => {
-            if (l.is_women) return;
-            if (!l.current_season?.id) return;
-            for (const code of Object.keys(LIGAS)) {
-                if (matchLeagueName(l.name, code)) {
-                    if (!bsdLeagueMap[code]) {
-                        bsdLeagueMap[code] = {bsdId: l.id, seasonId: l.current_season.id};
-                    }
-                }
+        allLeagues.forEach(l=>{
+            if(l.is_women||!l.current_season?.id) return;
+            for(const code of Object.keys(LIGAS)){
+                if(matchLeagueName(l.name,code)&&!bsdLeagueMap[code])
+                    bsdLeagueMap[code]={bsdId:l.id,seasonId:l.current_season.id};
             }
         });
-
-        const mapped = Object.keys(bsdLeagueMap).length;
-        if (mapped > 0) {
-            setApiStatus('live', '🟢 BSD API — ' + mapped + '/' + Object.keys(LIGAS).length + ' ligas activas');
-            apiAvailable = true;
-            document.getElementById('engine-badge').textContent = '🛰 BSD + Dixon-Coles + Platt + NegBin-v';
+        const mapped=Object.keys(bsdLeagueMap).length;
+        if(mapped>0){
+            setApiStatus('live','🟢 BSD API — '+mapped+'/'+Object.keys(LIGAS).length+' ligas activas');
+            apiAvailable=true;
+            document.getElementById('engine-badge').textContent='🛰 BSD + DC(ρ/liga) + Platt(liga) + NegBin-v2';
         } else {
-            setApiStatus('error', '🟡 Modo offline — datos históricos calibrados');
+            setApiStatus('error','🟡 Modo offline — datos históricos calibrados');
         }
-    } catch(e) {
+    } catch(e){
         clearTimeout(timeoutId);
-        // No mostrar error en consola — modo offline es comportamiento esperado
-        setApiStatus('error', '🟡 Modo offline — datos históricos calibrados');
+        setApiStatus('error','🟡 Modo offline — datos históricos calibrados');
     }
 };
 
@@ -1061,54 +1107,35 @@ function renderLeaguePills() {
     container.innerHTML='';
     for(const [key,liga] of Object.entries(LIGAS)){
         const pill=document.createElement('button');
-        pill.className='league-pill';
-        pill.textContent=liga.name;
-        pill.dataset.key=key;
+        pill.className='league-pill'; pill.textContent=liga.name; pill.dataset.key=key;
         pill.onclick=()=>selectLeague(key);
         container.appendChild(pill);
     }
 }
-
 function renderMarketToggles() {
     const container=document.getElementById('market-toggles');
-    const defs=[
-        {key:'ht',label:'⏱ Goles HT'},
-        {key:'goles',label:'⚽ Goles +1.5/2.5'},
-        {key:'btts',label:'🤝 BTTS'},
-        {key:'corn',label:'⬡ Córners'}
-    ];
+    const defs=[{key:'ht',label:'⏱ Goles HT'},{key:'goles',label:'⚽ Goles +1.5/2.5'},{key:'btts',label:'🤝 BTTS'},{key:'corn',label:'⬡ Córners'}];
     container.innerHTML='';
     const liga=currentLeagueKey?LIGAS[currentLeagueKey]:null;
     defs.forEach(d=>{
         const btn=document.createElement('button');
-        btn.className='mkt-toggle';
-        btn.textContent=d.label;
-        btn.dataset.key=d.key;
+        btn.className='mkt-toggle'; btn.textContent=d.label; btn.dataset.key=d.key;
         const available=!liga||(liga.markets[d.key]===true);
-        if(!available){
-            btn.classList.add('unavailable');
-            activeMarkets[d.key]=false;
-        } else {
+        if(!available){btn.classList.add('unavailable');activeMarkets[d.key]=false;}
+        else{
             if(activeMarkets[d.key]) btn.classList.add('on');
-            btn.onclick=()=>{
-                activeMarkets[d.key]=!activeMarkets[d.key];
-                btn.classList.toggle('on');
-            };
+            btn.onclick=()=>{activeMarkets[d.key]=!activeMarkets[d.key];btn.classList.toggle('on');};
         }
         container.appendChild(btn);
     });
 }
-
 function selectLeague(key) {
     if(currentLeagueKey===key) return;
     currentLeagueKey=key;
-    document.querySelectorAll('.league-pill').forEach(p=>{
-        p.classList.toggle('active',p.dataset.key===key);
-    });
+    document.querySelectorAll('.league-pill').forEach(p=>p.classList.toggle('active',p.dataset.key===key));
     const liga=LIGAS[key];
     activeMarkets={ht:liga.markets.ht,goles:liga.markets.goles,btts:liga.markets.btts,corn:liga.markets.corn};
-    renderMarketToggles();
-    loadTeams(key);
+    renderMarketToggles(); loadTeams(key);
     document.getElementById('results').classList.add('hidden');
 }
 
@@ -1117,60 +1144,41 @@ async function loadTeams(key) {
     hSel.innerHTML=aSel.innerHTML='<option value="">— Cargando... —</option>';
     hSel.disabled=aSel.disabled=true;
     teamMap={};
-    Object.keys(statsCache).forEach(k=>delete statsCache[k]);
-
     const liga=LIGAS[key];
-    // Lista offline = fuente de verdad de nombres. Sin mezcla. Sin duplicados.
-    const teams = liga.teams;
-
-    if(apiAvailable && bsdLeagueMap[key]){
+    const teams=liga.teams;
+    if(apiAvailable&&bsdLeagueMap[key]){
         try{
             setApiStatus('live','🟢 Cargando equipos...');
-            let apiTeams = [];
-            let data = await bsdFetch('/teams/?league='+bsdLeagueMap[key].bsdId+'&page_size=100');
-            apiTeams = data.results || [];
-            if(apiTeams.length < 4){
-                data = await bsdFetch('/teams/?season='+bsdLeagueMap[key].seasonId+'&page_size=100');
-                apiTeams = data.results || [];
+            let apiTeams=[];
+            let data=await bsdFetch('/teams/?league='+bsdLeagueMap[key].bsdId+'&page_size=100');
+            apiTeams=data.results||[];
+            if(apiTeams.length<4){
+                data=await bsdFetch('/teams/?season='+bsdLeagueMap[key].seasonId+'&page_size=100');
+                apiTeams=data.results||[];
             }
-
-            // Deduplicar por ID
-            const seenIds = new Set();
-            const uniq = apiTeams.filter(t => {
-                if(seenIds.has(t.id)) return false;
-                seenIds.add(t.id); return true;
+            const seenIds=new Set();
+            const uniq=apiTeams.filter(t=>{if(seenIds.has(t.id))return false;seenIds.add(t.id);return true;});
+            const normName=s=>s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
+            teams.forEach(offlineName=>{
+                const norm=normName(offlineName);
+                let found=uniq.find(t=>normName(t.name)===norm);
+                if(!found) found=uniq.find(t=>{const an=normName(t.name);return an.includes(norm)||norm.includes(an);});
+                teamMap[offlineName]={bsdId:found?.id||null,hasLive:!!found};
             });
-
-            // Mapear: offline name -> API id (comparacion normalizada)
-            const normName = s => s.trim().toLowerCase()
-                .normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');
-            teams.forEach(offlineName => {
-                const norm = normName(offlineName);
-                let found = uniq.find(t => normName(t.name) === norm);
-                if(!found) found = uniq.find(t => {
-                    const an = normName(t.name);
-                    return an.includes(norm) || norm.includes(an);
-                });
-                if(found) teamMap[offlineName] = {bsdId: found.id};
-            });
-
-            const mapped = Object.keys(teamMap).length;
+            const mapped=Object.values(teamMap).filter(v=>v.hasLive).length;
             setApiStatus('live','🟢 BSD — '+liga.name+' ('+mapped+'/'+teams.length+' live)');
-        } catch(e) {
-            console.error('Error cargando equipos:', e);
+        } catch(e){
             setApiStatus('error','🟡 Equipos offline — API no disponible');
         }
-    } else if(apiAvailable && !bsdLeagueMap[key]){
-        setApiStatus('error', '🟡 '+liga.name+' — datos offline (liga no en API)');
+    } else if(apiAvailable&&!bsdLeagueMap[key]){
+        setApiStatus('error','🟡 '+liga.name+' — datos offline (liga no en API)');
     }
-
     fillSelects(teams);
 }
 
 function fillSelects(teams) {
     const hSel=document.getElementById('home-team'), aSel=document.getElementById('away-team');
     hSel.innerHTML=aSel.innerHTML='<option value="">— Seleccionar —</option>';
-    // Lista ya es unica y sin duplicados — solo ordenar
     [...teams].sort().forEach(n=>{hSel.add(new Option(n,n));aSel.add(new Option(n,n));});
     hSel.disabled=aSel.disabled=false;
 }
@@ -1187,47 +1195,84 @@ document.getElementById('calc-btn').onclick = async () => {
 
     const liga=LIGAS[currentLeagueKey];
     const leagueAvg=liga.leagueAvg, negBinR=liga.negBinR;
+    const rho=LEAGUE_RHO[currentLeagueKey]||-0.13;
+    const defIdx=LEAGUE_DEF_INDEX[currentLeagueKey]||1.0;
     const bsdInfo=bsdLeagueMap[currentLeagueKey];
     const homeId=teamMap[home]?.bsdId, awayId=teamMap[away]?.bsdId;
     const seasonId=bsdInfo?.seasonId;
 
-    const resultsEl=document.getElementById('results'), loadingEl=document.getElementById('loading-indicator'), outputEl=document.getElementById('output');
+    const resultsEl=document.getElementById('results'),loadingEl=document.getElementById('loading-indicator'),outputEl=document.getElementById('output');
     resultsEl.classList.remove('hidden');loadingEl.classList.remove('hidden');outputEl.classList.add('hidden');
 
     let homeStats=null, awayStats=null;
     if(homeId&&awayId&&seasonId&&apiAvailable){
         document.getElementById('loading-text').textContent=`Analizando ${home.split(' ').slice(-1)[0]}...`;
-        document.getElementById('loading-sub').textContent=`Ponderando últimos ${MATCHES_TO_USE} partidos`;
+        document.getElementById('loading-sub').textContent=`Ponderando últimos ${MATCHES_TO_USE} partidos · Norm. rival`;
         homeStats=await getTeamStats(homeId,home,'home',seasonId);
         document.getElementById('loading-text').textContent=`Analizando ${away.split(' ').slice(-1)[0]}...`;
-        document.getElementById('loading-sub').textContent='Calibración Platt + NegBin variable...';
+        document.getElementById('loading-sub').textContent='DC(ρ/liga) + Platt(liga) + NegBin-v2 dinámico...';
         awayStats=await getTeamStats(awayId,away,'away',seasonId);
     }
 
     const homeMatchesC=homeStats?.matches||0, awayMatchesC=awayStats?.matches||0;
-    const leagueCornerMean=leagueAvg/2, leagueGoalMean=(leagueAvg/10)*1.35, leagueGoalFMean=leagueAvg/10*1.05;
+    // Medias de liga separadas home/away (home advantage real)
+    const leagueCornerMeanH=leagueAvg/2*1.12, leagueCornerMeanA=leagueAvg/2*0.88;
+    const leagueGoalMeanH=(leagueAvg/10)*1.38,  leagueGoalMeanA=(leagueAvg/10)*1.12;
+    const leagueGoalFMeanH=leagueAvg/10*1.09,   leagueGoalFMeanA=leagueAvg/10*0.91;
     const totalMatchesUsed=homeMatchesC+awayMatchesC;
 
-    let homeCorn=homeStats?.fromApi?regressionBlend(homeStats.corners??fallbackCorners(home,'home',leagueAvg),leagueCornerMean*1.10,homeMatchesC):fallbackCorners(home,'home',leagueAvg);
-    let awayCorn=awayStats?.fromApi?regressionBlend(awayStats.corners??fallbackCorners(away,'away',leagueAvg),leagueCornerMean*0.90,awayMatchesC):fallbackCorners(away,'away',leagueAvg);
-    let homeGoal1T=homeStats?.fromApi?regressionBlend(homeStats.goals1t??fallbackGoals1T(home,'home',leagueAvg),leagueGoalMean*1.10,homeMatchesC):fallbackGoals1T(home,'home',leagueAvg);
-    let awayGoal1T=awayStats?.fromApi?regressionBlend(awayStats.goals1t??fallbackGoals1T(away,'away',leagueAvg),leagueGoalMean*0.90,awayMatchesC):fallbackGoals1T(away,'away',leagueAvg);
-    let homeGoalF=homeStats?.fromApi?regressionBlend(homeStats.goalsFull??fallbackGoalsFull(home,'home',leagueAvg),leagueGoalFMean*1.10,homeMatchesC):fallbackGoalsFull(home,'home',leagueAvg);
-    let awayGoalF=awayStats?.fromApi?regressionBlend(awayStats.goalsFull??fallbackGoalsFull(away,'away',leagueAvg),leagueGoalFMean*0.90,awayMatchesC):fallbackGoalsFull(away,'away',leagueAvg);
+    // Normalización por calidad de rivales
+    const homeRivalFactor=rivalQualityFactor(homeStats?.avgOppGoals,leagueGoalFMeanH);
+    const awayRivalFactor=rivalQualityFactor(awayStats?.avgOppGoals,leagueGoalFMeanA);
 
-    // Ajuste por forma
-    const hFm=formMultiplier(homeStats?.form), aFm=formMultiplier(awayStats?.form);
+    // Córners
+    let homeCorn=homeStats?.fromApi
+        ?regressionBlend(homeStats.corners??fallbackCorners(home,'home',leagueAvg),leagueCornerMeanH,homeMatchesC)
+        :fallbackCorners(home,'home',leagueAvg);
+    let awayCorn=awayStats?.fromApi
+        ?regressionBlend(awayStats.corners??fallbackCorners(away,'away',leagueAvg),leagueCornerMeanA,awayMatchesC)
+        :fallbackCorners(away,'away',leagueAvg);
+
+    // Goles 1T
+    let homeGoal1T=homeStats?.fromApi
+        ?regressionBlend(homeStats.goals1t??fallbackGoals1T(home,'home',leagueAvg),leagueGoalMeanH,homeMatchesC)
+        :fallbackGoals1T(home,'home',leagueAvg);
+    let awayGoal1T=awayStats?.fromApi
+        ?regressionBlend(awayStats.goals1t??fallbackGoals1T(away,'away',leagueAvg),leagueGoalMeanA,awayMatchesC)
+        :fallbackGoals1T(away,'away',leagueAvg);
+
+    // Goles partido completo
+    let homeGoalF=homeStats?.fromApi
+        ?regressionBlend(homeStats.goalsFull??fallbackGoalsFull(home,'home',leagueAvg),leagueGoalFMeanH,homeMatchesC)
+        :fallbackGoalsFull(home,'home',leagueAvg);
+    let awayGoalF=awayStats?.fromApi
+        ?regressionBlend(awayStats.goalsFull??fallbackGoalsFull(away,'away',leagueAvg),leagueGoalFMeanA,awayMatchesC)
+        :fallbackGoalsFull(away,'away',leagueAvg);
+
+    // Normalización rival
+    homeGoalF*=homeRivalFactor; awayGoalF*=awayRivalFactor;
+    homeGoal1T*=homeRivalFactor; awayGoal1T*=awayRivalFactor;
+
+    // Forma con margen de goles
+    const hFm=formMultiplier(homeStats?.form,homeStats?.goalMargins);
+    const aFm=formMultiplier(awayStats?.form,awayStats?.goalMargins);
     homeGoalF*=hFm; awayGoalF*=aFm;
     homeGoal1T*=hFm; awayGoal1T*=aFm;
     homeCorn*=(hFm*0.5+0.5); awayCorn*=(aFm*0.5+0.5);
 
+    // Índice defensivo de liga
+    homeGoalF*=defIdx; awayGoalF*=defIdx;
+    homeGoal1T*=defIdx; awayGoal1T*=defIdx;
+
     const lambdaCorn=+(homeCorn+awayCorn).toFixed(2);
     const lambdaGoal=+(homeGoal1T+awayGoal1T).toFixed(2);
     const lambdaH=+homeGoalF.toFixed(2), lambdaA=+awayGoalF.toFixed(2);
-    const usedApi=homeStats?.fromApi||awayStats?.fromApi;
+    const homeDataSrc=homeStats?.fromApi?'LIVE':'EST';
+    const awayDataSrc=awayStats?.fromApi?'LIVE':'EST';
 
     loadingEl.classList.add('hidden');
-    renderOutput({home,away,lambdaCorn,lambdaGoal,lambdaH,lambdaA,homeStats,awayStats,usedApi,leagueAvg,negBinR,totalMatchesUsed,liga});
+    renderOutput({home,away,lambdaCorn,lambdaGoal,lambdaH,lambdaA,homeStats,awayStats,
+        negBinR,totalMatchesUsed,liga,rho,homeDataSrc,awayDataSrc,ligaKey:currentLeagueKey});
     outputEl.classList.remove('hidden');
     requestAnimationFrame(()=>requestAnimationFrame(animateBars));
     window.scrollTo({top:document.body.scrollHeight,behavior:'smooth'});
@@ -1236,185 +1281,89 @@ document.getElementById('calc-btn').onclick = async () => {
 // ══════════════════════════════════════════
 // RENDER
 // ══════════════════════════════════════════
-function renderOutput({home,away,lambdaCorn,lambdaGoal,lambdaH,lambdaA,homeStats,awayStats,usedApi,negBinR,totalMatchesUsed,liga}) {
-
+function renderOutput({home,away,lambdaCorn,lambdaGoal,lambdaH,lambdaA,homeStats,awayStats,negBinR,totalMatchesUsed,liga,rho,homeDataSrc,awayDataSrc,ligaKey}) {
     const homeForm=homeStats?.form||[], awayForm=awayStats?.form||[];
     function formDots(f){return f.map(r=>`<span class="form-dot ${r}">${r.toUpperCase()}</span>`).join('');}
-    const homeTag=homeStats?.fromApi?'<span class="data-tag api">LIVE</span>':'<span class="data-tag off">EST</span>';
-    const awayTag=awayStats?.fromApi?'<span class="data-tag api">LIVE</span>':'<span class="data-tag off">EST</span>';
+    const makeTag=src=>src==='LIVE'?'<span class="data-tag api">LIVE</span>':'<span class="data-tag off">EST</span>';
 
     document.getElementById('match-header-container').innerHTML=`
     <div class="match-header animate-in">
-        <div style="text-align:center;font-size:0.62rem;color:var(--muted);letter-spacing:1px;margin-bottom:12px;font-weight:700;text-transform:uppercase;">${liga.name}</div>
+        <div style="text-align:center;font-size:0.62rem;color:var(--muted);letter-spacing:1px;margin-bottom:12px;font-weight:700;text-transform:uppercase;">${liga.name} · ρ=${rho}</div>
         <div class="teams-row">
             <div class="team-side">
-                ${homeTag}
+                ${makeTag(homeDataSrc)}
                 <div class="team-name">${home.replace(/\s?(FC|CF|SC|CD|AC|AS|SS|RC|RB|KV|KRC|KAA)\s?/gi,'').trim()}</div>
                 ${homeForm.length?`<div class="form-row">${formDots(homeForm)}</div>`:''}
             </div>
             <div class="vs-center">VS</div>
             <div class="team-side">
-                ${awayTag}
+                ${makeTag(awayDataSrc)}
                 <div class="team-name">${away.replace(/\s?(FC|CF|SC|CD|AC|AS|SS|RC|RB|KV|KRC|KAA)\s?/gi,'').trim()}</div>
                 ${awayForm.length?`<div class="form-row">${formDots(awayForm)}</div>`:''}
             </div>
         </div>
-        ${renderResultBoxes(lambdaH,lambdaA)}
+        ${renderResultBoxes(lambdaH,lambdaA,rho,ligaKey)}
     </div>`;
 
-    // MERCADOS SEGÚN CONFIGURACIÓN
     let html='';
     const mkt=activeMarkets;
 
     function mktCard(labelLine,rawProb,marketType,barIdx,labelSub) {
-        const prob=+plattCalibrate(rawProb,marketType).toFixed(1);
+        const prob=+plattCalibrate(rawProb,marketType,ligaKey).toFixed(1);
         const color=colorFor(prob), cls=cardClassFor(prob);
         const band=uncertaintyBand(prob,Math.max(8,totalMatchesUsed));
+        const confIcon=band.width<=15?'🎯':band.width<=25?'📊':'⚠️';
         return `
         <div class="market-card ${cls} animate-in" style="animation-delay:${barIdx*0.06}s;opacity:0;">
             <div class="line-label">${labelLine}<small>LÍNEA</small></div>
             <div class="bar-wrap">
                 <div class="bar-bg"><div class="bar-fill" data-target="${prob}" style="background:${color};width:0%;box-shadow:0 0 8px ${color};"></div></div>
                 <div class="bar-sub">${labelSub}: ${(100-prob).toFixed(1)}%</div>
-                <div class="uncertainty-band">IC80%: ${band.low}–${band.high}%</div>
+                <div class="uncertainty-band">${confIcon} IC80%: ${band.low}–${band.high}% (±${Math.round(band.width/2)}pp)</div>
             </div>
             <div class="pct-label" style="color:${color}">${prob.toFixed(0)}%<small>OVER</small></div>
         </div>`;
     }
 
-    // Goles partido completo
     if(mkt.goles){
         const lFull2=lambdaH+lambdaA;
-        html+=`<div class="section-header animate-in"><span class="section-icon">⚽</span><span class="section-title">GOLES</span><span class="section-lambda">λ <span>${lFull2.toFixed(2)}</span></span><span class="cal-badge">✓ Calibrado</span></div>`;
+        html+=`<div class="section-header animate-in"><span class="section-icon">⚽</span><span class="section-title">GOLES</span><span class="section-lambda">λ <span>${lFull2.toFixed(2)}</span></span><span class="cal-badge">✓ Calibrado/Liga</span></div>`;
         html+=mktCard('+1.5',poissonOver(lFull2,1.5),'goals_over15',0,'Under');
         html+=mktCard('+2.5',poissonOver(lFull2,2.5),'goals_over25',1,'Under');
         html+='<div class="section-divider"></div>';
     }
-
-    // Goles 1er tiempo
     if(mkt.ht){
-        html+=`<div class="section-header animate-in"><span class="section-icon">⏱</span><span class="section-title">GOLES 1er TIEMPO</span><span class="section-lambda">λ <span>${lambdaGoal.toFixed(2)}</span></span><span class="cal-badge">✓ Calibrado</span></div>`;
+        html+=`<div class="section-header animate-in"><span class="section-icon">⏱</span><span class="section-title">GOLES 1er TIEMPO</span><span class="section-lambda">λ <span>${lambdaGoal.toFixed(2)}</span></span><span class="cal-badge">✓ Calibrado/Liga</span></div>`;
         html+=mktCard('+0.5',poissonOver(lambdaGoal,0.5),'goals_ht05',2,'Under');
         html+=mktCard('+1.5',poissonOver(lambdaGoal,1.5),'goals_ht15',3,'Under');
         html+='<div class="section-divider"></div>';
     }
-
-    // BTTS
     if(mkt.btts){
-        const bttsRaw=calcBTTS(lambdaH,lambdaA);
-        const bttsProb=+plattCalibrate(bttsRaw,'btts').toFixed(0);
+        const bttsRaw=calcBTTS(lambdaH,lambdaA,rho);
+        const bttsProb=+plattCalibrate(bttsRaw,'btts',ligaKey).toFixed(0);
         const band=uncertaintyBand(bttsProb,Math.max(8,totalMatchesUsed));
-        html+=`<div class="section-header animate-in"><span class="section-icon">🤝</span><span class="section-title">AMBOS MARCAN</span><span class="cal-badge">✓ Calibrado</span></div>`;
+        const confIcon=band.width<=15?'🎯':band.width<=25?'📊':'⚠️';
+        html+=`<div class="section-header animate-in"><span class="section-icon">🤝</span><span class="section-title">AMBOS MARCAN</span><span class="cal-badge">✓ DC ρ=${rho}</span></div>`;
         html+=`<div class="market-card ${cardClassFor(bttsProb)} animate-in" style="opacity:0;">
             <div class="line-label">BTTS<small>AMBOS</small></div>
             <div class="bar-wrap">
                 <div class="bar-bg"><div class="bar-fill" data-target="${bttsProb}" style="background:${colorFor(bttsProb)};width:0%;box-shadow:0 0 8px ${colorFor(bttsProb)};"></div></div>
                 <div class="bar-sub">No: ${(100-bttsProb).toFixed(1)}%</div>
-                <div class="uncertainty-band">IC80%: ${band.low}–${band.high}%</div>
+                <div class="uncertainty-band">${confIcon} IC80%: ${band.low}–${band.high}% (±${Math.round(band.width/2)}pp)</div>
             </div>
             <div class="pct-label" style="color:${colorFor(bttsProb)}">${bttsProb}%<small>SÍ</small></div>
         </div>`;
         html+='<div class="section-divider"></div>';
     }
-
-    // Córners
     if(mkt.corn){
-        html+=`<div class="section-header animate-in"><span class="section-icon">⬡</span><span class="section-title">CÓRNERS</span><span class="section-lambda">λ <span>${lambdaCorn} · r=${negBinR}</span></span><span class="cal-badge">✓ Calibrado</span></div>`;
+        html+=`<div class="section-header animate-in"><span class="section-icon">⬡</span><span class="section-title">CÓRNERS</span><span class="section-lambda">λ <span>${lambdaCorn} · r-din</span></span><span class="cal-badge">✓ NegBin-v2</span></div>`;
         [7.5,8.5,9.5,10.5].forEach((line,i)=>{
-            html+=mktCard(`+${line}`,negBinOver(lambdaCorn,line,negBinR),'corners',i+4,'Under');
+            const rDyn=dynamicNegBinR(negBinR,lambdaCorn,line);
+            html+=mktCard(`+${line}`,negBinOver(lambdaCorn,line,rDyn),'corners',i+4,'Under');
         });
     }
 
     document.getElementById('all-markets-container').innerHTML=html;
 
     // RECOMENDACIÓN
-    const lFull2=lambdaH+lambdaA;
-    const allMkts=[];
-    if(mkt.goles){
-        allMkts.push({label:'GOLES OVER 1.5',prob:+plattCalibrate(poissonOver(lFull2,1.5),'goals_over15').toFixed(0),desc:'Alta prob. de partido con goles',type:'goles'});
-        allMkts.push({label:'GOLES OVER 2.5',prob:+plattCalibrate(poissonOver(lFull2,2.5),'goals_over25').toFixed(0),desc:'3+ goles en el partido',type:'goles'});
-    }
-    if(mkt.ht){
-        allMkts.push({label:'GOL HT OVER 0.5',prob:+plattCalibrate(poissonOver(lambdaGoal,0.5),'goals_ht05').toFixed(0),desc:'Al menos un gol antes del descanso',type:'ht'});
-        allMkts.push({label:'GOL HT OVER 1.5',prob:+plattCalibrate(poissonOver(lambdaGoal,1.5),'goals_ht15').toFixed(0),desc:'2+ goles en el primer tiempo',type:'ht'});
-    }
-    if(mkt.btts){
-        const bp=+plattCalibrate(calcBTTS(lambdaH,lambdaA),'btts').toFixed(0);
-        allMkts.push({label:'AMBOS MARCAN',prob:bp,desc:`${bp}% de prob. que ambos anoten`,type:'btts'});
-    }
-    if(mkt.corn){
-        [7.5,8.5,9.5].forEach(line=>{
-            allMkts.push({label:`CÓRNERS OVER ${line}`,prob:+plattCalibrate(negBinOver(lambdaCorn,line,negBinR),'corners').toFixed(0),desc:`Sobre ${line} córners`,type:'corners'});
-        });
-    }
-
-    const rpRaw=calcResultProbs(lambdaH,lambdaA);
-    const rp={home:+plattCalibrate(rpRaw.home,'resultado').toFixed(1),draw:+plattCalibrate(rpRaw.draw,'resultado').toFixed(1),away:+plattCalibrate(rpRaw.away,'resultado').toFixed(1)};
-    allMkts.push({label:`VICTORIA LOCAL`,prob:rp.home,desc:`${home.split(' ').slice(-1)[0]} favorito`,type:'resultado'});
-    allMkts.push({label:`VICTORIA VISITANTE`,prob:rp.away,desc:`${away.split(' ').slice(-1)[0]} favorito`,type:'resultado'});
-
-    const rec=buildRecommendation(allMkts);
-    if(!rec.top){
-        document.getElementById('recomendacion-container').innerHTML=`
-        <div class="recomendacion animate-in" style="border-color:rgba(255,77,90,0.25);">
-            <div class="rec-title" style="color:var(--accent);">RECOMENDACIÓN DE VALOR</div>
-            <div class="rec-main" style="color:var(--accent);font-size:1.2rem;">SIN APUESTA CLARA</div>
-            <div class="rec-sub">Ningún mercado supera el umbral de confianza mínimo</div>
-        </div>`;
-    } else {
-        const t=rec.top;
-        const clsColor=t.prob>=70?'var(--green)':t.prob>=60?'var(--yellow)':'var(--accent)';
-        const secondHtml=rec.second?`
-        <div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);">
-            <div style="font-size:0.6rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">SEGUNDA OPCIÓN</div>
-            <div style="font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:1px;color:var(--muted);">
-                ${rec.second.label} <span style="color:${colorFor(rec.second.prob)};margin-left:6px;">${rec.second.prob}%</span>
-            </div>
-        </div>`:'';
-        document.getElementById('recomendacion-container').innerHTML=`
-        <div class="recomendacion animate-in">
-            <div class="rec-title">RECOMENDACIÓN DE VALOR</div>
-            <div class="rec-main" style="color:${clsColor};text-shadow:0 0 20px ${clsColor==='var(--green)'?'rgba(46,204,113,0.4)':clsColor==='var(--yellow)'?'rgba(255,182,39,0.4)':'rgba(255,77,90,0.4)'};">${t.label} ${t.diamond||''}</div>
-            <div class="rec-sub">${t.desc}</div>
-            <div class="rec-confidence">
-                <span class="rc-pct" style="color:${clsColor}">${t.prob.toFixed(0)}%</span>
-                <span class="rc-label">MODELO CALIBRADO</span>
-            </div>
-            ${secondHtml}
-        </div>`;
-    }
-}
-
-function renderResultBoxes(lambdaH,lambdaA) {
-    const rpRaw=calcResultProbs(lambdaH,lambdaA);
-    const rp={
-        home:+plattCalibrate(rpRaw.home,'resultado').toFixed(1),
-        draw:+plattCalibrate(rpRaw.draw,'resultado').toFixed(1),
-        away:+plattCalibrate(rpRaw.away,'resultado').toFixed(1)
-    };
-    const maxRP=Math.max(rp.home,rp.draw,rp.away);
-    const rpColor=v=>v===maxRP?'var(--green)':v>=30?'var(--yellow)':'var(--accent)';
-    const rpGlow=v=>v===maxRP?'rgba(46,204,113,0.3)':v>=30?'rgba(255,182,39,0.3)':'rgba(255,77,90,0.3)';
-    return `
-    <div class="result-boxes">
-        <div class="result-box">
-            <div class="rb-label">🏠 Local</div>
-            <div class="rb-pct" style="color:${rpColor(rp.home)};text-shadow:0 0 15px ${rpGlow(rp.home)};">${rp.home}%</div>
-        </div>
-        <div class="result-box rb-center">
-            <div class="rb-label">🟡 Empate</div>
-            <div class="rb-pct" style="color:${rpColor(rp.draw)};text-shadow:0 0 15px ${rpGlow(rp.draw)};">${rp.draw}%</div>
-        </div>
-        <div class="result-box">
-            <div class="rb-label">✈️ Visitante</div>
-            <div class="rb-pct" style="color:${rpColor(rp.away)};text-shadow:0 0 15px ${rpGlow(rp.away)};">${rp.away}%</div>
-        </div>
-    </div>`;
-}
-
-function animateBars(){
-    document.querySelectorAll('.bar-fill[data-target]').forEach(b=>{b.style.width=b.dataset.target+'%';});
-}
-</script>
-</body>
-</html>
+    const 
