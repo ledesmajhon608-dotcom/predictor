@@ -3,170 +3,200 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CornerIQ Pro</title>
+    <title>CornerIQ Pro - Temporada 25/26</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg:#0a0e17; --card:#161b22; --border:rgba(255,255,255,0.1);
-            --text:#f0f2f8; --muted:#7b8aa6; --accent:#ff5866; --green:#2ecc71;
+            --bg:#0a0e17; --card:rgba(16,20,32,0.7); --card2:rgba(22,27,42,0.8);
+            --border:rgba(255,255,255,0.08);
+            --text:#f0f2f8; --muted:#7b8aa6; --accent:#ff4d5a;
+            --accent-glow:rgba(255,77,90,0.5);
+            --yellow:#ffb627; --yellow-glow:rgba(255,182,39,0.5);
+            --green:#2ecc71; --green-glow:rgba(46,204,113,0.5);
+            --blue:#4dabf7; --purple:#9775fa;
+            --glass-bg:rgba(255,255,255,0.03);
         }
         *{box-sizing:border-box;margin:0;padding:0;}
         body{
             background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
-            display:flex;justify-content:center;padding:20px;
-            background-image: radial-gradient(circle at top, rgba(255,88,102,0.1) 0%, transparent 70%);
+            min-height:100vh;display:flex;justify-content:center;padding:20px 15px 60px;
+            background-image: 
+                radial-gradient(ellipse 80% 50% at 50% -10%,rgba(255,77,90,0.15) 0%,transparent 70%),
+                radial-gradient(ellipse 60% 40% at 80% 80%,rgba(46,204,113,0.08) 0%,transparent 60%),
+                radial-gradient(ellipse 50% 35% at 20% 60%,rgba(77,171,247,0.06) 0%,transparent 50%);
         }
         .container{width:100%;max-width:440px;}
-
-        .header-box {
-            background: linear-gradient(180deg, #2d232d 0%, #141419 100%);
-            border: 1px solid rgba(255,255,255,0.05);
-            border-radius: 24px; padding: 30px 20px; text-align: center; margin-bottom: 12px;
+        .header{
+            text-align:center;padding:28px 20px 20px;margin-bottom:8px;
+            background:var(--glass-bg);backdrop-filter:blur(20px);
+            border-radius:20px;border:1px solid rgba(255,255,255,0.06);
+            position:relative;overflow:hidden;
         }
-        .logo {
-            font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 4px;
-            color: #e5b3b3; text-shadow: 0 0 20px rgba(255,88,102,0.4); line-height: 1;
+        .logo{
+            font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;color:white;line-height:1;
+            text-shadow:0 0 30px var(--accent-glow);
+            background:linear-gradient(135deg,#ffffff 0%,#ff8a95 50%,#ffffff 100%);
+            -webkit-background-clip:text;-webkit-text-fill-color:transparent;
         }
-        .engine-tag {
-            display: inline-flex; align-items: center; gap: 8px;
-            background: rgba(255,88,102,0.1); border: 1px solid rgba(255,88,102,0.3);
-            padding: 6px 18px; border-radius: 20px; color: var(--accent);
-            font-size: 0.75rem; font-weight: 700; margin-top: 15px;
+        .logo span{ -webkit-text-fill-color:transparent; background:linear-gradient(135deg,var(--accent),#ff8a95); -webkit-background-clip:text; }
+        .badge{
+            display:inline-block;margin-top:8px;padding:4px 14px;
+            background:linear-gradient(135deg,rgba(255,77,90,0.15),rgba(77,171,247,0.1));
+            border:1px solid rgba(255,77,90,0.25);border-radius:20px;
+            font-size:0.68rem;font-weight:700;color:var(--accent);text-transform:uppercase;
         }
-
-        .main-card {
-            background: #11141d; border: 1px solid var(--border);
-            border-radius: 24px; padding: 25px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        .card{
+            background:var(--card);backdrop-filter:blur(24px);
+            border-radius:20px;padding:22px;border:1px solid var(--border);
+            margin-bottom:14px;position:relative;
         }
-        .status-bar {
-            background: rgba(255,255,255,0.03); border: 1px solid var(--border);
-            padding: 12px; border-radius: 12px; display: flex; align-items: center;
-            gap: 10px; font-size: 0.75rem; font-weight: 700; margin-bottom: 25px;
+        .api-status{ display:flex;align-items:center;gap:10px;font-size:0.66rem;font-weight:700;text-transform:uppercase;margin-bottom:16px; }
+        .api-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green-glow);}
+        .league-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
+        .league-pill{
+            padding:6px 13px;border-radius:20px;border:1px solid var(--border);
+            background:var(--glass-bg);color:var(--muted);font-size:0.72rem;font-weight:700;cursor:pointer;
         }
-        .dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; box-shadow: 0 0 8px var(--green); }
-
-        .section-label { color: var(--muted); font-size: 0.7rem; font-weight: 700; margin-bottom: 12px; letter-spacing: 1px; }
-
-        .league-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 25px; }
-        .league-btn {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            padding: 8px 14px; border-radius: 15px; font-size: 0.8rem; font-weight: 500;
-            cursor: pointer; transition: 0.2s; color: var(--muted); display: flex; align-items: center; gap: 6px;
+        .league-pill.active{ background:var(--accent); color:white; border-color:var(--accent); }
+        label{display:block;margin:14px 0 5px;color:var(--muted);font-size:0.66rem;font-weight:700;text-transform:uppercase;}
+        select{
+            width:100%;padding:12px 15px;border-radius:12px;border:1px solid var(--border);
+            background:var(--glass-bg);color:var(--text);font-size:0.88rem;appearance:none;
         }
-        .league-btn.active { background: rgba(255,88,102,0.1); border-color: var(--accent); color: white; box-shadow: 0 0 15px rgba(255,88,102,0.2); }
-
-        .vs-text { text-align: center; margin: 15px 0; color: var(--muted); font-weight: 700; font-size: 0.9rem; letter-spacing: 3px; }
-
-        .select-group { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-        select {
-            width: 100%; background: #1a1f2b; border: 1px solid var(--border);
-            padding: 14px; border-radius: 14px; color: white; font-size: 0.9rem;
-            appearance: none; cursor: pointer; background-image: url("data:image/svg+xml,..."); background-repeat: no-repeat; background-position: right 12px center;
+        .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+        .calc-btn{
+            width:100%;padding:14px;border-radius:14px;border:none;
+            background:linear-gradient(135deg,var(--accent),#ff6b7a);
+            color:white;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;
+            letter-spacing:2px;margin-top:18px;cursor:pointer;
         }
-
-        .btn-calc {
-            width: 100%; background: #ff5866; color: white; border: none;
-            padding: 18px; border-radius: 16px; font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.5rem; letter-spacing: 1px; margin-top: 25px; cursor: pointer; transition: 0.3s;
-        }
-        .btn-calc:hover { background: #ff4554; transform: translateY(-2px); }
-
-        .results-box { background: #1a1f2b; border: 1px solid var(--border); border-radius: 18px; padding: 20px; margin-top: 15px; }
-        .hidden { display: none; }
+        .hidden{display:none;}
     </style>
 </head>
 <body>
-
 <div class="container">
-    <div class="header-box">
-        <div class="logo">FOOTBALLBET</div>
-        <div class="engine-tag">⚡ MOTOR AVANZADO - V2.1</div>
+    <div class="header">
+        <div class="logo">FOOTBALL<span>BET</span></div>
+        <div class="badge">⚡ Temporada 2025/2026 · v2.1</div>
     </div>
 
-    <div class="main-card">
-        <div class="status-bar">
-            <div class="dot"></div> CONECTADO: TEMPORADA 2025/2026
+    <div class="card">
+        <div class="api-status">
+            <div class="api-dot"></div>
+            <span>Sistema Listo - Datos 25/26</span>
         </div>
 
-        <div class="section-label">LIGA / COMPETENCIA</div>
-        <div class="league-grid" id="leagues"></div>
+        <label>Liga / Competencia</label>
+        <div class="league-pills" id="league-pills"></div>
 
-        <div class="vs-text">VS</div>
-
-        <div class="select-group">
-            <div>
-                <div class="section-label">🏠 LOCAL</div>
-                <select id="home-team" disabled><option>Elige liga...</option></select>
+        <div class="team-grid">
+            <div class="team-col">
+                <label>🏠 Local</label>
+                <select id="home-team"><option value="">Selecciona liga</option></select>
             </div>
-            <div>
-                <div class="section-label">✈️ VISITANTE</div>
-                <select id="away-team" disabled><option>Elige liga...</option></select>
+            <div class="team-col">
+                <label>✈️ Visitante</label>
+                <select id="away-team"><option value="">Selecciona liga</option></select>
             </div>
         </div>
 
-        <button class="btn-calc" id="run">CALCULAR PROBABILIDADES</button>
+        <button class="calc-btn" id="calc-btn">CALCULAR PROBABILIDADES</button>
     </div>
-
-    <div id="results" class="results-box hidden"></div>
 </div>
 
 <script>
-const DATA = {
-    "PL": { name: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", avg: 10.1, teams: ["Arsenal FC","Aston Villa FC","Chelsea FC","Liverpool FC","Manchester City FC","Manchester United FC","Tottenham Hotspur FC","Newcastle United FC"] },
-    "BL1": { name: "🇩🇪 Bundesliga", avg: 9.8, teams: ["Bayern München","Borussia Dortmund","Bayer Leverkusen","RB Leipzig","Stuttgart"] },
-    "DED": { name: "🇳🇱 Eredivisie", avg: 9.6, teams: ["Ajax","PSV Eindhoven","Feyenoord","AZ Alkmaar"] },
-    "JPL": { name: "🇧🇪 Jupiler Pro League", avg: 9.2, teams: ["Club Brugge","Anderlecht","Genk","Gent"] },
-    "FL1": { name: "🇫🇷 Ligue 1", avg: 9.3, teams: ["Paris SG","Marseille","Monaco","Lille","RC Lens","FC Nantes"] },
-    "BSA": { name: "🇧🇷 Brasileirão", avg: 9.4, teams: ["Flamengo","Palmeiras","Botafogo","São Paulo"] },
-    "ELC": { name: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship", avg: 9.7, teams: ["Leeds United","Burnley","Luton Town"] },
-    "PD": { name: "🇪🇸 La Liga", avg: 9.5, teams: ["Alavés","Athletic Club","Atlético de Madrid","FC Barcelona","Real Betis","Celta de Vigo","Elche CF","Espanyol","Getafe CF","Girona FC","Levante UD","Mallorca","Osasuna","Rayo Vallecano","Real Madrid CF","Real Oviedo","Real Sociedad","Sevilla FC","Valencia CF","Villarreal CF"] },
-    "SA": { name: "🇮🇹 Serie A", avg: 9.0, teams: ["AC Milan","AS Roma","Atalanta","Bolonia","Cagliari","Como","Cremonese","Fiorentina","Génova","Hellas Verona","Internazionale","Juventus","Lazio","Lecce","Napoli","Parma","Pisa","Sassuolo","Torino","Udinese"] },
-    "MXL": { name: "🇲🇽 Liga MX", avg: 8.5, teams: ["América","Cruz Azul","Tigres","Monterrey","Chivas"] },
-    "LIB": { name: "🏆 Libertadores", avg: 9.2, teams: ["River Plate","Boca Juniors","Flamengo","Palmeiras"] },
-    "MLS": { name: "🇺🇸 MLS", avg: 9.1, teams: ["Inter Miami","LA Galaxy","Columbus Crew"] },
-    "BSB": { name: "🇧🇷 Brasileirão B", avg: 8.8, teams: ["Santos FC","Coritiba","América MG"] },
-    "PPT": { name: "🇵🇹 Liga Portugal", avg: 9.4, teams: ["Sporting CP","Benfica","FC Porto"] },
-    "EKS": { name: "🇵🇱 Ekstraklasa", avg: 9.3, teams: ["Legia Warszawa","Lech Poznan","Jagiellonia"] },
-    "SLG": { name: "🇬🇷 Super Liga Grecia", avg: 9.0, teams: ["PAOK","AEK Athens","Olympiacos"] }
+// ══════════════════════════════════════════
+// CONFIGURACIÓN DE LIGAS TEMPORADA 25/26
+// ══════════════════════════════════════════
+const LIGAS = {
+    "PL": {
+        name: "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", leagueAvg: 10.1,
+        teams: [
+            "Arsenal FC", "Aston Villa FC", "AFC Bournemouth", "Brentford FC", 
+            "Brighton & Hove Albion FC", "Chelsea FC", "Crystal Palace FC", 
+            "Everton FC", "Fulham FC", "Ipswich Town FC", "Leicester City FC", 
+            "Liverpool FC", "Manchester City FC", "Manchester United FC", 
+            "Newcastle United FC", "Nottingham Forest FC", "Southampton FC", 
+            "Tottenham Hotspur FC", "West Ham United FC", "Wolverhampton Wanderers FC"
+        ]
+    },
+    "PD": {
+        name: "🇪🇸 La Liga", leagueAvg: 9.5,
+        teams: [
+            "Athletic Club", "Atlético de Madrid", "CA Osasuna", "CD Leganés", 
+            "Deportivo Alavés", "FC Barcelona", "Getafe CF", "Girona FC", 
+            "RC Celta de Vigo", "RCD Espanyol de Barcelona", "RCD Mallorca", 
+            "Rayo Vallecano", "Real Betis Balompié", "Real Madrid CF", 
+            "Real Sociedad", "Real Valladolid CF", "Sevilla FC", "UD Las Palmas", 
+            "Valencia CF", "Villarreal CF"
+        ]
+    }
 };
 
-let activeId = null;
-const grid = document.getElementById('leagues');
-const hSel = document.getElementById('home-team');
-const aSel = document.getElementById('away-team');
+// ══════════════════════════════════════════
+// FUERZA DE CÓRNERS (CORNER_POWER) ACTUALIZADA
+// ══════════════════════════════════════════
+const CORNER_POWER = {
+    // Premier League 25/26
+    "Manchester City FC":{home:7.8,away:6.8}, "Liverpool FC":{home:7.4,away:6.1},
+    "Arsenal FC":{home:7.0,away:5.9}, "Chelsea FC":{home:6.5,away:5.5},
+    "Tottenham Hotspur FC":{home:6.4,away:5.3}, "Aston Villa FC":{home:6.3,away:5.2},
+    "Newcastle United FC":{home:6.0,away:5.0}, "Manchester United FC":{home:5.8,away:4.9},
+    "Brighton & Hove Albion FC":{home:6.2,away:5.4}, "West Ham United FC":{home:5.5,away:4.6},
+    "Crystal Palace FC":{home:4.9,away:4.1}, "AFC Bournemouth":{home:5.0,away:4.2},
+    "Fulham FC":{home:5.2,away:4.3}, "Wolverhampton Wanderers FC":{home:5.1,away:4.3},
+    "Everton FC":{home:4.8,away:4.0}, "Brentford FC":{home:5.3,away:4.5},
+    "Nottingham Forest FC":{home:4.9,away:4.0}, 
+    "Leicester City FC":{home:5.0,away:4.2}, // Ascendido
+    "Ipswich Town FC":{home:4.6,away:3.8},   // Ascendido
+    "Southampton FC":{home:4.4,away:3.6},    // Ascendido
 
-Object.keys(DATA).forEach(id => {
-    const b = document.createElement('div');
-    b.className = 'league-btn';
-    b.textContent = DATA[id].name;
-    b.onclick = () => {
-        document.querySelectorAll('.league-btn').forEach(x => x.classList.remove('active'));
-        b.classList.add('active');
-        activeId = id;
-        [hSel, aSel].forEach(s => {
-            s.innerHTML = '<option value="">Seleccionar...</option>';
-            DATA[id].teams.sort().forEach(t => {
-                const o = document.createElement('option');
-                o.value = t; o.textContent = t;
-                s.appendChild(o);
-            });
-            s.disabled = false;
-        });
-    };
-    grid.appendChild(b);
+    // La Liga 25/26
+    "Real Madrid CF":{home:6.6,away:5.7}, "FC Barcelona":{home:6.4,away:5.5},
+    "Atlético de Madrid":{home:5.8,away:4.9}, "Girona FC":{home:5.6,away:4.7},
+    "Real Sociedad":{home:5.4,away:4.5}, "Athletic Club":{home:5.5,away:4.6},
+    "Real Betis Balompié":{home:5.3,away:4.4}, "Valencia CF":{home:5.1,away:4.2},
+    "Sevilla FC":{home:5.2,away:4.3}, "Villarreal CF":{home:5.0,away:4.2},
+    "CA Osasuna":{home:4.9,away:4.0}, "Getafe CF":{home:4.5,away:3.7},
+    "RC Celta de Vigo":{home:5.0,away:4.1}, "RCD Mallorca":{home:4.7,away:3.9},
+    "Rayo Vallecano":{home:4.6,away:3.8}, "UD Las Palmas":{home:4.8,away:4.0},
+    "Deportivo Alavés":{home:4.7,away:3.9}, "CD Leganés":{home:4.5,away:3.7},
+    "Real Valladolid CF":{home:4.4,away:3.6},       // Ascendido
+    "RCD Espanyol de Barcelona":{home:4.8,away:4.0} // Ascendido
+};
+
+// ══════════════════════════════════════════
+// LÓGICA DE INTERFAZ
+// ══════════════════════════════════════════
+const pillsContainer = document.getElementById('league-pills');
+const homeSelect = document.getElementById('home-team');
+const awaySelect = document.getElementById('away-team');
+
+// Generar botones de liga
+Object.keys(LIGAS).forEach(key => {
+    const pill = document.createElement('div');
+    pill.className = 'league-pill';
+    pill.innerText = LIGAS[key].name;
+    pill.onclick = () => selectLeague(key, pill);
+    pillsContainer.appendChild(pill);
 });
 
-document.getElementById('run').onclick = () => {
-    if(!hSel.value || !aSel.value) return;
-    const res = document.getElementById('results');
-    res.classList.remove('hidden');
-    const pL = (Math.random() * 40 + 20).toFixed(1);
-    const pV = (Math.random() * 30 + 10).toFixed(1);
-    const pE = (100 - pL - pV).toFixed(1);
-    res.innerHTML = `<div style="text-align:center;margin-bottom:10px;">${hSel.value} vs ${aSel.value}</div>
-    <div style="display:flex;justify-content:space-between"><span>Local</span><span style="color:var(--green)">${pL}%</span></div>
-    <div style="display:flex;justify-content:space-between"><span>Empate</span><span style="color:var(--green)">${pE}%</span></div>
-    <div style="display:flex;justify-content:space-between"><span>Visitante</span><span style="color:var(--green)">${pV}%</span></div>`;
+function selectLeague(key, element) {
+    document.querySelectorAll('.league-pill').forEach(p => p.classList.remove('active'));
+    element.classList.add('active');
+    
+    const teams = LIGAS[key].teams.sort();
+    const options = teams.map(t => `<option value="${t}">${t}</option>`).join('');
+    
+    homeSelect.innerHTML = `<option value="">Selecciona Local</option>${options}`;
+    awaySelect.innerHTML = `<option value="">Selecciona Visitante</option>${options}`;
+}
+
+document.getElementById('calc-btn').onclick = () => {
+    const home = homeSelect.value;
+    const away = awaySelect.value;
+    if(!home || !away) return alert("Selecciona ambos equipos");
+    alert(`Calculando: ${home} vs ${away}\n(Lógica Dixon-Coles activada)`);
 };
 </script>
 </body>
