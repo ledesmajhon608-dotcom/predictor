@@ -74,6 +74,11 @@
             background:linear-gradient(90deg,transparent,var(--accent),var(--yellow),var(--green),transparent);
             opacity:0.7;
         }
+        .card::after{
+            content:'';position:absolute;top:0;left:0;right:0;bottom:0;
+            background:radial-gradient(ellipse at top left,rgba(255,255,255,0.02) 0%,transparent 50%);
+            pointer-events:none;
+        }
 
         .api-status{
             display:flex;align-items:center;gap:10px;font-size:0.66rem;font-weight:700;
@@ -92,9 +97,13 @@
             font-weight:700;cursor:pointer;transition:all 0.25s ease;
             letter-spacing:0.5px;backdrop-filter:blur(10px);
         }
-        .league-pill:hover, .league-pill.active{
+        .league-pill:hover{
             border-color:var(--accent);color:var(--text);
-            background:rgba(255,77,90,0.1);box-shadow:0 4px 15px rgba(255,77,90,0.2);
+            background:rgba(255,77,90,0.1);transform:translateY(-1px);
+        }
+        .league-pill.active{
+            background:linear-gradient(135deg,rgba(255,77,90,0.2),rgba(77,171,247,0.15));
+            border-color:var(--accent);color:white;
         }
 
         label{display:block;margin:14px 0 5px;color:var(--muted);font-size:0.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
@@ -104,13 +113,28 @@
             font-size:0.88rem;appearance:none;
             background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%237b8aa6' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
             background-repeat:no-repeat;background-position:right 14px center;
-            cursor:pointer;backdrop-filter:blur(10px);
+            cursor:pointer;transition:all 0.25s ease;backdrop-filter:blur(10px);
         }
         .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
         .vs-divider{
             display:flex;align-items:center;justify-content:center;margin:6px 0;
             color:var(--muted);font-family:'Bebas Neue',sans-serif;
             font-size:1.1rem;letter-spacing:3px;gap:12px;
+        }
+        .vs-divider::before,.vs-divider::after{
+            content:'';flex:1;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);
+        }
+
+        .markets-label{display:block;margin:14px 0 8px;color:var(--muted);font-size:0.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
+        .market-toggles{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:4px;}
+        .mkt-toggle{
+            padding:6px 12px;border-radius:16px;border:1px solid var(--border);
+            background:var(--glass-bg);color:var(--muted);font-size:0.7rem;
+            font-weight:700;cursor:pointer;transition:all 0.25s ease;
+        }
+        .mkt-toggle.on{
+            background:linear-gradient(135deg,rgba(46,204,113,0.15),rgba(77,171,247,0.1));
+            border-color:rgba(46,204,113,0.4);color:var(--green);
         }
 
         .calc-btn{
@@ -120,10 +144,10 @@
             font-family:'Bebas Neue',sans-serif;font-size:1.15rem;
             letter-spacing:2px;margin-top:18px;cursor:pointer;
             transition:all 0.3s ease;animation:shimmer 3s ease-in-out infinite;
-            box-shadow:0 6px 25px rgba(255,77,90,0.3);
         }
         @keyframes shimmer{0%,100%{background-position:0% 50%;}50%{background-position:100% 50%;}}
 
+        .disclaimer{text-align:center;color:var(--muted);font-size:0.63rem;margin-top:20px;line-height:1.6;opacity:0.6;}
         .hidden{display:none;}
     </style>
 </head>
@@ -155,11 +179,22 @@
             </div>
         </div>
 
+        <span class="markets-label">Mercados a calcular</span>
+        <div class="market-toggles" id="market-toggles"></div>
+
         <button class="calc-btn" id="calc-btn">CALCULAR PROBABILIDADES</button>
     </div>
 
     <div id="results" class="hidden">
-        <!-- Contenedor de resultados dinámicos -->
+        <div id="loading-indicator" class="card">
+            <p style="text-align:center;">Analizando datos...</p>
+        </div>
+        <div id="output">
+             <div id="match-header-container"></div>
+             <div id="all-markets-container"></div>
+             <div id="recomendacion-container"></div>
+             <p class="disclaimer">Modelo Avanzado v2.1 · Dixon-Coles (ρ por liga) · Altitud/Contexto. Solo uso personal.</p>
+        </div>
     </div>
 </div>
 
@@ -171,83 +206,121 @@ const BSD_TOKEN = '3d62e7e48993262cddf921e75fcb4ea8be6f70be';
 const BSD_BASE  = 'https://sports.bzzoiro.com/api';
 
 // ══════════════════════════════════════════
-// LIGAS ACTUALIZADAS 2025/2026
+// LIGAS COMPLETAS (16 LIGAS) ACTUALIZADAS 25/26
 // ══════════════════════════════════════════
 const LIGAS = {
     "PL": {
         name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", leagueAvg:10.1, negBinR:5.4,
-        markets:{ht:true, goles:true, btts:true, corn:true},
-        bsdName:"Premier League",
+        markets:{ht:true, goles:true, btts:true, corn:true}, bsdName:"Premier League",
         teams:["Arsenal FC","Aston Villa FC","AFC Bournemouth","Brentford FC","Brighton & Hove Albion FC","Chelsea FC","Crystal Palace FC","Everton FC","Fulham FC","Ipswich Town FC","Leicester City FC","Liverpool FC","Manchester City FC","Manchester United FC","Newcastle United FC","Nottingham Forest FC","Southampton FC","Tottenham Hotspur FC","West Ham United FC","Wolverhampton Wanderers FC"]
-    },
-    "PD": {
-        name:"🇪🇸 La Liga", leagueAvg:9.5, negBinR:6.6,
-        markets:{ht:false, goles:true, btts:false, corn:true},
-        bsdName:"La Liga",
-        teams:["Athletic Club","Atlético de Madrid","CA Osasuna","CD Leganés","Deportivo Alavés","FC Barcelona","Getafe CF","Girona FC","RC Celta de Vigo","RCD Espanyol de Barcelona","RCD Mallorca","Rayo Vallecano","Real Betis Balompié","Real Madrid CF","Real Sociedad","Real Valladolid CF","Sevilla FC","UD Las Palmas","Valencia CF","Villarreal CF"]
-    },
-    "SA": {
-        name:"🇮🇹 Serie A", leagueAvg:9.0, negBinR:7.1,
-        markets:{ht:true, goles:true, btts:false, corn:true},
-        bsdName:"Serie A",
-        teams:["AC Milan","AC Monza","ACF Fiorentina","AS Roma","Atalanta BC","Bologna FC 1909","Cagliari Calcio","Como 1907","Empoli FC","Genoa CFC","Hellas Verona FC","Inter Milano","Juventus FC","Parma Calcio 1913","SS Lazio","SSC Napoli","Torino FC","Udinese Calcio","US Lecce","Venezia FC"]
     },
     "BL1": {
         name:"🇩🇪 Bundesliga", leagueAvg:9.8, negBinR:5.9,
-        markets:{ht:true, goles:true, btts:true, corn:true},
-        bsdName:"Bundesliga",
-        teams:["1. FC Heidenheim 1846","1. FC Union Berlin","1. FSV Mainz 05","Bayer 04 Leverkusen","Borussia Dortmund","Borussia Mönchengladbach","Eintracht Frankfurt","FC Augsburg","FC Bayern München","FC St. Pauli","Holstein Kiel","RB Leipzig","SC Freiburg","SV Werder Bremen","TSG 1899 Hoffenheim","VfB Stuttgart","VfL Bochum 1848","VfL Wolfsburg"]
+        markets:{ht:true, goles:true, btts:true, corn:true}, bsdName:"Bundesliga",
+        teams:["Bayer 04 Leverkusen","Bayern München","Borussia Dortmund","RB Leipzig","Stuttgart","Eintracht Frankfurt","Hoffenheim","Heidenheim","Werder Bremen","Freiburg","Augsburg","Wolfsburg","Mainz 05","Monchengladbach","Union Berlin","Bochum","FC St. Pauli","Holstein Kiel"]
+    },
+    "DED": {
+        name:"🇳🇱 Eredivisie", leagueAvg:9.6, negBinR:5.7,
+        markets:{ht:true, goles:true, btts:true, corn:true}, bsdName:"Eredivisie",
+        teams:["PSV Eindhoven","Feyenoord","FC Twente","AZ Alkmaar","Ajax","FC Utrecht","Go Ahead Eagles","Sparta Rotterdam","NEC Nijmegen","sc Heerenveen","Fortuna Sittard","Heracles Almelo","PEC Zwolle","Almere City FC","Willem II","FC Groningen","NAC Breda","RKC Waalwijk"]
+    },
+    "JPL": {
+        name:"🇧🇪 Jupiler Pro League", leagueAvg:9.2, negBinR:6.0,
+        markets:{ht:true, goles:true, btts:true, corn:true}, bsdName:"Belgian Pro League",
+        teams:["Club Brugge KV","R. Union Saint-Gilloise","Anderlecht","Cercle Brugge KSV","KRC Genk","KAA Gent","KV Mechelen","STVV","KVC Westerlo","Standard de Liège","Charleroi","OH Leuven","KV Kortrijk","Beerschot VA","Dender EH","FCV Dender EH"]
+    },
+    "FL1": {
+        name:"🇫🇷 Ligue 1", leagueAvg:9.3, negBinR:6.2,
+        markets:{ht:true, goles:true, btts:false, corn:false}, bsdName:"Ligue 1",
+        teams:["Paris Saint-Germain FC","AS Monaco FC","Stade Brestois 29","Lille OSC","OGC Nice","Olympique Lyonnais","RC Lens","Olympique de Marseille","Stade de Reims","Stade Rennais FC","Toulouse FC","Montpellier HSC","RC Strasbourg Alsace","FC Nantes","Le Havre AC","AJ Auxerre","Angers SCO","AS Saint-Étienne"]
+    },
+    "BSA": {
+        name:"🇧🇷 Brasileirão", leagueAvg:9.4, negBinR:5.8,
+        markets:{ht:false, goles:true, btts:false, corn:true}, bsdName:"Campeonato Brasileiro Série A",
+        teams:["Palmeiras","Flamengo","Botafogo","Atlético Mineiro","São Paulo","Internacional","Cruzeiro","Fortaleza","Bahia","Corinthians","Vasco da Gama","Grêmio","Fluminense","Cuiabá","Criciúma","Red Bull Bragantino","Juventude","Vitória","Atlético Goianiense","Santos"]
+    },
+    "ELC": {
+        name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship", leagueAvg:9.7, negBinR:5.5,
+        markets:{ht:false, goles:false, btts:true, corn:true}, bsdName:"Championship",
+        teams:["Burnley FC","Luton Town","Sheffield United","Leeds United","West Bromwich Albion","Norwich City","Hull City","Middlesbrough FC","Coventry City","Preston North End","Bristol City","Cardiff City","Millwall FC","Swansea City","Watford FC","Sunderland AFC","Stoke City","QPR","Blackburn Rovers","Sheffield Wednesday","Plymouth Argyle","Portsmouth FC","Derby County","Oxford United"]
+    },
+    "PD": {
+        name:"🇪🇸 La Liga", leagueAvg:9.5, negBinR:6.6,
+        markets:{ht:false, goles:true, btts:false, corn:true}, bsdName:"La Liga",
+        teams:["Real Madrid CF","FC Barcelona","Girona FC","Atlético de Madrid","Athletic Club","Real Sociedad","Real Betis Balompié","Villarreal CF","Valencia CF","Deportivo Alavés","CA Osasuna","Getafe CF","RC Celta de Vigo","Sevilla FC","RCD Mallorca","Rayo Vallecano","UD Las Palmas","CD Leganés","Real Valladolid CF","RCD Espanyol de Barcelona"]
+    },
+    "SA": {
+        name:"🇮🇹 Serie A", leagueAvg:9.0, negBinR:7.1,
+        markets:{ht:true, goles:true, btts:false, corn:true}, bsdName:"Serie A",
+        teams:["Inter Milano","AC Milan","Juventus FC","Atalanta BC","Bologna FC 1909","AS Roma","SS Lazio","ACF Fiorentina","SSC Napoli","Torino FC","Genoa CFC","AC Monza","Hellas Verona FC","US Lecce","Udinese Calcio","Cagliari Calcio","Empoli FC","Parma Calcio 1913","Como 1907","Venezia FC"]
     },
     "MXL": {
         name:"🇲🇽 Liga MX", leagueAvg:8.5, negBinR:6.3,
-        markets:{ht:true, goles:true, btts:false, corn:true},
-        bsdName:"Liga MX",
-        teams:["América","Atlas FC","Atlético de San Luis","CF Pachuca","Club Necaxa","Club Tijuana","Cruz Azul","Deportivo Guadalajara","FC Juárez","León","Mazatlán FC","Monterrey","Puebla FC","Querétaro FC","Santos Laguna","Tigres UANL","Toluca FC","UNAM Pumas"]
+        markets:{ht:true, goles:true, btts:false, corn:true}, bsdName:"Liga MX",
+        teams:["América","Cruz Azul","Toluca FC","Monterrey","Tigres UANL","Deportivo Guadalajara","Pachuca","Pumas UNAM","León","Querétaro FC","Necaxa","Atlético de San Luis","Juárez FC","Santos Laguna","Mazatlán FC","Atlas FC","Tijuana","Puebla FC"]
     },
     "LIB": {
         name:"🏆 Libertadores", leagueAvg:9.2, negBinR:6.1,
-        markets:{ht:true, goles:true, btts:true, corn:true},
-        bsdName:"Copa Libertadores",
+        markets:{ht:true, goles:true, btts:true, corn:true}, bsdName:"Copa Libertadores",
         teams:["Flamengo","Palmeiras","River Plate","Atlético Mineiro","Boca Juniors","São Paulo","Fluminense","Peñarol","Nacional","Independiente del Valle","Club Bolívar","Colo-Colo","Talleres","LDU Quito","Estudiantes","Cerro Porteño","Junior","Santa Fe","The Strongest","Always Ready"]
     },
     "MLS": {
         name:"🇺🇸 MLS", leagueAvg:9.1, negBinR:6.2,
-        markets:{ht:true, goles:true, btts:true, corn:false},
-        bsdName:"Major League Soccer",
+        markets:{ht:true, goles:true, btts:true, corn:false}, bsdName:"Major League Soccer",
         teams:["Inter Miami CF","Columbus Crew","LA Galaxy","Los Angeles FC","FC Cincinnati","New York City FC","Seattle Sounders FC","San Diego FC","Orlando City SC","Portland Timbers","Atlanta United FC","Real Salt Lake","Minnesota United FC","Charlotte FC","Nashville SC","Houston Dynamo FC","Sporting Kansas City","Philadelphia Union","New York Red Bulls","FC Dallas"]
+    },
+    "BSB": {
+        name:"🇧🇷 Brasileirão B", leagueAvg:8.8, negBinR:6.4,
+        markets:{ht:false, goles:true, btts:true, corn:false}, bsdName:"Campeonato Brasileiro Série B",
+        teams:["Santos FC","América Mineiro","Coritiba","Goiás","Sport Recife","Ceará SC","Vila Nova","Operário-PR","Mirassol","Novorizontino","Amazonas FC","Botafogo-SP","Avaí FC","CRB","Ponte Preta","Chapecoense","Ituano","Paysandu","Brusque","Guarani"]
+    },
+    "PPT": {
+        name:"🇵🇹 Liga Portugal", leagueAvg:9.4, negBinR:6.1,
+        markets:{ht:false, goles:true, btts:true, corn:true}, bsdName:"Liga Portugal",
+        teams:["Sporting CP","SL Benfica","FC Porto","SC Braga","Vitória SC","Moreirense FC","FC Arouca","FC Famalicão","Casa Pia AC","SC Farense","Rio Ave FC","Gil Vicente FC","GD Estoril Praia","Boavista FC","CF Estrela da Amadora","Santa Clara","Nacional da Madeira","AVS Futebol SAD"]
+    },
+    "EKS": {
+        name:"🇵🇱 Ekstraklasa", leagueAvg:9.3, negBinR:6.2,
+        markets:{ht:false, goles:true, btts:true, corn:true}, bsdName:"Ekstraklasa",
+        teams:["Jagiellonia Białystok","Śląsk Wrocław","Legia Warszawa","Lech Poznań","Raków Częstochowa","Pogoń Szczecin","Górnik Zabrze","Zagłębie Lubin","Widzew Łódź","Piast Gliwice","Stal Mielec","Puszcza Niepołomice","Cracovia","Radomiak Radom","Korona Kielce","Lechia Gdańsk","GKS Katowice","Motor Lublin"]
+    },
+    "SLG": {
+        name:"🇬🇷 Super Liga Grecia", leagueAvg:9.0, negBinR:6.3,
+        markets:{ht:false, goles:true, btts:true, corn:true}, bsdName:"Super League Greece",
+        teams:["PAOK","AEK Athens","Olympiacos","Panathinaikos","Aris Thessaloniki","Lamia","Asteras Tripolis","Atromitos","OFI Crete","Panserraikos","Panetolikos","Volos NFC","Kallithea","Levadiakos"]
     }
 };
 
 // ══════════════════════════════════════════
-// MOTOR Dixon-Coles Rho
+// RHO Y PARÁMETROS Dixon-Coles
 // ══════════════════════════════════════════
 const DIXON_COLES_RHO = {
-    "PL": -0.060, "BL1": -0.080, "SA": -0.125, "PD": -0.095, "MXL": -0.090, "LIB": -0.085, "MLS": -0.065, "default": -0.12
+    "PL": -0.060, "BL1": -0.080, "SA": -0.125, "PD": -0.095, "FL1": -0.100, 
+    "DED": -0.070, "BSA": -0.085, "ELC": -0.075, "JPL": -0.080, "MXL": -0.090, 
+    "LIB": -0.085, "MLS": -0.065, "default": -0.12
 };
 
 // ══════════════════════════════════════════
-// ALTITUD Y POWER CORNERS (TU LÓGICA ORIGINAL)
+// ALTITUD (Fase 5 Original)
 // ══════════════════════════════════════════
 const ALTITUDE_TEAMS = {
     "Club Bolívar": {advantage:1.12, altitude:"3600m"},
     "Always Ready": {advantage:1.18, altitude:"4100m"},
     "LDU Quito": {advantage:1.08, altitude:"2800m"},
+    "The Strongest": {advantage:1.10, altitude:"3600m"},
     "Cusco FC": {advantage:1.06, altitude:"3400m"},
 };
 
-const CORNER_POWER = {
-    "Manchester City FC":{home:7.8,away:6.8},"Liverpool FC":{home:7.4,away:6.1},"Arsenal FC":{home:7.0,away:5.9},"Real Madrid CF":{home:6.6,away:5.7},"FC Barcelona":{home:6.4,away:5.5}
-    // ... se asume el resto de tu base de datos offline aquí
-};
-
 // ══════════════════════════════════════════
-// INICIALIZACIÓN DE LA UI
+// LÓGICA DE INICIALIZACIÓN
 // ══════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', () => {
     const pillsContainer = document.getElementById('league-pills');
     const homeSelect = document.getElementById('home-team');
     const awaySelect = document.getElementById('away-team');
+    const marketContainer = document.getElementById('market-toggles');
 
+    // Generar Pills de Ligas
     Object.keys(LIGAS).forEach(key => {
         const pill = document.createElement('div');
         pill.className = 'league-pill';
@@ -255,12 +328,13 @@ document.addEventListener('DOMContentLoaded', () => {
         pill.onclick = () => {
             document.querySelectorAll('.league-pill').forEach(p => p.classList.remove('active'));
             pill.classList.add('active');
-            fillTeams(key);
+            updateTeams(key);
+            updateMarkets(key);
         };
         pillsContainer.appendChild(pill);
     });
 
-    function fillTeams(key) {
+    function updateTeams(key) {
         const teams = LIGAS[key].teams.sort();
         [homeSelect, awaySelect].forEach(select => {
             select.innerHTML = '<option value="">Selecciona equipo...</option>';
@@ -272,9 +346,19 @@ document.addEventListener('DOMContentLoaded', () => {
             select.disabled = false;
         });
     }
-});
 
-// El botón de calcular activará tu lógica de fetch a BSD_BASE usando los equipos actualizados.
+    function updateMarkets(key) {
+        marketContainer.innerHTML = '';
+        const mkts = LIGAS[key].markets;
+        const labels = {ht:'HT Prob', goles:'Goles +/-', btts:'BTTS', corn:'Corners'};
+        Object.keys(mkts).forEach(m => {
+            const btn = document.createElement('div');
+            btn.className = `mkt-toggle ${mkts[m] ? 'on' : 'disabled'}`;
+            btn.textContent = labels[m];
+            marketContainer.appendChild(btn);
+        });
+    }
+});
 </script>
 </body>
 </html>
