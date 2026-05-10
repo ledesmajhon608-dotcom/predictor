@@ -682,21 +682,102 @@ function colorFor(p){return p>=65?'var(--green)':p>=42?'var(--yellow)':'var(--ac
 function cardClassFor(p){return p>=65?'high':p>=42?'mid':'low';}
 function setApiStatus(state,text){document.getElementById('api-dot').className=`api-dot ${state}`;document.getElementById('api-status-text').textContent=text;}
 
-function matchLeagueName(bsdLeagueName,ligaKey){const liga=LIGAS[ligaKey];if(!liga)return false;const norm=s=>s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');const bsdNorm=norm(bsdLeagueName);if(bsdNorm===norm(liga.bsdName))return true;if(liga.bsdNameAlt){for(const alt of liga.bsdNameAlt){if(bsdNorm===norm(alt))return true;}}const mainWords=norm(liga.bsdName).split(' ');if(mainWords.every(word=>bsdNorm.includes(word)))return true;return false;}
+// ── LEAGUE MATCHING — fingerprints únicos + blockers anti-contaminación ──
+const LEAGUE_FINGERPRINTS = {
+    'PL': ['premier league','premier'],
+    'BL1': ['bundesliga'],
+    'DED': ['eredivisie'],
+    'JPL': ['jupiler','belgian','pro league','first division a','first division b'],
+    'FL1': ['ligue 1','ligue un','ligue1'],
+    'BSA': ['brasileiro serie a','brasileirao','campeonato brasileiro ser','serie a bra','brasileirao serie a'],
+    'ELC': ['championship','efl championship','sky bet championship'],
+    'PD': ['la liga','primera division','laliga'],
+    'SA': ['serie a','serie a tim','italian serie','calcio serie a'],
+    'MXL': ['liga mx','liga bbva','mexican liga','liga mex','liga mx clausura','liga mx apertura'],
+    'LIB': ['libertadores','conmebol libertadores','copa libertadores'],
+    'MLS': ['major league soccer',' mls ','mls regular','mls eastern','mls western'],
+    'BSB': ['brasileiro serie b','serie b bra','brasileirao serie b','campeonato brasileiro serie b'],
+    'PPT': ['liga portugal','primeira liga','ligaportugal','liga nos','liga bwin'],
+    'EKS': ['ekstraklasa'],
+    'SLG': ['super league greece','greek super','super league 1','stoiximan super','super league hellas'],
+};
+const LEAGUE_BLOCKERS = {
+    'PD': ['brasileiro','brasileirao','portugal','mx','mexico','liga mx'],
+    'SA': ['brasileiro','brasileirao','serie b','spanish','portugal','serie a bra'],
+    'MXL': ['la liga','primera division','portugal','brasileiro','laliga'],
+    'PPT': ['la liga','primera division','mx','mexican','laliga'],
+    'BSA': ['serie b','segunda','serie b bra'],
+    'BSB': ['serie a bra','campeonato brasileiro serie a','primeira','primeiro'],
+    'BL1': ['2. bundesliga','bundesliga 2','bundesliga ii'],
+    'FL1': ['ligue 2'],
+    'MLS': ['liga mx','la liga'],
+};
+function normStr(s){return s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\s]/g,' ').replace(/\s+/g,' ').trim();}
+function matchLeagueName(bsdLeagueName,ligaKey){
+    const apiNorm=normStr(bsdLeagueName);
+    const fps=LEAGUE_FINGERPRINTS[ligaKey]||[];
+    const blockers=LEAGUE_BLOCKERS[ligaKey]||[];
+    if(blockers.some(b=>apiNorm.includes(normStr(b))))return false;
+    return fps.some(fp=>apiNorm.includes(normStr(fp)));
+}
 
 window.onload=async()=>{
     renderLeaguePills();renderMarketToggles();
     setApiStatus('error','🟡 Modo offline — datos históricos calibrados');
-    const controller=new AbortController();const timeoutId=setTimeout(()=>controller.abort(),8000);
-    try{
-        let allLeagues=[],url=BSD_BASE+'/leagues/?page_size=100',pageCount=0;
-        while(url&&pageCount<5){const res=await fetch(url,{headers:{'Authorization':'Token '+BSD_TOKEN},signal:controller.signal});if(!res.ok)throw new Error('BSD '+res.status);const data=await res.json();allLeagues=allLeagues.concat(data.results||[]);url=data.next||null;pageCount++;}
-        clearTimeout(timeoutId);
-        allLeagues.forEach(l=>{if(l.is_women)return;if(!l.current_season?.id)return;for(const code of Object.keys(LIGAS)){if(matchLeagueName(l.name,code)&&!bsdLeagueMap[code]){bsdLeagueMap[code]={bsdId:l.id,seasonId:l.current_season.id};}}});
-        const mapped=Object.keys(bsdLeagueMap).length;
-        if(mapped>0){setApiStatus('live','🟢 BSD API — '+mapped+'/'+Object.keys(LIGAS).length+' ligas activas');apiAvailable=true;document.getElementById('engine-badge').textContent='🛰 BSD + Elo + Atk×Def + xG + Altitud · v2.1';}
-    }catch(e){clearTimeout(timeoutId);}
+    await initBsdApi();
 };
+
+async function initBsdApi(){
+    const controller=new AbortController();
+    const timeoutId=setTimeout(()=>controller.abort(),12000);
+    try{
+        // Fetch ALL leagues (paginate up to 500)
+        let allLeagues=[],url=BSD_BASE+'/leagues/?page_size=200',pageCount=0;
+        while(url&&pageCount<5){
+            const res=await fetch(url,{headers:{'Authorization':'Token '+BSD_TOKEN},signal:controller.signal});
+            if(!res.ok)throw new Error('BSD '+res.status);
+            const data=await res.json();
+            allLeagues=allLeagues.concat(data.results||[]);
+            url=data.next||null;
+            pageCount++;
+        }
+        clearTimeout(timeoutId);
+
+        // Log all available league names for debugging
+        const active=allLeagues.filter(l=>!l.is_women&&l.current_season?.id);
+        console.log('[BSD] Total active leagues:',active.length);
+        active.forEach(l=>console.log(' -',JSON.stringify(l.name),'| season:',l.current_season?.id));
+
+        // Match each liga
+        active.forEach(l=>{
+            for(const code of Object.keys(LIGAS)){
+                if(!bsdLeagueMap[code]&&matchLeagueName(l.name,code)){
+                    bsdLeagueMap[code]={bsdId:l.id,seasonId:l.current_season.id};
+                    console.log('[LIGA ✅]',code,'→',l.name,'(season:',l.current_season.id+')');
+                }
+            }
+        });
+
+        // Log unmatched ligas
+        Object.keys(LIGAS).forEach(code=>{
+            if(!bsdLeagueMap[code]) console.warn('[LIGA ❌] Sin match:',code,LIGAS[code].name);
+        });
+
+        const mapped=Object.keys(bsdLeagueMap).length;
+        const total=Object.keys(LIGAS).length;
+        if(mapped>0){
+            setApiStatus('live','🟢 BSD API — '+mapped+'/'+total+' ligas activas');
+            apiAvailable=true;
+            document.getElementById('engine-badge').textContent='🛰 BSD Live · '+mapped+'/'+total+' ligas · v2.1';
+        } else {
+            setApiStatus('error','🟡 Modo offline — sin conexión API');
+        }
+    }catch(e){
+        clearTimeout(timeoutId);
+        console.warn('[BSD] initBsdApi error:',e.message);
+        setApiStatus('error','🟡 Modo offline — '+e.message.substring(0,30));
+    }
+}
 
 function renderLeaguePills(){const container=document.getElementById('league-pills');container.innerHTML='';for(const[key,liga]of Object.entries(LIGAS)){const pill=document.createElement('button');pill.className='league-pill';pill.textContent=liga.name;pill.dataset.key=key;pill.onclick=()=>selectLeague(key);container.appendChild(pill);}}
 function renderMarketToggles(){const container=document.getElementById('market-toggles');const defs=[{key:'ht',label:'⏱ Goles HT'},{key:'goles',label:'⚽ Goles +1.5/2.5'},{key:'btts',label:'🤝 BTTS'},{key:'corn',label:'⬡ Córners'}];container.innerHTML='';const liga=currentLeagueKey?LIGAS[currentLeagueKey]:null;defs.forEach(d=>{const btn=document.createElement('button');btn.className='mkt-toggle';btn.textContent=d.label;btn.dataset.key=d.key;const available=!liga||(liga.markets[d.key]===true);if(!available){btn.classList.add('unavailable');activeMarkets[d.key]=false;}else{if(activeMarkets[d.key])btn.classList.add('on');btn.onclick=()=>{activeMarkets[d.key]=!activeMarkets[d.key];btn.classList.toggle('on');};}container.appendChild(btn);});}
