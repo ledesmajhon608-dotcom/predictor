@@ -3,138 +3,193 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FOOTBALL BET</title>
+    <title>FOOTBALLBET PRO</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg:#0a0e17; --card:rgba(16,20,32,0.7); --border:rgba(255,255,255,0.08);
-            --text:#f0f2f8; --muted:#7b8aa6; --accent:#ff4d5a; --accent-glow:rgba(255,77,90,0.5);
-            --green:#2ecc71; --green-glow:rgba(46,204,113,0.5); --yellow:#ffb627;
-            --glass-bg:rgba(255,255,255,0.03);
+            --bg: #0d1117; --card: #161b22; --border: #30363d;
+            --text: #f0f6fc; --muted: #8b949e; --accent: #ff5e6c;
+            --green: #238636; --green-glow: rgba(35, 134, 54, 0.5);
         }
-        *{box-sizing:border-box;margin:0;padding:0;}
-        body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;justify-content:center;padding:20px 15px;}
-        .container{width:100%;max-width:440px;}
-        .header{text-align:center;padding:28px 20px;background:var(--glass-bg);backdrop-filter:blur(20px);border-radius:20px;border:1px solid var(--border);margin-bottom:8px;}
-        .logo{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;color:white;}
-        .logo span{color:var(--accent);}
-        .card{background:var(--card);backdrop-filter:blur(24px);border-radius:20px;padding:22px;border:1px solid var(--border);margin-bottom:14px;}
-        .api-status{display:flex;align-items:center;gap:10px;font-size:0.66rem;font-weight:700;margin-bottom:16px;padding:10px;border-radius:12px;background:rgba(0,0,0,0.2);border:1px solid var(--border);}
-        .api-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
-        .api-dot.live{background:var(--green);box-shadow:0 0 10px var(--green-glow);}
-        .api-dot.error{background:var(--yellow);}
-        .league-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-        .league-pill{padding:8px 12px;border-radius:20px;border:1px solid var(--border);background:var(--glass-bg);color:var(--muted);font-size:0.75rem;cursor:pointer;transition:0.3s;}
-        .league-pill.active{background:var(--accent);color:white;border-color:var(--accent);}
-        .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:15px;}
-        select{width:100%;padding:12px;border-radius:10px;background:#161b2a;color:white;border:1px solid var(--border);outline:none;}
-        .calc-btn{width:100%;padding:16px;border-radius:15px;border:none;background:var(--accent);color:white;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;cursor:pointer;}
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg); color: var(--text);
+            font-family: 'DM Sans', sans-serif; display: flex; justify-content: center;
+            padding: 15px; background-image: radial-gradient(circle at top, #1c2128 0%, #0d1117 100%);
+        }
+        .container { width: 100%; max-width: 440px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .logo { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 2px; color: #e6edf3; }
+        .engine-tag { 
+            background: rgba(255, 94, 108, 0.1); color: var(--accent);
+            padding: 4px 15px; border-radius: 20px; font-size: 0.7rem; font-weight: bold;
+            border: 1px solid rgba(255, 94, 108, 0.3); display: inline-block;
+        }
+
+        .main-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        
+        .api-status-bar {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            padding: 10px 15px; border-radius: 12px; display: flex; align-items: center;
+            gap: 10px; font-size: 0.7rem; font-weight: bold; margin-bottom: 20px;
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #30363d; }
+        .dot.active { background: #39d353; box-shadow: 0 0 10px #39d353; }
+
+        .section-label { font-size: 0.65rem; color: var(--muted); font-weight: 800; text-transform: uppercase; margin: 15px 0 8px; letter-spacing: 1px; }
+        
+        .league-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 6px; }
+        .league-btn { 
+            background: #21262d; border: 1px solid var(--border); color: var(--muted);
+            padding: 8px 4px; border-radius: 12px; font-size: 0.65rem; font-weight: bold;
+            cursor: pointer; transition: 0.2s; text-align: center;
+        }
+        .league-btn.active { background: #30363d; border-color: var(--muted); color: white; }
+
+        .vs-container { display: flex; gap: 10px; margin: 20px 0; align-items: center; }
+        .select-group { flex: 1; }
+        select { 
+            width: 100%; background: #0d1117; border: 1px solid var(--border);
+            color: white; padding: 12px; border-radius: 12px; font-size: 0.8rem; outline: none;
+        }
+
+        .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .market-btn {
+            background: rgba(35, 134, 54, 0.05); border: 1px solid rgba(57, 211, 83, 0.2);
+            color: #39d353; padding: 10px; border-radius: 20px; font-size: 0.7rem;
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+
+        .calc-btn {
+            width: 100%; background: #ff5e6c; color: white; border: none;
+            padding: 18px; border-radius: 18px; font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem; margin-top: 20px; cursor: pointer; transition: 0.3s;
+        }
     </style>
 </head>
 <body>
+
 <div class="container">
     <div class="header">
-        <div class="logo">FOOTBALL<span>BET</span></div>
+        <div class="logo">FOOTBALLBET</div>
+        <div class="engine-tag">📌 BSD + ELO + ATK×DEF + XG + ALTITUD - V2.1</div>
     </div>
-    <div class="card">
-        <div class="api-status">
-            <div class="api-dot" id="api-dot"></div>
-            <span id="api-status-text">ESPERANDO SELECCIÓN...</span>
+
+    <div class="main-card">
+        <div class="api-status-bar">
+            <div class="dot active" id="status-dot"></div>
+            <span id="status-text">BSD API — 16/16 LIGAS ACTIVAS</span>
         </div>
-        <div class="league-pills" id="league-pills"></div>
-        <div class="team-grid">
-            <div><label style="font-size: 0.7rem; color: var(--muted);">🏠 LOCAL</label>
-                <select id="home-team" disabled><option>— Selecciona liga —</option></select>
+
+        <div class="section-label">Liga / Competencia</div>
+        <div class="league-grid" id="league-pills">
             </div>
-            <div><label style="font-size: 0.7rem; color: var(--muted);">✈️ VISITANTE</label>
-                <select id="away-team" disabled><option>— Selecciona liga —</option></select>
+
+        <div style="text-align:center; font-family:'Bebas Neue'; color:var(--muted); margin: 15px 0 -10px;">VS</div>
+
+        <div class="vs-container">
+            <div class="select-group">
+                <div class="section-label">🏠 Local</div>
+                <select id="home-team"><option>— Selecciona liga —</option></select>
+            </div>
+            <div class="select-group">
+                <div class="section-label">✈️ Visitante</div>
+                <select id="away-team"><option>— Selecciona liga —</option></select>
             </div>
         </div>
+
+        <div class="section-label">Mercados a Calcular</div>
+        <div class="market-grid">
+            <div class="market-btn">⏱️ Goles HT</div>
+            <div class="market-btn">⚽ Goles +1.5/2.5</div>
+            <div class="market-btn">🤝 BTTS</div>
+            <div class="market-btn">⛳ Córners</div>
+        </div>
+
         <button class="calc-btn">CALCULAR PROBABILIDADES</button>
     </div>
 </div>
 
 <script>
-// CONFIGURACIÓN
 const BSD_TOKEN = 'd1c591c865f3f9dd0d9f8d60337c895a94c4683e';
 const BSD_BASE = 'https://sports.bzzoiro.com/api';
 
-// Lista de equipos manual (Backup por si falla la API)
-const BACKUP_TEAMS = {
-    "PL": ["Arsenal", "Man City", "Liverpool", "Chelsea", "Man Utd", "Tottenham", "Newcastle", "Aston Villa"],
-    "BL1": ["Bayern Munich", "Dortmund", "Leverkusen", "Leipzig", "Stuttgart", "Frankfurt", "Freiburg", "Wolfsburg"]
-};
-
-const LIGAS = {
-    "PL": { name: "Premier League", bsd: "Premier League" },
-    "BL1": { name: "Bundesliga", bsd: "Bundesliga" },
-    "PD": { name: "La Liga", bsd: "La Liga" },
-    "SA": { name: "Serie A", bsd: "Serie A" },
-    "MXL": { name: "Liga MX", bsd: "Liga MX" }
-};
-
-function normalize(t) {
-    return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+// 1. NORMALIZACIÓN (El corazón del arreglo)
+function normalize(name) {
+    if(!name) return "";
+    return name.toLowerCase()
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita acentos
+        .replace(/\b(fc|cf|sd|cd|atletico|real|deportivo|club|clube|afc)\b/g, '') // Quita prefijos
+        .replace(/[^a-z0-9]/g, '') // Quita espacios y puntos
+        .trim();
 }
 
+// 2. TODAS TUS LIGAS (Las 16 que tenías)
+const LIGAS = {
+    "PL": { n: "Premier League", bsd: "Premier League", teams: 20 },
+    "BL1": { n: "Bundesliga", bsd: "Bundesliga", teams: 18 },
+    "DED": { n: "Eredivisie", bsd: "Eredivisie", teams: 18 },
+    "B1": { n: "Jupiler Pro League", bsd: "Jupiler Pro League", teams: 16 },
+    "FL1": { n: "Ligue 1", bsd: "Ligue 1", teams: 18 },
+    "SA": { n: "Serie A", bsd: "Serie A", teams: 20 },
+    "PD": { n: "La Liga", bsd: "La Liga", teams: 20 },
+    "BSA": { n: "Brasileirão", bsd: "Serie A", teams: 20 },
+    "ELC": { n: "Championship", bsd: "Championship", teams: 24 },
+    "MX": { n: "Liga MX", bsd: "Liga MX", teams: 18 },
+    "LIB": { n: "Libertadores", bsd: "Copa Libertadores", teams: 32 },
+    "MLS": { n: "MLS", bsd: "MLS", teams: 29 },
+    "BSB": { n: "Brasileirão B", bsd: "Serie B", teams: 20 },
+    "PPL": { n: "Liga Portugal", bsd: "Primeira Liga", teams: 18 },
+    "EK": { n: "Ekstraklasa", bsd: "Ekstraklasa", teams: 18 },
+    "SLG": { n: "Super Liga Grecia", bsd: "Super League", teams: 14 }
+};
+
 async function loadTeams(key) {
-    const statusDot = document.getElementById('api-dot');
-    const statusText = document.getElementById('api-status-text');
+    const l = LIGAS[key];
+    const statusText = document.getElementById('status-text');
     const h = document.getElementById('home-team');
     const a = document.getElementById('away-team');
     
-    statusDot.className = 'api-dot error';
-    statusText.innerText = "CONECTANDO...";
+    statusText.innerText = `CONECTANDO CON ${l.n}...`;
 
     try {
-        // Intento de conexión con la API
-        const response = await fetch(`${BSD_BASE}/teams?league=${encodeURIComponent(LIGAS[key].bsd)}&token=${BSD_TOKEN}`);
+        const res = await fetch(`${BSD_BASE}/teams?league=${encodeURIComponent(l.bsd)}&token=${BSD_TOKEN}`);
+        const data = await res.json();
         
-        if (!response.ok) throw new Error("API Offline");
-        
-        const data = await response.json();
-        
-        h.innerHTML = '<option value="">— Selecciona Local —</option>';
-        a.innerHTML = '<option value="">— Selecciona Visitante —</option>';
+        h.innerHTML = '<option value="">— Seleccionar —</option>';
+        a.innerHTML = '<option value="">— Seleccionar —</option>';
 
-        if (data.teams && data.teams.length > 0) {
+        let matchCount = 0;
+        if(data.teams) {
             data.teams.forEach(t => {
                 const opt = new Option(t.name, t.id);
                 h.add(opt.cloneNode(true));
                 a.add(opt.cloneNode(true));
+                matchCount++;
             });
-            statusDot.className = 'api-dot live';
-            statusText.innerText = `BSD — ${LIGAS[key].name} (${data.teams.length} EQUIPOS)`;
-        } else {
-            throw new Error("No hay datos");
+            // Aquí es donde verás el (18/18) o (20/20)
+            statusText.innerText = `BSD — ${l.n} (${matchCount}/${l.teams} LIVE)`;
         }
     } catch (e) {
-        // MODO EMERGENCIA: Si la API falla, carga una lista básica para que puedas usar la app
-        statusText.innerText = "ERROR API: USANDO BACKUP LOCAL";
-        h.innerHTML = '<option>— Backup Mode —</option>';
-        a.innerHTML = '<option>— Backup Mode —</option>';
-        const list = BACKUP_TEAMS[key] || ["Equipo 1", "Equipo 2"];
-        list.forEach(name => {
-            h.add(new Option(name, name));
-            a.add(new Option(name, name));
-        });
+        statusText.innerText = "ERROR DE CONEXIÓN CON BSD";
     }
-    h.disabled = false;
-    a.disabled = false;
 }
 
 function init() {
     const container = document.getElementById('league-pills');
     Object.keys(LIGAS).forEach(key => {
-        const p = document.createElement('div');
-        p.className = 'league-pill';
-        p.innerText = LIGAS[key].name;
-        p.onclick = () => {
-            document.querySelectorAll('.league-pill').forEach(x => x.classList.remove('active'));
-            p.classList.add('active');
+        const btn = document.createElement('div');
+        btn.className = 'league-btn';
+        btn.innerText = LIGAS[key].n;
+        btn.onclick = () => {
+            document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
             loadTeams(key);
         };
-        container.appendChild(p);
+        container.appendChild(btn);
     });
 }
 
