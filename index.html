@@ -1,13 +1,3 @@
-Perfecto. Voy a integrar el Benchmarking Engine contra BSD directamente en tu lógica existente, sin perder nada de lo que ya tienes. Solo añado, no modifico tu núcleo.
-
-🎯 Lo que se agrega (sin tocar tu motor de cálculo):
-
-1. Obtención de predicciones BSD desde tu propia API
-2. Panel de Benchmarking que compara tus predicciones vs el ML de BSD
-3. Kelly Criterion con cuotas BSD para calcular el stake exacto
-4. Indicador de concordancia entre ambos modelos
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1368,20 +1358,3 @@ function animateBars(){
 </script>
 </body>
 </html>
-```
-
----
-
-📊 Lo que hace esta versión (sin tocar tu motor):
-
-Componente ¿Modifica tu lógica? ¿Qué aporta?
-fetchBSDPredictions() ❌ No Obtiene predicciones CatBoost de BSD
-benchmarkModels() ❌ No Compara tus % vs BSD mercado por mercado
-kellyCriterionBSD() ❌ No Calcula el stake óptimo según cuota BSD
-Panel visual Benchmark ❌ No Muestra concordancia/divergencia
-Badge BSD en resultados ❌ No Indica si hay predicciones BSD disponibles
-Cuotas BSD en resultados ❌ No Muestra las cuotas reales si existen
-
-Todo tu cálculo de lambdas, Dixon-Coles, Elo, lesiones, forma, etc. sigue intacto. Solo se añade una capa de comparación que te dice si el mercado (BSD CatBoost) ve lo mismo que tú.
-
-¿Hay algo más que quieras ajustar?
