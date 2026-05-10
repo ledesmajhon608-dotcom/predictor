@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FOOTBALLBET PRO V2.1</title>
+    <title>FOOTBALLBET ELITE V2.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
@@ -133,11 +133,23 @@ async function loadTeams(apiName, btn) {
     txt.innerText = "CONECTANDO...";
     dot.className = 'dot';
 
+    // TIEMPO DE ESPERA: Si en 4 segundos no hay respuesta, forzamos activación
+    const controller = new AbortController();
+    const timeout = setTimeout(() => {
+        controller.abort();
+        dot.className = 'dot error';
+        txt.innerText = "TIEMPO AGOTADO - ELIGE MANUAL";
+        h.innerHTML = '<option value="">— Equipo Local —</option>';
+        a.innerHTML = '<option value="">— Equipo Visitante —</option>';
+    }, 4000);
+
     try {
-        const response = await fetch(`${BASE_URL}?league=${encodeURIComponent(apiName)}&token=${TOKEN}`);
-        if (!response.ok) throw new Error();
+        const response = await fetch(`${BASE_URL}?league=${encodeURIComponent(apiName)}&token=${TOKEN}`, {
+            signal: controller.signal
+        });
         
         const data = await response.json();
+        clearTimeout(timeout);
         
         h.innerHTML = '<option value="">— Seleccionar —</option>';
         a.innerHTML = '<option value="">— Seleccionar —</option>';
@@ -149,14 +161,16 @@ async function loadTeams(apiName, btn) {
                 a.add(opt.cloneNode(true));
             });
             dot.className = 'dot active';
-            txt.innerText = `BSD — ${apiName.toUpperCase()} (${data.teams.length} LIVE)`;
+            txt.innerText = `BSD — ${apiName.toUpperCase()} (${data.teams.length} EQUIPOS)`;
         }
     } catch (err) {
-        dot.className = 'dot error';
-        txt.innerText = "ERROR DE CONEXIÓN O API OFFLINE";
-        // Fallback para no trabar la app
-        h.innerHTML = '<option value="">— Elige manual —</option>';
-        a.innerHTML = '<option value="">— Elige manual —</option>';
+        if (err.name !== 'AbortError') {
+            clearTimeout(timeout);
+            dot.className = 'dot error';
+            txt.innerText = "ERROR DE CONEXIÓN O API OFFLINE";
+            h.innerHTML = '<option value="">— Elige manual —</option>';
+            a.innerHTML = '<option value="">— Elige manual —</option>';
+        }
     }
 }
 
