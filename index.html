@@ -1,26 +1,3 @@
-¡Excelente trabajo! Has construido una base de código muy sólida, con una implementación estadística sofisticada. Después de una revisión exhaustiva de tu arquitectura, he identificado varias áreas de mejora críticas y de alto impacto que harán tus predicciones significativamente más precisas.
-
-El problema principal no es que el algoritmo sea "malo", sino que le falta el contexto más importante para el fútbol: las alineaciones y las lesiones, y tiene algunos errores conceptuales en la calibración que están limitando su poder predictivo real.
-
-Aquí está el diagnóstico detallado y las mejoras implementadas:
-
-🎯 Problemas Detectados y Mejoras Clave
-
-1. Error Conceptual Grave: El Córner "Over" está mal calibrado.
-   · Problema: Tu función plattCalibrate espera una probabilidad cruda entre 0-100. Sin embargo, para las líneas de córner como Over 9.5, la probabilidad del modelo (negBinOver) a menudo está por debajo del 40%, que es la probabilidad de que ocurra. Al calibrar ese número como si fuera "Over 2.5 goles", obtienes un resultado sin sentido.
-   · Solución: La calibración Platt para córners debe hacerse sobre la línea base del mercado, no sobre el "Over". La métrica correcta a calibrar es el total de córners (lambdaCorn) en relación con la línea. Se ha creado una función calibrateCornersOver que primero ajusta la expectativa de córners y luego calcula la probabilidad, resultando en predicciones mucho más realistas y con mejor discriminación.
-2. Falta de Contexto de Lesiones y Alineaciones (El mayor predictor).
-   · Problema: Un modelo puramente estadístico es ciego al evento más importante antes de un partido: las bajas de última hora. Esto causa las mayores desviaciones en las predicciones.
-   · Solución (Backend): Se ha añadido una función simulada getInjuryImpact. En un entorno de producción, esto se conectaría a un endpoint real de la BSD API (/squads/ o /events/.../lineups/) para comparar la alineación titular con el 11 ideal.
-   · Solución (Frontend): El impacto estimado se muestra como una badge 🏥 Sin Bajas Clave (verde) o 🚨 Bajas Clave: MEDIO (roja) directamente en el match-header.
-3. Ponderación de Forma (Racha) Demasiado Débil.
-   · Problema: Tu formMultiplier es muy tímido (0.85 a 1.15). Un equipo en racha de 5 victorias vs. 5 derrotas tiene un impulso anímico y de confianza mucho mayor.
-   · Solución: Se ha recalibrado el factor de forma para ser más expresivo (rango de 0.80 a 1.25) y se ha añadido un indicador visual de la racha en el match-header.
-4. Incertidumbre en la Recomendación (Overfitting).
-   · Problema: La recomendación se muestra con demasiada certeza (ej. "76%"). Una probabilidad del modelo del 55% y del 76% tienen una fiabilidad real muy distinta.
-   · Solución: La rec-confidence ahora incluye la barra de confianza confidence-meter que ya tenías diseñada pero sin usar. Se rellena según la probabilidad, mostrando visualmente la solidez de la predicción.
-5. Defensa del Visitante Infravalorada.
-   · Problema: El ajuste Elo que aplicas es simétrico (awayGoalF /= eloAdjustment). Pero viajar afecta más a la
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -1408,15 +1385,16 @@ function renderOutput({home, away, lambdaCorn, lambdaGoal, lambdaH, lambdaA, hom
     // RECOMENDACIÓN CON BARRA DE CONFIANZA
     const lFull2 = lambdaH + lambdaA;
     const allMkts = [];
-
-    if (mkt.goles) {
-        allMkts.push({label: 'GOLES OVER 1.5', prob: +plattCalibrate(poissonOver(lFull2, 1.5), 'goals_over15', currentLeagueKey).toFixed(0), desc: 'Alta prob. de partido con goles', type: 'goles'});
-        allMkts.push({label: 'GOLES OVER 2.5', prob: +plattCalibrate(poissonOver(lFull2, 2.5), 'goals_over25', currentLeagueKey).toFixed(0), desc: '3+ goles en el partido', type: 'goles'});
-    }
-    if (mkt.ht) {
+    
+   if (mkt.ht) {
         allMkts.push({label: 'GOL HT OVER 0.5', prob: +plattCalibrate(poissonOver(lambdaGoal, 0.5), 'goals_ht05', currentLeagueKey).toFixed(0), desc: 'Al menos un gol antes del descanso', type: 'ht'});
         allMkts.push({label: 'GOL HT OVER 1.5', prob: +plattCalibrate(poissonOver(lambdaGoal, 1.5), 'goals_ht15', currentLeagueKey).toFixed(0), desc: '2+ goles en el primer tiempo', type: 'ht'});
     }
+   if (mkt.goles) {
+        allMkts.push({label: 'GOLES OVER 1.5', prob: +plattCalibrate(poissonOver(lFull2, 1.5), 'goals_over15', currentLeagueKey).toFixed(0), desc: 'Alta prob. de partido con goles', type: 'goles'});
+        allMkts.push({label: 'GOLES OVER 2.5', prob: +plattCalibrate(poissonOver(lFull2, 2.5), 'goals_over25', currentLeagueKey).toFixed(0), desc: '3+ goles en el partido', type: 'goles'});
+    }
+    
     if (mkt.btts) {
         const bp = +plattCalibrate(calcBTTS(lambdaH, lambdaA, currentLeagueKey), 'btts', currentLeagueKey).toFixed(0);
         allMkts.push({label: 'AMBOS MARCAN', prob: bp, desc: `${bp}% de prob. que ambos anoten`, type: 'btts'});
