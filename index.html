@@ -7,150 +7,134 @@
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg:#0a0e17; --card:rgba(16,20,32,0.7); --card2:rgba(22,27,42,0.8); --border:rgba(255,255,255,0.08);
+            --bg:#0a0e17; --card:rgba(16,20,32,0.7); --border:rgba(255,255,255,0.08);
             --text:#f0f2f8; --muted:#7b8aa6; --accent:#ff4d5a; --accent-glow:rgba(255,77,90,0.5);
-            --yellow:#ffb627; --yellow-glow:rgba(255,182,39,0.5);
-            --green:#2ecc71; --green-glow:rgba(46,204,113,0.5);
-            --blue:#4dabf7; --purple:#9775fa;
+            --green:#2ecc71; --green-glow:rgba(46,204,113,0.5); --yellow:#ffb627;
             --glass-bg:rgba(255,255,255,0.03);
         }
         *{box-sizing:border-box;margin:0;padding:0;}
-        body{
-            background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
-            min-height:100vh;display:flex;justify-content:center;padding:20px 15px 60px;
-            background-image:
-                radial-gradient(ellipse 80% 50% at 50% -10%,rgba(255,77,90,0.15) 0%,transparent 70%),
-                radial-gradient(ellipse 60% 40% at 80% 80%,rgba(46,204,113,0.08) 0%,transparent 60%),
-                radial-gradient(ellipse 50% 35% at 20% 60%,rgba(77,171,247,0.06) 0%,transparent 50%),
-                repeating-linear-gradient(0deg,transparent,transparent 39px,rgba(255,255,255,0.015) 39px,rgba(255,255,255,0.015) 40px),
-                repeating-linear-gradient(90deg,transparent,transparent 39px,rgba(255,255,255,0.015) 39px,rgba(255,255,255,0.015) 40px);
-        }
+        body{background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;display:flex;justify-content:center;padding:20px 15px;}
         .container{width:100%;max-width:440px;}
-        .header{text-align:center;padding:28px 20px 20px;margin-bottom:8px;background:var(--glass-bg);backdrop-filter:blur(20px);border-radius:20px;border:1px solid rgba(255,255,255,0.06);position:relative;overflow:hidden;}
-        .header::before{content:'';position:absolute;top:-50%;left:-50%;width:200%;height:200%;background:conic-gradient(from 0deg,transparent,var(--accent-glow),transparent,var(--green-glow),transparent);animation:rotateGlow 8s linear infinite;opacity:0.3;}
-        @keyframes rotateGlow{to{transform:rotate(360deg);}}
-        .header>*{position:relative;z-index:1;}
-        .logo{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;color:white;line-height:1;text-shadow:0 0 30px var(--accent-glow),0 2px 4px rgba(0,0,0,0.5);background:linear-gradient(135deg,#ffffff 0%,#ff8a95 50%,#ffffff 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;}
-        .logo span{-webkit-text-fill-color:transparent;background:linear-gradient(135deg,var(--accent),#ff8a95);-webkit-background-clip:text;background-clip:text;}
-        .badge{display:inline-block;margin-top:8px;padding:4px 14px;background:linear-gradient(135deg,rgba(255,77,90,0.15),rgba(77,171,247,0.1));border:1px solid rgba(255,77,90,0.25);border-radius:20px;font-size:0.68rem;font-weight:700;letter-spacing:2px;color:var(--accent);text-transform:uppercase;backdrop-filter:blur(10px);box-shadow:0 0 20px rgba(255,77,90,0.1);}
-        .card{background:var(--card);backdrop-filter:blur(24px);border-radius:20px;padding:22px;border:1px solid var(--border);margin-bottom:14px;position:relative;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.3);transition:all 0.3s ease;}
-        .api-status{display:flex;align-items:center;gap:10px;font-size:0.66rem;font-weight:700;letter-spacing:1px;text-transform:uppercase;margin-bottom:16px;padding:8px 14px;border-radius:12px;background:rgba(255,255,255,0.02);border:1px solid rgba(255,255,255,0.06);backdrop-filter:blur(10px);}
-        .api-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);flex-shrink:0;transition:all 0.3s;}
-        .api-dot.live{background:var(--green);box-shadow:0 0 10px var(--green-glow),0 0 20px var(--green-glow);}
-        .api-dot.error{background:var(--yellow);box-shadow:0 0 10px var(--yellow-glow);}
+        .header{text-align:center;padding:28px 20px;background:var(--glass-bg);backdrop-filter:blur(20px);border-radius:20px;border:1px solid var(--border);margin-bottom:8px;}
+        .logo{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;color:white;}
+        .logo span{color:var(--accent);}
+        .card{background:var(--card);backdrop-filter:blur(24px);border-radius:20px;padding:22px;border:1px solid var(--border);margin-bottom:14px;}
+        .api-status{display:flex;align-items:center;gap:10px;font-size:0.66rem;font-weight:700;margin-bottom:16px;padding:10px;border-radius:12px;background:rgba(0,0,0,0.2);border:1px solid var(--border);}
+        .api-dot{width:8px;height:8px;border-radius:50%;background:var(--muted);}
+        .api-dot.live{background:var(--green);box-shadow:0 0 10px var(--green-glow);}
+        .api-dot.error{background:var(--yellow);}
         .league-pills{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;}
-        .league-pill{padding:6px 13px;border-radius:20px;border:1px solid var(--border);background:var(--glass-bg);color:var(--muted);font-size:0.72rem;font-weight:700;cursor:pointer;transition:all 0.25s ease;backdrop-filter:blur(10px);}
-        .league-pill.active{background:linear-gradient(135deg,rgba(255,77,90,0.2),rgba(77,171,247,0.15));border-color:var(--accent);color:white;}
-        label{display:block;margin:14px 0 5px;color:var(--muted);font-size:0.66rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;}
-        select{width:100%;padding:12px 15px;border-radius:12px;border:1px solid var(--border);background:var(--glass-bg);color:var(--text);appearance:none;cursor:pointer;}
-        .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-        .calc-btn{width:100%;padding:14px;border-radius:14px;border:none;background:linear-gradient(135deg,var(--accent),#ff6b7a,var(--accent));color:white;font-family:'Bebas Neue',sans-serif;font-size:1.15rem;letter-spacing:2px;margin-top:18px;cursor:pointer;}
-        .hidden{display:none;}
+        .league-pill{padding:8px 12px;border-radius:20px;border:1px solid var(--border);background:var(--glass-bg);color:var(--muted);font-size:0.75rem;cursor:pointer;transition:0.3s;}
+        .league-pill.active{background:var(--accent);color:white;border-color:var(--accent);}
+        .team-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:15px;}
+        select{width:100%;padding:12px;border-radius:10px;background:#161b2a;color:white;border:1px solid var(--border);outline:none;}
+        .calc-btn{width:100%;padding:16px;border-radius:15px;border:none;background:var(--accent);color:white;font-family:'Bebas Neue',sans-serif;font-size:1.3rem;letter-spacing:2px;cursor:pointer;}
     </style>
 </head>
 <body>
 <div class="container">
     <div class="header">
         <div class="logo">FOOTBALL<span>BET</span></div>
-        <div class="badge" id="engine-badge">⚡ Motor Avanzado · v2.1</div>
     </div>
     <div class="card">
         <div class="api-status">
             <div class="api-dot" id="api-dot"></div>
-            <span id="api-status-text">Conectando con BSD API...</span>
+            <span id="api-status-text">ESPERANDO SELECCIÓN...</span>
         </div>
-        <label>Liga / Competencia</label>
         <div class="league-pills" id="league-pills"></div>
         <div class="team-grid">
-            <div class="team-col"><label>🏠 Local</label><select id="home-team" disabled><option value="">— Selecciona liga —</option></select></div>
-            <div class="team-col"><label>✈️ Visitante</label><select id="away-team" disabled><option value="">— Selecciona liga —</option></select></div>
+            <div><label style="font-size: 0.7rem; color: var(--muted);">🏠 LOCAL</label>
+                <select id="home-team" disabled><option>— Selecciona liga —</option></select>
+            </div>
+            <div><label style="font-size: 0.7rem; color: var(--muted);">✈️ VISITANTE</label>
+                <select id="away-team" disabled><option>— Selecciona liga —</option></select>
+            </div>
         </div>
-        <button class="calc-btn" id="calc-btn">CALCULAR PROBABILIDADES</button>
-    </div>
-    <div id="results" class="hidden">
-        <div id="output"></div>
+        <button class="calc-btn">CALCULAR PROBABILIDADES</button>
     </div>
 </div>
 
 <script>
+// CONFIGURACIÓN
 const BSD_TOKEN = 'd1c591c865f3f9dd0d9f8d60337c895a94c4683e';
 const BSD_BASE = 'https://sports.bzzoiro.com/api';
 
-// NORMALIZACIÓN PARA MATCHING (Corrige el 4/18)
-function normalizeName(text) {
-    if(!text) return "";
-    return text.toLowerCase()
-        .normalize("NFD").replace(/[\u0300-\u036f]/g, "") // Quita acentos
-        .replace(/\b(fc|cf|sd|cd|deportivo|club|clube|atletico|atletico de|real|afc)\b/g, '') // Quita prefijos comunes
-        .replace(/[^a-z0-9]/g, '') // Quita espacios y puntos
-        .trim();
-}
-
-const LIGAS = {
-    "PL":  {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", bsdName:"Premier League", teams:["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Crystal Palace","Everton","Fulham","Liverpool","Manchester City","Manchester United","Newcastle","Nottingham Forest","Tottenham","West Ham","Wolves","Leicester","Ipswich","Southampton"]},
-    "BL1": {name:"🇩🇪 Bundesliga", bsdName:"Bundesliga", teams:["Bayern Munich","Dortmund","Leverkusen","Leipzig","Stuttgart","Frankfurt","Freiburg","Hoffenheim","Werder Bremen","Heidenheim","Augsburg","Mainz","Monchengladbach","Union Berlin","Bochum","Wolfsburg","St. Pauli","Holstein Kiel"]},
-    "PD":  {name:"🇪🇸 La Liga", bsdName:"La Liga", teams:["Real Madrid","Barcelona","Atletico Madrid","Real Sociedad","Villarreal","Betis","Girona","Athletic Club","Sevilla","Valencia","Celta Vigo","Osasuna","Rayo Vallecano","Getafe","Mallorca","Las Palmas","Alaves","Espanyol","Leganes","Valladolid"]},
-    "SA":  {name:"🇮🇹 Serie A", bsdName:"Serie A", teams:["Inter","Milan","Juventus","Napoli","Atalanta","Roma","Lazio","Fiorentina","Bologna","Torino","Genoa","Monza","Verona","Udinese","Cagliari","Lecce","Empoli","Parma","Como","Venezia"]},
-    "MXL": {name:"🇲🇽 Liga MX", bsdName:"Liga MX", teams:["America","Chivas","Cruz Azul","Tigres","Monterrey","Pumas","Toluca","Pachuca","Leon","Santos Laguna","Atlas","Tijuana","Queretaro","Mazatlan","Juarez","Necaxa","Puebla","San Luis"]}
+// Lista de equipos manual (Backup por si falla la API)
+const BACKUP_TEAMS = {
+    "PL": ["Arsenal", "Man City", "Liverpool", "Chelsea", "Man Utd", "Tottenham", "Newcastle", "Aston Villa"],
+    "BL1": ["Bayern Munich", "Dortmund", "Leverkusen", "Leipzig", "Stuttgart", "Frankfurt", "Freiburg", "Wolfsburg"]
 };
 
-async function loadTeams(leagueKey) {
-    const league = LIGAS[leagueKey];
+const LIGAS = {
+    "PL": { name: "Premier League", bsd: "Premier League" },
+    "BL1": { name: "Bundesliga", bsd: "Bundesliga" },
+    "PD": { name: "La Liga", bsd: "La Liga" },
+    "SA": { name: "Serie A", bsd: "Serie A" },
+    "MXL": { name: "Liga MX", bsd: "Liga MX" }
+};
+
+function normalize(t) {
+    return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, "");
+}
+
+async function loadTeams(key) {
     const statusDot = document.getElementById('api-dot');
     const statusText = document.getElementById('api-status-text');
+    const h = document.getElementById('home-team');
+    const a = document.getElementById('away-team');
     
-    statusDot.className = 'api-dot';
-    statusText.innerText = `Buscando equipos en ${league.bsdName}...`;
+    statusDot.className = 'api-dot error';
+    statusText.innerText = "CONECTANDO...";
 
     try {
-        const res = await fetch(`${BSD_BASE}/teams?league=${league.bsdName}&token=${BSD_TOKEN}`);
-        const data = await res.json();
+        // Intento de conexión con la API
+        const response = await fetch(`${BSD_BASE}/teams?league=${encodeURIComponent(LIGAS[key].bsd)}&token=${BSD_TOKEN}`);
         
-        const homeSelect = document.getElementById('home-team');
-        const awaySelect = document.getElementById('away-team');
-        homeSelect.innerHTML = '<option value="">— Selecciona Local —</option>';
-        awaySelect.innerHTML = '<option value="">— Selecciona Visitante —</option>';
+        if (!response.ok) throw new Error("API Offline");
+        
+        const data = await response.json();
+        
+        h.innerHTML = '<option value="">— Selecciona Local —</option>';
+        a.innerHTML = '<option value="">— Selecciona Visitante —</option>';
 
-        let found = 0;
-        // MATCHING INTELIGENTE
-        data.teams.forEach(apiTeam => {
-            const apiNorm = normalizeName(apiTeam.name);
-            const match = league.teams.find(localName => {
-                const localNorm = normalizeName(localName);
-                return apiNorm.includes(localNorm) || localNorm.includes(apiNorm);
+        if (data.teams && data.teams.length > 0) {
+            data.teams.forEach(t => {
+                const opt = new Option(t.name, t.id);
+                h.add(opt.cloneNode(true));
+                a.add(opt.cloneNode(true));
             });
-
-            if (match) {
-                const opt = new Option(apiTeam.name, apiTeam.id);
-                homeSelect.add(opt.cloneNode(true));
-                awaySelect.add(opt.cloneNode(true));
-                found++;
-            }
-        });
-
-        statusDot.className = 'api-dot live';
-        statusText.innerText = `BSD — ${league.name} (${found}/${league.teams.length} LIVE)`;
-        homeSelect.disabled = false;
-        awaySelect.disabled = false;
-
+            statusDot.className = 'api-dot live';
+            statusText.innerText = `BSD — ${LIGAS[key].name} (${data.teams.length} EQUIPOS)`;
+        } else {
+            throw new Error("No hay datos");
+        }
     } catch (e) {
-        statusDot.className = 'api-dot error';
-        statusText.innerText = "Error de conexión con BSD";
+        // MODO EMERGENCIA: Si la API falla, carga una lista básica para que puedas usar la app
+        statusText.innerText = "ERROR API: USANDO BACKUP LOCAL";
+        h.innerHTML = '<option>— Backup Mode —</option>';
+        a.innerHTML = '<option>— Backup Mode —</option>';
+        const list = BACKUP_TEAMS[key] || ["Equipo 1", "Equipo 2"];
+        list.forEach(name => {
+            h.add(new Option(name, name));
+            a.add(new Option(name, name));
+        });
     }
+    h.disabled = false;
+    a.disabled = false;
 }
 
 function init() {
-    const pillContainer = document.getElementById('league-pills');
+    const container = document.getElementById('league-pills');
     Object.keys(LIGAS).forEach(key => {
-        const pill = document.createElement('div');
-        pill.className = 'league-pill';
-        pill.innerText = LIGAS[key].name;
-        pill.onclick = () => {
-            document.querySelectorAll('.league-pill').forEach(p => p.classList.remove('active'));
-            pill.classList.add('active');
+        const p = document.createElement('div');
+        p.className = 'league-pill';
+        p.innerText = LIGAS[key].name;
+        p.onclick = () => {
+            document.querySelectorAll('.league-pill').forEach(x => x.classList.remove('active'));
+            p.classList.add('active');
             loadTeams(key);
         };
-        pillContainer.appendChild(pill);
+        container.appendChild(p);
     });
 }
 
