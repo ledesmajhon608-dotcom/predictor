@@ -3,44 +3,69 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FOOTBALLBET ELITE</title>
+    <title>FOOTBALLBET ELITE V2.1</title>
     <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg:#0a0e17; --card:rgba(16,20,32,0.7); --border:rgba(255,255,255,0.08);
-            --text:#f0f2f8; --muted:#7b8aa6; --accent:#ff4d5a; --accent-glow:rgba(255,77,90,0.5);
-            --green:#2ecc71; --green-glow:rgba(46,204,113,0.5);
+            --bg: #0d1117; --card: #161b22; --border: #30363d;
+            --text: #f0f6fc; --muted: #8b949e; --accent: #ff5e6c;
+            --green: #238636; --green-btn: #39d353;
         }
-        *{box-sizing:border-box;margin:0;padding:0;}
-        body{
-            background:var(--bg);color:var(--text);font-family:'DM Sans',sans-serif;
-            display:flex;justify-content:center;padding:15px;
-            background-image: radial-gradient(ellipse at top, rgba(255,77,90,0.1), transparent);
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background-color: var(--bg); color: var(--text);
+            font-family: 'DM Sans', sans-serif; display: flex; justify-content: center;
+            padding: 15px; background-image: radial-gradient(circle at top, #1c2128 0%, #0d1117 100%);
         }
-        .container{width:100%;max-width:440px;}
-        .header{text-align:center;padding:20px;margin-bottom:10px;}
-        .logo{font-family:'Bebas Neue',sans-serif;font-size:3rem;letter-spacing:4px;color:white;text-shadow:0 0 20px var(--accent-glow);}
-        .badge{display:inline-block;padding:4px 12px;background:rgba(255,77,90,0.1);border:1px solid var(--accent);border-radius:20px;font-size:0.65rem;color:var(--accent);font-weight:700;letter-spacing:1px;}
-        
-        .card{background:var(--card);backdrop-filter:blur(20px);border-radius:22px;padding:20px;border:1px solid var(--border);box-shadow:0 10px 30px rgba(0,0,0,0.5);}
-        
-        .api-status{display:flex;align-items:center;gap:10px;font-size:0.65rem;font-weight:700;margin-bottom:15px;padding:10px;border-radius:12px;background:rgba(0,0,0,0.2);border:1px solid var(--border);}
-        .api-dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 10px var(--green);}
-        
-        .league-grid{display:grid;grid-template-columns:repeat(auto-fill, minmax(95px, 1fr));gap:6px;margin-bottom:15px;}
-        .league-pill{padding:8px 4px;border-radius:12px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--muted);font-size:0.65rem;font-weight:700;cursor:pointer;text-align:center;transition:0.2s;}
-        .league-pill.active{background:var(--accent);color:white;border-color:var(--accent);}
+        .container { width: 100%; max-width: 440px; }
+        .header { text-align: center; margin-bottom: 20px; }
+        .logo { font-family: 'Bebas Neue', sans-serif; font-size: 3.5rem; letter-spacing: 2px; color: #e6edf3; }
+        .engine-tag { 
+            background: rgba(255, 94, 108, 0.1); color: var(--accent);
+            padding: 6px 15px; border-radius: 20px; font-size: 0.7rem; font-weight: bold;
+            border: 1px solid rgba(255, 94, 108, 0.3); display: inline-block;
+        }
+        .main-card {
+            background: var(--card); border: 1px solid var(--border);
+            border-radius: 24px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .api-status-bar {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            padding: 10px 15px; border-radius: 12px; display: flex; align-items: center;
+            gap: 10px; font-size: 0.7rem; font-weight: bold; margin-bottom: 20px;
+        }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #30363d; }
+        .dot.active { background: #39d353; box-shadow: 0 0 10px #39d353; }
+        .dot.error { background: #ffb627; }
 
-        .vs-box{display:flex;gap:10px;margin:15px 0;}
-        .select-col{flex:1;}
-        label{display:block;font-size:0.6rem;color:var(--muted);margin-bottom:5px;font-weight:bold;text-transform:uppercase;}
-        select{width:100%;padding:12px;border-radius:10px;background:#161b2a;color:white;border:1px solid var(--border);font-size:0.8rem;outline:none;}
-        
-        .markets-label{font-size:0.65rem;color:var(--muted);font-weight:bold;margin:15px 0 8px;text-transform:uppercase;}
-        .market-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
-        .market-btn{padding:10px;border-radius:20px;border:1px solid rgba(46,204,113,0.3);background:rgba(46,204,113,0.05);color:var(--green);font-size:0.65rem;font-weight:700;text-align:center;display:flex;align-items:center;justify-content:center;gap:5px;}
-        
-        .calc-btn{width:100%;padding:18px;border-radius:18px;border:none;background:var(--accent);color:white;font-family:'Bebas Neue',sans-serif;font-size:1.4rem;letter-spacing:2px;margin-top:20px;cursor:pointer;box-shadow:0 5px 15px var(--accent-glow);}
+        .section-label { font-size: 0.65rem; color: var(--muted); font-weight: 800; text-transform: uppercase; margin: 15px 0 8px; letter-spacing: 1px; }
+        .league-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; }
+        .league-btn { 
+            background: #21262d; border: 1px solid var(--border); color: var(--muted);
+            padding: 10px 4px; border-radius: 12px; font-size: 0.65rem; font-weight: bold;
+            cursor: pointer; transition: 0.2s; text-align: center;
+        }
+        .league-btn.active { background: #ff5e6c; border-color: #ff5e6c; color: white; }
+
+        .vs-container { display: flex; gap: 10px; margin: 20px 0; align-items: center; }
+        .select-group { flex: 1; }
+        select { 
+            width: 100%; background: #0d1117; border: 1px solid var(--border);
+            color: white; padding: 12px; border-radius: 12px; font-size: 0.8rem; outline: none; appearance: none;
+        }
+
+        .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .market-btn {
+            background: rgba(35, 134, 54, 0.05); border: 1px solid rgba(57, 211, 83, 0.2);
+            color: #39d353; padding: 12px; border-radius: 20px; font-size: 0.7rem;
+            font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+
+        .calc-btn {
+            width: 100%; background: #ff5e6c; color: white; border: none;
+            padding: 18px; border-radius: 18px; font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.4rem; margin-top: 25px; cursor: pointer; box-shadow: 0 4px 15px rgba(255, 94, 108, 0.3);
+        }
     </style>
 </head>
 <body>
@@ -48,29 +73,31 @@
 <div class="container">
     <div class="header">
         <div class="logo">FOOTBALLBET</div>
-        <div class="badge">📌 BSD + ELO + ATK×DEF + XG + ALTITUD - V2.1</div>
+        <div class="engine-tag">📌 BSD + ELO + ATK×DEF + XG + ALTITUD - V2.1</div>
     </div>
 
-    <div class="card">
-        <div class="api-status">
-            <div class="api-dot" id="dot"></div>
-            <span id="status">ESPERANDO SELECCIÓN...</span>
+    <div class="main-card">
+        <div class="api-status-bar">
+            <div class="dot" id="status-dot"></div>
+            <span id="status-text">SELECCIONA UNA LIGA PARA EMPEZAR</span>
         </div>
 
-        <div class="league-grid" id="pills"></div>
-
-        <div class="vs-box">
-            <div class="select-col">
-                <label>🏠 Local</label>
-                <select id="home"><option value="">— Seleccionar —</option></select>
+        <div class="section-label">Liga / Competencia</div>
+        <div class="league-grid" id="league-pills">
             </div>
-            <div class="select-col">
-                <label>✈️ Visitante</label>
-                <select id="away"><option value="">— Seleccionar —</option></select>
+
+        <div class="vs-container">
+            <div class="select-group">
+                <div class="section-label">🏠 Local</div>
+                <select id="home-team"><option value="">— Seleccionar —</option></select>
+            </div>
+            <div class="select-group">
+                <div class="section-label">✈️ Visitante</div>
+                <select id="away-team"><option value="">— Seleccionar —</option></select>
             </div>
         </div>
 
-        <div class="markets-label">Mercados a Calcular</div>
+        <div class="section-label">Mercados a Calcular</div>
         <div class="market-grid">
             <div class="market-btn">⏱️ Goles HT</div>
             <div class="market-btn">⚽ Goles +1.5/2.5</div>
@@ -78,82 +105,96 @@
             <div class="market-btn">⛳ Córners</div>
         </div>
 
-        <button class="calc-btn">CALCULAR PROBABILIDADES</button>
+        <button class="calc-btn" onclick="alert('Iniciando cálculos avanzados...')">CALCULAR PROBABILIDADES</button>
     </div>
 </div>
 
 <script>
 const TOKEN = 'd1c591c865f3f9dd0d9f8d60337c895a94c4683e';
-const BASE = 'https://sports.bzzoiro.com/api';
+const API_URL = 'https://sports.bzzoiro.com/api/teams';
 
-// Función para que la API reconozca tus equipos aunque tengan acentos o "FC"
-function clean(n) {
-    return n ? n.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\b(fc|cf|sd|cd|atletico|real|deportivo|club|clube|afc)\b/g, '').replace(/[^a-z0-9]/g, '').trim() : "";
-}
+const LIGAS = [
+    {id: "PL", n: "Premier League", api: "Premier League"},
+    {id: "BL", n: "Bundesliga", api: "Bundesliga"},
+    {id: "ED", n: "Eredivisie", api: "Eredivisie"},
+    {id: "JP", n: "Jupiler Pro", api: "Jupiler Pro League"},
+    {id: "L1", n: "Ligue 1", api: "Ligue 1"},
+    {id: "SA", n: "Serie A", api: "Serie A"},
+    {id: "LL", n: "La Liga", api: "La Liga"},
+    {id: "BR", n: "Brasileirão", api: "Serie A"},
+    {id: "CH", n: "Championship", api: "Championship"},
+    {id: "MX", n: "Liga MX", api: "Liga MX"},
+    {id: "LB", n: "Libertadores", api: "Copa Libertadores"},
+    {id: "ML", n: "MLS", api: "MLS"},
+    {id: "BB", n: "Brasileirão B", api: "Serie B"},
+    {id: "LP", n: "Liga Portugal", api: "Primeira Liga"},
+    {id: "EK", n: "Ekstraklasa", api: "Ekstraklasa"},
+    {id: "SG", n: "S. Liga Grecia", api: "Super League"}
+];
 
-const LIGAS = {
-    "PL":  {n:"Premier League", bsd:"Premier League", total:20},
-    "BL1": {n:"Bundesliga", bsd:"Bundesliga", total:18},
-    "DED": {n:"Eredivisie", bsd:"Eredivisie", total:18},
-    "B1":  {n:"Jupiler Pro", bsd:"Jupiler Pro League", total:16},
-    "FL1": {n:"Ligue 1", bsd:"Ligue 1", total:18},
-    "SA":  {n:"Serie A", bsd:"Serie A", total:20},
-    "PD":  {n:"La Liga", bsd:"La Liga", total:20},
-    "BSA": {n:"Brasileirão", bsd:"Serie A", total:20},
-    "ELC": {n:"Championship", bsd:"Championship", total:24},
-    "MX":  {n:"Liga MX", bsd:"Liga MX", total:18},
-    "LIB": {n:"Libertadores", bsd:"Copa Libertadores", total:32},
-    "MLS": {n:"MLS", bsd:"MLS", total:29},
-    "BSB": {n:"Brasileirão B", bsd:"Serie B", total:20},
-    "PPL": {n:"Liga Portugal", bsd:"Primeira Liga", total:18},
-    "EK":  {n:"Ekstraklasa", bsd:"Ekstraklasa", total:18},
-    "SLG": {n:"S. Liga Grecia", bsd:"Super League", total:14}
-};
+async function loadTeams(leagueApiName, btn) {
+    const dot = document.getElementById('status-dot');
+    const txt = document.getElementById('status-text');
+    const h = document.getElementById('home-team');
+    const a = document.getElementById('away-team');
 
-async function load(key) {
-    const l = LIGAS[key];
-    const st = document.getElementById('status');
-    const h = document.getElementById('home');
-    const a = document.getElementById('away');
-    
-    st.innerText = `CONECTANDO CON ${l.n}...`;
-    
+    // Reset UI
+    document.querySelectorAll('.league-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    dot.className = 'dot';
+    txt.innerText = `CONECTANDO CON ${leagueApiName}...`;
+
+    // Timeout de seguridad: Si la API no responde en 5s, avisar.
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 5000);
+
     try {
-        const res = await fetch(`${BASE}/teams?league=${encodeURIComponent(l.bsd)}&token=${TOKEN}`);
-        const data = await res.json();
+        const response = await fetch(`${API_URL}?league=${encodeURIComponent(leagueApiName)}&token=${TOKEN}`, {
+            signal: controller.signal
+        });
         
+        if (!response.ok) throw new Error("Server Error");
+        
+        const data = await response.json();
+        clearTimeout(timeout);
+
         h.innerHTML = '<option value="">— Seleccionar —</option>';
         a.innerHTML = '<option value="">— Seleccionar —</option>';
 
-        if(data.teams) {
+        if (data.teams && data.teams.length > 0) {
             data.teams.forEach(t => {
                 const opt = new Option(t.name, t.id);
                 h.add(opt.cloneNode(true));
                 a.add(opt.cloneNode(true));
             });
-            // Esto arregla el (4/18) porque ahora cuenta lo que realmente baja de la API
-            st.innerText = `BSD — ${l.n} (${data.teams.length}/${l.total} LIVE)`;
+            dot.className = 'dot active';
+            txt.innerText = `BSD — ${leagueApiName} (${data.teams.length} LIVE)`;
+        } else {
+            throw new Error("No teams found");
         }
-    } catch (e) {
-        st.innerText = "ERROR DE CONEXIÓN CON BSD";
+    } catch (err) {
+        dot.className = 'dot error';
+        txt.innerText = "ERROR DE CONEXIÓN O API OFFLINE";
+        console.error(err);
+        // Fallback: Permitir entrada manual si falla la API
+        h.innerHTML = '<option value="">— Error: Elige manual —</option>';
+        a.innerHTML = '<option value="">— Error: Elige manual —</option>';
     }
 }
 
 function init() {
-    const p = document.getElementById('pills');
-    Object.keys(LIGAS).forEach(key => {
+    const grid = document.getElementById('league-pills');
+    LIGAS.forEach(l => {
         const b = document.createElement('div');
-        b.className = 'league-pill';
-        b.innerText = LIGAS[key].n;
-        b.onclick = () => {
-            document.querySelectorAll('.league-pill').forEach(x => x.classList.remove('active'));
-            b.classList.add('active');
-            load(key);
-        };
-        p.appendChild(b);
+        b.className = 'league-btn';
+        b.innerText = l.n;
+        b.onclick = () => loadTeams(l.api, b);
+        grid.appendChild(b);
     });
 }
+
 window.onload = init;
 </script>
+
 </body>
 </html>
