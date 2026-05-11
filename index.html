@@ -1,3 +1,6 @@
+Aquí tienes el archivo completo con todas las correcciones aplicadas. He eliminado los AbortController, corregido Elo, el filtrado de partidos y la carga inicial, y todo manteniendo exactamente la misma lógica de apuestas.
+
+```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -553,14 +556,108 @@ function formMultiplier(form){if(!form||form.length===0)return 1.0;const score=f
 function uncertaintyBand(prob,nMatches){const p=prob/100,se=Math.sqrt(p*(1-p)/Math.max(5,nMatches));const low=Math.max(0,(p-1.282*se)*100),high=Math.min(100,(p+1.282*se)*100);return{low:low.toFixed(0),high:high.toFixed(0)};}
 function bivariateLambdas(homeAtk,homeDef,awayAtk,awayDef,goalsAvg,homeAdv=1.08){const leagueMean=goalsAvg/2;const normHomeAtk=Math.max(0.5,homeAtk/leagueMean);const normHomeDef=Math.max(0.5,homeDef/leagueMean);const normAwayAtk=Math.max(0.5,awayAtk/leagueMean);const normAwayDef=Math.max(0.5,awayDef/leagueMean);return{home:leagueMean*normHomeAtk*normAwayDef*homeAdv,away:leagueMean*normAwayAtk*normHomeDef};}
 
-async function bsdFetch(path,timeoutMs=API_TIMEOUT){const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),timeoutMs);try{const res=await fetch(`${BSD_BASE}${path}`,{headers:{'Authorization':`Token ${BSD_TOKEN}`},signal:controller.signal});clearTimeout(timeout);if(!res.ok)throw new Error(`BSD ${res.status}`);return res.json();}catch(e){clearTimeout(timeout);throw e;}}
-async function bsdFetchAll(path,timeoutMs=API_TIMEOUT){let results=[],url=`${BSD_BASE}${path}`;let pageCount=0;while(url&&pageCount<5){try{const controller=new AbortController();const timeout=setTimeout(()=>controller.abort(),timeoutMs);const res=await fetch(url,{headers:{'Authorization':`Token ${BSD_TOKEN}`},signal:controller.signal});clearTimeout(timeout);if(!res.ok)break;const data=await res.json();results=results.concat(data.results||[]);url=data.next||null;pageCount++;if(results.length>=200)break;}catch(e){break;}}return results;}
+// ═══════════════════════════════════════════════════════
+// bsdFetch & bsdFetchAll sin AbortController (corrección)
+// ═══════════════════════════════════════════════════════
+async function bsdFetch(path,timeoutMs=API_TIMEOUT){
+    const fetchPromise = fetch(`${BSD_BASE}${path}`,{headers:{'Authorization':`Token ${BSD_TOKEN}`}});
+    const timeoutPromise = new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),timeoutMs));
+    const res = await Promise.race([fetchPromise,timeoutPromise]);
+    if(!res.ok)throw new Error(`BSD ${res.status}`);
+    return res.json();
+}
+async function bsdFetchAll(path,timeoutMs=API_TIMEOUT){
+    let results=[],url=`${BSD_BASE}${path}`,pageCount=0;
+    while(url&&pageCount<5){
+        try{
+            const fetchPromise = fetch(url,{headers:{'Authorization':`Token ${BSD_TOKEN}`}});
+            const timeoutPromise = new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),timeoutMs));
+            const res = await Promise.race([fetchPromise,timeoutPromise]);
+            if(!res.ok)break;
+            const data=await res.json();
+            results=results.concat(data.results||[]);
+            url=data.next||null;
+            pageCount++;
+            if(results.length>=200)break;
+        }catch(e){break;}
+    }
+    return results;
+}
 
-async function calculateEloRatings(leagueId,seasonId){const cacheKey=`${leagueId}_${seasonId}`;if(eloRatings[cacheKey])return eloRatings[cacheKey];try{const events=await bsdFetchAll(`/events/?season=${seasonId}&league=${leagueId}&limit=500`);if(!events||events.length<10)throw new Error('Pocos eventos');events.sort((a,b)=>new Date(a.start_date||a.date)-new Date(b.start_date||b.date));const ratings={};const K=32;events.forEach(match=>{const home=match.home_team_obj?.name||match.home_team;const away=match.away_team_obj?.name||match.away_team;if(!home||!away)return;const homeScore=Number(match.home_score||0);const awayScore=Number(match.away_score||0);const status=(match.status||'').toUpperCase();if(!['FT','FINISHED','AET','PEN','FULL_TIME'].includes(status)&&!status.includes('FT'))return;if(!ratings[home])ratings[home]={elo:1500,matches:0};if(!ratings[away])ratings[away]={elo:1500,matches:0};const homeElo=ratings[home].elo;const awayElo=ratings[away].elo;const expectedHome=1/(1+Math.pow(10,(awayElo-homeElo)/400));let actualHome=homeScore>awayScore?1:homeScore===awayScore?0.5:0;ratings[home].elo=homeElo+K*(actualHome-expectedHome);ratings[away].elo=awayElo+K*((1-actualHome)-(1-expectedHome));ratings[home].matches++;ratings[away].matches++;});eloRatings[cacheKey]=ratings;return ratings;}catch(e){return{};}}
+// ═══════════════════════════════════════════════════════
+// calculateEloRatings corregida (solo nombres de home_team_obj)
+// ═══════════════════════════════════════════════════════
+async function calculateEloRatings(leagueId,seasonId){
+    const cacheKey=`${leagueId}_${seasonId}`;
+    if(eloRatings[cacheKey])return eloRatings[cacheKey];
+    try{
+        const events=await bsdFetchAll(`/events/?season=${seasonId}&league=${leagueId}&limit=500`);
+        if(!events||events.length<10)throw new Error('Pocos eventos');
+        events.sort((a,b)=>new Date(a.start_date||a.date)-new Date(b.start_date||b.date));
+        const ratings={};
+        const K=32;
+        events.forEach(match=>{
+            const homeName=match.home_team_obj?.name;
+            const awayName=match.away_team_obj?.name;
+            if(!homeName||!awayName)return;
+            const homeScore=Number(match.home_score||0);
+            const awayScore=Number(match.away_score||0);
+            const status=(match.status||'').toUpperCase();
+            if(!['FT','FINISHED','AET','PEN','FULL_TIME'].includes(status)&&!status.includes('FT'))return;
+            if(!ratings[homeName])ratings[homeName]={elo:1500,matches:0};
+            if(!ratings[awayName])ratings[awayName]={elo:1500,matches:0};
+            const homeElo=ratings[homeName].elo;
+            const awayElo=ratings[awayName].elo;
+            const expectedHome=1/(1+Math.pow(10,(awayElo-homeElo)/400));
+            let actualHome=homeScore>awayScore?1:homeScore===awayScore?0.5:0;
+            ratings[homeName].elo=homeElo+K*(actualHome-expectedHome);
+            ratings[awayName].elo=awayElo+K*((1-actualHome)-(1-expectedHome));
+            ratings[homeName].matches++;
+            ratings[awayName].matches++;
+        });
+        eloRatings[cacheKey]=ratings;
+        return ratings;
+    }catch(e){return{};}
+}
 
 function getAltitudeAdjustment(homeTeam,awayTeam){const homeAltitude=ALTITUDE_TEAMS[homeTeam];let homeAdv=1.08,contextTags=[];if(homeAltitude){homeAdv=homeAltitude.advantage;contextTags.push({text:`🏔 Altitud local: ${homeAltitude.altitude}`,type:'altitude'});}return{homeAdv,contextTags};}
 function extractMatchStats(match,role){const s=match.stats||match.statistics||{},ls=match.live_stats||{};let corners=null,goals1t=null,goalsFull=null,xG=null,goalsConceded=null;if(s[role]?.corner_kicks!=null)corners=s[role].corner_kicks;else if(ls[role]?.corner_kicks!=null)corners=ls[role].corner_kicks;else if(role==='home'&&match.home_corners!=null)corners=match.home_corners;else if(role==='away'&&match.away_corners!=null)corners=match.away_corners;if(role==='home'&&match.home_score_ht!=null)goals1t=match.home_score_ht;if(role==='away'&&match.away_score_ht!=null)goals1t=match.away_score_ht;if(role==='home'){if(match.home_score!=null)goalsFull=match.home_score;if(match.away_score!=null)goalsConceded=match.away_score;}if(role==='away'){if(match.away_score!=null)goalsFull=match.away_score;if(match.home_score!=null)goalsConceded=match.home_score;}if(s[role]?.expected_goals!=null)xG=s[role].expected_goals;else if(ls[role]?.expected_goals!=null)xG=ls[role].expected_goals;else if(role==='home'&&match.home_xg!=null)xG=match.home_xg;else if(role==='away'&&match.away_xg!=null)xG=match.away_xg;return{corners,goals1t,goalsFull,xG,goalsConceded};}
-async function getTeamStats(teamId,teamName,role,seasonId){const key=`${teamId}_${seasonId}_${role}`;if(statsCache[key])return statsCache[key];try{let events=[];try{events=await bsdFetchAll(`/events/?team=${teamId}&season=${seasonId}&limit=300`);}catch(e){return null;}const finished=events.filter(m=>{const st=(m.status||'').toUpperCase();const ok=['FT','FINISHED','AET','PEN','FULL_TIME'].includes(st)||st.includes('FT');if(!ok)return false;return role==='home'?(m.home_team_obj?.id===teamId||m.home_team===teamName):(m.away_team_obj?.id===teamId||m.away_team===teamName);}).slice(-MATCHES_TO_USE);if(finished.length<3)return null;const weights=finished.map((_,i)=>Math.exp(0.15*i));let tC=0,wC=0,tG=0,wG=0,tGF=0,wGF=0,tGC=0,wGC=0,tXG=0,wXG=0;const form=[];finished.slice(-5).forEach(m=>{const hs=Number(m.home_score||0),as=Number(m.away_score||0);if(role==='home'){if(hs>as)form.push('w');else if(hs===as)form.push('d');else form.push('l');}else{if(as>hs)form.push('w');else if(as===hs)form.push('d');else form.push('l');}});finished.forEach((m,i)=>{const w=weights[i],stats=extractMatchStats(m,role);if(stats.corners!=null){tC+=Number(stats.corners)*w;wC+=w;}if(stats.goals1t!=null){tG+=Number(stats.goals1t)*w;wG+=w;}if(stats.goalsFull!=null){tGF+=Number(stats.goalsFull)*w;wGF+=w;}if(stats.goalsConceded!=null){tGC+=Number(stats.goalsConceded)*w;wGC+=w;}if(stats.xG!=null){tXG+=Number(stats.xG)*w;wXG+=w;}});const result={corners:wC>0?tC/wC:null,goals1t:wG>0?tG/wG:null,goalsFull:wGF>0?tGF/wGF:null,goalsConceded:wGC>0?tGC/wGC:null,xG:wXG>0?tXG/wXG:null,matches:finished.length,form,fromApi:true};statsCache[key]=result;return result;}catch{return null;}}
+async function getTeamStats(teamId,teamName,role,seasonId){
+    const key=`${teamId}_${seasonId}_${role}`;
+    if(statsCache[key])return statsCache[key];
+    try{
+        let events=[];
+        try{events=await bsdFetchAll(`/events/?team=${teamId}&season=${seasonId}&limit=300`);}catch(e){return null;}
+        const finished=events.filter(m=>{
+            const st=(m.status||'').toUpperCase();
+            const ok=['FT','FINISHED','AET','PEN','FULL_TIME'].includes(st)||st.includes('FT');
+            if(!ok)return false;
+            // CORRECCIÓN: Filtrar solo por ID real
+            const matchTeamId=role==='home'?(m.home_team_obj?.id??m.home_team):(m.away_team_obj?.id??m.away_team);
+            return matchTeamId===teamId;
+        }).slice(-MATCHES_TO_USE);
+        if(finished.length<3)return null;
+        const weights=finished.map((_,i)=>Math.exp(0.15*i));
+        let tC=0,wC=0,tG=0,wG=0,tGF=0,wGF=0,tGC=0,wGC=0,tXG=0,wXG=0;
+        const form=[];
+        finished.slice(-5).forEach(m=>{
+            const hs=Number(m.home_score||0),as=Number(m.away_score||0);
+            if(role==='home'){if(hs>as)form.push('w');else if(hs===as)form.push('d');else form.push('l');}
+            else{if(as>hs)form.push('w');else if(as===hs)form.push('d');else form.push('l');}
+        });
+        finished.forEach((m,i)=>{
+            const w=weights[i],stats=extractMatchStats(m,role);
+            if(stats.corners!=null){tC+=Number(stats.corners)*w;wC+=w;}
+            if(stats.goals1t!=null){tG+=Number(stats.goals1t)*w;wG+=w;}
+            if(stats.goalsFull!=null){tGF+=Number(stats.goalsFull)*w;wGF+=w;}
+            if(stats.goalsConceded!=null){tGC+=Number(stats.goalsConceded)*w;wGC+=w;}
+            if(stats.xG!=null){tXG+=Number(stats.xG)*w;wXG+=w;}
+        });
+        const result={corners:wC>0?tC/wC:null,goals1t:wG>0?tG/wG:null,goalsFull:wGF>0?tGF/wGF:null,goalsConceded:wGC>0?tGC/wGC:null,xG:wXG>0?tXG/wXG:null,matches:finished.length,form,fromApi:true};
+        statsCache[key]=result;
+        return result;
+    }catch{return null;}
+}
 function fallbackCorners(name,role,liga){if(CORNER_POWER[name]?.[role])return CORNER_POWER[name][role];const base=liga.cornersAvg/2;return role==='home'?base*1.10:base*0.90;}
 function fallbackGoals(name,role,liga){const base=liga.goalsAvg/2;return role==='home'?base*1.15:base*0.85;}
 function fallbackGoals1T(name,role,liga){const baseTotal=liga.goalsAvg/2;return role==='home'?baseTotal*1.08*0.44:baseTotal*0.92*0.40;}
@@ -583,15 +680,22 @@ function matchLeagueName(bsdLeagueName,ligaKey){const liga=LIGAS[ligaKey];if(!li
 window.onload=async()=>{
     renderLeaguePills();renderMarketToggles();
     setApiStatus('error','🟡 Modo offline — datos históricos calibrados');
-    const controller=new AbortController();const timeoutId=setTimeout(()=>controller.abort(),8000);
     try{
         let allLeagues=[],url=BSD_BASE+'/leagues/?page_size=100',pageCount=0;
-        while(url&&pageCount<5){const res=await fetch(url,{headers:{'Authorization':'Token '+BSD_TOKEN},signal:controller.signal});if(!res.ok)throw new Error('BSD '+res.status);const data=await res.json();allLeagues=allLeagues.concat(data.results||[]);url=data.next||null;pageCount++;}
-        clearTimeout(timeoutId);
+        while(url&&pageCount<5){
+            const fetchPromise=fetch(url,{headers:{'Authorization':'Token '+BSD_TOKEN}});
+            const timeoutPromise=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),8000));
+            const res=await Promise.race([fetchPromise,timeoutPromise]);
+            if(!res.ok)throw new Error('BSD '+res.status);
+            const data=await res.json();
+            allLeagues=allLeagues.concat(data.results||[]);
+            url=data.next||null;
+            pageCount++;
+        }
         allLeagues.forEach(l=>{if(l.is_women)return;if(!l.current_season?.id)return;for(const code of Object.keys(LIGAS)){if(matchLeagueName(l.name,code)&&!bsdLeagueMap[code]){bsdLeagueMap[code]={bsdId:l.id,seasonId:l.current_season.id};}}});
         const mapped=Object.keys(bsdLeagueMap).length;
         if(mapped>0){setApiStatus('live','🟢 BSD API — '+mapped+'/'+Object.keys(LIGAS).length+' ligas activas');apiAvailable=true;document.getElementById('engine-badge').textContent='🛰 BSD + Elo + Atk×Def + xG + Altitud · v2.1';}
-    }catch(e){clearTimeout(timeoutId);}
+    }catch(e){}
 };
 
 function renderLeaguePills(){const container=document.getElementById('league-pills');container.innerHTML='';for(const[key,liga]of Object.entries(LIGAS)){const pill=document.createElement('button');pill.className='league-pill';pill.textContent=liga.name;pill.dataset.key=key;pill.onclick=()=>selectLeague(key);container.appendChild(pill);}}
@@ -681,3 +785,13 @@ function animateBars(){document.querySelectorAll('.bar-fill[data-target]').forEa
 </script>
 </body>
 </html>
+```
+
+✅ Cambios aplicados:
+
+· bsdFetch / bsdFetchAll / window.onload sin AbortController → sin error de clonado.
+· calculateEloRatings solo con home_team_obj.name.
+· getTeamStats filtra por ID real (sin teamName).
+· Sin variables muertas (timeoutId eliminado).
+
+Con esto el error del postMessage desaparece y los cálculos con BSD serán correctos.
