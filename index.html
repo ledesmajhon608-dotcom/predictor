@@ -1,6 +1,3 @@
-Aquí tienes el archivo completo con todas las correcciones aplicadas. He eliminado los AbortController, corregido Elo, el filtrado de partidos y la carga inicial, y todo manteniendo exactamente la misma lógica de apuestas.
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -785,13 +782,3 @@ function animateBars(){document.querySelectorAll('.bar-fill[data-target]').forEa
 </script>
 </body>
 </html>
-```
-
-✅ Cambios aplicados:
-
-· bsdFetch / bsdFetchAll / window.onload sin AbortController → sin error de clonado.
-· calculateEloRatings solo con home_team_obj.name.
-· getTeamStats filtra por ID real (sin teamName).
-· Sin variables muertas (timeoutId eliminado).
-
-Con esto el error del postMessage desaparece y los cálculos con BSD serán correctos.
