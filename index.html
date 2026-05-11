@@ -380,7 +380,6 @@ let bsdLeagueMap={},eloRatings={};
 function normalizeTeamName(s) {
     return s.trim().toLowerCase()
         .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-        // Quita prefijos/sufijos comunes que confunden
         .replace(/\b(fc|cf|sc|ac|as|ss|rc|rb|kv|krc|kaa|afc|rcd|ud|ca|oh|sv|vfl|vfb|fsv|tsg|rkc|pec|nec|ssc|acf|cd|og|aj|sl|ae|bv|sv|bayer|borussia|atletico|olympique|deportivo|real|club|sporting|sport)\b/gi, '')
         .replace(/[^a-z0-9\s]/g, '')
         .replace(/\s+/g, ' ').trim();
@@ -400,15 +399,12 @@ function findTeamInAPI(offlineName, apiTeams) {
     const targetNorm = norm(offlineName);
     const aliases = (TEAM_ALIASES[currentLeagueKey]?.[offlineName]) || [];
 
-    // 1. Exact match (original name)
     let found = apiTeams.find(t => t.name.trim().toLowerCase() === offlineName.trim().toLowerCase());
     if (found) return found;
 
-    // 2. Exact match normalizado
     found = apiTeams.find(t => norm(t.name) === targetNorm);
     if (found) return found;
 
-    // 3. Alias exact match
     for (const alias of aliases) {
         found = apiTeams.find(t =>
             t.name.trim().toLowerCase() === alias.trim().toLowerCase() ||
@@ -417,7 +413,6 @@ function findTeamInAPI(offlineName, apiTeams) {
         if (found) return found;
     }
 
-    // 4. Substring bidireccional (normalized)
     found = apiTeams.find(t => {
         const n = norm(t.name);
         return (n.length > 3 && targetNorm.length > 3) &&
@@ -425,7 +420,6 @@ function findTeamInAPI(offlineName, apiTeams) {
     });
     if (found) return found;
 
-    // 5. Alias substring bidireccional
     for (const alias of aliases) {
         const aliasNorm = norm(alias);
         found = apiTeams.find(t => {
@@ -436,7 +430,6 @@ function findTeamInAPI(offlineName, apiTeams) {
         if (found) return found;
     }
 
-    // 6. Token overlap ≥ 0.65 con el nombre original
     let bestScore = 0, bestTeam = null;
     apiTeams.forEach(t => {
         const score = tokenOverlap(targetNorm, norm(t.name));
@@ -447,7 +440,6 @@ function findTeamInAPI(offlineName, apiTeams) {
         return bestTeam;
     }
 
-    // 7. Token overlap ≥ 0.5 con aliases
     for (const alias of aliases) {
         const aliasNorm = norm(alias);
         let aliasScore = 0, aliasTeam = null;
@@ -483,14 +475,12 @@ async function loadTeams(key) {
             setApiStatus('live','🟢 Cargando equipos...');
             let apiTeams=[];
 
-            // Estrategia 1: por league ID
             try{
                 let data=await bsdFetch('/teams/?league='+bsdLeagueMap[key].bsdId+'&page_size=200');
                 apiTeams=data.results||[];
                 console.log(`[API] Liga ${key}: ${apiTeams.length} equipos vía league ID`);
             }catch(e){console.warn('[API] Fallo búsqueda por league:',e);}
 
-            // Estrategia 2: por season ID (complementa y soluciona casos donde liga ID no devuelve equipos)
             try{
                 let data=await bsdFetch('/teams/?season='+bsdLeagueMap[key].seasonId+'&page_size=200');
                 const bySeason=data.results||[];
@@ -499,7 +489,6 @@ async function loadTeams(key) {
                 bySeason.forEach(t=>{if(!existingIds.has(t.id))apiTeams.push(t);});
             }catch(e){console.warn('[API] Fallo búsqueda por season:',e);}
 
-            // Estrategia 3: extraer de eventos si aún hay pocos
             if(apiTeams.length<6){
                 try{
                     console.log(`[API] Pocos equipos (${apiTeams.length}), extrayendo de eventos...`);
@@ -629,7 +618,6 @@ async function getTeamStats(teamId,teamName,role,seasonId){
             const st=(m.status||'').toUpperCase();
             const ok=['FT','FINISHED','AET','PEN','FULL_TIME'].includes(st)||st.includes('FT');
             if(!ok)return false;
-            // CORRECCIÓN: Filtrar solo por ID real
             const matchTeamId=role==='home'?(m.home_team_obj?.id??m.home_team):(m.away_team_obj?.id??m.away_team);
             return matchTeamId===teamId;
         }).slice(-MATCHES_TO_USE);
@@ -667,7 +655,73 @@ function negBinOver(mu,threshold,r=6.0){const k=Math.floor(threshold);let cdf=0;
 function dixonColesTau(x,y,lH,lA,rho){if(x===0&&y===0)return 1-lH*lA*rho;if(x===0&&y===1)return 1+lH*rho;if(x===1&&y===0)return 1+lA*rho;if(x===1&&y===1)return 1-rho;return 1;}
 function calcResultProbs(lambdaH,lambdaA,leagueKey='default'){const rho=DIXON_COLES_RHO[leagueKey]||DIXON_COLES_RHO.default;let pH=0,pD=0,pA=0;for(let h=0;h<=10;h++)for(let a=0;a<=10;a++){let p=poissonExact(lambdaH,h)*poissonExact(lambdaA,a);if(h<=1&&a<=1)p*=dixonColesTau(h,a,lambdaH,lambdaA,rho);if(h>a)pH+=p;else if(h===a)pD+=p;else pA+=p;}const t=pH+pD+pA;return{home:+(pH/t*100).toFixed(1),draw:+(pD/t*100).toFixed(1),away:+(pA/t*100).toFixed(1)};}
 function calcBTTS(lambdaH,lambdaA,leagueKey='default'){const rho=DIXON_COLES_RHO[leagueKey]||DIXON_COLES_RHO.default;const p00=poissonExact(lambdaH,0)*poissonExact(lambdaA,0)*dixonColesTau(0,0,lambdaH,lambdaA,rho);return Math.min(98,Math.max(2,(1-Math.exp(-lambdaH)-Math.exp(-lambdaA)+p00)*100));}
-function buildRecommendation(markets){const thresholds={resultado:55,btts:58,goles:62,corners:67,ht:62};const minMargin={resultado:10,btts:10,goles:10,corners:8,ht:15};const reliability={corners:0.92,btts:0.88,goles:0.85,ht:0.82,resultado:0.78};const candidates=markets.filter(m=>m.prob>=(thresholds[m.type]||55)+(minMargin[m.type]||10)).map(m=>{const sameGroup=markets.filter(x=>x.type===m.type&&x!==m&&x.prob>=55);return{...m,score:m.prob*(reliability[m.type]||0.80)+sameGroup.length*1.5};}).sort((a,b)=>b.score-a.score);if(!candidates.length)return{top:null,second:null};return{top:{...candidates[0],diamond:candidates[0].prob>=80?'💎':candidates[0].prob>=72?'⭐':''},second:candidates[1]||null};}
+
+// ═══════════════════════════════════════════════════════
+// buildRecommendation AGRESIVA (top 3, umbrales bajos)
+// ═══════════════════════════════════════════════════════
+function buildRecommendation(markets) {
+    const thresholds = {
+        resultado: 48,
+        btts:      50,
+        goles:     54,
+        corners:   56,
+        ht:        54
+    };
+    const minMargin = {
+        resultado: 5,
+        btts:      4,
+        goles:     4,
+        corners:   4,
+        ht:        6
+    };
+    const reliability = {
+        corners:   0.92,
+        btts:      0.88,
+        goles:     0.85,
+        ht:        0.82,
+        resultado: 0.78
+    };
+
+    const candidates = markets.map(m => {
+        const baseProb   = m.prob;
+        const threshold  = thresholds[m.type] || 50;
+        const margin     = minMargin[m.type]   || 5;
+        const rel        = reliability[m.type] || 0.80;
+
+        let score = baseProb * rel;
+
+        if (baseProb >= threshold + margin) {
+            score *= 1.25;
+        } else if (baseProb >= threshold) {
+            score *= 1.05;
+        } else if (baseProb < threshold - 5) {
+            score *= 0.85;
+        }
+
+        const sameGroup = markets.filter(x => x.type === m.type && x !== m && x.prob >= 48);
+        score += sameGroup.length * 2.0;
+
+        return { ...m, score };
+    }).sort((a, b) => b.score - a.score);
+
+    const top3 = candidates.slice(0, 3).map(c => ({
+        ...c,
+        confidenceLevel: c.prob >= 70 ? 'alta' : c.prob >= 60 ? 'media' : 'riesgo',
+        diamond: c.prob >= 80 ? '💎' : c.prob >= 72 ? '⭐' : c.prob >= 64 ? '🔥' : ''
+    }));
+
+    if (top3.length === 0) {
+        const best = markets.reduce((a, b) => a.prob > b.prob ? a : b, markets[0]);
+        return { top: best, top3: [best], isAggressive: true };
+    }
+
+    return {
+        top: top3[0],
+        top3,
+        isAggressive: top3[0].prob < (thresholds[top3[0].type] || 50) + (minMargin[top3[0].type] || 5)
+    };
+}
+
 function colorFor(p){return p>=65?'var(--green)':p>=42?'var(--yellow)':'var(--accent)';}
 function cardClassFor(p){return p>=65?'high':p>=42?'mid':'low';}
 function setApiStatus(state,text){document.getElementById('api-dot').className=`api-dot ${state}`;document.getElementById('api-status-text').textContent=text;}
@@ -771,9 +825,60 @@ function renderOutput({home,away,lambdaCorn,lambdaGoal,lambdaH,lambdaA,homeStats
     if(mkt.corn){[7.5,8.5,9.5].forEach(line=>{allMkts.push({label:`CÓRNERS OVER ${line}`,prob:+plattCalibrate(negBinOver(lambdaCorn,line,negBinR),'corners').toFixed(0),desc:`Sobre ${line} córners`,type:'corners'});});}
     const rpRaw=calcResultProbs(lambdaH,lambdaA,currentLeagueKey);const rp={home:+plattCalibrate(rpRaw.home,'resultado').toFixed(1),draw:+plattCalibrate(rpRaw.draw,'resultado').toFixed(1),away:+plattCalibrate(rpRaw.away,'resultado').toFixed(1)};
     allMkts.push({label:'VICTORIA LOCAL',prob:rp.home,desc:`${home.split(' ').slice(-1)[0]} favorito`,type:'resultado'});allMkts.push({label:'VICTORIA VISITANTE',prob:rp.away,desc:`${away.split(' ').slice(-1)[0]} favorito`,type:'resultado'});
-    const rec=buildRecommendation(allMkts);
-    if(!rec.top){document.getElementById('recomendacion-container').innerHTML=`<div class="recomendacion animate-in" style="border-color:rgba(255,77,90,0.25);"><div class="rec-title" style="color:var(--accent);">RECOMENDACIÓN DE VALOR</div><div class="rec-main" style="color:var(--accent);font-size:1.2rem;">SIN APUESTA CLARA</div><div class="rec-sub">Ningún mercado supera el umbral de confianza mínimo</div></div>`;}
-    else{const t=rec.top;const clsColor=t.prob>=70?'var(--green)':t.prob>=60?'var(--yellow)':'var(--accent)';const secondHtml=rec.second?`<div style="margin-top:12px;padding-top:12px;border-top:1px solid rgba(255,255,255,0.06);"><div style="font-size:0.6rem;color:var(--muted);letter-spacing:1px;text-transform:uppercase;margin-bottom:4px;">SEGUNDA OPCIÓN</div><div style="font-family:'Bebas Neue',sans-serif;font-size:1.05rem;letter-spacing:1px;color:var(--muted);">${rec.second.label} <span style="color:${colorFor(rec.second.prob)};margin-left:6px;">${rec.second.prob}%</span></div></div>`:'';document.getElementById('recomendacion-container').innerHTML=`<div class="recomendacion animate-in"><div class="rec-title">RECOMENDACIÓN DE VALOR</div><div class="rec-main" style="color:${clsColor};text-shadow:0 0 20px ${clsColor==='var(--green)'?'rgba(46,204,113,0.4)':clsColor==='var(--yellow)'?'rgba(255,182,39,0.4)':'rgba(255,77,90,0.4)'};">${t.label} ${t.diamond||''}</div><div class="rec-sub">${t.desc}</div><div class="rec-confidence"><span class="rc-pct" style="color:${clsColor}">${t.prob.toFixed(0)}%</span><span class="rc-label">MODELO CALIBRADO</span></div>${secondHtml}</div>`;}
+
+    // NUEVA RECOMENDACIÓN AGRESIVA (top 3)
+    const rec = buildRecommendation(allMkts);
+    if (!rec.top) {
+        document.getElementById('recomendacion-container').innerHTML =
+            `<div class="recomendacion animate-in" style="border-color:rgba(255,77,90,0.25);">
+                <div class="rec-title" style="color:var(--accent);">SIN APUESTA CLARA</div>
+                <div class="rec-main" style="color:var(--accent);font-size:1.2rem;">SIN APUESTA CLARA</div>
+                <div class="rec-sub">Ningún mercado supera el umbral de confianza mínimo</div>
+            </div>`;
+    } else {
+        const top3 = rec.top3 || [rec.top];
+        const topBet = top3[0];
+        const clsColor = topBet.prob >= 70 ? 'var(--green)' :
+                         topBet.prob >= 60 ? 'var(--yellow)' : 'var(--accent)';
+        const glowColor = clsColor === 'var(--green)' ? 'rgba(46,204,113,0.5)' :
+                          clsColor === 'var(--yellow)' ? 'rgba(255,182,39,0.5)' :
+                          'rgba(255,77,90,0.5)';
+        const confLabel = topBet.confidenceLevel === 'alta' ? 'CONFIANZA ALTA' :
+                          topBet.confidenceLevel === 'media' ? 'CONFIANZA MEDIA' : 'ALTO RIESGO';
+
+        let top3HTML = '';
+        if (top3.length > 1) {
+            top3HTML = top3.slice(1).map((bet, i) => {
+                const c = bet.prob >= 70 ? 'var(--green)' :
+                          bet.prob >= 60 ? 'var(--yellow)' : 'var(--accent)';
+                return `<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,0.05);">
+                    <span style="font-size:0.75rem;opacity:0.6;">#${i+2}</span>
+                    <span style="flex:1;font-weight:600;font-size:0.8rem;">${bet.label}</span>
+                    <span style="font-family:'Bebas Neue';font-size:1rem;color:${c};">${bet.prob.toFixed(0)}%</span>
+                    ${bet.diamond ? `<span style="font-size:0.9rem;">${bet.diamond}</span>` : ''}
+                </div>`;
+            }).join('');
+        }
+
+        document.getElementById('recomendacion-container').innerHTML = `
+            <div class="recomendacion animate-in" style="border-color:${rec.isAggressive ? 'rgba(255,77,90,0.4)' : 'rgba(46,204,113,0.4)'};">
+                <div class="rec-title" style="color:${rec.isAggressive ? 'var(--accent)' : 'var(--green)'};">
+                    ${rec.isAggressive ? '⚡ APUESTA AGRESIVA' : '🎯 MEJOR APUESTA'}
+                </div>
+                <div class="rec-main" style="color:${clsColor};text-shadow:0 0 20px ${glowColor};">
+                    ${topBet.label} ${topBet.diamond || ''}
+                </div>
+                <div class="rec-sub">${topBet.desc}</div>
+                <div class="rec-confidence" style="border-color:${clsColor};">
+                    <span class="rc-pct" style="color:${clsColor}">${topBet.prob.toFixed(0)}%</span>
+                    <span class="rc-label">${confLabel}</span>
+                </div>
+                ${top3HTML ? `<div style="margin-top:14px;text-align:left;">
+                    <div style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">🔎 OTRAS OPCIONES</div>
+                    ${top3HTML}
+                </div>` : ''}
+            </div>`;
+    }
 }
 
 function renderResultBoxes(lambdaH,lambdaA){const rpRaw=calcResultProbs(lambdaH,lambdaA,currentLeagueKey);const rp={home:+plattCalibrate(rpRaw.home,'resultado').toFixed(1),draw:+plattCalibrate(rpRaw.draw,'resultado').toFixed(1),away:+plattCalibrate(rpRaw.away,'resultado').toFixed(1)};const maxRP=Math.max(rp.home,rp.draw,rp.away);const rpColor=v=>v===maxRP?'var(--green)':v>=30?'var(--yellow)':'var(--accent)';const rpGlow=v=>v===maxRP?'rgba(46,204,113,0.3)':v>=30?'rgba(255,182,39,0.3)':'rgba(255,77,90,0.3)';return`<div class="result-boxes"><div class="result-box"><div class="rb-label">🏠 Local</div><div class="rb-pct" style="color:${rpColor(rp.home)};text-shadow:0 0 15px ${rpGlow(rp.home)};">${rp.home}%</div></div><div class="result-box rb-center"><div class="rb-label">🟡 Empate</div><div class="rb-pct" style="color:${rpColor(rp.draw)};text-shadow:0 0 15px ${rpGlow(rp.draw)};">${rp.draw}%</div></div><div class="result-box"><div class="rb-label">✈️ Visitante</div><div class="rb-pct" style="color:${rpColor(rp.away)};text-shadow:0 0 15px ${rpGlow(rp.away)};">${rp.away}%</div></div></div>`;}
