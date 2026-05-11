@@ -172,7 +172,7 @@ const MATCHES_TO_USE = 15;
 const API_TIMEOUT = 6000;
 
 const LIGAS = {
-    "PL": {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",cornersAvg:10.1,goalsAvg:2.85,negBinR:5.4,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Premier League",teams:["Arsenal FC","Aston Villa FC","AFC Bournemouth","Brentford FC","Brighton & Hove Albion FC","Chelsea FC","Crystal Palace FC","Everton FC","Fulham FC","Liverpool FC","Manchester City FC","Manchester United FC","Newcastle United FC","Nottingham Forest FC","Tottenham Hotspur FC","West Ham United FC","Wolverhampton Wanderers FC","Leeds United","Burnley FC","Sunderland AFC"]},
+    "PL":  {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",cornersAvg:10.1,goalsAvg:2.85,negBinR:5.4,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Premier League",teams:["Arsenal FC","Aston Villa FC","AFC Bournemouth","Brentford FC","Brighton & Hove Albion FC","Chelsea FC","Crystal Palace FC","Everton FC","Fulham FC","Liverpool FC","Manchester City FC","Manchester United FC","Newcastle United FC","Nottingham Forest FC","Tottenham Hotspur FC","West Ham United FC","Wolverhampton Wanderers FC","Leeds United","Burnley FC","Sunderland AFC"]},
     "BL1": {name:"🇩🇪 Bundesliga",cornersAvg:9.8,goalsAvg:3.00,negBinR:5.9,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Bundesliga",teams:["1. FC Heidenheim 1846","1. FC Union Berlin","1. FSV Mainz 05","Bayer 04 Leverkusen","Borussia Dortmund","Borussia Mönchengladbach","Eintracht Frankfurt","FC Augsburg","FC Bayern München","RB Leipzig","SC Freiburg","SV Werder Bremen","TSG 1899 Hoffenheim","VfB Stuttgart","VfL Bochum 1848","VfL Wolfsburg","FC St. Pauli","Holstein Kiel"]},
     "DED": {name:"🇳🇱 Eredivisie",cornersAvg:9.6,goalsAvg:3.10,negBinR:5.7,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Eredivisie",teams:["AZ Alkmaar","Ajax","Almere City FC","FC Groningen","FC Twente","FC Utrecht","Feyenoord","Fortuna Sittard","Go Ahead Eagles","Heracles Almelo","NAC Breda","NEC Nijmegen","PEC Zwolle","PSV Eindhoven","RKC Waalwijk","Sparta Rotterdam","Willem II","sc Heerenveen"]},
     "JPL": {name:"🇧🇪 Jupiler Pro League",cornersAvg:9.2,goalsAvg:2.90,negBinR:6.0,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Belgian Pro League",bsdNameAlt:["First Division A","Jupiler Pro League","Pro League"],teams:["Anderlecht","Club Brugge KV","KAA Gent","KRC Genk","Cercle Brugge KSV","Standard de Liège","R. Union Saint-Gilloise","KV Mechelen","STVV","Beerschot VA","OH Leuven","KV Kortrijk","Charleroi","KVC Westerlo","RFC Seraing","Zulte Waregem"]},
@@ -344,12 +344,24 @@ function fallbackGoals(name,role,liga,key){const s=getTeamStrength(name,key);con
 function fallbackGoals1T(name,role,liga,key){return fallbackGoals(name,role,liga,key)*(role==='home'?0.44:0.40);}
 function fallbackCorners(name,role,liga){if(CORNER_POWER[name]?.[role])return CORNER_POWER[name][role];const base=liga.cornersAvg/2;return role==='home'?base*1.10:base*0.90;}
 
+// ------------------ RECOMENDACIÓN ORDENADA POR PROBABILIDAD ------------------
 function buildRecommendation(mkts){
-    const th={resultado:48,btts:50,goles:54,corners:56,ht:54},mm={resultado:5,btts:4,goles:4,corners:4,ht:6},rel={corners:0.92,btts:0.88,goles:0.85,ht:0.82,resultado:0.78};
-    const cand=mkts.map(m=>{let s=m.prob*(rel[m.type]||0.8);if(m.prob>=(th[m.type]||50)+(mm[m.type]||5))s*=1.25;else if(m.prob>=(th[m.type]||50))s*=1.05;else if(m.prob<(th[m.type]||50)-5)s*=0.85;const same=mkts.filter(x=>x.type===m.type&&x!==m&&x.prob>=48).length;s+=same*2;return{...m,score:s};}).sort((a,b)=>b.score-a.score);
-    const top3=cand.slice(0,3).map(c=>({...c,confidenceLevel:c.prob>=70?'alta':c.prob>=60?'media':'riesgo',diamond:c.prob>=80?'💎':c.prob>=72?'⭐':c.prob>=64?'🔥':''}));
-    if(!top3.length){const b=mkts.reduce((a,b)=>a.prob>b.prob?a:b,mkts[0]);return{top:b,top3:[b],isAggressive:true};}
-    return{top:top3[0],top3,isAggressive:top3[0].prob<(th[top3[0].type]||50)+(mm[top3[0].type]||5)};
+    // Ordenar todos los mercados por probabilidad descendente
+    const sorted = [...mkts].sort((a,b) => b.prob - a.prob);
+    // Tomar los 3 primeros
+    const top3 = sorted.slice(0,3).map(c => ({
+        ...c,
+        confidenceLevel: c.prob >= 70 ? 'alta' : c.prob >= 60 ? 'media' : 'riesgo',
+        diamond: c.prob >= 80 ? '💎' : c.prob >= 72 ? '⭐' : c.prob >= 64 ? '🔥' : ''
+    }));
+    if (top3.length === 0) {
+        const best = mkts.reduce((a,b) => a.prob > b.prob ? a : b, mkts[0]);
+        return { top: best, top3: [best], isAggressive: true };
+    }
+    const top = top3[0];
+    // Considerar agresivo si la probabilidad principal es menor a 55%
+    const isAggressive = top.prob < 55;
+    return { top, top3, isAggressive };
 }
 
 document.getElementById('calc-btn').onclick=async()=>{
