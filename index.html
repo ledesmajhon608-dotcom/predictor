@@ -179,7 +179,7 @@ const LIGAS = {
     "FL1": {name:"🇫🇷 Ligue 1",cornersAvg:9.3,goalsAvg:2.70,negBinR:6.2,markets:{ht:true,goles:true,btts:false,corn:false},bsdName:"Ligue 1",teams:["AJ Auxerre","AS Monaco FC","Le Havre AC","Lille OSC","Montpellier HSC","OGC Nice","Olympique Lyonnais","Olympique de Marseille","Paris Saint-Germain FC","RC Lens","RC Strasbourg Alsace","Stade Brestois 29","Stade Rennais FC","Stade de Reims","Toulouse FC","FC Nantes","FC Lorient","ESTAC Troyes"]},
     "BSA": {name:"🇧🇷 Brasileirão",cornersAvg:9.4,goalsAvg:2.45,negBinR:5.8,markets:{ht:false,goles:true,btts:false,corn:true},bsdName:"Campeonato Brasileiro Série A",bsdNameAlt:["Brasileirão Série A","Brasileirao Serie A","Serie A (Brazil)","Brazilian Serie A"],teams:["Athletico Paranaense","Atlético Mineiro","Bahia","Botafogo","Chapecoense","Corinthians","Coritiba","Cruzeiro","Flamengo","Fluminense","Grêmio","Internacional","Mirassol","Palmeiras","Red Bull Bragantino","Remo","Santos","São Paulo","Vasco da Gama","Vitória"]},
     "ELC": {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship",cornersAvg:9.7,goalsAvg:2.65,negBinR:5.5,markets:{ht:false,goles:false,btts:true,corn:true},bsdName:"Championship",bsdNameAlt:["EFL Championship","English Championship"],teams:["Blackburn Rovers","Bristol City","Cardiff City","Coventry City","Derby County","Hull City","Luton Town","Middlesbrough FC","Millwall FC","Norwich City","Oxford United","Plymouth Argyle","Portsmouth FC","Preston North End","QPR","Sheffield United","Sheffield Wednesday","Stoke City","Swansea City","Watford FC","West Bromwich Albion","Leicester City FC","Ipswich Town FC","Southampton FC"]},
-    "PD":  {name:"🇪🇸 La Liga",cornersAvg:9.5,goalsAvg:2.55,negBinR:6.6,markets:{ht:false,goles:true,btts:false,corn:true},bsdName:"La Liga",bsdNameAlt:["LaLiga"],teams:["Athletic Club","Atlético de Madrid","CA Osasuna","Deportivo Alavés","FC Barcelona","Getafe CF","Girona FC","RC Celta de Vigo","RCD Mallorca","Rayo Vallecano","Real Betis Balompié","Real Madrid CF","Real Sociedad","Sevilla FC","UD Las Palmas","Valencia CF","Villarreal CF","RCD Espanyol de Barcelona","CD Leganés","Real Valladolid CF"]},
+    "PD":  {name:"🇪🇸 La Liga",cornersAvg:9.5,goalsAvg:2.55,negBinR:6.6,markets:{ht:false,goles:true,btts:false,corn:true},bsdName:"La Liga",bsdNameAlt:["Primera División","LaLiga"],teams:["Athletic Club","Atlético de Madrid","CA Osasuna","Deportivo Alavés","FC Barcelona","Getafe CF","Girona FC","RC Celta de Vigo","RCD Mallorca","Rayo Vallecano","Real Betis Balompié","Real Madrid CF","Real Sociedad","Sevilla FC","UD Las Palmas","Valencia CF","Villarreal CF","RCD Espanyol de Barcelona","CD Leganés","Real Valladolid CF"]},
     "SA":  {name:"🇮🇹 Serie A",cornersAvg:9.0,goalsAvg:2.65,negBinR:7.1,markets:{ht:true,goles:true,btts:false,corn:true},bsdName:"Serie A",bsdNameAlt:["Serie A (Italy)","Italian Serie A"],teams:["AC Milan","AC Monza","ACF Fiorentina","AS Roma","Atalanta BC","Bologna FC 1909","Cagliari Calcio","Como 1907","Empoli FC","Genoa CFC","Hellas Verona FC","Inter Milano","Juventus FC","Parma Calcio 1913","SS Lazio","SSC Napoli","Torino FC","Udinese Calcio","US Lecce","Sassuolo"]},
     "MXL": {name:"🇲🇽 Liga MX",cornersAvg:8.5,goalsAvg:2.70,negBinR:6.3,markets:{ht:true,goles:true,btts:false,corn:true},bsdName:"Liga MX",bsdNameAlt:["Liga BBVA MX","Mexican Liga MX","Liga MX Apertura","Liga MX Clausura","Primera Division Mexico","Mexico Liga MX"],teams:["América","Atlas FC","Atlético de San Luis","CF Pachuca","Club Necaxa","Club Tijuana","Cruz Azul","Deportivo Guadalajara","FC Juárez","León","Mazatlán FC","Monterrey","Puebla FC","Querétaro FC","Santos Laguna","Tigres UANL","Toluca FC","UNAM Pumas"]},
     "LIB": {name:"🏆 Libertadores",cornersAvg:9.2,goalsAvg:2.50,negBinR:6.1,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Copa Libertadores",bsdNameAlt:["CONMEBOL Libertadores","Copa CONMEBOL Libertadores","Copa CONMEBOL Libertadores 2026"],teams:["Flamengo","Estudiantes de La Plata","Cusco FC","Independiente Medellín","Nacional","Universitario","Coquimbo Unido","Deportes Tolima","Fluminense","Club Bolívar","Deportivo La Guaira","Independiente Rivadavia","Boca Juniors","Cruzeiro","Universidad Católica","Barcelona SC","Peñarol","Corinthians","Santa Fe","Platense","Palmeiras","Cerro Porteño","Junior","Sporting Cristal","LDU Quito","Lanús","Always Ready","Mirassol","Independiente del Valle","Libertad","Rosario Central","Universidad Central"]},
@@ -188,6 +188,155 @@ const LIGAS = {
     "PPT": {name:"🇵🇹 Liga Portugal",cornersAvg:9.4,goalsAvg:2.60,negBinR:6.1,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Liga Portugal",bsdNameAlt:["Primeira Liga","Liga Portugal Betclic","Liga NOS"],teams:["Sporting CP","FC Porto","SL Benfica","SC Braga","FC Famalicão","Rio Ave FC","CD Santa Clara","FC Alverca","GD Estoril Praia","Gil Vicente FC","Vitória SC","Casa Pia AC","FC Arouca","CD Tondela","Moreirense FC","CD Nacional","Estrela da Amadora","SC Farense"]},
     "EKS": {name:"🇵🇱 Ekstraklasa",cornersAvg:9.3,goalsAvg:2.55,negBinR:6.2,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Ekstraklasa",bsdNameAlt:["PKO Bank Polski Ekstraklasa","PKO BP Ekstraklasa","Poland Ekstraklasa"],teams:["Lech Poznań","Raków Częstochowa","Jagiellonia Białystok","Legia Warszawa","Pogoń Szczecin","Górnik Zabrze","Zagłębie Lubin","Piast Gliwice","Wisła Płock","Motor Lublin","GKS Katowice","Cracovia","Widzew Łódź","Korona Kielce","Radomiak Radom","Lechia Gdańsk","Arka Gdynia","Bruk-Bet Termalica Nieciecza"]},
     "SLG": {name:"🇬🇷 Super Liga Grecia",cornersAvg:9.0,goalsAvg:2.60,negBinR:6.3,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Super League Greece",bsdNameAlt:["Stoiximan Super League","Super League 1","Greek Super League"],teams:["AEK Athens","PAOK","Olympiacos","Panathinaikos","Levadiakos","Aris","OFI Crete","Volos NFC","Atromitos","A.E. Kifisia","Panetolikos","Panserraikos","Asteras Tripolis","AEL"]}
+};
+
+const TEAM_ALIASES = {
+    "PL": {
+        "Arsenal FC":["Arsenal"],"Aston Villa FC":["Aston Villa"],"AFC Bournemouth":["Bournemouth"],
+        "Brentford FC":["Brentford"],"Brighton & Hove Albion FC":["Brighton","Brighton & Hove Albion"],
+        "Chelsea FC":["Chelsea"],"Crystal Palace FC":["Crystal Palace"],"Everton FC":["Everton"],
+        "Fulham FC":["Fulham"],"Liverpool FC":["Liverpool"],"Manchester City FC":["Manchester City","Man City"],
+        "Manchester United FC":["Manchester United","Man Utd","Man United"],
+        "Newcastle United FC":["Newcastle United","Newcastle"],
+        "Nottingham Forest FC":["Nottingham Forest","Notts Forest"],
+        "Tottenham Hotspur FC":["Tottenham Hotspur","Tottenham","Spurs"],
+        "West Ham United FC":["West Ham United","West Ham"],
+        "Wolverhampton Wanderers FC":["Wolverhampton Wanderers","Wolves","Wolverhampton"]
+    },
+    "BL1": {
+        "FC Bayern München":["Bayern Munich","FC Bayern Munich","Bayern","Bayern Munchen","FC Bayern"],
+        "Borussia Dortmund":["Dortmund","BVB","BVB 09","Borussia Dortmund"],
+        "Bayer 04 Leverkusen":["Bayer Leverkusen","Leverkusen","Bayer 04"],
+        "RB Leipzig":["Leipzig","Red Bull Leipzig","Rasenballsport Leipzig"],
+        "VfB Stuttgart":["Stuttgart","VfB"],
+        "Eintracht Frankfurt":["Frankfurt","Eintracht","SGE"],
+        "SC Freiburg":["Freiburg","Sport-Club Freiburg"],
+        "TSG 1899 Hoffenheim":["TSG Hoffenheim","Hoffenheim","1899 Hoffenheim","TSG Hoffenheim 1899"],
+        "SV Werder Bremen":["Werder Bremen","Werder"],
+        "1. FC Heidenheim 1846":["1. FC Heidenheim","Heidenheim","FC Heidenheim"],
+        "FC Augsburg":["Augsburg","FCA"],
+        "1. FSV Mainz 05":["Mainz 05","Mainz","FSV Mainz","1. FSV Mainz"],
+        "Borussia Mönchengladbach":["Borussia Moenchengladbach","Borussia M'gladbach","Gladbach","M'gladbach","Monchengladbach"],
+        "1. FC Union Berlin":["Union Berlin","FC Union Berlin","Union"],
+        "VfL Bochum 1848":["VfL Bochum","Bochum"],
+        "VfL Wolfsburg":["Wolfsburg"],
+        "FC St. Pauli":["St. Pauli","FC Sankt Pauli","Sankt Pauli"],
+        "Holstein Kiel":["Kiel","Holstein"]
+    },
+    "DED": {
+        "AZ Alkmaar":["AZ"],"Almere City FC":["Almere City"],"FC Groningen":["Groningen"],
+        "FC Twente":["Twente"],"FC Utrecht":["Utrecht"],"Fortuna Sittard":["Fortuna"],
+        "Go Ahead Eagles":["GA Eagles","Go Ahead"],"Heracles Almelo":["Heracles"],
+        "NAC Breda":["NAC"],"NEC Nijmegen":["NEC"],"PEC Zwolle":["Zwolle"],
+        "PSV Eindhoven":["PSV"],"RKC Waalwijk":["RKC"],"Sparta Rotterdam":["Sparta"],
+        "Willem II":["Willem"],"sc Heerenveen":["Heerenveen","SC Heerenveen"]
+    },
+    "JPL": {
+        "Club Brugge KV":["Club Brugge","Brugge"],"Anderlecht":["RSC Anderlecht"],
+        "KAA Gent":["Gent"],"KRC Genk":["Genk"],"R. Union Saint-Gilloise":["Union Saint-Gilloise","Union SG"],
+        "Cercle Brugge KSV":["Cercle Brugge"],"Standard de Liège":["Standard Liege","Standard"],
+        "KV Mechelen":["Mechelen"],"STVV":["Sint-Truiden","St. Truiden"],"OH Leuven":["OHL","Leuven"],
+        "Beerschot VA":["Beerschot"],"KV Kortrijk":["Kortrijk"],"Charleroi":["Sporting Charleroi"],
+        "KVC Westerlo":["Westerlo"],"RFC Seraing":["Seraing"],"Zulte Waregem":["Essevee"]
+    },
+    "FL1": {
+        "Paris Saint-Germain FC":["Paris Saint-Germain","PSG","Paris SG"],
+        "Olympique Lyonnais":["Lyon","Olympique Lyon"],
+        "Olympique de Marseille":["Marseille","OM"],
+        "AS Monaco FC":["Monaco"],"Lille OSC":["Lille"],"OGC Nice":["Nice"],
+        "RC Lens":["Lens"],"Stade Rennais FC":["Rennes","Stade Rennais"],
+        "Stade de Reims":["Reims"],"Toulouse FC":["Toulouse"],
+        "Montpellier HSC":["Montpellier"],"RC Strasbourg Alsace":["Strasbourg"],
+        "Le Havre AC":["Le Havre","HAC"],"FC Nantes":["Nantes"],
+        "Stade Brestois 29":["Brest","Stade Brestois"],"AJ Auxerre":["Auxerre"],
+        "FC Lorient":["Lorient"],"ESTAC Troyes":["Troyes"]
+    },
+    "PD": {
+        "Athletic Club":["Athletic Bilbao","Athletic de Bilbao"],
+        "Atlético de Madrid":["Atletico Madrid","Atletico de Madrid"],
+        "CA Osasuna":["Osasuna"],"Deportivo Alavés":["Alaves","Deportivo Alaves"],
+        "FC Barcelona":["Barcelona","Barca"],"Getafe CF":["Getafe"],
+        "Girona FC":["Girona"],"RC Celta de Vigo":["Celta Vigo","Celta de Vigo"],
+        "RCD Mallorca":["Mallorca"],"Rayo Vallecano":["Rayo"],
+        "Real Betis Balompié":["Real Betis","Betis"],
+        "Real Madrid CF":["Real Madrid"],"Real Sociedad":["Sociedad","Real Sociedad"],
+        "Sevilla FC":["Sevilla"],"UD Las Palmas":["Las Palmas"],
+        "Valencia CF":["Valencia"],"Villarreal CF":["Villarreal"],
+        "RCD Espanyol de Barcelona":["Espanyol","RCD Espanyol"],
+        "CD Leganés":["Leganes","CD Leganes"],"Real Valladolid CF":["Valladolid","Real Valladolid"]
+    },
+    "SA": {
+        "Inter Milano":["Inter Milan","Inter","FC Internazionale","Internazionale"],
+        "AC Milan":["Milan"],"Juventus FC":["Juventus","Juve"],"SSC Napoli":["Napoli"],
+        "Atalanta BC":["Atalanta"],"AS Roma":["Roma"],"SS Lazio":["Lazio"],
+        "ACF Fiorentina":["Fiorentina"],"Torino FC":["Torino"],"Bologna FC 1909":["Bologna"],
+        "Genoa CFC":["Genoa"],"AC Monza":["Monza"],"Hellas Verona FC":["Hellas Verona","Verona"],
+        "Udinese Calcio":["Udinese"],"Cagliari Calcio":["Cagliari"],
+        "Empoli FC":["Empoli"],"Como 1907":["Como"],"Parma Calcio 1913":["Parma"],
+        "US Lecce":["Lecce"],"Sassuolo":["US Sassuolo"]
+    },
+    "BSA": {
+        "Athletico Paranaense":["Athletico PR","Paranaense","CAP"],
+        "Atlético Mineiro":["Atletico Mineiro","Atletico MG"],
+        "Corinthians":["Sport Club Corinthians"],"Flamengo":["CR Flamengo"],
+        "Fluminense":["Fluminense FC"],"Grêmio":["Gremio"],
+        "Internacional":["SC Internacional"],"Palmeiras":["SE Palmeiras"],
+        "Santos":["Santos FC"],"São Paulo":["Sao Paulo","SPFC"],
+        "Vasco da Gama":["Vasco","CR Vasco da Gama"],
+        "Vitória":["Vitoria","EC Vitoria"],
+        "Red Bull Bragantino":["Bragantino","RB Bragantino"]
+    },
+    "MXL": {
+        "América":["Club America","America","CA America"],"Atlas FC":["Atlas"],
+        "Atlético de San Luis":["Atletico San Luis","San Luis"],"CF Pachuca":["Pachuca"],
+        "Club Necaxa":["Necaxa"],"Club Tijuana":["Tijuana","Xolos"],
+        "Cruz Azul":["Cruz Azul FC"],"Deportivo Guadalajara":["Chivas","Guadalajara"],
+        "FC Juárez":["Juarez","Bravos"],"León":["Club Leon","Leon"],
+        "Mazatlán FC":["Mazatlan"],"Monterrey":["CF Monterrey","Rayados"],
+        "Puebla FC":["Puebla","FC Puebla"],"Querétaro FC":["Queretaro","Gallos"],
+        "Santos Laguna":["Santos"],"Tigres UANL":["Tigres","UANL"],
+        "Toluca FC":["Toluca","Deportivo Toluca"],"UNAM Pumas":["Pumas","UNAM","Pumas UNAM"]
+    },
+    "LIB": {
+        "Flamengo":["CR Flamengo","Flamengo RJ"],"Estudiantes de La Plata":["Estudiantes","Estudiantes LP"],
+        "Cusco FC":["Cusco"],"Independiente Medellín":["Ind. Medellin","Medellin","DIM"],
+        "Nacional":["Club Nacional","Nacional Montevideo"],"Universitario":["Universitario de Deportes"],
+        "Coquimbo Unido":["Coquimbo"],"Deportes Tolima":["Tolima"],
+        "Fluminense":["Fluminense FC"],"Club Bolívar":["Bolivar","The Strongest... wait","Strongest"],
+        "Deportivo La Guaira":["La Guaira","Caracas"],"Independiente Rivadavia":["Ind. Rivadavia"],
+        "Boca Juniors":["Boca Juniors CA","CA Boca Juniors"],"Cruzeiro":["Cruzeiro EC"],
+        "Universidad Católica":["U. Catolica","Universidad Catolica"],
+        "Barcelona SC":["Barcelona SC Guayaquil"],"Peñarol":["Penarol","CA Peñarol"],
+        "Corinthians":["Sport Club Corinthians"],"Santa Fe":["Independiente Santa Fe"],
+        "Platense":["Club Atletico Platense"],"Palmeiras":["SE Palmeiras"],
+        "Cerro Porteño":["Cerro Porteno"],"Junior":["Junior FC","Atletico Junior"],
+        "Sporting Cristal":["Cristal","Club Sporting Cristal"],
+        "LDU Quito":["Liga de Quito","LDU"],"Lanús":["Lanus","CA Lanus"],
+        "Always Ready":["Always Ready FC"],"Mirassol":["Mirassol FC"],
+        "Independiente del Valle":["Ind. del Valle","IDV"],"Libertad":["Club Libertad"],
+        "Rosario Central":["CA Rosario Central"],"Universidad Central":["U. Central"]
+    },
+    "MLS": {
+        "Inter Miami CF":["Inter Miami","CF Inter Miami"],"CF Montréal":["CF Montreal","Montreal Impact","Montreal"],
+        "Charlotte FC":["Charlotte"],"Chicago Fire FC":["Chicago Fire"],
+        "FC Cincinnati":["Cincinnati"],"Columbus Crew":["Columbus Crew SC","Columbus"],
+        "D.C. United":["DC United","Washington DC United"],
+        "CF New England Revolution":["New England Revolution","New England","Revolution"],
+        "Nashville SC":["Nashville"],"New York City FC":["New York City","NYCFC"],
+        "New York Red Bulls":["NY Red Bulls","Red Bulls","NYRB"],
+        "Orlando City SC":["Orlando City"],"Philadelphia Union":["Philadelphia"],
+        "Atlanta United FC":["Atlanta United","Atlanta"],"Toronto FC":["Toronto"],
+        "Austin FC":["Austin"],"Colorado Rapids":["Colorado"],"FC Dallas":["Dallas"],
+        "Houston Dynamo FC":["Houston Dynamo","Houston"],
+        "LA Galaxy":["Los Angeles Galaxy","Galaxy"],
+        "Los Angeles FC":["LAFC"],"Minnesota United FC":["Minnesota United"],
+        "Portland Timbers":["Portland"],"Real Salt Lake":["RSL","Salt Lake"],
+        "San Jose Earthquakes":["San Jose"],"Seattle Sounders FC":["Seattle Sounders","Seattle"],
+        "Sporting Kansas City":["Sporting KC","Kansas City"],
+        "St. Louis City SC":["St. Louis City","St Louis City"],
+        "Vancouver Whitecaps FC":["Vancouver Whitecaps","Vancouver"],
+        "San Diego FC":["San Diego"]
+    }
 };
 
 const CORNER_POWER = {
@@ -239,56 +388,79 @@ async function bsdFetchAll(path,ms=API_TIMEOUT){
 
 function matchLeagueName(n,k){const l=LIGAS[k];if(!l)return false;const norm=s=>s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');const bn=norm(n);if(bn===norm(l.bsdName))return true;if(l.bsdNameAlt){for(const a of l.bsdNameAlt)if(bn===norm(a))return true;}return norm(l.bsdName).split(' ').every(w=>bn.includes(w));}
 
-// Nueva función para filtrar nombres basura de la API
-function isValidTeamName(name) {
-    if (!name || name.trim().length < 4) return false;
-    const cleaned = name.trim().toLowerCase();
-    if (/^\d{1,2}[a-zA-Z]$/.test(cleaned)) return false;
-    if (/^[a-zA-Z]\d{1,2}$/.test(cleaned)) return false;
-    if (/^[a-zA-Z]{2}\s?[a-zA-Z]{2,}$/.test(cleaned) && cleaned.length <= 6) return false;
-    if (!/[aeiouáéíóú]/.test(cleaned)) return false;
-    return true;
+function normalizeTeamName(s) {
+    return s.trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+        .replace(/\b(fc|cf|sc|ac|as|ss|rc|rb|kv|krc|kaa|afc|rcd|ud|ca|oh|sv|vfl|vfb|fsv|tsg|rkc|pec|nec|ssc|acf|cd|og|aj|sl|ae|bv|sv|bayer|borussia|atletico|olympique|deportivo|real|club|sporting|sport)\b/gi, '')
+        .replace(/[^a-z0-9\s]/g, '')
+        .replace(/\s+/g, ' ').trim();
 }
+function tokenOverlap(a,b){const tA=new Set(a.split(' ').filter(t=>t.length>2));const tB=new Set(b.split(' ').filter(t=>t.length>2));if(!tA.size||!tB.size)return 0;let s=0;tA.forEach(t=>{if(tB.has(t))s++;});return s/Math.min(tA.size,tB.size);}
+function findTeamInAPI(offlineName,apiTeams){
+    const norm=normalizeTeamName;const tn=norm(offlineName);const aliases=(TEAM_ALIASES[currentLeagueKey]?.[offlineName])||[];
+    let f=apiTeams.find(t=>t.name.trim().toLowerCase()===offlineName.trim().toLowerCase());if(f)return f;
+    f=apiTeams.find(t=>norm(t.name)===tn);if(f)return f;
+    for(const a of aliases){f=apiTeams.find(t=>t.name.trim().toLowerCase()===a.trim().toLowerCase()||norm(t.name)===norm(a));if(f)return f;}
+    f=apiTeams.find(t=>{const n=norm(t.name);return n.length>3&&tn.length>3&&(n.includes(tn)||tn.includes(n));});if(f)return f;
+    for(const a of aliases){const an=norm(a);f=apiTeams.find(t=>{const n=norm(t.name);return n.length>3&&an.length>3&&(n.includes(an)||an.includes(n));});if(f)return f;}
+    let best=0,bestT=null;apiTeams.forEach(t=>{const sc=tokenOverlap(tn,norm(t.name));if(sc>best){best=sc;bestT=t;}});if(best>=0.65){console.log(`[FUZZY] "${offlineName}" -> "${bestT.name}" (${best.toFixed(2)})`);return bestT;}
+    for(const a of aliases){const an=norm(a);let as=0,at=null;apiTeams.forEach(t=>{const sc=tokenOverlap(an,norm(t.name));if(sc>as){as=sc;at=t;}});if(as>=0.5&&as>best){console.log(`[ALIAS FUZZY] "${offlineName}" via "${a}" -> "${at.name}" (${as.toFixed(2)})`);return at;}}
+    console.warn(`[MATCH FAIL] "${offlineName}" best=${best.toFixed(2)}`);return null;
+}
+
+function isValidTeamName(name){if(!name||name.trim().length<4)return false;const c=name.trim().toLowerCase();if(/^\d{1,2}[a-zA-Z]$/.test(c))return false;if(/^[a-zA-Z]\d{1,2}$/.test(c))return false;if(/^[a-zA-Z]{2}\s?[a-zA-Z]{2,}$/.test(c)&&c.length<=6)return false;if(!/[aeiouáéíóú]/.test(c))return false;return true;}
 
 async function loadTeams(key){
     const hSel=document.getElementById('home-team'),aSel=document.getElementById('away-team');
     hSel.innerHTML=aSel.innerHTML='<option value="">— Cargando... —</option>';
     hSel.disabled=aSel.disabled=true;
-    const liga=LIGAS[key]; const teams=liga.teams;
+    const liga=LIGAS[key];
+    const teams=[...liga.teams].sort();
     teamMap={};
+
     if(apiAvailable && bsdLeagueMap[key]){
         try{
-            setApiStatus('live','🟢 Cargando equipos...');
+            setApiStatus('live','🟢 Buscando IDs de equipos...');
             let apiTeams=[];
             try{const d=await bsdFetch('/teams/?league='+bsdLeagueMap[key].bsdId+'&page_size=200');apiTeams=d.results||[];}catch(e){}
             try{const d=await bsdFetch('/teams/?season='+bsdLeagueMap[key].seasonId+'&page_size=200');const extra=d.results||[];const ids=new Set(apiTeams.map(t=>t.id));extra.forEach(t=>{if(!ids.has(t.id))apiTeams.push(t);});}catch(e){}
             if(apiTeams.length<6){try{const ev=await bsdFetchAll('/events/?season='+bsdLeagueMap[key].seasonId+'&limit=100');const m=new Map();ev.forEach(e=>{if(e.home_team_obj?.id)m.set(e.home_team_obj.id,e.home_team_obj);if(e.away_team_obj?.id)m.set(e.away_team_obj.id,e.away_team_obj);});const fe=[...m.values()];const ids=new Set(apiTeams.map(t=>t.id));fe.forEach(t=>{if(!ids.has(t.id))apiTeams.push(t);});}catch(e){}}
             const uniq=Array.from(new Map(apiTeams.map(t=>[t.id,t])).values());
-            const validTeams = uniq.filter(t => t.name && isValidTeamName(t.name));
-            const names = validTeams.map(t => t.name).filter(n => n && n.trim());
-            if(names.length >= 4){
-                const meta={}; 
-                names.forEach(n=>{const api=validTeams.find(t=>t.name===n);if(api){meta[n]={bsdId:api.id,offlineName:n};teamMap[n]={bsdId:api.id,offlineName:n};}});
-                fillSelects(names,meta);
-                setApiStatus('live','🟢 BSD — '+names.length+' equipos válidos');
+            let matched=0;
+            teams.forEach(offName=>{
+                const apiTeam=findTeamInAPI(offName,uniq);
+                if(apiTeam && isValidTeamName(apiTeam.name)){
+                    teamMap[offName]={bsdId:apiTeam.id,offlineName:offName};
+                    matched++;
+                }else{
+                    teamMap[offName]={bsdId:'',offlineName:offName};
+                }
+            });
+            fillSelects(teams,teamMap);
+            setApiStatus('live',`🟢 ${matched}/${teams.length} equipos vinculados a API`);
+            if(matched>4){
                 try{await calculateEloAndSeasonStats(bsdLeagueMap[key].bsdId,bsdLeagueMap[key].seasonId);}catch(e){}
-                return;
-            } else {
-                console.warn(`[API] Nombres inválidos detectados en ${key}, usando offline. API devolvió:`, uniq.map(t=>t.name));
             }
+            return;
         }catch(e){console.error(e);}
     }
     setApiStatus('error','🟡 Equipos offline');
-    fillSelects(teams);
+    teams.forEach(name=>{teamMap[name]={bsdId:'',offlineName:name};});
+    fillSelects(teams,teamMap);
 }
 
-function fillSelects(teamList,meta={}){
+function fillSelects(teamList,metaMap={}){
     const h=document.getElementById('home-team'),a=document.getElementById('away-team');
     h.innerHTML=a.innerHTML='<option value="">— Seleccionar —</option>';
-    [...teamList].sort().forEach(name=>{
+    teamList.forEach(name=>{
         const opt=new Option(name,name);
-        if(meta[name]){opt.dataset.bsdId=meta[name].bsdId||'';opt.dataset.offlineName=meta[name].offlineName||name;}
-        else{teamMap[name]={bsdId:'',offlineName:name};}
+        if(metaMap[name]){
+            opt.dataset.bsdId=metaMap[name].bsdId||'';
+            opt.dataset.offlineName=metaMap[name].offlineName||name;
+        }else{
+            teamMap[name]={bsdId:'',offlineName:name};
+            opt.dataset.bsdId='';opt.dataset.offlineName=name;
+        }
         h.add(opt.cloneNode(true));a.add(opt.cloneNode(true));
     });
     h.disabled=a.disabled=false;
