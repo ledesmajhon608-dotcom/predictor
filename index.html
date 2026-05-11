@@ -239,6 +239,17 @@ async function bsdFetchAll(path,ms=API_TIMEOUT){
 
 function matchLeagueName(n,k){const l=LIGAS[k];if(!l)return false;const norm=s=>s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');const bn=norm(n);if(bn===norm(l.bsdName))return true;if(l.bsdNameAlt){for(const a of l.bsdNameAlt)if(bn===norm(a))return true;}return norm(l.bsdName).split(' ').every(w=>bn.includes(w));}
 
+// Nueva función para filtrar nombres basura de la API
+function isValidTeamName(name) {
+    if (!name || name.trim().length < 4) return false;
+    const cleaned = name.trim().toLowerCase();
+    if (/^\d{1,2}[a-zA-Z]$/.test(cleaned)) return false;
+    if (/^[a-zA-Z]\d{1,2}$/.test(cleaned)) return false;
+    if (/^[a-zA-Z]{2}\s?[a-zA-Z]{2,}$/.test(cleaned) && cleaned.length <= 6) return false;
+    if (!/[aeiouáéíóú]/.test(cleaned)) return false;
+    return true;
+}
+
 async function loadTeams(key){
     const hSel=document.getElementById('home-team'),aSel=document.getElementById('away-team');
     hSel.innerHTML=aSel.innerHTML='<option value="">— Cargando... —</option>';
@@ -253,13 +264,17 @@ async function loadTeams(key){
             try{const d=await bsdFetch('/teams/?season='+bsdLeagueMap[key].seasonId+'&page_size=200');const extra=d.results||[];const ids=new Set(apiTeams.map(t=>t.id));extra.forEach(t=>{if(!ids.has(t.id))apiTeams.push(t);});}catch(e){}
             if(apiTeams.length<6){try{const ev=await bsdFetchAll('/events/?season='+bsdLeagueMap[key].seasonId+'&limit=100');const m=new Map();ev.forEach(e=>{if(e.home_team_obj?.id)m.set(e.home_team_obj.id,e.home_team_obj);if(e.away_team_obj?.id)m.set(e.away_team_obj.id,e.away_team_obj);});const fe=[...m.values()];const ids=new Set(apiTeams.map(t=>t.id));fe.forEach(t=>{if(!ids.has(t.id))apiTeams.push(t);});}catch(e){}}
             const uniq=Array.from(new Map(apiTeams.map(t=>[t.id,t])).values());
-            const names=uniq.map(t=>t.name).filter(n=>n&&n.trim());
-            if(names.length>0){
-                const meta={}; names.forEach(n=>{const api=uniq.find(t=>t.name===n);if(api){meta[n]={bsdId:api.id,offlineName:n};teamMap[n]={bsdId:api.id,offlineName:n};}});
+            const validTeams = uniq.filter(t => t.name && isValidTeamName(t.name));
+            const names = validTeams.map(t => t.name).filter(n => n && n.trim());
+            if(names.length >= 4){
+                const meta={}; 
+                names.forEach(n=>{const api=validTeams.find(t=>t.name===n);if(api){meta[n]={bsdId:api.id,offlineName:n};teamMap[n]={bsdId:api.id,offlineName:n};}});
                 fillSelects(names,meta);
-                setApiStatus('live','🟢 BSD — '+names.length+' equipos');
+                setApiStatus('live','🟢 BSD — '+names.length+' equipos válidos');
                 try{await calculateEloAndSeasonStats(bsdLeagueMap[key].bsdId,bsdLeagueMap[key].seasonId);}catch(e){}
                 return;
+            } else {
+                console.warn(`[API] Nombres inválidos detectados en ${key}, usando offline. API devolvió:`, uniq.map(t=>t.name));
             }
         }catch(e){console.error(e);}
     }
@@ -344,11 +359,8 @@ function fallbackGoals(name,role,liga,key){const s=getTeamStrength(name,key);con
 function fallbackGoals1T(name,role,liga,key){return fallbackGoals(name,role,liga,key)*(role==='home'?0.44:0.40);}
 function fallbackCorners(name,role,liga){if(CORNER_POWER[name]?.[role])return CORNER_POWER[name][role];const base=liga.cornersAvg/2;return role==='home'?base*1.10:base*0.90;}
 
-// ------------------ RECOMENDACIÓN ORDENADA POR PROBABILIDAD ------------------
 function buildRecommendation(mkts){
-    // Ordenar todos los mercados por probabilidad descendente
     const sorted = [...mkts].sort((a,b) => b.prob - a.prob);
-    // Tomar los 3 primeros
     const top3 = sorted.slice(0,3).map(c => ({
         ...c,
         confidenceLevel: c.prob >= 70 ? 'alta' : c.prob >= 60 ? 'media' : 'riesgo',
@@ -359,7 +371,6 @@ function buildRecommendation(mkts){
         return { top: best, top3: [best], isAggressive: true };
     }
     const top = top3[0];
-    // Considerar agresivo si la probabilidad principal es menor a 55%
     const isAggressive = top.prob < 55;
     return { top, top3, isAggressive };
 }
