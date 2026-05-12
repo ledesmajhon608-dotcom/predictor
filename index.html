@@ -166,7 +166,7 @@
 </div>
 
 <script>
-const BSD_TOKEN = 'd1c591c865f3f9dd0d9f8d60337c895a94c4683e';
+const BSD_TOKEN = '3d62e7e48993262cddf921e75fcb4ea8be6f70be';
 const BSD_BASE = 'https://sports.bzzoiro.com/api';
 const MATCHES_TO_USE = 15;
 const API_TIMEOUT = 6000;
@@ -175,19 +175,19 @@ const LIGAS = {
     "PL":  {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",cornersAvg:10.1,goalsAvg:2.85,negBinR:5.4,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Premier League",teams:["Arsenal FC","Aston Villa FC","AFC Bournemouth","Brentford FC","Brighton & Hove Albion FC","Chelsea FC","Crystal Palace FC","Everton FC","Fulham FC","Liverpool FC","Manchester City FC","Manchester United FC","Newcastle United FC","Nottingham Forest FC","Tottenham Hotspur FC","West Ham United FC","Wolverhampton Wanderers FC","Leeds United","Burnley FC","Sunderland AFC"]},
     "BL1": {name:"🇩🇪 Bundesliga",cornersAvg:9.8,goalsAvg:3.00,negBinR:5.9,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Bundesliga",teams:["1. FC Heidenheim 1846","1. FC Union Berlin","1. FSV Mainz 05","Bayer 04 Leverkusen","Borussia Dortmund","Borussia Mönchengladbach","Eintracht Frankfurt","FC Augsburg","FC Bayern München","RB Leipzig","SC Freiburg","SV Werder Bremen","TSG 1899 Hoffenheim","VfB Stuttgart","VfL Bochum 1848","VfL Wolfsburg","FC St. Pauli","Holstein Kiel"]},
     "DED": {name:"🇳🇱 Eredivisie",cornersAvg:9.6,goalsAvg:3.10,negBinR:5.7,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Eredivisie",teams:["AZ Alkmaar","Ajax","Almere City FC","FC Groningen","FC Twente","FC Utrecht","Feyenoord","Fortuna Sittard","Go Ahead Eagles","Heracles Almelo","NAC Breda","NEC Nijmegen","PEC Zwolle","PSV Eindhoven","RKC Waalwijk","Sparta Rotterdam","Willem II","sc Heerenveen"]},
-    "JPL": {name:"🇧🇪 Jupiler Pro League",cornersAvg:9.2,goalsAvg:2.90,negBinR:6.0,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Belgian Pro League",bsdNameAlt:["First Division A","Jupiler Pro League","Pro League"],teams:["Anderlecht","Club Brugge KV","KAA Gent","KRC Genk","Cercle Brugge KSV","Standard de Liège","R. Union Saint-Gilloise","KV Mechelen","STVV","Beerschot VA","OH Leuven","KV Kortrijk","Charleroi","KVC Westerlo","RFC Seraing","Zulte Waregem"]},
-    "FL1": {name:"🇫🇷 Ligue 1",cornersAvg:9.3,goalsAvg:2.70,negBinR:6.2,markets:{ht:true,goles:true,btts:false,corn:false},bsdName:"Ligue 1",teams:["AJ Auxerre","AS Monaco FC","Le Havre AC","Lille OSC","Montpellier HSC","OGC Nice","Olympique Lyonnais","Olympique de Marseille","Paris Saint-Germain FC","RC Lens","RC Strasbourg Alsace","Stade Brestois 29","Stade Rennais FC","Stade de Reims","Toulouse FC","FC Nantes","FC Lorient","ESTAC Troyes"]},
-    "BSA": {name:"🇧🇷 Brasileirão",cornersAvg:9.4,goalsAvg:2.45,negBinR:5.8,markets:{ht:false,goles:true,btts:false,corn:true},bsdName:"Campeonato Brasileiro Série A",bsdNameAlt:["Brasileirão Série A","Brasileirao Serie A","Serie A (Brazil)","Brazilian Serie A"],teams:["Athletico Paranaense","Atlético Mineiro","Bahia","Botafogo","Chapecoense","Corinthians","Coritiba","Cruzeiro","Flamengo","Fluminense","Grêmio","Internacional","Mirassol","Palmeiras","Red Bull Bragantino","Remo","Santos","São Paulo","Vasco da Gama","Vitória"]},
-    "ELC": {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship",cornersAvg:9.7,goalsAvg:2.65,negBinR:5.5,markets:{ht:false,goles:false,btts:true,corn:true},bsdName:"Championship",bsdNameAlt:["EFL Championship","English Championship"],teams:["Blackburn Rovers","Bristol City","Cardiff City","Coventry City","Derby County","Hull City","Luton Town","Middlesbrough FC","Millwall FC","Norwich City","Oxford United","Plymouth Argyle","Portsmouth FC","Preston North End","QPR","Sheffield United","Sheffield Wednesday","Stoke City","Swansea City","Watford FC","West Bromwich Albion","Leicester City FC","Ipswich Town FC","Southampton FC"]},
-    "PD":  {name:"🇪🇸 La Liga",cornersAvg:9.5,goalsAvg:2.55,negBinR:6.6,markets:{ht:false,goles:true,btts:false,corn:true},bsdName:"La Liga",bsdNameAlt:["Primera División","LaLiga"],teams:["Athletic Club","Atlético de Madrid","CA Osasuna","Deportivo Alavés","FC Barcelona","Getafe CF","Girona FC","RC Celta de Vigo","RCD Mallorca","Rayo Vallecano","Real Betis Balompié","Real Madrid CF","Real Sociedad","Sevilla FC","UD Las Palmas","Valencia CF","Villarreal CF","RCD Espanyol de Barcelona","CD Leganés","Real Valladolid CF"]},
-    "SA":  {name:"🇮🇹 Serie A",cornersAvg:9.0,goalsAvg:2.65,negBinR:7.1,markets:{ht:true,goles:true,btts:false,corn:true},bsdName:"Serie A",bsdNameAlt:["Serie A (Italy)","Italian Serie A"],teams:["AC Milan","AC Monza","ACF Fiorentina","AS Roma","Atalanta BC","Bologna FC 1909","Cagliari Calcio","Como 1907","Empoli FC","Genoa CFC","Hellas Verona FC","Inter Milano","Juventus FC","Parma Calcio 1913","SS Lazio","SSC Napoli","Torino FC","Udinese Calcio","US Lecce","Sassuolo"]},
-    "MXL": {name:"🇲🇽 Liga MX",cornersAvg:8.5,goalsAvg:2.70,negBinR:6.3,markets:{ht:true,goles:true,btts:false,corn:true},bsdName:"Liga MX",bsdNameAlt:["Liga BBVA MX","Mexican Liga MX","Liga MX Apertura","Liga MX Clausura","Primera Division Mexico","Mexico Liga MX"],teams:["América","Atlas FC","Atlético de San Luis","CF Pachuca","Club Necaxa","Club Tijuana","Cruz Azul","Deportivo Guadalajara","FC Juárez","León","Mazatlán FC","Monterrey","Puebla FC","Querétaro FC","Santos Laguna","Tigres UANL","Toluca FC","UNAM Pumas"]},
-    "LIB": {name:"🏆 Libertadores",cornersAvg:9.2,goalsAvg:2.50,negBinR:6.1,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Copa Libertadores",bsdNameAlt:["CONMEBOL Libertadores","Copa CONMEBOL Libertadores","Copa CONMEBOL Libertadores 2026"],teams:["Flamengo","Estudiantes de La Plata","Cusco FC","Independiente Medellín","Nacional","Universitario","Coquimbo Unido","Deportes Tolima","Fluminense","Club Bolívar","Deportivo La Guaira","Independiente Rivadavia","Boca Juniors","Cruzeiro","Universidad Católica","Barcelona SC","Peñarol","Corinthians","Santa Fe","Platense","Palmeiras","Cerro Porteño","Junior","Sporting Cristal","LDU Quito","Lanús","Always Ready","Mirassol","Independiente del Valle","Libertad","Rosario Central","Universidad Central"]},
-    "MLS": {name:"🇺🇸 MLS",cornersAvg:9.1,goalsAvg:2.85,negBinR:6.2,markets:{ht:true,goles:true,btts:true,corn:false},bsdName:"Major League Soccer",bsdNameAlt:["MLS","MLS Regular Season"],teams:["Inter Miami CF","CF Montréal","Charlotte FC","Chicago Fire FC","FC Cincinnati","Columbus Crew","D.C. United","CF New England Revolution","Nashville SC","New York City FC","New York Red Bulls","Orlando City SC","Philadelphia Union","Atlanta United FC","Toronto FC","Austin FC","Colorado Rapids","FC Dallas","Houston Dynamo FC","LA Galaxy","Los Angeles FC","Minnesota United FC","Portland Timbers","Real Salt Lake","San Jose Earthquakes","Seattle Sounders FC","Sporting Kansas City","St. Louis City SC","Vancouver Whitecaps FC","San Diego FC"]},
-    "BSB": {name:"🇧🇷 Brasileirão B",cornersAvg:8.8,goalsAvg:2.30,negBinR:6.4,markets:{ht:false,goles:true,btts:true,corn:false},bsdName:"Campeonato Brasileiro Série B",bsdNameAlt:["Brasileirão Série B","Serie B (Brazil)","Brazilian Serie B"],teams:["América Mineiro","Athletic Club","Atlético Goianiense","Avaí FC","Botafogo-SP","Ceará SC","CRB","Criciúma","Cuiabá","Fortaleza","Goiás","Juventude","Londrina","Náutico","Novorizontino","Operário-PR","Ponte Preta","São Bernardo FC","Sport Recife","Vila Nova"]},
-    "PPT": {name:"🇵🇹 Liga Portugal",cornersAvg:9.4,goalsAvg:2.60,negBinR:6.1,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Liga Portugal",bsdNameAlt:["Primeira Liga","Liga Portugal Betclic","Liga NOS"],teams:["Sporting CP","FC Porto","SL Benfica","SC Braga","FC Famalicão","Rio Ave FC","CD Santa Clara","FC Alverca","GD Estoril Praia","Gil Vicente FC","Vitória SC","Casa Pia AC","FC Arouca","CD Tondela","Moreirense FC","CD Nacional","Estrela da Amadora","SC Farense"]},
-    "EKS": {name:"🇵🇱 Ekstraklasa",cornersAvg:9.3,goalsAvg:2.55,negBinR:6.2,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Ekstraklasa",bsdNameAlt:["PKO Bank Polski Ekstraklasa","PKO BP Ekstraklasa","Poland Ekstraklasa"],teams:["Lech Poznań","Raków Częstochowa","Jagiellonia Białystok","Legia Warszawa","Pogoń Szczecin","Górnik Zabrze","Zagłębie Lubin","Piast Gliwice","Wisła Płock","Motor Lublin","GKS Katowice","Cracovia","Widzew Łódź","Korona Kielce","Radomiak Radom","Lechia Gdańsk","Arka Gdynia","Bruk-Bet Termalica Nieciecza"]},
-    "SLG": {name:"🇬🇷 Super Liga Grecia",cornersAvg:9.0,goalsAvg:2.60,negBinR:6.3,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Super League Greece",bsdNameAlt:["Stoiximan Super League","Super League 1","Greek Super League"],teams:["AEK Athens","PAOK","Olympiacos","Panathinaikos","Levadiakos","Aris","OFI Crete","Volos NFC","Atromitos","A.E. Kifisia","Panetolikos","Panserraikos","Asteras Tripolis","AEL"]}
+    "JPL": {name:"🇧🇪 Jupiler Pro League",cornersAvg:9.2,goalsAvg:2.90,negBinR:6.0,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Belgian Pro League",bsdNameAlt:["First Division A","Jupiler Pro League","Pro League","Belgian First Division A","Belgium First Division A"],teams:["Anderlecht","Club Brugge KV","KAA Gent","KRC Genk","Cercle Brugge KSV","Standard de Liège","R. Union Saint-Gilloise","KV Mechelen","STVV","Beerschot VA","OH Leuven","KV Kortrijk","Charleroi","KVC Westerlo","RFC Seraing","Zulte Waregem"]},
+    "FL1": {name:"🇫🇷 Ligue 1",cornersAvg:9.3,goalsAvg:2.70,negBinR:6.2,markets:{ht:true,goles:true,btts:false,corn:false},bsdName:"Ligue 1",bsdNameAlt:["Ligue 1 Uber Eats","Ligue 1 McDonald's","French Ligue 1","France Ligue 1"],teams:["AJ Auxerre","AS Monaco FC","Le Havre AC","Lille OSC","Montpellier HSC","OGC Nice","Olympique Lyonnais","Olympique de Marseille","Paris Saint-Germain FC","RC Lens","RC Strasbourg Alsace","Stade Brestois 29","Stade Rennais FC","Stade de Reims","Toulouse FC","FC Nantes","FC Lorient","ESTAC Troyes"]},
+    "BSA": {name:"🇧🇷 Brasileirão",cornersAvg:9.4,goalsAvg:2.45,negBinR:5.8,markets:{ht:false,goles:true,btts:false,corn:true},bsdName:"Campeonato Brasileiro Série A",bsdNameAlt:["Brasileirão Série A","Brasileirao Serie A","Serie A (Brazil)","Brazilian Serie A","Brazil Serie A","Campeonato Brasileiro"],teams:["Athletico Paranaense","Atlético Mineiro","Bahia","Botafogo","Chapecoense","Corinthians","Coritiba","Cruzeiro","Flamengo","Fluminense","Grêmio","Internacional","Mirassol","Palmeiras","Red Bull Bragantino","Remo","Santos","São Paulo","Vasco da Gama","Vitória"]},
+    "ELC": {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship",cornersAvg:9.7,goalsAvg:2.65,negBinR:5.5,markets:{ht:false,goles:false,btts:true,corn:true},bsdName:"Championship",bsdNameAlt:["EFL Championship","English Championship","Sky Bet Championship"],teams:["Blackburn Rovers","Bristol City","Cardiff City","Coventry City","Derby County","Hull City","Luton Town","Middlesbrough FC","Millwall FC","Norwich City","Oxford United","Plymouth Argyle","Portsmouth FC","Preston North End","QPR","Sheffield United","Sheffield Wednesday","Stoke City","Swansea City","Watford FC","West Bromwich Albion","Leicester City FC","Ipswich Town FC","Southampton FC"]},
+    "PD":  {name:"🇪🇸 La Liga",cornersAvg:9.5,goalsAvg:2.55,negBinR:6.6,markets:{ht:false,goles:true,btts:false,corn:true},bsdName:"La Liga",bsdNameAlt:["Primera División","LaLiga","Primera Division","Spain La Liga","Spanish La Liga","LaLiga EA Sports"],teams:["Athletic Club","Atlético de Madrid","CA Osasuna","Deportivo Alavés","FC Barcelona","Getafe CF","Real Oviedo","Girona FC","RC Celta de Vigo","RCD Mallorca","Rayo Vallecano","Real Betis Balompié","Real Madrid CF","Elche CF","Real Sociedad","Sevilla FC","UD Las Palmas","Valencia CF","Villarreal CF","RCD Espanyol de Barcelona","CD Leganés","Levante UD","Real Valladolid CF"]},
+    "SA":  {name:"🇮🇹 Serie A",cornersAvg:9.0,goalsAvg:2.65,negBinR:7.1,markets:{ht:true,goles:true,btts:false,corn:true},bsdName:"Serie A",bsdNameAlt:["Serie A (Italy)","Italian Serie A","Italy Serie A","Serie A TIM","Serie A Enilive"],teams:["AC Milan","AC Monza","ACF Fiorentina","AS Roma","Atalanta BC","Bologna FC 1909","Cagliari Calcio","Como 1907","Empoli FC","Genoa CFC","Hellas Verona FC","Inter Milano","Juventus FC","Parma Calcio 1913","SS Lazio","SSC Napoli","Torino FC","Udinese Calcio","US Lecce","Sassuolo"]},
+    "MXL": {name:"🇲🇽 Liga MX",cornersAvg:8.5,goalsAvg:2.70,negBinR:6.3,markets:{ht:true,goles:true,btts:false,corn:true},bsdName:"Liga MX",bsdNameAlt:["Liga BBVA MX","Mexican Liga MX","Liga MX Apertura","Liga MX Clausura","Primera Division Mexico","Mexico Liga MX","Liga BBVA Bancomer MX"],teams:["América","Atlas FC","Atlético de San Luis","CF Pachuca","Club Necaxa","Club Tijuana","Cruz Azul","Deportivo Guadalajara","FC Juárez","León","Mazatlán FC","Monterrey","Puebla FC","Querétaro FC","Santos Laguna","Tigres UANL","Toluca FC","UNAM Pumas"]},
+    "LIB": {name:"🏆 Libertadores",cornersAvg:9.2,goalsAvg:2.50,negBinR:6.1,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Copa Libertadores",bsdNameAlt:["CONMEBOL Libertadores","Copa CONMEBOL Libertadores","Copa CONMEBOL Libertadores 2026","Copa Libertadores 2026"],teams:["Flamengo","Estudiantes de La Plata","Cusco FC","Independiente Medellín","Nacional","Universitario","Coquimbo Unido","Deportes Tolima","Fluminense","Club Bolívar","Deportivo La Guaira","Independiente Rivadavia","Boca Juniors","Cruzeiro","Universidad Católica","Barcelona SC","Peñarol","Corinthians","Santa Fe","Platense","Palmeiras","Cerro Porteño","Junior","Sporting Cristal","LDU Quito","Lanús","Always Ready","Mirassol","Independiente del Valle","Libertad","Rosario Central","Universidad Central"]},
+    "MLS": {name:"🇺🇸 MLS",cornersAvg:9.1,goalsAvg:2.85,negBinR:6.2,markets:{ht:true,goles:true,btts:true,corn:false},bsdName:"Major League Soccer",bsdNameAlt:["MLS","MLS Regular Season","US MLS","USA MLS"],teams:["Inter Miami CF","CF Montréal","Charlotte FC","Chicago Fire FC","FC Cincinnati","Columbus Crew","D.C. United","CF New England Revolution","Nashville SC","New York City FC","New York Red Bulls","Orlando City SC","Philadelphia Union","Atlanta United FC","Toronto FC","Austin FC","Colorado Rapids","FC Dallas","Houston Dynamo FC","LA Galaxy","Los Angeles FC","Minnesota United FC","Portland Timbers","Real Salt Lake","San Jose Earthquakes","Seattle Sounders FC","Sporting Kansas City","St. Louis City SC","Vancouver Whitecaps FC","San Diego FC"]},
+    "BSB": {name:"🇧🇷 Brasileirão B",cornersAvg:8.8,goalsAvg:2.30,negBinR:6.4,markets:{ht:false,goles:true,btts:true,corn:false},bsdName:"Campeonato Brasileiro Série B",bsdNameAlt:["Brasileirão Série B","Serie B (Brazil)","Brazilian Serie B","Brazil Serie B","Campeonato Brasileiro Serie B"],teams:["América Mineiro","Athletic Club","Atlético Goianiense","Avaí FC","Botafogo-SP","Ceará SC","CRB","Criciúma","Cuiabá","Fortaleza","Goiás","Juventude","Londrina","Náutico","Novorizontino","Operário-PR","Ponte Preta","São Bernardo FC","Sport Recife","Vila Nova"]},
+    "PPT": {name:"🇵🇹 Liga Portugal",cornersAvg:9.4,goalsAvg:2.60,negBinR:6.1,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Liga Portugal",bsdNameAlt:["Primeira Liga","Liga Portugal Betclic","Liga NOS","Portugal Primeira Liga","Portuguese Primeira Liga"],teams:["Sporting CP","FC Porto","SL Benfica","SC Braga","FC Famalicão","Rio Ave FC","CD Santa Clara","FC Alverca","GD Estoril Praia","Gil Vicente FC","Vitória SC","Casa Pia AC","FC Arouca","CD Tondela","Moreirense FC","CD Nacional","Estrela da Amadora","SC Farense"]},
+    "EKS": {name:"🇵🇱 Ekstraklasa",cornersAvg:9.3,goalsAvg:2.55,negBinR:6.2,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Ekstraklasa",bsdNameAlt:["PKO Bank Polski Ekstraklasa","PKO BP Ekstraklasa","Poland Ekstraklasa","Polish Ekstraklasa"],teams:["Lech Poznań","Raków Częstochowa","Jagiellonia Białystok","Legia Warszawa","Pogoń Szczecin","Górnik Zabrze","Zagłębie Lubin","Piast Gliwice","Wisła Płock","Motor Lublin","GKS Katowice","Cracovia","Widzew Łódź","Korona Kielce","Radomiak Radom","Lechia Gdańsk","Arka Gdynia","Bruk-Bet Termalica Nieciecza"]},
+    "SLG": {name:"🇬🇷 Super Liga Grecia",cornersAvg:9.0,goalsAvg:2.60,negBinR:6.3,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Super League Greece",bsdNameAlt:["Stoiximan Super League","Super League 1","Greek Super League","Greece Super League","Super League Greece 1"],teams:["AEK Athens","PAOK","Olympiacos","Panathinaikos","Levadiakos","Aris","OFI Crete","Volos NFC","Atromitos","A.E. Kifisia","Panetolikos","Panserraikos","Asteras Tripolis","AEL"]}
 };
 
 const TEAM_ALIASES = {
@@ -302,7 +302,7 @@ const TEAM_ALIASES = {
         "Cusco FC":["Cusco"],"Independiente Medellín":["Ind. Medellin","Medellin","DIM"],
         "Nacional":["Club Nacional","Nacional Montevideo"],"Universitario":["Universitario de Deportes"],
         "Coquimbo Unido":["Coquimbo"],"Deportes Tolima":["Tolima"],
-        "Fluminense":["Fluminense FC"],"Club Bolívar":["Bolivar","The Strongest... wait","Strongest"],
+        "Fluminense":["Fluminense FC"],"Club Bolívar":["Bolivar"],
         "Deportivo La Guaira":["La Guaira","Caracas"],"Independiente Rivadavia":["Ind. Rivadavia"],
         "Boca Juniors":["Boca Juniors CA","CA Boca Juniors"],"Cruzeiro":["Cruzeiro EC"],
         "Universidad Católica":["U. Catolica","Universidad Catolica"],
@@ -386,7 +386,53 @@ async function bsdFetchAll(path,ms=API_TIMEOUT){
     return res;
 }
 
-function matchLeagueName(n,k){const l=LIGAS[k];if(!l)return false;const norm=s=>s.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ');const bn=norm(n);if(bn===norm(l.bsdName))return true;if(l.bsdNameAlt){for(const a of l.bsdNameAlt)if(bn===norm(a))return true;}return norm(l.bsdName).split(' ').every(w=>bn.includes(w));}
+// ─── FIX 1: matchLeagueName mejorado ───────────────────────────────────────
+// Normaliza eliminando acentos, años (2024/25, 2025-26) y espacios extra.
+// Luego comprueba: exacto > alias exacto > todas las palabras clave presentes
+// en el nombre de la API (en cualquier orden) > alias con palabras clave.
+function matchLeagueName(n, k) {
+    const l = LIGAS[k];
+    if (!l) return false;
+
+    const norm = s => s.trim().toLowerCase()
+        .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // quitar acentos
+        .replace(/\b20\d{2}[\/\-]?\d{0,2}\b/g, '')          // quitar años: 2024/25, 2025-26, 2026
+        .replace(/[^a-z0-9\s]/g, ' ')                        // quitar caracteres especiales
+        .replace(/\s+/g, ' ').trim();
+
+    const bn = norm(n);
+    const mainNorm = norm(l.bsdName);
+    const alts = (l.bsdNameAlt || []).map(norm);
+
+    // 1. Exacto contra nombre principal
+    if (bn === mainNorm) return true;
+
+    // 2. Exacto contra algún alias
+    if (alts.some(a => bn === a)) return true;
+
+    // 3. El nombre de la API contiene todas las palabras del nombre principal (len > 2)
+    const mainWords = mainNorm.split(' ').filter(w => w.length > 2);
+    if (mainWords.length > 0 && mainWords.every(w => bn.includes(w))) return true;
+
+    // 4. El nombre principal contiene todas las palabras del nombre de la API
+    if (mainWords.length > 0 && mainWords.every(w => mainNorm.includes(w.toLowerCase()))
+        && bn.split(' ').filter(w=>w.length>2).every(w => mainNorm.includes(w))) {
+        // más restrictivo: al menos 2 palabras en común de longitud > 3
+        const apiWords = bn.split(' ').filter(w => w.length > 3);
+        const overlap = apiWords.filter(w => mainNorm.includes(w)).length;
+        if (overlap >= 2) return true;
+    }
+
+    // 5. Algún alias con palabras clave presentes en el nombre de la API
+    for (const alt of alts) {
+        const altWords = alt.split(' ').filter(w => w.length > 2);
+        if (altWords.length > 0 && altWords.every(w => bn.includes(w))) return true;
+        if (bn === alt) return true;
+    }
+
+    return false;
+}
+// ───────────────────────────────────────────────────────────────────────────
 
 function normalizeTeamName(s) {
     return s.trim().toLowerCase()
@@ -639,17 +685,67 @@ function renderOutput(o){
 function renderResultBoxes(lH,lA){const rp=calcResultProbs(lH,lA,currentLeagueKey);const r={home:+plattCalibrate(rp.home,'resultado').toFixed(1),draw:+plattCalibrate(rp.draw,'resultado').toFixed(1),away:+plattCalibrate(rp.away,'resultado').toFixed(1)};const mx=Math.max(r.home,r.draw,r.away);const rc=v=>v===mx?'var(--green)':v>=30?'var(--yellow)':'var(--accent)';const rg=v=>v===mx?'rgba(46,204,113,0.3)':v>=30?'rgba(255,182,39,0.3)':'rgba(255,77,90,0.3)';return`<div class="result-boxes"><div class="result-box"><div class="rb-label">🏠 Local</div><div class="rb-pct" style="color:${rc(r.home)};text-shadow:0 0 15px ${rg(r.home)};">${r.home}%</div></div><div class="result-box rb-center"><div class="rb-label">🟡 Empate</div><div class="rb-pct" style="color:${rc(r.draw)};text-shadow:0 0 15px ${rg(r.draw)};">${r.draw}%</div></div><div class="result-box"><div class="rb-label">✈️ Visitante</div><div class="rb-pct" style="color:${rc(r.away)};text-shadow:0 0 15px ${rg(r.away)};">${r.away}%</div></div></div>`;}
 function animateBars(){document.querySelectorAll('.bar-fill[data-target]').forEach(b=>b.style.width=b.dataset.target+'%');}
 
-window.onload=async()=>{
-    renderLeaguePills();renderMarketToggles();
-    setApiStatus('error','🟡 Conectando con BSD API...');
-    try{
-        let all=[],url=BSD_BASE+'/leagues/?page_size=100',p=0;
-        while(url&&p<5){const fp=fetch(url,{headers:{'Authorization':'Token '+BSD_TOKEN}});const tp=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),8000));const r=await Promise.race([fp,tp]);if(!r.ok)throw new Error('BSD '+r.status);const d=await r.json();all=all.concat(d.results||[]);url=d.next||null;p++;}
-        all.forEach(l=>{if(l.is_women)return;if(!l.current_season?.id)return;for(const c of Object.keys(LIGAS)){if(matchLeagueName(l.name,c)&&!bsdLeagueMap[c]){bsdLeagueMap[c]={bsdId:l.id,seasonId:l.current_season.id};}}});
-        const mapped=Object.keys(bsdLeagueMap).length;
-        if(mapped>0){setApiStatus('live','🟢 BSD API — '+mapped+'/'+Object.keys(LIGAS).length+' ligas activas');apiAvailable=true;document.getElementById('engine-badge').textContent='🛰 BSD + Elo + Atk×Def + xG + Altitud · v2.1';}
-    }catch(e){setApiStatus('error','🟡 Sin conexión — usando datos offline');}
+// ─── FIX 2 & 3: Paginación ampliada + log de ligas para diagnóstico ─────────
+window.onload = async () => {
+    renderLeaguePills();
+    renderMarketToggles();
+    setApiStatus('error', '🟡 Conectando con BSD API...');
+    try {
+        let all = [], url = BSD_BASE + '/leagues/?page_size=200', p = 0;
+
+        // FIX 2: aumentamos page_size a 200 y límite de páginas a 10
+        while (url && p < 10) {
+            const fp = fetch(url, { headers: { 'Authorization': 'Token ' + BSD_TOKEN } });
+            const tp = new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), 8000));
+            const r = await Promise.race([fp, tp]);
+            if (!r.ok) throw new Error('BSD ' + r.status);
+            const d = await r.json();
+            all = all.concat(d.results || []);
+            url = d.next || null;
+            p++;
+        }
+
+        // FIX 3: log de diagnóstico — muestra en consola qué ligas devuelve BSD
+        console.group('[BSD] Ligas disponibles en la API (' + all.length + ')');
+        all.forEach(l => {
+            if (!l.is_women) console.log(`"${l.name}" | season: ${l.current_season?.id ?? 'SIN TEMPORADA'}`);
+        });
+        console.groupEnd();
+
+        // Mapeo con matchLeagueName mejorado
+        all.forEach(l => {
+            if (l.is_women) return;
+            if (!l.current_season?.id) return;
+            for (const c of Object.keys(LIGAS)) {
+                if (matchLeagueName(l.name, c) && !bsdLeagueMap[c]) {
+                    bsdLeagueMap[c] = { bsdId: l.id, seasonId: l.current_season.id };
+                    console.log(`[MATCH] ${c} → "${l.name}" (id:${l.id}, season:${l.current_season.id})`);
+                }
+            }
+        });
+
+        const mapped = Object.keys(bsdLeagueMap).length;
+        const total = Object.keys(LIGAS).length;
+
+        // Log de ligas NO encontradas para guiar ajuste de bsdNameAlt
+        const missing = Object.keys(LIGAS).filter(k => !bsdLeagueMap[k]);
+        if (missing.length > 0) {
+            console.warn('[BSD] Ligas SIN mapear:', missing.map(k => `${k} (${LIGAS[k].bsdName})`));
+        }
+
+        if (mapped > 0) {
+            setApiStatus('live', `🟢 BSD API — ${mapped}/${total} ligas activas`);
+            apiAvailable = true;
+            document.getElementById('engine-badge').textContent = '🛰 BSD + Elo + Atk×Def + xG + Altitud · v2.1';
+        } else {
+            setApiStatus('error', '🟡 Sin conexión — usando datos offline');
+        }
+    } catch (e) {
+        console.error('[BSD] Error al conectar:', e);
+        setApiStatus('error', '🟡 Sin conexión — usando datos offline');
+    }
 };
+// ───────────────────────────────────────────────────────────────────────────
 </script>
 </body>
 </html>
