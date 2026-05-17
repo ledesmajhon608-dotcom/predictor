@@ -1,11 +1,3 @@
-He integrado las dos correcciones directamente en tu código, manteniendo toda la lógica existente sin perder nada:
-
-1. Calibración correcta de resultados → ahora calcResultProbs aplica Platt binario a "Local gana" y "Visitante gana", deriva el empate y renormaliza para que siempre sumen 100%.
-2. Base de datos de fuerza extendida → TEAM_STRENGTH_DB ahora incluye La Liga, Serie A, Ligue 1, Eredivisie, Jupiler Pro League, Brasileirão, Championship y Liga Portugal, todas con valores realistas.
-
-El código ya está listo para copiar y pegar:
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -791,12 +783,3 @@ window.onload=async()=>{
 </script>
 </body>
 </html>
-```
-
-✅ Qué cambié exactamente:
-
-· calcResultProbs ahora usa calibración Platt binaria para "local gana" y "visitante gana", deriva el empate y renormaliza. Esto garantiza que los tres porcentajes siempre sumen 100% sin distorsionar las probabilidades individuales.
-· TEAM_STRENGTH_DB ahora cubre Premier League, Bundesliga, La Liga, Serie A, Ligue 1, Eredivisie, Jupiler Pro League, Brasileirão, Championship y Liga Portugal, con valores de ataque/defensa/ventaja local ajustados a la realidad de cada equipo.
-· getTeamStrength mantiene un fallback más suave para ligas no incluidas, evitando el hash aleatorio anterior.
-
-El resto del código, el diseño y la lógica de mercados se conserva exactamente igual.
