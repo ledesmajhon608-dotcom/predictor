@@ -170,7 +170,7 @@ const BSD_TOKEN = '3d62e7e48993262cddf921e75fcb4ea8be6f70be';
 const BSD_BASE = 'https://sports.bzzoiro.com/api';
 const MATCHES_TO_USE = 15;
 const API_TIMEOUT = 6000;
-
+    
 const LIGAS = {
     "PL":  {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",cornersAvg:10.1,goalsAvg:2.85,negBinR:5.4,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Premier League",teams:["Arsenal FC","Aston Villa FC","AFC Bournemouth","Brentford FC","Brighton & Hove Albion FC","Chelsea FC","Crystal Palace FC","Everton FC","Fulham FC","Liverpool FC","Manchester City FC","Manchester United FC","Newcastle United FC","Nottingham Forest FC","Tottenham Hotspur FC","West Ham United FC","Wolverhampton Wanderers FC","Leeds United","Burnley FC","Sunderland AFC"]},
     "BL1": {name:"🇩🇪 Bundesliga",cornersAvg:9.8,goalsAvg:3.00,negBinR:5.9,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Bundesliga",teams:["1. FC Heidenheim 1846","1. FC Union Berlin","1. FSV Mainz 05","Bayer 04 Leverkusen","Borussia Dortmund","Borussia Mönchengladbach","Eintracht Frankfurt","FC Augsburg","FC Bayern München","RB Leipzig","SC Freiburg","SV Werder Bremen","TSG 1899 Hoffenheim","VfB Stuttgart","VfL Bochum 1848","VfL Wolfsburg","FC St. Pauli","Holstein Kiel"]},
@@ -187,7 +187,8 @@ const LIGAS = {
     "BSB": {name:"🇧🇷 Brasileirão B",cornersAvg:8.8,goalsAvg:2.30,negBinR:6.4,markets:{ht:false,goles:true,btts:true,corn:false},bsdName:"Campeonato Brasileiro Série B",bsdNameAlt:["Brasileirão Série B","Serie B (Brazil)","Brazilian Serie B"],teams:["América Mineiro","Athletic Club","Atlético Goianiense","Avaí FC","Botafogo-SP","Ceará SC","CRB","Criciúma","Cuiabá","Fortaleza","Goiás","Juventude","Londrina","Náutico","Novorizontino","Operário-PR","Ponte Preta","São Bernardo FC","Sport Recife","Vila Nova"]},
     "PPT": {name:"🇵🇹 Liga Portugal",cornersAvg:9.4,goalsAvg:2.60,negBinR:6.1,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Liga Portugal",bsdNameAlt:["Primeira Liga","Liga Portugal Betclic","Liga NOS"],teams:["Sporting CP","FC Porto","SL Benfica","SC Braga","FC Famalicão","Rio Ave FC","CD Santa Clara","FC Alverca","GD Estoril Praia","Gil Vicente FC","Vitória SC","Casa Pia AC","FC Arouca","CD Tondela","Moreirense FC","CD Nacional","Estrela da Amadora","SC Farense"]},
     "EKS": {name:"🇵🇱 Ekstraklasa",cornersAvg:9.3,goalsAvg:2.55,negBinR:6.2,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Ekstraklasa",bsdNameAlt:["PKO Bank Polski Ekstraklasa","PKO BP Ekstraklasa","Poland Ekstraklasa"],teams:["Lech Poznań","Raków Częstochowa","Jagiellonia Białystok","Legia Warszawa","Pogoń Szczecin","Górnik Zabrze","Zagłębie Lubin","Piast Gliwice","Wisła Płock","Motor Lublin","GKS Katowice","Cracovia","Widzew Łódź","Korona Kielce","Radomiak Radom","Lechia Gdańsk","Arka Gdynia","Bruk-Bet Termalica Nieciecza"]},
-    "SLG": {name:"🇬🇷 Super Liga Grecia",cornersAvg:9.0,goalsAvg:2.60,negBinR:6.3,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Super League Greece",bsdNameAlt:["Stoiximan Super League","Super League 1","Greek Super League"],teams:["AEK Athens","PAOK","Olympiacos","Panathinaikos","Levadiakos","Aris","OFI Crete","Volos NFC","Atromitos","A.E. Kifisia","Panetolikos","Panserraikos","Asteras Tripolis","AEL"]}
+    "SLG": {name:"🇬🇷 Super Liga Grecia",cornersAvg:9.0,goalsAvg:2.60,negBinR:6.3,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Super League Greece",bsdNameAlt:["Stoiximan Super League","Super League 1","Greek Super League"],teams:["AEK Athens","PAOK","Olympiacos","Panathinaikos","Levadiakos","Aris","OFI Crete","Volos NFC","Atromitos","A.E. Kifisia","Panetolikos","Panserraikos","Asteras Tripolis","AEL"]},
+    "WC":  {name:"🏆 Copa Mundial 2026",cornersAvg:9.6,goalsAvg:2.75,negBinR:6.5,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"FIFA World Cup",bsdNameAlt:["Copa Mundial de la FIFA","World Cup 2026","Mundial 2026","FIFA World Cup 2026"],teams:["Argentina","Francia","Inglaterra","España","Brasil","Alemania","Portugal","Países Bajos","Italia","Uruguay","Colombia","Bélgica","Croacia","Marruecos","Estados Unidos","México","Canadá","Japón","Corea del Sur","Ecuador","Senegal","Irán","Dinamarca","Suiza","Austria","Australia","Ucrania","Turquía","Nigeria","Egipto","Argelia","Costa de Marfil","Túnez","Arabia Saudita","Qatar","Panamá","Costa Rica","Jamaica","Paraguay","Venezuela","Irak","Uzbekistán","Nueva Zelanda","Polonia","Serbia","Mali","Camerún","Honduras"]}
 };
 
 const TEAM_ALIASES = {
@@ -336,6 +337,14 @@ const TEAM_ALIASES = {
         "St. Louis City SC":["St. Louis City","St Louis City"],
         "Vancouver Whitecaps FC":["Vancouver Whitecaps","Vancouver"],
         "San Diego FC":["San Diego"]
+    },
+    "WC": {
+        "Estados Unidos":["USA","United States","EEUU","EE.UU."],"México":["Mexico","Selección Mexicana"],"Canadá":["Canada"],
+        "Argentina":["Albiceleste"],"Brasil":["Brazil","Seleção"],"Francia":["France","Les Bleus"],
+        "Inglaterra":["England"],"España":["Spain","La Roja"],"Alemania":["Germany","Die Mannschaft"],
+        "Países Bajos":["Netherlands","Holanda","Oranje"],"Portugal":["Seleção das Quinas"],
+        "Italia":["Italy","Azzurri"],"Uruguay":["Charrúas"],"Colombia":["Cafeteros"],"Bélgica":["Belgium"],
+        "Japón":["Japan","Samurai Blue"],"Corea del Sur":["South Korea"],"Ecuador":["La Tri"]
     }
 };
 
@@ -346,7 +355,9 @@ const CORNER_POWER = {
     "Club Brugge KV":{home:6.2,away:5.2},"Anderlecht":{home:5.9,away:5.0},"KAA Gent":{home:5.6,away:4.7},"KRC Genk":{home:5.5,away:4.6},"R. Union Saint-Gilloise":{home:5.4,away:4.5},"Cercle Brugge KSV":{home:5.2,away:4.3},"Standard de Liège":{home:5.0,away:4.2},"KV Mechelen":{home:4.9,away:4.1},"STVV":{home:4.8,away:4.0},"OH Leuven":{home:4.7,away:3.9},"Beerschot VA":{home:4.7,away:3.9},"KV Kortrijk":{home:4.6,away:3.8},"Charleroi":{home:4.8,away:4.0},"KVC Westerlo":{home:4.6,away:3.8},"RFC Seraing":{home:4.4,away:3.6},"Zulte Waregem":{home:4.5,away:3.7},
     "Paris Saint-Germain FC":{home:6.7,away:5.7},"AS Monaco FC":{home:6.0,away:5.1},"Lille OSC":{home:5.6,away:4.7},"OGC Nice":{home:5.4,away:4.5},"Olympique Lyonnais":{home:5.5,away:4.6},"Olympique de Marseille":{home:5.5,away:4.6},"RC Lens":{home:5.3,away:4.4},"Stade Rennais FC":{home:5.1,away:4.2},"Stade de Reims":{home:4.9,away:4.1},"Toulouse FC":{home:4.8,away:4.0},"Montpellier HSC":{home:4.7,away:3.9},"RC Strasbourg Alsace":{home:4.8,away:4.0},"Le Havre AC":{home:4.6,away:3.8},"FC Nantes":{home:4.7,away:3.9},"Stade Brestois 29":{home:5.2,away:4.3},"AJ Auxerre":{home:4.6,away:3.8},"FC Lorient":{home:4.8,away:4.0},"ESTAC Troyes":{home:4.3,away:3.5},
     "Real Madrid CF":{home:6.6,away:5.7},"FC Barcelona":{home:6.4,away:5.5},"Atlético de Madrid":{home:5.8,away:4.9},"Athletic Club":{home:5.5,away:4.6},"Real Sociedad":{home:5.4,away:4.5},"Real Betis Balompié":{home:5.3,away:4.4},"Villarreal CF":{home:5.0,away:4.2},"Valencia CF":{home:5.1,away:4.2},"Sevilla FC":{home:5.2,away:4.3},"Girona FC":{home:5.6,away:4.7},"CA Osasuna":{home:4.9,away:4.0},"Getafe CF":{home:4.5,away:3.7},"RC Celta de Vigo":{home:5.0,away:4.1},"RCD Mallorca":{home:4.7,away:3.9},"Rayo Vallecano":{home:4.6,away:3.8},"UD Las Palmas":{home:4.8,away:4.0},"Deportivo Alavés":{home:4.7,away:3.9},"RCD Espanyol de Barcelona":{home:4.8,away:4.0},"CD Leganés":{home:4.5,away:3.7},"Real Valladolid CF":{home:4.4,away:3.6},
-    "Inter Milano":{home:6.0,away:5.1},"AC Milan":{home:5.8,away:4.9},"Juventus FC":{home:5.6,away:4.7},"Atalanta BC":{home:5.9,away:5.0},"SSC Napoli":{home:5.7,away:4.8},"AS Roma":{home:5.5,away:4.6},"SS Lazio":{home:5.3,away:4.4},"ACF Fiorentina":{home:5.4,away:4.5},"Torino FC":{home:4.8,away:4.0},"Bologna FC 1909":{home:5.2,away:4.3},"Genoa CFC":{home:4.7,away:3.9},"AC Monza":{home:4.6,away:3.8},"Hellas Verona FC":{home:4.5,away:3.7},"Udinese Calcio":{home:4.6,away:3.8},"Cagliari Calcio":{home:4.5,away:3.7},"Empoli FC":{home:4.7,away:3.9},"Como 1907":{home:5.0,away:4.2},"Parma Calcio 1913":{home:4.8,away:4.0},"US Lecce":{home:4.4,away:3.6},"Sassuolo":{home:5.0,away:4.2}
+    "Inter Milano":{home:6.0,away:5.1},"AC Milan":{home:5.8,away:4.9},"Juventus FC":{home:5.6,away:4.7},"Atalanta BC":{home:5.9,away:5.0},"SSC Napoli":{home:5.7,away:4.8},"AS Roma":{home:5.5,away:4.6},"SS Lazio":{home:5.3,away:4.4},"ACF Fiorentina":{home:5.4,away:4.5},"Torino FC":{home:4.8,away:4.0},"Bologna FC 1909":{home:5.2,away:4.3},"Genoa CFC":{home:4.7,away:3.9},"AC Monza":{home:4.6,away:3.8},"Hellas Verona FC":{home:4.5,away:3.7},"Udinese Calcio":{home:4.6,away:3.8},"Cagliari Calcio":{home:4.5,away:3.7},"Empoli FC":{home:4.7,away:3.9},"Como 1907":{home:5.0,away:4.2},"Parma Calcio 1913":{home:4.8,away:4.0},"US Lecce":{home:4.4,away:3.6},"Sassuolo":{home:5.0,away:4.2},
+    // Espejo de poder de córners para simulación internacional neutra basada en xG histórico de torneos cortos
+    "Argentina":{home:6.2,away:5.3},"Francia":{home:6.0,away:5.2},"Inglaterra":{home:6.1,away:5.1},"España":{home:6.5,away:5.4},"Brasil":{home:6.3,away:5.2},"Alemania":{home:6.0,away:5.0},"Estados Unidos":{home:5.5,away:4.6},"México":{home:5.6,away:4.7},"Canadá":{home:5.4,away:4.5}
 };
 
 const PLATT_PARAMS = {
@@ -354,16 +365,21 @@ const PLATT_PARAMS = {
     btts:{A:0.944,B:-0.038},corners:{A:0.962,B:-0.025},
     goals_ht05:{A:0.951,B:-0.035},goals_ht15:{A:0.924,B:-0.055},resultado:{A:0.908,B:-0.075}
 };
+
 const DIXON_COLES_RHO = {
     "PL":-0.065,"BL1":-0.085,"SA":-0.130,"PD":-0.098,"FL1":-0.105,"DED":-0.072,
     "BSA":-0.090,"ELC":-0.078,"JPL":-0.082,"MXL":-0.095,"LIB":-0.088,"MLS":-0.070,
-    "BSB":-0.092,"PPT":-0.080,"EKS":-0.085,"SLG":-0.100,"default":-0.13
+    "BSB":-0.092,"PPT":-0.080,"EKS":-0.085,"SLG":-0.100,"WC":-0.075,"default":-0.13
 };
+
 const ALTITUDE_TEAMS = {
     "Club Bolívar":{advantage:1.12,altitude:"3600m"},"Always Ready":{advantage:1.18,altitude:"4100m"},
     "LDU Quito":{advantage:1.08,altitude:"2800m"},"Cusco FC":{advantage:1.06,altitude:"3400m"},
-    "Universitario":{advantage:1.04,altitude:"2800m"},"Independiente del Valle":{advantage:1.03,altitude:"2500m"}
+    "Universitario":{advantage:1.04,altitude:"2800m"},"Independiente del Valle":{advantage:1.03,altitude:"2500m"},
+    // Sedes oficiales del Mundial con impacto de altitud real indexadas a las selecciones locales organizadoras
+    "México":{advantage:1.04,altitude:"2240m"}
 };
+
 
 let currentLeagueKey=null, teamMap={}, apiAvailable=false;
 let activeMarkets={ht:true,goles:true,btts:true,corn:true};
