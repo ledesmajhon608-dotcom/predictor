@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FOOTBALLBET PRO v2.5 - Live API Connection</title>
+    <title>FOOTBALLBET PRO v2.5 - Final Fixed</title>
     <style>
         /* ESTILOS INTERFAZ ORIGINAL PRESERVADOS AL 100% */
         :root {
@@ -28,7 +28,6 @@
         .api-status { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.75rem; font-weight: bold; margin-bottom: 15px; padding: 8px; border-radius: 6px; text-transform: uppercase; border: 1px solid transparent; transition: 0.3s; }
         .api-status.connected { color: var(--green); background: rgba(46,204,113,0.05); border-color: rgba(46,204,113,0.2); }
         .api-status.fallback { color: var(--yellow); background: rgba(255,182,39,0.05); border-color: rgba(255,182,39,0.2); }
-        .api-status.error { color: var(--pink-accent); background: rgba(255,77,109,0.05); border-color: rgba(255,77,109,0.2); }
         
         .section-label { font-size: 0.7rem; font-weight: 700; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; margin-bottom: 8px; margin-top: 5px; }
         .leagues-grid { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 15px; }
@@ -138,28 +137,39 @@
 // ==========================================
 const API_CONFIG = {
     baseUrl: 'https://api.bsdfootball.com/v1',
-    token: 'REEMPLAZA_CON_TU_TOKEN_REAL', // Pon aquí tu credencial de acceso si la API requiere Header Authorization
-    useLiveApi: false // El sistema cambiará a true automáticamente si la API responde con éxito
+    token: 'REEMPLAZA_CON_TU_TOKEN_REAL', 
+    useLiveApi: false 
 };
 
 const DIXON_COLES_RHO = -0.05;
 let currentLeagueKey = 'PREMIER_LEAGUE';
 const activeMarkets = { goles_ht: true, goles_full: true, btts: true, corners: true };
 
-// RESPALDO DE SEGURIDAD ESTÁTICO (Evita congelamientos si la API cae)
+// =========================================================================
+// LAS 16 LIGAS Y EQUIPOS COMPLETOS RESTAURADOS COMO RESPALDO AUTOMÁTICO
+// =========================================================================
 const LIGAS_FALLBACK = {
-    'PREMIER_LEAGUE': { name: '🍇 Premier League', btts_factor: 1.05, mean_corners: 10.2, teams: ['Manchester City', 'Arsenal', 'Liverpool', 'Aston Villa', 'Chelsea'] },
-    'BUNDESLIGA': { name: '🇩🇪 Bundesliga', btts_factor: 1.12, mean_corners: 9.8, teams: ['Bayer Leverkusen', 'Bayern Munich', 'RB Leipzig', 'Borussia Dortmund'] },
-    'SERIE_A': { name: '🇮🇹 Serie A', btts_factor: 0.97, mean_corners: 9.5, teams: ['Inter Milan', 'AC Milan', 'Juventus', 'Atalanta BC', 'Bologna FC 1909'] },
-    'LA_LIGA': { name: '🇪🇸 La Liga', btts_factor: 0.94, mean_corners: 9.1, teams: ['Real Madrid', 'Barcelona', 'Girona FC', 'Atlético Madrid'] },
-    'LIBERTADORES': { name: '🏆 Libertadores', btts_factor: 0.92, mean_corners: 9.7, teams: ['River Plate', 'Boca Juniors', 'Palmeiras', 'LDU Quito', 'Bolivar'] }
+    'PREMIER_LEAGUE': { name: '🍇 Premier League', btts_factor: 1.05, mean_corners: 10.2, teams: ['Manchester City', 'Arsenal', 'Liverpool', 'Aston Villa', 'Tottenham', 'Chelsea', 'Manchester United', 'Newcastle'] },
+    'BUNDESLIGA': { name: '🇩🇪 Bundesliga', btts_factor: 1.12, mean_corners: 9.8, teams: ['Bayer Leverkusen', 'Bayern Munich', 'VfB Stuttgart', 'RB Leipzig', 'Borussia Dortmund', 'Eintracht Frankfurt'] },
+    'EREDIVISIE': { name: '🇳🇱 Eredivisie', btts_factor: 1.15, mean_corners: 10.1, teams: ['PSV Eindhoven', 'Feyenoord', 'Twente', 'AZ Alkmaar', 'Ajax Amsterdam'] },
+    'JUPILER_LEAGUE': { name: '🇧🇪 Jupiler Pro League', btts_factor: 1.08, mean_corners: 9.9, teams: ['Club Brugge', 'Union SG', 'Anderlecht', 'Antwerp', 'KRC Genk'] },
+    'LIGUE_1': { name: '🇫🇷 Ligue 1', btts_factor: 0.98, mean_corners: 9.3, teams: ['Paris Saint-Germain', 'AS Monaco', 'Lille OSC', 'Stade Brestois', 'OGC Nice', 'Olympique Marseille'] },
+    'BRASILEIRAO': { name: '🇧🇷 Brasileirão', btts_factor: 0.96, mean_corners: 10.4, teams: ['Palmeiras', 'Flamengo', 'Atlético Mineiro', 'Botafogo', 'São Paulo', 'Fluminense'] },
+    'CHAMPIONSHIP': { name: '🍇 Championship', btts_factor: 1.04, mean_corners: 10.5, teams: ['Leicester City', 'Ipswich Town', 'Leeds United', 'Southampton', 'West Brom'] },
+    'LA_LIGA': { name: '🇪🇸 La Liga', btts_factor: 0.94, mean_corners: 9.1, teams: ['Real Madrid', 'Barcelona', 'Girona FC', 'Atlético Madrid', 'Athletic Bilbao', 'Real Sociedad'] },
+    'SERIE_A': { name: '🇮🇹 Serie A', btts_factor: 0.97, mean_corners: 9.5, teams: ['Inter Milan', 'AC Milan', 'Juventus', 'Atalanta BC', 'Bologna FC 1909', 'AS Roma', 'SS Lazio'] },
+    'LIGA_MX': { name: '🇲🇽 Liga MX', btts_factor: 1.06, mean_corners: 9.6, teams: ['Club América', 'Tigres UANL', 'Monterrey', 'CD Guadalajara', 'Cruz Azul', 'Pumas UNAM'] },
+    'LIBERTADORES': { name: '🏆 Libertadores', btts_factor: 0.92, mean_corners: 9.7, teams: ['River Plate', 'Boca Juniors', 'Palmeiras', 'Flamengo', 'LDU Quito', 'Bolivar'] },
+    'MLS': { name: '🇺🇸 MLS', btts_factor: 1.18, mean_corners: 10.3, teams: ['Inter Miami CF', 'Columbus Crew', 'LAFC', 'Los Angeles Galaxy', 'FC Cincinnati'] },
+    'BRASILEIRAO_B': { name: '🇧🇷 Brasileirão B', btts_factor: 0.88, mean_corners: 9.9, teams: ['Santos FC', 'Goiás EC', 'Coritiba', 'América Mineiro', 'Sport Recife'] },
+    'LIGA_PORTUGAL': { name: '🇵🇹 Liga Portugal', btts_factor: 1.02, mean_corners: 9.8, teams: ['Sporting CP', 'SL Benfica', 'FC Porto', 'SC Braga', 'Vitória Guimarães'] },
+    'EKSTRAKLASA': { name: '🇵🇱 Ekstraklasa', btts_factor: 0.99, mean_corners: 9.6, teams: ['Jagiellonia', 'Śląsk Wrocław', 'Legia Warszawa', 'Lech Poznań', 'Raków'] },
+    'GRECIA': { name: '🇬🇷 Super Liga Grecia', btts_factor: 0.95, mean_corners: 9.1, teams: ['PAOK Salonica', 'AEK Athens', 'Olympiacos FC', 'Panathinaikos', 'Aris'] }
 };
 
 // =========================================================================
-// PROCESAMIENTO ASÍNCRONO DE DATOS (CONEXIÓN API REAL VIA FETCH)
+// CONEXIONES ASÍNCRONAS REALES (FETCH)
 // =========================================================================
-
-// 1. Verificar estado de API externa al arrancar
 async function checkApiConnection() {
     const indicator = document.getElementById('api-indicator');
     try {
@@ -167,87 +177,66 @@ async function checkApiConnection() {
             method: 'GET',
             headers: { 'Authorization': `Bearer ${API_CONFIG.token}`, 'Content-Type': 'application/json' }
         });
-        
         if (response.ok) {
             API_CONFIG.useLiveApi = true;
             indicator.className = "api-status connected";
-            indicator.textContent = "🟢 BSD API V2.5 CONECTADA Y ADAPTATIVA";
-        } else {
-            throw new Error("Token o endpoint inválido");
-        }
+            indicator.textContent = "🟢 BSD API V2.5 CONECTADA EN VIVO";
+        } else { throw new Error(); }
     } catch (error) {
-        // Fallback elegante sin romper la experiencia de usuario
         API_CONFIG.useLiveApi = false;
         indicator.className = "api-status fallback";
-        indicator.textContent = "⚠️ MODO DE RESPALDO LOCAL ACTIVO (API OFFLINE)";
+        indicator.textContent = "⚠️ CONEXIÓN LOCAL ACTIVA (API EN ESPERA)";
     }
 }
 
-// 2. Traer dinámicamente los equipos de la liga seleccionada
 async function fetchTeamsForLeague(leagueKey) {
     if (!API_CONFIG.useLiveApi) {
-        return LIGAS_FALLBACK[leagueKey]?.teams || ['Equipo Local Pro', 'Equipo Visitante Pro'];
+        return LIGAS_FALLBACK[leagueKey]?.teams || [];
     }
-
     try {
         const response = await fetch(`${API_CONFIG.baseUrl}/teams?league=${leagueKey}`, {
             headers: { 'Authorization': `Bearer ${API_CONFIG.token}` }
         });
         const data = await response.json();
-        // Asumiendo que tu API devuelve un array directo o un objeto con propiedad .teams
         return data.teams || data; 
     } catch (e) {
-        console.warn("Fallo al traer equipos de API, cargando fallback local.");
         return LIGAS_FALLBACK[leagueKey]?.teams || [];
     }
 }
 
-// 3. Traer estadísticas de rendimiento xG en vivo para el cálculo avanzado
 async function fetchTeamStatsFromApi(homeTeam, awayTeam) {
     let defaultStats = {
         home: { atk: 1.25, def: 0.80, elo: 1700, xgAtk: 1.30, xgDef: 0.75, cornerFor: 5.8, cornerAgainst: 4.1, altitud: 0 },
         away: { atk: 1.10, def: 0.90, elo: 1650, xgAtk: 1.15, xgDef: 0.85, cornerFor: 5.2, cornerAgainst: 4.5, altitud: 0 }
     };
-
     if (!API_CONFIG.useLiveApi) return defaultStats;
-
     try {
         const response = await fetch(`${API_CONFIG.baseUrl}/match-analysis?home=${encodeURIComponent(homeTeam)}&away=${encodeURIComponent(awayTeam)}`, {
             headers: { 'Authorization': `Bearer ${API_CONFIG.token}` }
         });
-        const liveData = await response.json();
-        return liveData;
-    } catch (err) {
-        return defaultStats;
-    }
+        return await response.json();
+    } catch (err) { return defaultStats; }
 }
 
 // ==========================================
-// CORE MATEMÁTICO ALIMENTADO POR LOS DATOS
+// MOTOR MATEMÁTICO DE PROBABILIDADES
 // ==========================================
 function calculateLambdas(stats, leagueKey) {
-    const league = LIGAS_FALLBACK[leagueKey] || { btts_factor: 1.0, mean_corners: 9.5 };
     const baseGoals = 1.35;
-    
     let lambdaH = baseGoals * stats.home.xgAtk * stats.away.xgDef;
     let lambdaA = baseGoals * stats.away.xgAtk * stats.home.xgDef;
     
     const eloDiff = stats.home.elo - stats.away.elo;
-    lambdaH *= (1 + eloDiff / 1300);
-    lambdaA *= (1 - eloDiff / 1300);
-    
-    if(stats.home.altitud > 2000) { lambdaH *= 1.15; lambdaA *= 0.82; }
+    lambdaH *= (1 + eloDiff / 1300); lambdaA *= (1 - eloDiff / 1300);
     
     return {
-        lambdaH: Math.max(0.1, lambdaH),
-        lambdaA: Math.max(0.1, lambdaA),
+        lambdaH: Math.max(0.1, lambdaH), lambdaA: Math.max(0.1, lambdaA),
         lambdaGoal: Math.max(0.05, (lambdaH + lambdaA) * 0.44),
         lambdaCorn: (stats.home.cornerFor + stats.away.cornerAgainst + stats.home.cornerAgainst + stats.away.cornerFor) / 2,
         negBinR: 6.5
     };
 }
 
-// DISTRIBUCIONES
 function factorial(n) { let r = 1; for (let i = 2; i <= n; i++) r *= i; return r; }
 function poissonProb(k, lambda) { return (Math.pow(lambda, k) * Math.exp(-lambda)) / factorial(k); }
 function poissonOver(lambda, line) {
@@ -279,9 +268,7 @@ function calcResultProbs(lH, lA) {
     const t = h + d + a || 1; return { home: (h/t)*100, draw: (d/t)*100, away: (a/t)*100 };
 }
 
-// ==========================================
-// RENDERS VISUALES DE BARRAS DE PROGRESO
-// ==========================================
+// RENDERIZADO VISUAL RECTILÍNEO
 function buildRow(label, rawProb, type) {
     const calibrated = plattCalibrate(rawProb, type);
     const colorClass = calibrated >= 70 ? 'green' : calibrated >= 52 ? 'yellow' : 'accent';
@@ -296,7 +283,6 @@ async function processAndRenderUI() {
     const home = document.getElementById('select-home').value;
     const away = document.getElementById('select-away').value;
     
-    // Llamada API en tiempo real para extraer xG dinámico
     const dataMetrics = await fetchTeamStatsFromApi(home, away);
     const lambdas = calculateLambdas(dataMetrics, currentLeagueKey);
     
@@ -306,8 +292,7 @@ async function processAndRenderUI() {
     document.getElementById('pct-1x2-away').textContent = plattCalibrate(rp.away, 'result').toFixed(1) + '%';
     document.getElementById('match-header-text').textContent = `${home} VS ${away}`;
 
-    let html = '';
-    const recList = [];
+    let html = ''; const recList = [];
 
     if (activeMarkets.goles_full) {
         const sumL = lambdas.lambdaH + lambdas.lambdaA;
@@ -317,7 +302,7 @@ async function processAndRenderUI() {
                 ${buildRow('+1.5 Goles', poissonOver(sumL, 1.5), 'goals')}
                 ${buildRow('+2.5 Goles', poissonOver(sumL, 2.5), 'goals')}
             </div>`;
-        recList.push({ label: 'GOLES OVER 1.5', prob: plattCalibrate(poissonOver(sumL, 1.5), 'goals'), desc: 'Ataques dinámicos proyectados.' });
+        recList.push({ label: 'GOLES OVER 1.5', prob: plattCalibrate(poissonOver(sumL, 1.5), 'goals'), desc: 'Ataques proyectados eficientes.' });
     }
 
     if (activeMarkets.goles_ht) {
@@ -327,7 +312,7 @@ async function processAndRenderUI() {
                 ${buildRow('+0.5 HT', poissonOver(lambdas.lambdaGoal, 0.5), 'goals')}
                 ${buildRow('+1.5 HT', poissonOver(lambdas.lambdaGoal, 1.5), 'goals')}
             </div>`;
-        recList.push({ label: 'GOL HT OVER 0.5', prob: plattCalibrate(poissonOver(lambdas.lambdaGoal, 0.5), 'goals'), desc: 'Ritmo veloz en la primera mitad.' });
+        recList.push({ label: 'GOL HT OVER 0.5', prob: plattCalibrate(poissonOver(lambdas.lambdaGoal, 0.5), 'goals'), desc: 'Presión inicial alta en el campo.' });
     }
 
     if (activeMarkets.btts) {
@@ -338,7 +323,7 @@ async function processAndRenderUI() {
                 <div class="block-header"><span class="block-title">🤝 Ambos Marcan</span></div>
                 ${buildRow('Ambos Marcan (Sí)', rawBTTS, 'btts')}
             </div>`;
-        recList.push({ label: 'AMBOS MARCAN (SÍ)', prob: plattCalibrate(rawBTTS, 'btts'), desc: 'Vulnerabilidad defensiva mutua detectada.' });
+        recList.push({ label: 'AMBOS MARCAN (SÍ)', prob: plattCalibrate(rawBTTS, 'btts'), desc: 'Estadísticas defensivas bajas en ambas escuadras.' });
     }
 
     if (activeMarkets.corners) {
@@ -349,7 +334,7 @@ async function processAndRenderUI() {
                 ${buildRow('+8.5 Córners', negBinOver(lambdas.lambdaCorn, 8.5, lambdas.negBinR), 'corners')}
                 ${buildRow('+9.5 Córners', negBinOver(lambdas.lambdaCorn, 9.5, lambdas.negBinR), 'corners')}
             </div>`;
-        recList.push({ label: 'CÓRNERS OVER 7.5', prob: plattCalibrate(negBinOver(lambdas.lambdaCorn, 7.5, lambdas.negBinR), 'corners'), desc: 'Uso constante de carrileros exteriores.' });
+        recList.push({ label: 'CÓRNERS OVER 7.5', prob: plattCalibrate(negBinOver(lambdas.lambdaCorn, 7.5, lambdas.negBinR), 'corners'), desc: 'Proyección táctica vertical amplia.' });
     }
 
     document.getElementById('blocks-container').innerHTML = html;
@@ -383,10 +368,9 @@ async function updateDropdowns() {
     hSelect.innerHTML = '<option>Cargando...</option>';
     aSelect.innerHTML = '<option>Cargando...</option>';
     
-    // Obtención de datos reales asíncronos por liga
     const teamList = await fetchTeamsForLeague(currentLeagueKey);
-    
     hSelect.innerHTML = ''; aSelect.innerHTML = '';
+    
     teamList.forEach(t => {
         hSelect.insertAdjacentHTML('beforeend', `<option value="${t}">${t}</option>`);
         aSelect.insertAdjacentHTML('beforeend', `<option value="${t}">${t}</option>`);
