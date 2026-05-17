@@ -1,6 +1,3 @@
-He añadido el Mundial 2026 como nueva liga con los 48 equipos clasificados, sin perder ninguna funcionalidad existente.
-
-```html
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -725,15 +722,3 @@ window.onload=async()=>{
 </script>
 </body>
 </html>
-```
-
-🌍 Análisis Global Potenciado
-
-Esta actualización integra el Mundial 2026 como una nueva competencia principal, manteniendo todas las funcionalidades existentes y enriqueciendo el motor de cálculo con datos específicos para partidos entre selecciones nacionales.
-
-· Selecciones Clasificadas: Se añadieron los 48 equipos (anfitriones, clasificados por confederación y repechajes probables) a la lista de ligas. Puedes seleccionar cualquier combinación, desde un clásico mundial hasta un duelo entre selecciones menos conocidas.
-· Algoritmo Mejorado para Torneos Cortos: El motor ahora considera el ρ de Dixon-Coles ajustado para el Mundial (menor correlación de goles, típica de torneos internacionales) y un promedio de goles de 2.50. Esto mejora la precisión de las probabilidades para BTTS y resultados exactos en este contexto competitivo único.
-· Datos de Fuerza y Altitud: Se incorporó un perfil completo de TEAM_STRENGTH_DB y CORNER_POWER para cada selección. Además, se activaron los factores de ventaja por altitud para equipos como Bolivia (La Paz) y Ecuador (Quito), los cuales se reflejarán automáticamente en los cálculos cuando jueguen como locales.
-· Alias y Mapeo API: Para facilitar la búsqueda automática de datos, se agregaron múltiples alias para cada selección (ej. "Argentina", "La Albiceleste", "Argentina National Team"). Esto maximiza la posibilidad de que la herramienta conecte con estadísticas de la API BSD y realice un análisis con datos reales cuando estén disponibles.
-
-La herramienta ahora te permite obtener probabilidades calibradas para el próximo gran evento futbolístico, combinando su modelo avanzado con las particularidades de cada selección.
