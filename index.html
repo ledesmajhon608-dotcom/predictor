@@ -182,22 +182,52 @@ const API_TIMEOUT = 8000;
 const ELO_K_FACTOR = 24;
 const ELO_HOME_ADVANTAGE = 65;
 
-// ============ DEFINICIÓN DE LIGAS ============
+// ============ DEFINICIÓN DE LIGAS (con equipos) ============
 const LIGAS = {
-    "PL":  {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",goalsAvg:2.81,goalsHomeAvg:1.55,goalsAwayAvg:1.26,cornersAvg:10.25,cornersHomeAvg:5.65,cornersAwayAvg:4.60,negBinRGoals:5.2,negBinRCorners:5.8,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Premier League"},
-    "BL1": {name:"🇩🇪 Bundesliga",goalsAvg:3.05,goalsHomeAvg:1.68,goalsAwayAvg:1.37,cornersAvg:9.80,cornersHomeAvg:5.40,cornersAwayAvg:4.40,negBinRGoals:5.9,negBinRCorners:5.6,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Bundesliga"},
-    "DED": {name:"🇳🇱 Eredivisie",goalsAvg:3.15,goalsHomeAvg:1.72,goalsAwayAvg:1.43,cornersAvg:9.60,cornersHomeAvg:5.30,cornersAwayAvg:4.30,negBinRGoals:5.5,negBinRCorners:5.4,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Eredivisie"},
-    "JPL": {name:"🇧🇪 Jupiler Pro League",goalsAvg:2.88,goalsHomeAvg:1.58,goalsAwayAvg:1.30,cornersAvg:9.30,cornersHomeAvg:5.10,cornersAwayAvg:4.20,negBinRGoals:5.8,negBinRCorners:5.5,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Belgian Pro League"},
-    "FL1": {name:"🇫🇷 Ligue 1",goalsAvg:2.72,goalsHomeAvg:1.50,goalsAwayAvg:1.22,cornersAvg:9.30,cornersHomeAvg:5.10,cornersAwayAvg:4.20,negBinRGoals:6.0,negBinRCorners:5.7,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Ligue 1"},
-    "BSA": {name:"🇧🇷 Brasileirão",goalsAvg:2.44,goalsHomeAvg:1.42,goalsAwayAvg:1.02,cornersAvg:9.50,cornersHomeAvg:5.40,cornersAwayAvg:4.10,negBinRGoals:5.6,negBinRCorners:5.3,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Campeonato Brasileiro Série A"},
-    "ELC": {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship",goalsAvg:2.62,goalsHomeAvg:1.45,goalsAwayAvg:1.17,cornersAvg:9.70,cornersHomeAvg:5.35,cornersAwayAvg:4.35,negBinRGoals:5.4,negBinRCorners:5.2,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Championship"},
-    "PD":  {name:"🇪🇸 La Liga",goalsAvg:2.55,goalsHomeAvg:1.48,goalsAwayAvg:1.07,cornersAvg:9.50,cornersHomeAvg:5.30,cornersAwayAvg:4.20,negBinRGoals:6.4,negBinRCorners:5.9,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"La Liga"},
-    "SA":  {name:"🇮🇹 Serie A",goalsAvg:2.68,goalsHomeAvg:1.45,goalsAwayAvg:1.23,cornersAvg:9.10,cornersHomeAvg:5.00,cornersAwayAvg:4.10,negBinRGoals:6.8,negBinRCorners:6.0,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Serie A"},
-    "MXL": {name:"🇲🇽 Liga MX",goalsAvg:2.72,goalsHomeAvg:1.52,goalsAwayAvg:1.20,cornersAvg:8.60,cornersHomeAvg:4.80,cornersAwayAvg:3.80,negBinRGoals:6.1,negBinRCorners:5.5,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Liga MX"},
-    "LIB": {name:"🏆 Libertadores",goalsAvg:2.48,goalsHomeAvg:1.44,goalsAwayAvg:1.04,cornersAvg:9.20,cornersHomeAvg:5.20,cornersAwayAvg:4.00,negBinRGoals:5.9,negBinRCorners:5.4,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Copa Libertadores"},
-    "MLS": {name:"🇺🇸 MLS",goalsAvg:2.85,goalsHomeAvg:1.62,goalsAwayAvg:1.23,cornersAvg:9.15,cornersHomeAvg:5.15,cornersAwayAvg:4.00,negBinRGoals:6.0,negBinRCorners:5.6,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Major League Soccer"},
-    "PPT": {name:"🇵🇹 Liga Portugal",goalsAvg:2.58,goalsHomeAvg:1.44,goalsAwayAvg:1.14,cornersAvg:9.40,cornersHomeAvg:5.25,cornersAwayAvg:4.15,negBinRGoals:5.9,negBinRCorners:5.5,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Liga Portugal"},
-    "WC26":{name:"🏆 Mundial 2026",goalsAvg:2.55,goalsHomeAvg:1.40,goalsAwayAvg:1.15,cornersAvg:8.90,cornersHomeAvg:4.90,cornersAwayAvg:4.00,negBinRGoals:5.4,negBinRCorners:5.1,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"FIFA World Cup"}
+    "PL":  {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League",goalsAvg:2.81,goalsHomeAvg:1.55,goalsAwayAvg:1.26,cornersAvg:10.25,cornersHomeAvg:5.65,cornersAwayAvg:4.60,negBinRGoals:5.2,negBinRCorners:5.8,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Premier League",
+        teams:["Arsenal FC","Aston Villa FC","AFC Bournemouth","Brentford FC","Brighton & Hove Albion FC","Chelsea FC","Crystal Palace FC","Everton FC","Fulham FC","Liverpool FC","Manchester City FC","Manchester United FC","Newcastle United FC","Nottingham Forest FC","Tottenham Hotspur FC","West Ham United FC","Wolverhampton Wanderers FC","Leeds United","Burnley FC","Sunderland AFC"]},
+    "BL1": {name:"🇩🇪 Bundesliga",goalsAvg:3.05,goalsHomeAvg:1.68,goalsAwayAvg:1.37,cornersAvg:9.80,cornersHomeAvg:5.40,cornersAwayAvg:4.40,negBinRGoals:5.9,negBinRCorners:5.6,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Bundesliga",
+        teams:["1. FC Heidenheim 1846","1. FC Union Berlin","1. FSV Mainz 05","Bayer 04 Leverkusen","Borussia Dortmund","Borussia Mönchengladbach","Eintracht Frankfurt","FC Augsburg","FC Bayern München","RB Leipzig","SC Freiburg","SV Werder Bremen","TSG 1899 Hoffenheim","VfB Stuttgart","VfL Bochum 1848","VfL Wolfsburg","FC St. Pauli","Holstein Kiel"]},
+    "DED": {name:"🇳🇱 Eredivisie",goalsAvg:3.15,goalsHomeAvg:1.72,goalsAwayAvg:1.43,cornersAvg:9.60,cornersHomeAvg:5.30,cornersAwayAvg:4.30,negBinRGoals:5.5,negBinRCorners:5.4,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Eredivisie",
+        teams:["AZ Alkmaar","Ajax","Almere City FC","FC Groningen","FC Twente","FC Utrecht","Feyenoord","Fortuna Sittard","Go Ahead Eagles","Heracles Almelo","NAC Breda","NEC Nijmegen","PEC Zwolle","PSV Eindhoven","RKC Waalwijk","Sparta Rotterdam","Willem II","sc Heerenveen"]},
+    "JPL": {name:"🇧🇪 Jupiler Pro League",goalsAvg:2.88,goalsHomeAvg:1.58,goalsAwayAvg:1.30,cornersAvg:9.30,cornersHomeAvg:5.10,cornersAwayAvg:4.20,negBinRGoals:5.8,negBinRCorners:5.5,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Belgian Pro League",
+        teams:["Anderlecht","Club Brugge KV","KAA Gent","Antwerp","KRC Genk","Cercle Brugge KSV","Standard de Liège","R. Union Saint-Gilloise","KV Mechelen","STVV","Beerschot VA","OH Leuven","KV Kortrijk","Charleroi","KVC Westerlo","RFC Seraing","Zulte Waregem"]},
+    "FL1": {name:"🇫🇷 Ligue 1",goalsAvg:2.72,goalsHomeAvg:1.50,goalsAwayAvg:1.22,cornersAvg:9.30,cornersHomeAvg:5.10,cornersAwayAvg:4.20,negBinRGoals:6.0,negBinRCorners:5.7,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Ligue 1",
+        teams:["AJ Auxerre","AS Monaco FC","Le Havre AC","Lille OSC","Montpellier HSC","OGC Nice","Olympique Lyonnais","Olympique de Marseille","Paris Saint-Germain FC","RC Lens","RC Strasbourg Alsace","Stade Brestois 29","Stade Rennais FC","Stade de Reims","Toulouse FC","FC Nantes","FC Lorient","ESTAC Troyes"]},
+    "BSA": {name:"🇧🇷 Brasileirão",goalsAvg:2.44,goalsHomeAvg:1.42,goalsAwayAvg:1.02,cornersAvg:9.50,cornersHomeAvg:5.40,cornersAwayAvg:4.10,negBinRGoals:5.6,negBinRCorners:5.3,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Campeonato Brasileiro Série A",
+        teams:["Athletico Paranaense","Atlético Mineiro","Bahia","Botafogo","Chapecoense","Corinthians","Coritiba","Cruzeiro","Flamengo","Fluminense","Grêmio","Internacional","Mirassol","Palmeiras","Red Bull Bragantino","Remo","Santos","São Paulo","Vasco da Gama","Vitória"]},
+    "ELC": {name:"🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship",goalsAvg:2.62,goalsHomeAvg:1.45,goalsAwayAvg:1.17,cornersAvg:9.70,cornersHomeAvg:5.35,cornersAwayAvg:4.35,negBinRGoals:5.4,negBinRCorners:5.2,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Championship",
+        teams:["Blackburn Rovers","Bristol City","Cardiff City","Coventry City","Derby County","Hull City","Luton Town","Middlesbrough FC","Millwall FC","Norwich City","Oxford United","Plymouth Argyle","Portsmouth FC","Preston North End","QPR","Sheffield United","Sheffield Wednesday","Stoke City","Swansea City","Watford FC","West Bromwich Albion","Leicester City FC","Ipswich Town FC","Southampton FC"]},
+    "PD":  {name:"🇪🇸 La Liga",goalsAvg:2.55,goalsHomeAvg:1.48,goalsAwayAvg:1.07,cornersAvg:9.50,cornersHomeAvg:5.30,cornersAwayAvg:4.20,negBinRGoals:6.4,negBinRCorners:5.9,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"La Liga",
+        teams:["Athletic Club","Atlético de Madrid","CA Osasuna","Deportivo Alavés","FC Barcelona","Getafe CF","Real Oviedo","Girona FC","RC Celta de Vigo","RCD Mallorca","Rayo Vallecano","Real Betis Balompié","Real Madrid CF","Elche CF","Real Sociedad","Sevilla FC","UD Las Palmas","Valencia CF","Villarreal CF","RCD Espanyol de Barcelona","CD Leganés","Levante UD","Real Valladolid CF"]},
+    "SA":  {name:"🇮🇹 Serie A",goalsAvg:2.68,goalsHomeAvg:1.45,goalsAwayAvg:1.23,cornersAvg:9.10,cornersHomeAvg:5.00,cornersAwayAvg:4.10,negBinRGoals:6.8,negBinRCorners:6.0,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Serie A",
+        teams:["AC Milan","AC Monza","ACF Fiorentina","AS Roma","Atalanta BC","Bologna FC 1909","Cagliari Calcio","Como 1907","Empoli FC","Genoa CFC","Hellas Verona FC","Inter Milano","Juventus FC","Parma Calcio 1913","SS Lazio","SSC Napoli","Torino FC","Udinese Calcio","US Lecce","Sassuolo"]},
+    "MXL": {name:"🇲🇽 Liga MX",goalsAvg:2.72,goalsHomeAvg:1.52,goalsAwayAvg:1.20,cornersAvg:8.60,cornersHomeAvg:4.80,cornersAwayAvg:3.80,negBinRGoals:6.1,negBinRCorners:5.5,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Liga MX",
+        teams:["América","Atlas FC","Atlético de San Luis","CF Pachuca","Club Necaxa","Club Tijuana","Cruz Azul","Deportivo Guadalajara","FC Juárez","León","Mazatlán FC","Monterrey","Puebla FC","Querétaro FC","Santos Laguna","Tigres UANL","Toluca FC","UNAM Pumas"]},
+    "LIB": {name:"🏆 Libertadores",goalsAvg:2.48,goalsHomeAvg:1.44,goalsAwayAvg:1.04,cornersAvg:9.20,cornersHomeAvg:5.20,cornersAwayAvg:4.00,negBinRGoals:5.9,negBinRCorners:5.4,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Copa Libertadores",
+        teams:["Flamengo","Estudiantes de La Plata","Cusco FC","Independiente Medellín","Nacional","Universitario","Coquimbo Unido","Deportes Tolima","Fluminense","Club Bolívar","Deportivo La Guaira","Independiente Rivadavia","Boca Juniors","Cruzeiro","Universidad Católica","Barcelona SC","Peñarol","Corinthians","Santa Fe","Platense","Palmeiras","Cerro Porteño","Junior","Sporting Cristal","LDU Quito","Lanús","Always Ready","Mirassol","Independiente del Valle","Libertad","Rosario Central","Universidad Central"]},
+    "MLS": {name:"🇺🇸 MLS",goalsAvg:2.85,goalsHomeAvg:1.62,goalsAwayAvg:1.23,cornersAvg:9.15,cornersHomeAvg:5.15,cornersAwayAvg:4.00,negBinRGoals:6.0,negBinRCorners:5.6,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Major League Soccer",
+        teams:["Inter Miami CF","CF Montréal","Charlotte FC","Chicago Fire FC","FC Cincinnati","Columbus Crew","D.C. United","CF New England Revolution","Nashville SC","New York City FC","New York Red Bulls","Orlando City SC","Philadelphia Union","Atlanta United FC","Toronto FC","Austin FC","Colorado Rapids","FC Dallas","Houston Dynamo FC","LA Galaxy","Los Angeles FC","Minnesota United FC","Portland Timbers","Real Salt Lake","San Jose Earthquakes","Seattle Sounders FC","Sporting Kansas City","St. Louis City SC","Vancouver Whitecaps FC","San Diego FC"]},
+    "PPT": {name:"🇵🇹 Liga Portugal",goalsAvg:2.58,goalsHomeAvg:1.44,goalsAwayAvg:1.14,cornersAvg:9.40,cornersHomeAvg:5.25,cornersAwayAvg:4.15,negBinRGoals:5.9,negBinRCorners:5.5,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"Liga Portugal",
+        teams:["Sporting CP","FC Porto","SL Benfica","SC Braga","FC Famalicão","Rio Ave FC","CD Santa Clara","FC Alverca","GD Estoril Praia","Gil Vicente FC","Vitória SC","Casa Pia AC","FC Arouca","CD Tondela","Moreirense FC","CD Nacional","Estrela da Amadora","SC Farense"]},
+    "WC26":{name:"🏆 Mundial 2026",goalsAvg:2.55,goalsHomeAvg:1.40,goalsAwayAvg:1.15,cornersAvg:8.90,cornersHomeAvg:4.90,cornersAwayAvg:4.00,negBinRGoals:5.4,negBinRCorners:5.1,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"FIFA World Cup",
+        teams:["Argentina","Brazil","Uruguay","Colombia","Ecuador","Paraguay","Chile","Bolivia","Germany","Spain","France","England","Portugal","Italy","Netherlands","Belgium","Croatia","Denmark","Switzerland","Austria","Ukraine","Turkey","Sweden","Wales","Japan","Iran","South Korea","Saudi Arabia","Australia","China","United Arab Emirates","Uzbekistan","Egypt","Morocco","Senegal","Ghana","Ivory Coast","Nigeria","Cameroon","Algeria","South Africa","United States","Mexico","Canada","Panama","Costa Rica","Honduras","Jamaica","New Zealand"]}
+};
+
+// ============ BASES DE DATOS ESTÁTICAS (FALLBACK OFFLINE) ============
+const TEAM_STRENGTH_DB = {
+    "PL":{"Arsenal FC":[1.24,0.82,1.10],"Aston Villa FC":[1.17,0.92,1.08],"AFC Bournemouth":[0.95,1.08,1.05],"Brentford FC":[1.02,1.03,1.06],"Brighton & Hove Albion FC":[1.11,0.96,1.07],"Chelsea FC":[1.15,0.89,1.09],"Crystal Palace FC":[0.98,1.05,1.04],"Everton FC":[0.92,1.10,1.05],"Fulham FC":[1.04,1.01,1.06],"Liverpool FC":[1.28,0.79,1.12],"Manchester City FC":[1.30,0.77,1.13],"Manchester United FC":[1.18,0.88,1.09],"Newcastle United FC":[1.13,0.94,1.08],"Nottingham Forest FC":[0.96,1.07,1.05],"Tottenham Hotspur FC":[1.16,0.90,1.09],"West Ham United FC":[1.06,1.00,1.06],"Wolverhampton Wanderers FC":[1.03,1.02,1.06],"Leeds United":[1.01,1.04,1.06],"Burnley FC":[0.93,1.09,1.04],"Sunderland AFC":[0.94,1.08,1.04]},
+    "BL1":{"FC Bayern München":[1.32,0.76,1.13],"Borussia Dortmund":[1.24,0.83,1.10],"Bayer 04 Leverkusen":[1.27,0.80,1.12],"RB Leipzig":[1.22,0.85,1.10],"VfB Stuttgart":[1.16,0.91,1.08],"Eintracht Frankfurt":[1.14,0.93,1.08],"SC Freiburg":[1.09,0.98,1.07],"TSG 1899 Hoffenheim":[1.10,0.97,1.07],"SV Werder Bremen":[1.05,1.02,1.06],"1. FC Heidenheim 1846":[0.94,1.08,1.04],"FC Augsburg":[1.00,1.05,1.05],"VfL Wolfsburg":[1.04,1.01,1.06],"1. FSV Mainz 05":[1.02,1.03,1.06],"Borussia Mönchengladbach":[1.08,0.99,1.07],"1. FC Union Berlin":[0.98,1.06,1.05],"VfL Bochum 1848":[0.91,1.11,1.04],"FC St. Pauli":[0.96,1.07,1.05],"Holstein Kiel":[0.90,1.12,1.03]},
+    "WC26":{"Argentina":[1.35,0.72,1.08],"Brazil":[1.32,0.75,1.08],"Uruguay":[1.22,0.82,1.07],"Colombia":[1.20,0.84,1.07],"Ecuador":[1.18,0.86,1.08],"Paraguay":[1.05,1.00,1.05],"Chile":[1.04,1.02,1.05],"Bolivia":[1.10,0.92,1.14],"Germany":[1.30,0.76,1.07],"Spain":[1.33,0.74,1.07],"France":[1.34,0.73,1.07],"England":[1.31,0.75,1.07],"Portugal":[1.28,0.78,1.07],"Italy":[1.25,0.80,1.06],"Netherlands":[1.24,0.81,1.06],"Belgium":[1.20,0.84,1.06],"Croatia":[1.18,0.86,1.06],"Denmark":[1.16,0.88,1.06],"Switzerland":[1.15,0.90,1.05],"Austria":[1.14,0.91,1.05],"Ukraine":[1.10,0.95,1.05],"Turkey":[1.12,0.93,1.05],"Sweden":[1.08,0.97,1.05],"Wales":[1.06,1.00,1.05],"Japan":[1.22,0.83,1.06],"Iran":[1.08,0.97,1.05],"South Korea":[1.16,0.89,1.06],"Saudi Arabia":[0.96,1.06,1.04],"Australia":[1.04,1.01,1.05],"China":[0.92,1.10,1.04],"United Arab Emirates":[0.90,1.12,1.04],"Uzbekistan":[0.94,1.08,1.04],"Egypt":[1.10,0.95,1.05],"Morocco":[1.25,0.80,1.06],"Senegal":[1.20,0.84,1.06],"Ghana":[1.06,1.00,1.05],"Ivory Coast":[1.15,0.90,1.05],"Nigeria":[1.14,0.91,1.05],"Cameroon":[1.05,1.01,1.05],"Algeria":[1.10,0.95,1.05],"South Africa":[1.02,1.03,1.05],"United States":[1.18,0.87,1.08],"Mexico":[1.16,0.89,1.07],"Canada":[1.12,0.93,1.07],"Panama":[0.94,1.08,1.05],"Costa Rica":[1.00,1.04,1.05],"Honduras":[0.92,1.10,1.04],"Jamaica":[0.98,1.05,1.05],"New Zealand":[0.88,1.14,1.04]}
+};
+
+const CORNER_POWER = {
+    "Manchester City FC":{home:7.8,away:6.8},"Liverpool FC":{home:7.4,away:6.1},"Arsenal FC":{home:7.0,away:5.9},"Chelsea FC":{home:6.5,away:5.5},"Tottenham Hotspur FC":{home:6.4,away:5.3},"Aston Villa FC":{home:6.3,away:5.2},"Newcastle United FC":{home:6.0,away:5.0},"Manchester United FC":{home:5.8,away:4.9},"Brighton & Hove Albion FC":{home:6.2,away:5.4},"West Ham United FC":{home:5.5,away:4.6},"Crystal Palace FC":{home:4.9,away:4.1},"AFC Bournemouth":{home:5.0,away:4.2},"Fulham FC":{home:5.2,away:4.3},"Wolverhampton Wanderers FC":{home:5.1,away:4.3},"Everton FC":{home:4.8,away:4.0},"Brentford FC":{home:5.3,away:4.5},"Nottingham Forest FC":{home:4.9,away:4.0},
+    "FC Bayern München":{home:7.2,away:6.2},"Borussia Dortmund":{home:6.4,away:5.4},"Bayer 04 Leverkusen":{home:6.7,away:5.7},"RB Leipzig":{home:6.3,away:5.3},"VfB Stuttgart":{home:5.9,away:5.0},"Eintracht Frankfurt":{home:5.7,away:4.8},"SC Freiburg":{home:5.4,away:4.5},"TSG 1899 Hoffenheim":{home:5.5,away:4.6},"SV Werder Bremen":{home:5.3,away:4.4},"1. FC Heidenheim 1846":{home:4.9,away:4.1},"FC Augsburg":{home:4.8,away:4.0},"VfL Wolfsburg":{home:5.2,away:4.3},"1. FSV Mainz 05":{home:5.0,away:4.2},"Borussia Mönchengladbach":{home:5.3,away:4.4},"1. FC Union Berlin":{home:4.7,away:3.9},"VfL Bochum 1848":{home:4.6,away:3.8},"FC St. Pauli":{home:4.8,away:4.0},"Holstein Kiel":{home:4.5,away:3.7},
+    "Paris Saint-Germain FC":{home:6.7,away:5.7},"AS Monaco FC":{home:6.0,away:5.1},"Lille OSC":{home:5.6,away:4.7},"OGC Nice":{home:5.4,away:4.5},"Olympique Lyonnais":{home:5.5,away:4.6},"Olympique de Marseille":{home:5.5,away:4.6},"RC Lens":{home:5.3,away:4.4},"Stade Rennais FC":{home:5.1,away:4.2},"Stade de Reims":{home:4.9,away:4.1},"Toulouse FC":{home:4.8,away:4.0},"Montpellier HSC":{home:4.7,away:3.9},"RC Strasbourg Alsace":{home:4.8,away:4.0},"Le Havre AC":{home:4.6,away:3.8},"FC Nantes":{home:4.7,away:3.9},"Stade Brestois 29":{home:5.2,away:4.3},"AJ Auxerre":{home:4.6,away:3.8},"FC Lorient":{home:4.8,away:4.0},"ESTAC Troyes":{home:4.3,away:3.5},
+    "Real Madrid CF":{home:6.6,away:5.7},"FC Barcelona":{home:6.4,away:5.5},"Atlético de Madrid":{home:5.8,away:4.9},"Athletic Club":{home:5.5,away:4.6},"Real Sociedad":{home:5.4,away:4.5},"Real Betis Balompié":{home:5.3,away:4.4},"Villarreal CF":{home:5.0,away:4.2},"Valencia CF":{home:5.1,away:4.2},"Sevilla FC":{home:5.2,away:4.3},"Girona FC":{home:5.6,away:4.7},"CA Osasuna":{home:4.9,away:4.0},"Getafe CF":{home:4.5,away:3.7},"RC Celta de Vigo":{home:5.0,away:4.1},"RCD Mallorca":{home:4.7,away:3.9},"Rayo Vallecano":{home:4.6,away:3.8},"UD Las Palmas":{home:4.8,away:4.0},"Deportivo Alavés":{home:4.7,away:3.9},"RCD Espanyol de Barcelona":{home:4.8,away:4.0},"CD Leganés":{home:4.5,away:3.7},"Real Valladolid CF":{home:4.4,away:3.6},
+    "Inter Milano":{home:6.0,away:5.1},"AC Milan":{home:5.8,away:4.9},"Juventus FC":{home:5.6,away:4.7},"Atalanta BC":{home:5.9,away:5.0},"SSC Napoli":{home:5.7,away:4.8},"AS Roma":{home:5.5,away:4.6},"SS Lazio":{home:5.3,away:4.4},"ACF Fiorentina":{home:5.4,away:4.5},"Torino FC":{home:4.8,away:4.0},"Bologna FC 1909":{home:5.2,away:4.3},"Genoa CFC":{home:4.7,away:3.9},"AC Monza":{home:4.6,away:3.8},"Hellas Verona FC":{home:4.5,away:3.7},"Udinese Calcio":{home:4.6,away:3.8},"Cagliari Calcio":{home:4.5,away:3.7},"Empoli FC":{home:4.7,away:3.9},"Como 1907":{home:5.0,away:4.2},"Parma Calcio 1913":{home:4.8,away:4.0},"US Lecce":{home:4.4,away:3.6},"Sassuolo":{home:5.0,away:4.2},
+    "Argentina":{home:6.2,away:5.3},"Brazil":{home:6.6,away:5.7},"Uruguay":{home:5.4,away:4.5},"Colombia":{home:5.3,away:4.4},"Germany":{home:6.8,away:5.9},"Spain":{home:6.4,away:5.5},"France":{home:6.5,away:5.6},"England":{home:6.3,away:5.4},"Portugal":{home:6.1,away:5.2},"Italy":{home:5.9,away:5.0},"Netherlands":{home:5.8,away:4.9},"Belgium":{home:5.7,away:4.8},"Croatia":{home:5.3,away:4.4},"Japan":{home:5.2,away:4.3},"Morocco":{home:5.0,away:4.1},"United States":{home:5.1,away:4.2},"Mexico":{home:5.2,away:4.3},"Senegal":{home:4.9,away:4.0},"Ecuador":{home:5.0,away:4.1},"South Korea":{home:4.8,away:3.9},"Iran":{home:4.5,away:3.7},"Australia":{home:4.6,away:3.8},"Canada":{home:4.7,away:3.9},"Egypt":{home:4.8,away:4.0},"Nigeria":{home:4.6,away:3.8},"Ghana":{home:4.5,away:3.7},"Cameroon":{home:4.7,away:3.9},"Ivory Coast":{home:4.8,away:4.0},"Algeria":{home:4.6,away:3.8},"South Africa":{home:4.5,away:3.7},"Denmark":{home:5.0,away:4.2},"Switzerland":{home:4.9,away:4.1},"Austria":{home:5.0,away:4.2},"Turkey":{home:5.1,away:4.3},"Sweden":{home:4.8,away:4.0},"Wales":{home:4.6,away:3.8},"Ukraine":{home:4.7,away:3.9},"Paraguay":{home:4.5,away:3.7},"Chile":{home:4.8,away:4.0},"Bolivia":{home:4.9,away:3.6},"Costa Rica":{home:4.4,away:3.6},"Panama":{home:4.3,away:3.5},"Honduras":{home:4.2,away:3.4},"Jamaica":{home:4.3,away:3.5},"Saudi Arabia":{home:4.4,away:3.6},"China":{home:4.3,away:3.5},"United Arab Emirates":{home:4.2,away:3.4},"Uzbekistan":{home:4.3,away:3.5},"New Zealand":{home:4.1,away:3.3}
 };
 
 // ============ ALTITUD (VENTAJA FISIOLÓGICA) ============
@@ -215,8 +245,7 @@ let apiAvailable = false;
 let activeMarkets = {ht:true, goles:true, btts:true, corn:true};
 let bsdLeagueMap = {};
 
-// Cachés de modelos entrenados dinámicamente
-let leagueModels = {}; // {leagueKey: {attackParams:{}, defenseParams:{}, homeAdvantage:number, plattCalibration:{}, cornerParams:{}, eloRatings:{}}}
+let leagueModels = {};
 let statsCache = {};
 
 // ============ FUNCIONES UI ============
@@ -338,30 +367,21 @@ function tokenOverlap(a, b) {
 function matchTeamName(offlineName, apiTeams) {
     const norm = normalizeTeamName;
     const tn = norm(offlineName);
-    
-    // Match exacto
     let f = apiTeams.find(t => t.name.trim().toLowerCase() === offlineName.trim().toLowerCase());
     if (f) return f;
-    
-    // Match normalizado
     f = apiTeams.find(t => norm(t.name) === tn);
     if (f) return f;
-    
-    // Fuzzy matching
     let best = 0, bestT = null;
     apiTeams.forEach(t => {
         const sc = tokenOverlap(tn, norm(t.name));
         if (sc > best) { best = sc; bestT = t; }
     });
     if (best >= 0.55) return bestT;
-    
-    // Contención
     f = apiTeams.find(t => {
         const n = norm(t.name);
         return n.length > 4 && tn.length > 4 && (n.includes(tn) || tn.includes(n));
     });
     if (f) return f;
-    
     return null;
 }
 
@@ -375,18 +395,13 @@ async function loadTeams(key) {
     const liga = LIGAS[key];
     updateModelStatus('Cargando equipos y entrenando modelo...');
     
-    // Obtener equipos de la API
     let apiTeams = [];
     if (apiAvailable && bsdLeagueMap[key]) {
         try {
             const leagueId = bsdLeagueMap[key].bsdId;
             const seasonId = bsdLeagueMap[key].seasonId;
-            
-            // Obtener equipos de la liga
             const teamsData = await bsdFetch(`/teams/?league=${leagueId}&page_size=200`);
             apiTeams = teamsData.results || [];
-            
-            // Complementar con equipos de eventos recientes
             const eventsData = await bsdFetchAll(`/events/?season=${seasonId}&league=${leagueId}&limit=200`);
             const teamIds = new Set(apiTeams.map(t => t.id));
             eventsData.forEach(e => {
@@ -399,26 +414,18 @@ async function loadTeams(key) {
                     teamIds.add(e.away_team_obj.id);
                 }
             });
-            
-            // Entrenar modelo con datos históricos
             await trainLeagueModel(key, eventsData, apiTeams);
         } catch (e) {
             console.error('Error cargando equipos:', e);
         }
     }
     
-    // Mapear equipos
     teamMap = {};
     const uniqueApiTeams = Array.from(new Map(apiTeams.map(t => [t.id, t])).values());
     
-    // Usar los equipos que aparecen en los datos históricos como fuente principal
+    // Priorizar equipos históricos, luego los de la lista predefinida
     const historicalTeams = leagueModels[key]?.teams || [];
-    const allTeamNames = new Set([...historicalTeams]);
-    
-    if (allTeamNames.size < 6) {
-        // Si no hay suficientes equipos históricos, usar lista predefinida
-        LIGAS[key].teams?.forEach(t => allTeamNames.add(t));
-    }
+    const allTeamNames = new Set([...historicalTeams, ...(LIGAS[key].teams || [])]);
     
     allTeamNames.forEach(name => {
         const apiTeam = matchTeamName(name, uniqueApiTeams);
@@ -429,7 +436,6 @@ async function loadTeams(key) {
         };
     });
     
-    // Llenar selects
     const sortedTeams = [...allTeamNames].sort();
     fillSelects(sortedTeams);
     
@@ -438,7 +444,7 @@ async function loadTeams(key) {
     setApiStatus('live', `🟢 ${matchedCount}/${sortedTeams.length} equipos vinculados | Modelo: ${modelTrained}`);
     updateModelStatus(leagueModels[key]?.trained ? 
         `Modelo entrenado con ${leagueModels[key].matchCount} partidos históricos` : 
-        'Usando parámetros estadísticos base');
+        'Usando parámetros estadísticos base + DB offline');
     document.getElementById('calc-btn').disabled = false;
 }
 
@@ -472,7 +478,6 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
         rho: -0.08
     };
     
-    // Filtrar partidos finalizados
     const finishedEvents = events.filter(m => {
         const st = (m.status || '').toUpperCase();
         return ['FT', 'FINISHED', 'AET', 'PEN', 'FULL_TIME'].includes(st) || st.includes('FT');
@@ -480,22 +485,16 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
     
     if (finishedEvents.length < 15) return;
     
-    // Datos para calibración Platt
     const calibrationData = {
         goals_over15: [], goals_over25: [], btts: [], goals_ht05: [], goals_ht15: [],
         corners_over85: [], corners_over95: [], corners_over105: [],
         result_home: [], result_away: []
     };
     
-    // Sistema Elo
     const eloRatings = {};
-    const ELO_INITIAL = 1500;
-    
-    // Acumuladores para ataque/defensa
-    const teamGoalStats = {}; // {teamName: {homeGF:0, homeGA:0, homeGP:0, awayGF:0, awayGA:0, awayGP:0}}
+    const teamGoalStats = {};
     const teamCornerStats = {};
     
-    // Procesar partidos en orden cronológico
     finishedEvents.sort((a, b) => new Date(a.start_date || a.date) - new Date(b.start_date || b.date));
     
     finishedEvents.forEach(m => {
@@ -509,7 +508,6 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
         model.teams.add(an);
         model.matchCount++;
         
-        // Acumular estadísticas de goles
         if (!teamGoalStats[hn]) teamGoalStats[hn] = {homeGF:0, homeGA:0, homeGP:0, awayGF:0, awayGA:0, awayGP:0};
         if (!teamGoalStats[an]) teamGoalStats[an] = {homeGF:0, homeGA:0, homeGP:0, awayGF:0, awayGA:0, awayGP:0};
         
@@ -520,7 +518,6 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
         teamGoalStats[an].awayGA += hs;
         teamGoalStats[an].awayGP++;
         
-        // Acumular estadísticas de córners
         const hc = m.home_corners || m.stats?.home?.corner_kicks || m.live_stats?.home?.corner_kicks;
         const ac = m.away_corners || m.stats?.away?.corner_kicks || m.live_stats?.away?.corner_kicks;
         if (hc != null && ac != null) {
@@ -534,9 +531,8 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
             teamCornerStats[an].awayCP++;
         }
         
-        // Sistema Elo
-        if (!eloRatings[hn]) eloRatings[hn] = ELO_INITIAL;
-        if (!eloRatings[an]) eloRatings[an] = ELO_INITIAL;
+        if (!eloRatings[hn]) eloRatings[hn] = 1500;
+        if (!eloRatings[an]) eloRatings[an] = 1500;
         
         const eloH = eloRatings[hn], eloA = eloRatings[an];
         const expectedHome = 1 / (1 + Math.pow(10, (eloA - eloH - ELO_HOME_ADVANTAGE) / 400));
@@ -552,41 +548,33 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
         eloRatings[hn] = eloH + kFactor * (actualHome - expectedHome);
         eloRatings[an] = eloA + kFactor * ((1 - actualHome) - (1 - expectedHome));
         
-        // Datos para calibración Platt (usando predicciones "ingenuas" basadas en promedios)
         const totalGoals = hs + as;
         const leagueAvgGoals = LIGAS[leagueKey]?.goalsAvg || 2.7;
         const leagueHomeAvg = LIGAS[leagueKey]?.goalsHomeAvg || 1.5;
         const leagueAwayAvg = LIGAS[leagueKey]?.goalsAwayAvg || 1.2;
         
-        // Predicción cruda simple para acumular datos de calibración
         const rawLambdaHome = leagueHomeAvg;
         const rawLambdaAway = leagueAwayAvg;
         const rawTotalLambda = rawLambdaHome + rawLambdaAway;
         
-        // Over 1.5
         let rawP = poissonOver(rawTotalLambda, 1.5);
         calibrationData.goals_over15.push({pred: rawP, actual: totalGoals > 1.5 ? 1 : 0});
         
-        // Over 2.5
         rawP = poissonOver(rawTotalLambda, 2.5);
         calibrationData.goals_over25.push({pred: rawP, actual: totalGoals > 2.5 ? 1 : 0});
         
-        // BTTS
         rawP = (1 - Math.exp(-rawLambdaHome)) * (1 - Math.exp(-rawLambdaAway)) * 100;
         calibrationData.btts.push({pred: rawP, actual: (hs > 0 && as > 0) ? 1 : 0});
         
-        // HT Over 0.5 (aproximación)
         const htLambda = rawTotalLambda * 0.44;
         rawP = poissonOver(htLambda, 0.5);
         const htGoals = (m.home_score_ht != null && m.away_score_ht != null) ? 
             Number(m.home_score_ht) + Number(m.away_score_ht) : Math.round(totalGoals * 0.44);
         calibrationData.goals_ht05.push({pred: rawP, actual: htGoals > 0.5 ? 1 : 0});
         
-        // HT Over 1.5
         rawP = poissonOver(htLambda, 1.5);
         calibrationData.goals_ht15.push({pred: rawP, actual: htGoals > 1.5 ? 1 : 0});
         
-        // Córners over 8.5
         if (hc != null && ac != null) {
             const totalCorners = hc + ac;
             const leagueCornAvg = LIGAS[leagueKey]?.cornersAvg || 9.5;
@@ -598,31 +586,25 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
             calibrationData.corners_over105.push({pred: rawP, actual: totalCorners > 10.5 ? 1 : 0});
         }
         
-        // Resultado
         calibrationData.result_home.push({pred: expectedHome * 100, actual: actualHome === 1 ? 1 : 0});
         calibrationData.result_away.push({pred: (1 - expectedHome) * 100 * 0.7, actual: actualHome === 0 ? 1 : 0});
     });
     
-    // Calcular parámetros de ataque/defensa normalizados
-    const liga = LIGAS[leagueKey];
-    const avgHomeGoals = liga?.goalsHomeAvg || 1.5;
-    const avgAwayGoals = liga?.goalsAwayAvg || 1.2;
-    const avgHomeCorners = liga?.cornersHomeAvg || 5.4;
-    const avgAwayCorners = liga?.cornersAwayAvg || 4.3;
+    const avgHomeGoals = LIGAS[leagueKey]?.goalsHomeAvg || 1.5;
+    const avgAwayGoals = LIGAS[leagueKey]?.goalsAwayAvg || 1.2;
+    const avgHomeCorners = LIGAS[leagueKey]?.cornersHomeAvg || 5.4;
+    const avgAwayCorners = LIGAS[leagueKey]?.cornersAwayAvg || 4.3;
     
     for (const [team, stats] of Object.entries(teamGoalStats)) {
-        // Parámetros de ataque: goles marcados / media de la liga
         const homeAtk = stats.homeGP > 0 ? (stats.homeGF / stats.homeGP) / avgHomeGoals : 1.0;
         const awayAtk = stats.awayGP > 0 ? (stats.awayGF / stats.awayGP) / avgAwayGoals : 1.0;
         model.attackParams[team] = {home: Math.max(0.5, Math.min(2.0, homeAtk)), away: Math.max(0.5, Math.min(2.0, awayAtk))};
         
-        // Parámetros de defensa: goles recibidos / media de la liga (invertido: menor = mejor defensa)
         const homeDef = stats.homeGP > 0 ? (stats.homeGA / stats.homeGP) / avgAwayGoals : 1.0;
         const awayDef = stats.awayGP > 0 ? (stats.awayGA / stats.awayGP) / avgHomeGoals : 1.0;
         model.defenseParams[team] = {home: Math.max(0.5, Math.min(2.0, homeDef)), away: Math.max(0.5, Math.min(2.0, awayDef))};
     }
     
-    // Parámetros de córners
     for (const [team, stats] of Object.entries(teamCornerStats)) {
         const homeAtkC = stats.homeCP > 0 ? (stats.homeCF / stats.homeCP) / avgHomeCorners : 1.0;
         const awayAtkC = stats.awayCP > 0 ? (stats.awayCF / stats.awayCP) / avgAwayCorners : 1.0;
@@ -638,7 +620,6 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
         };
     }
     
-    // Ventaja de campo observada
     const allHomeGoals = Object.values(teamGoalStats).reduce((s, t) => s + t.homeGF, 0);
     const allHomeGames = Object.values(teamGoalStats).reduce((s, t) => s + t.homeGP, 0);
     const allAwayGoals = Object.values(teamGoalStats).reduce((s, t) => s + t.awayGF, 0);
@@ -650,7 +631,6 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
         model.homeAdvantage = obsHomeAvg / Math.max(0.5, obsAwayAvg);
     }
     
-    // Rho de Dixon-Coles (correlación de goles bajos)
     let lowScoreCount = 0, lowScoreCorr = 0;
     finishedEvents.forEach(m => {
         const hs = Number(m.home_score || 0), as = Number(m.away_score || 0);
@@ -664,7 +644,6 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
         model.rho = Math.max(-0.20, Math.min(-0.02, model.rho));
     }
     
-    // Calibración Platt dinámica
     model.plattCalibration = {};
     const calibrationTypes = {
         'goals_over15': calibrationData.goals_over15,
@@ -682,13 +661,10 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
     for (const [type, data] of Object.entries(calibrationTypes)) {
         if (data.length >= 20) {
             const params = fitPlattScaling(data);
-            if (params) {
-                model.plattCalibration[type] = params;
-            }
+            if (params) model.plattCalibration[type] = params;
         }
     }
     
-    // Guardar ratings Elo
     model.eloRatings = eloRatings;
     model.trained = true;
     
@@ -696,10 +672,7 @@ async function trainLeagueModel(leagueKey, events, apiTeams) {
 }
 
 function fitPlattScaling(data) {
-    // Implementación de regresión logística simple para calibrar
-    // Usamos gradiente descendente para encontrar A y B óptimos
     if (data.length < 10) return null;
-    
     let A = 1.0, B = 0.0;
     const learningRate = 0.01;
     const iterations = 500;
@@ -707,29 +680,22 @@ function fitPlattScaling(data) {
     
     for (let iter = 0; iter < iterations; iter++) {
         let gradA = 0, gradB = 0;
-        
         for (const d of data) {
             const p = Math.max(0.001, Math.min(0.999, d.pred / 100));
             const logit = Math.log(p / (1 - p));
             const z = A * logit + B;
             const sigmoid = 1 / (1 + Math.exp(-z));
             const error = sigmoid - d.actual;
-            
             gradA += error * logit;
             gradB += error;
         }
-        
         gradA /= n;
         gradB /= n;
-        
         A -= learningRate * gradA;
         B -= learningRate * gradB;
-        
-        // Regularización suave
         A = Math.max(0.5, Math.min(2.0, A));
         B = Math.max(-1.0, Math.min(1.0, B));
     }
-    
     return {A, B};
 }
 
@@ -808,13 +774,13 @@ function applyPlattCalibration(rawProb, calibrationType, leagueKey) {
         return Math.min(98, Math.max(2, calibrated * 100));
     }
     
-    // Fallback: usar calibración genérica suave
     const genericParams = {
         'goals_over15': {A: 0.95, B: -0.03},
         'goals_over25': {A: 0.93, B: -0.05},
         'btts': {A: 0.96, B: -0.02},
         'goals_ht05': {A: 0.94, B: -0.04},
         'goals_ht15': {A: 0.90, B: -0.06},
+        'corners_over75': {A: 0.97, B: -0.02},
         'corners_over85': {A: 0.97, B: -0.02},
         'corners_over95': {A: 0.96, B: -0.03},
         'corners_over105': {A: 0.95, B: -0.04},
@@ -837,11 +803,15 @@ function uncertaintyBand(p, n) {
     };
 }
 
-// ============ FUNCIONES DE PREDICCIÓN ============
+// ============ PARÁMETROS CON FALLBACK OFFLINE ============
 function getTeamAttackParam(team, isHome, leagueKey) {
     const model = leagueModels[leagueKey];
     if (model?.attackParams?.[team]) {
         return isHome ? model.attackParams[team].home : model.attackParams[team].away;
+    }
+    const db = TEAM_STRENGTH_DB[leagueKey];
+    if (db && db[team]) {
+        return db[team][0]; // [atk, def, homeAdv]
     }
     return 1.0;
 }
@@ -850,6 +820,10 @@ function getTeamDefenseParam(team, isHome, leagueKey) {
     const model = leagueModels[leagueKey];
     if (model?.defenseParams?.[team]) {
         return isHome ? model.defenseParams[team].home : model.defenseParams[team].away;
+    }
+    const db = TEAM_STRENGTH_DB[leagueKey];
+    if (db && db[team]) {
+        return db[team][1];
     }
     return 1.0;
 }
@@ -861,6 +835,13 @@ function getTeamCornerParams(team, isHome, leagueKey) {
             atk: isHome ? model.cornerParams[team].homeAtk : model.cornerParams[team].awayAtk,
             def: isHome ? model.cornerParams[team].homeDef : model.cornerParams[team].awayDef
         };
+    }
+    const cp = CORNER_POWER[team];
+    if (cp) {
+        const val = isHome ? cp.home : cp.away;
+        const liga = LIGAS[leagueKey];
+        const avgCorn = isHome ? (liga?.cornersHomeAvg || 5.5) : (liga?.cornersAwayAvg || 4.5);
+        return { atk: val / avgCorn, def: 1.0 };
     }
     return {atk: 1.0, def: 1.0};
 }
@@ -882,12 +863,10 @@ function getAltitudeAdjustment(homeTeam, awayTeam) {
 function extractMatchStats(m, role) {
     const s = m.stats || m.statistics || {}, ls = m.live_stats || {};
     let c = null, g1 = null, gf = null, gc = null;
-    
     if (s[role]?.corner_kicks != null) c = s[role].corner_kicks;
     else if (ls[role]?.corner_kicks != null) c = ls[role].corner_kicks;
     else if (role === 'home' && m.home_corners != null) c = m.home_corners;
     else if (role === 'away' && m.away_corners != null) c = m.away_corners;
-    
     if (role === 'home') {
         if (m.home_score_ht != null) g1 = m.home_score_ht;
         if (m.home_score != null) gf = m.home_score;
@@ -898,7 +877,6 @@ function extractMatchStats(m, role) {
         if (m.away_score != null) gf = m.away_score;
         if (m.home_score != null) gc = m.home_score;
     }
-    
     return {corners: c, goals1t: g1, goalsFull: gf, goalsConceded: gc};
 }
 
@@ -933,7 +911,6 @@ async function getTeamRecentStats(teamId, teamName, role, seasonId, leagueKey) {
             }
         });
         
-        // Promedio simple (sin ponderación exponencial para más estabilidad)
         let totalCorners = 0, cornerCount = 0;
         let totalGoalsFull = 0, goalsFullCount = 0;
         let totalGoals1t = 0, goals1tCount = 0;
@@ -988,9 +965,8 @@ document.getElementById('calc-btn').onclick = async () => {
     document.getElementById('loading-text').textContent = 'Calculando con modelo Dixon-Coles...';
     document.getElementById('loading-sub').textContent = model?.trained ? 
         `Modelo entrenado con ${model.matchCount} partidos` : 
-        'Usando parámetros estadísticos base';
+        'Usando parámetros estadísticos + DB offline';
     
-    // Obtener estadísticas recientes para forma
     let homeStats = null, awayStats = null;
     const homeId = teamMap[home]?.bsdId;
     const awayId = teamMap[away]?.bsdId;
@@ -1003,49 +979,39 @@ document.getElementById('calc-btn').onclick = async () => {
         try { awayStats = await getTeamRecentStats(awayId, away, 'away', seasonId, currentLeagueKey); } catch (e) {}
     }
     
-    // Altitud
     const alt = getAltitudeAdjustment(home, away);
     let homeAdv = model?.homeAdvantage || liga.goalsHomeAvg / Math.max(0.5, liga.goalsAwayAvg);
-    if (alt.homeAdv > 1.08) homeAdv = alt.homeAdv; // La altitud domina sobre la ventaja de campo normal
+    if (alt.homeAdv > 1.08) homeAdv = alt.homeAdv;
     
-    // Parámetros de ataque/defensa del modelo Dixon-Coles
     const hAtk = getTeamAttackParam(home, true, currentLeagueKey);
     const hDef = getTeamDefenseParam(home, true, currentLeagueKey);
     const aAtk = getTeamAttackParam(away, false, currentLeagueKey);
     const aDef = getTeamDefenseParam(away, false, currentLeagueKey);
     
-    // Ajuste por forma reciente (suave, ±8%)
     const hForm = homeStats?.form ? formMultiplier(homeStats.form) : 1.0;
     const aForm = awayStats?.form ? formMultiplier(awayStats.form) : 1.0;
     
-    // Ajuste por Elo
     const hElo = getTeamElo(home, currentLeagueKey);
     const aElo = getTeamElo(away, currentLeagueKey);
     const eloDiff = (hElo - aElo - ELO_HOME_ADVANTAGE) / 400;
     const eloAdj = 1 + eloDiff * 0.10;
     
-    // Calcular lambdas de goles (modelo Dixon-Coles)
     const baseHomeLambda = liga.goalsHomeAvg * hAtk * aDef * homeAdv;
     const baseAwayLambda = liga.goalsAwayAvg * aAtk * hDef;
     
     const lH = +(baseHomeLambda * hForm * Math.max(0.90, Math.min(1.10, eloAdj))).toFixed(2);
     const lA = +(baseAwayLambda * aForm * Math.max(0.90, Math.min(1.10, 1/eloAdj))).toFixed(2);
     
-    // Goles primer tiempo (44% de los goles totales, ajustado por forma)
     const htRatio = 0.44;
     const lGoal = +((lH + lA) * htRatio).toFixed(2);
     
-    // Córners
     const hCornerP = getTeamCornerParams(home, true, currentLeagueKey);
     const aCornerP = getTeamCornerParams(away, false, currentLeagueKey);
     const hCorners = liga.cornersHomeAvg * hCornerP.atk * aCornerP.def;
     const aCorners = liga.cornersAwayAvg * aCornerP.atk * hCornerP.def;
     const lCorn = +(hCorners + aCorners).toFixed(2);
     
-    // Rho de Dixon-Coles
     const rho = model?.rho || -0.08;
-    
-    // Total de partidos usados para intervalo de confianza
     const totalMatchesUsed = (homeStats?.matches || 0) + (awayStats?.matches || 0);
     
     loadEl.classList.add('hidden');
@@ -1085,7 +1051,6 @@ function renderOutput(o) {
     const aTag = awayStats?.fromApi ? '<span class="data-tag api">LIVE</span>' : '<span class="data-tag off">EST</span>';
     const mTag = modelTrained ? '<span class="data-tag model">MODELO DC</span>' : '<span class="data-tag off">BASE</span>';
     
-    // Context tags
     const tags = [];
     if (Math.abs(homeElo - 1500) > 20 || Math.abs(awayElo - 1500) > 20) {
         tags.push({text: `Elo: ${home.split(' ').slice(-1)[0]} ${homeElo.toFixed(0)} vs ${away.split(' ').slice(-1)[0]} ${awayElo.toFixed(0)}`, type: 'elo'});
@@ -1095,7 +1060,6 @@ function renderOutput(o) {
     
     const ctx = tags.length ? `<div class="context-tags">${tags.map(t => `<span class="context-tag ${t.type}">${t.text}</span>`).join('')}</div>` : '';
     
-    // Match header
     document.getElementById('match-header-container').innerHTML = `
         <div class="match-header animate-in">
             <div style="text-align:center;font-size:0.62rem;color:var(--muted);letter-spacing:1px;margin-bottom:12px;font-weight:700;text-transform:uppercase;">
@@ -1118,7 +1082,6 @@ function renderOutput(o) {
             ${renderResultBoxes(lambdaH, lambdaA, rho)}
         </div>`;
     
-    // Mercados
     let html = '';
     const mkt = activeMarkets;
     const lk = currentLeagueKey;
@@ -1189,58 +1152,39 @@ function renderOutput(o) {
             <span class="cal-badge ${modelTrained ? 'trained' : ''}">✓ BinNeg</span>
         </div>`;
         [7.5, 8.5, 9.5, 10.5].forEach((line, i) => {
-            html += mktCard(`+${line}`, negBinOver(lambdaCorn, line, negBinR), `corners_over${String(line*10).replace('.','')}`, i + 4, 'Under');
+            const cType = `corners_over${String(line*10).replace('.','')}`;
+            html += mktCard(`+${line}`, negBinOver(lambdaCorn, line, negBinR), cType, i + 4, 'Under');
         });
     }
     
     document.getElementById('all-markets-container').innerHTML = html;
     
-    // Recomendación
     const all = [];
     if (mkt.goles) {
         const l = lambdaH + lambdaA;
-        all.push({
-            label: 'GOLES OVER 1.5', 
-            prob: +applyPlattCalibration(poissonOver(l, 1.5), 'goals_over15', lk).toFixed(0),
-            desc: 'Alta prob. de partido con goles', type: 'goles'
-        });
-        all.push({
-            label: 'GOLES OVER 2.5',
-            prob: +applyPlattCalibration(poissonOver(l, 2.5), 'goals_over25', lk).toFixed(0),
-            desc: '3+ goles en el partido', type: 'goles'
-        });
+        all.push({label:'GOLES OVER 1.5', prob:+applyPlattCalibration(poissonOver(l,1.5),'goals_over15',lk).toFixed(0), desc:'Alta prob. de partido con goles', type:'goles'});
+        all.push({label:'GOLES OVER 2.5', prob:+applyPlattCalibration(poissonOver(l,2.5),'goals_over25',lk).toFixed(0), desc:'3+ goles en el partido', type:'goles'});
     }
     if (mkt.ht) {
-        all.push({
-            label: 'GOL HT OVER 0.5',
-            prob: +applyPlattCalibration(poissonOver(lambdaGoal, 0.5), 'goals_ht05', lk).toFixed(0),
-            desc: 'Al menos un gol antes del descanso', type: 'ht'
-        });
-        all.push({
-            label: 'GOL HT OVER 1.5',
-            prob: +applyPlattCalibration(poissonOver(lambdaGoal, 1.5), 'goals_ht15', lk).toFixed(0),
-            desc: '2+ goles en el primer tiempo', type: 'ht'
-        });
+        all.push({label:'GOL HT OVER 0.5', prob:+applyPlattCalibration(poissonOver(lambdaGoal,0.5),'goals_ht05',lk).toFixed(0), desc:'Al menos un gol antes del descanso', type:'ht'});
+        all.push({label:'GOL HT OVER 1.5', prob:+applyPlattCalibration(poissonOver(lambdaGoal,1.5),'goals_ht15',lk).toFixed(0), desc:'2+ goles en el primer tiempo', type:'ht'});
     }
     if (mkt.btts) {
-        const bp = +applyPlattCalibration(calcBTTS_DC(lambdaH, lambdaA, rho), 'btts', lk).toFixed(0);
-        all.push({label: 'AMBOS MARCAN', prob: bp, desc: `${bp}% de prob. que ambos anoten`, type: 'btts'});
+        const bp = +applyPlattCalibration(calcBTTS_DC(lambdaH,lambdaA,rho),'btts',lk).toFixed(0);
+        all.push({label:'AMBOS MARCAN', prob:bp, desc:`${bp}% de prob. que ambos anoten`, type:'btts'});
     }
     if (mkt.corn) {
         const negBinR = liga.negBinRCorners || 5.5;
-        [7.5, 8.5, 9.5].forEach(line => {
-            all.push({
-                label: `CÓRNERS OVER ${line}`,
-                prob: +applyPlattCalibration(negBinOver(lambdaCorn, line, negBinR), `corners_over${String(line*10).replace('.','')}`, lk).toFixed(0),
-                desc: `Sobre ${line} córners`, type: 'corners'
-            });
+        [7.5,8.5,9.5].forEach(line => {
+            const cType = `corners_over${String(line*10).replace('.','')}`;
+            all.push({label:`CÓRNERS OVER ${line}`, prob:+applyPlattCalibration(negBinOver(lambdaCorn,line,negBinR),cType,lk).toFixed(0), desc:`Sobre ${line} córners`, type:'corners'});
         });
     }
-    const rp = calcResultProbs_DC(lambdaH, lambdaA, rho);
-    const rph = +applyPlattCalibration(rp.home, 'result_home', lk).toFixed(1);
-    const rpa = +applyPlattCalibration(rp.away, 'result_away', lk).toFixed(1);
-    all.push({label: 'VICTORIA LOCAL', prob: rph, desc: `${home.split(' ').slice(-1)[0]} favorito`, type: 'resultado'});
-    all.push({label: 'VICTORIA VISITANTE', prob: rpa, desc: `${away.split(' ').slice(-1)[0]} favorito`, type: 'resultado'});
+    const rp = calcResultProbs_DC(lambdaH,lambdaA,rho);
+    const rph = +applyPlattCalibration(rp.home,'result_home',lk).toFixed(1);
+    const rpa = +applyPlattCalibration(rp.away,'result_away',lk).toFixed(1);
+    all.push({label:'VICTORIA LOCAL', prob:rph, desc:`${home.split(' ').slice(-1)[0]} favorito`, type:'resultado'});
+    all.push({label:'VICTORIA VISITANTE', prob:rpa, desc:`${away.split(' ').slice(-1)[0]} favorito`, type:'resultado'});
     
     const rec = buildRecommendation(all);
     
@@ -1402,11 +1346,11 @@ window.onload = async () => {
             updateModelStatus('API conectada. Selecciona una liga para entrenar el modelo.');
         } else {
             setApiStatus('error', '🟡 Sin conexión — usando datos offline');
-            updateModelStatus('Modo offline: parámetros estadísticos base');
+            updateModelStatus('Modo offline: parámetros estadísticos + DB offline');
         }
     } catch (e) {
         setApiStatus('error', '🟡 Sin conexión — usando datos offline');
-        updateModelStatus('Modo offline: parámetros estadísticos base');
+        updateModelStatus('Modo offline: parámetros estadísticos + DB offline');
     }
 };
 </script>
