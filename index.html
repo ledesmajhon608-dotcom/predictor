@@ -124,14 +124,6 @@
         .animate-in{animation:fadeUp 0.5s ease-out forwards;}
         @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.7;}}
         .pulse{animation:pulse 2s ease-in-out infinite;}
-
-        /* Bankroll & Kelly */
-        .kelly-card{background:var(--card);backdrop-filter:blur(24px);border-radius:20px;padding:18px;margin-top:20px;border:1px solid rgba(255,255,255,0.08);box-shadow:0 8px 32px rgba(0,0,0,0.3);}
-        .kelly-row{display:flex;align-items:center;gap:10px;margin-bottom:12px;}
-        .kelly-row label{white-space:nowrap;font-size:0.7rem;letter-spacing:1px;color:var(--muted);margin:0;}
-        .kelly-row input{flex:1;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:rgba(255,255,255,0.03);color:var(--text);font-family:'DM Sans',sans-serif;font-size:0.85rem;}
-        .kelly-result{font-size:0.75rem;color:var(--muted);margin-top:6px;}
-        .kelly-stake{font-family:'Bebas Neue',sans-serif;font-size:1.3rem;color:var(--green);}
     </style>
 </head>
 <body>
@@ -166,14 +158,7 @@
             <div id="match-header-container"></div>
             <div id="all-markets-container"></div>
             <div id="recomendacion-container"></div>
-            <div id="kelly-container" class="kelly-card hidden">
-                <div style="font-family:'Bebas Neue',sans-serif;font-size:1rem;letter-spacing:2px;margin-bottom:14px;">💰 GESTIÓN DE BANKROLL (KELLY)</div>
-                <div class="kelly-row"><label>Bankroll ($)</label><input id="kelly-bank" type="number" value="1000" step="1" min="1"></div>
-                <div class="kelly-row"><label>Fracción Kelly</label><input id="kelly-frac" type="number" value="0.25" step="0.05" min="0.05" max="1"></div>
-                <div class="kelly-row"><label>Cuota real</label><input id="kelly-odds" type="number" value="2.00" step="0.05" min="1.05"></div>
-                <div class="kelly-result" id="kelly-output"></div>
-            </div>
-            <p class="disclaimer">FOOTBALL BET v2.3 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración · Altitud/Contexto · Bandas incertidumbre realistas · Criterio Kelly fraccional. Solo uso personal.</p>
+            <p class="disclaimer">FOOTBALL BET v2.3 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración · Altitud/Contexto · Bandas incertidumbre realistas. Solo uso personal.</p>
         </div>
     </div>
 </div>
@@ -537,7 +522,6 @@ const TEAM_ALIASES = {
   }
 };
 
-// AMPLIADO: cobertura total para todas las ligas (falback mejorado)
 const CORNER_POWER = {
     "Manchester City FC":{home:7.8,away:6.8},"Liverpool FC":{home:7.4,away:6.1},"Arsenal FC":{home:7.0,away:5.9},"Chelsea FC":{home:6.5,away:5.5},"Tottenham Hotspur FC":{home:6.4,away:5.3},"Aston Villa FC":{home:6.3,away:5.2},"Newcastle United FC":{home:6.0,away:5.0},"Manchester United FC":{home:5.8,away:4.9},"Brighton & Hove Albion FC":{home:6.2,away:5.4},"West Ham United FC":{home:5.5,away:4.6},"Crystal Palace FC":{home:4.9,away:4.1},"AFC Bournemouth":{home:5.0,away:4.2},"Fulham FC":{home:5.2,away:4.3},"Wolverhampton Wanderers FC":{home:5.1,away:4.3},"Everton FC":{home:4.8,away:4.0},"Brentford FC":{home:5.3,away:4.5},"Nottingham Forest FC":{home:4.9,away:4.0},
     "FC Bayern München":{home:7.2,away:6.2},"Borussia Dortmund":{home:6.4,away:5.4},"Bayer 04 Leverkusen":{home:6.7,away:5.7},"RB Leipzig":{home:6.3,away:5.3},"VfB Stuttgart":{home:5.9,away:5.0},"Eintracht Frankfurt":{home:5.7,away:4.8},"SC Freiburg":{home:5.4,away:4.5},"TSG 1899 Hoffenheim":{home:5.5,away:4.6},"SV Werder Bremen":{home:5.3,away:4.4},"1. FC Heidenheim 1846":{home:4.9,away:4.1},"FC Augsburg":{home:4.8,away:4.0},"VfL Wolfsburg":{home:5.2,away:4.3},"1. FSV Mainz 05":{home:5.0,away:4.2},"Borussia Mönchengladbach":{home:5.3,away:4.4},"1. FC Union Berlin":{home:4.7,away:3.9},"FC St. Pauli":{home:4.8,away:4.0},
@@ -566,12 +550,12 @@ const ALTITUDE_TEAMS = {
     "Bolivia":{advantage:1.15,altitude:"3600m (La Paz)"},"Ecuador":{advantage:1.07,altitude:"2800m (Quito)"}
 };
 
-// ============  NUEVAS FUNCIONES DE INCERTIDUMBRE REALISTA  ============
+// ============  INCERTIDUMBRE REALISTA  ============
 function poissonLambdaCI(goalsScored, matches, roleFactor = 1.0) {
     const lambda = (goalsScored / Math.max(1, matches)) * roleFactor;
-    const varLambda = lambda / Math.max(1, matches); // varianza de la media Poisson
+    const varLambda = lambda / Math.max(1, matches);
     const se = Math.sqrt(varLambda);
-    return { lambda, low: lambda - 1.44*se, high: lambda + 1.44*se }; // 85% CI aprox
+    return { lambda, low: lambda - 1.44*se, high: lambda + 1.44*se };
 }
 
 function uncertaintyBandReal(lambda, n, type='goals') {
@@ -584,19 +568,7 @@ function uncertaintyBandReal(lambda, n, type='goals') {
     return { mid, low: low.toFixed(0), high: high.toFixed(0) };
 }
 
-// ============  KELLY CRITERION  ============
-function kellyStake(probDecimal, oddsDecimal, bankroll, fraction=0.25) {
-    const p = probDecimal / 100;
-    const q = 1 - p;
-    const b = oddsDecimal - 1;
-    if (b <= 0 || p <= 0) return 0;
-    const edge = p*b - q;
-    if (edge <= 0) return 0;
-    const fullKelly = edge / b;
-    return Math.max(0, fullKelly * fraction * bankroll);
-}
-
-// ---------- Funciones auxiliares sin cambios (se mantienen igual) ----------
+// ---------- Funciones auxiliares ----------
 function setApiStatus(s,t){document.getElementById('api-dot').className='api-dot '+s;document.getElementById('api-status-text').textContent=t;}
 function renderLeaguePills(){const c=document.getElementById('league-pills');c.innerHTML='';for(const[k,v]of Object.entries(LIGAS)){const b=document.createElement('button');b.className='league-pill';b.textContent=v.name;b.dataset.key=k;b.onclick=()=>selectLeague(k);c.appendChild(b);}}
 function renderMarketToggles(){const c=document.getElementById('market-toggles');const d=[{key:'ht',label:'⏱ Goles HT'},{key:'goles',label:'⚽ Goles +1.5/2.5'},{key:'btts',label:'🤝 BTTS'},{key:'corn',label:'⬡ Córners'}];c.innerHTML='';const liga=currentLeagueKey?LIGAS[currentLeagueKey]:null;d.forEach(x=>{const b=document.createElement('button');b.className='mkt-toggle';b.textContent=x.label;b.dataset.key=x.key;const avail=!liga||(liga.markets[x.key]===true);if(!avail){b.classList.add('unavailable');activeMarkets[x.key]=false;}else{if(activeMarkets[x.key])b.classList.add('on');b.onclick=()=>{activeMarkets[x.key]=!activeMarkets[x.key];b.classList.toggle('on');};}c.appendChild(b);});}
@@ -654,7 +626,6 @@ async function loadTeams(key){
     const liga=LIGAS[key];
     const teams=[...liga.teams].sort();
     teamMap={};
-
     if(apiAvailable && bsdLeagueMap[key]){
         try{
             setApiStatus('live','🟢 Buscando IDs de equipos...');
@@ -734,7 +705,6 @@ async function calculateEloAndSeasonStats(leagueId,seasonId){
 
 function plattCalibrate(raw,type){const p=Math.max(0.001,Math.min(0.999,raw/100));const logit=Math.log(p/(1-p));const par=PLATT_PARAMS[type]||{A:0.93,B:-0.04};const cp=1/(1+Math.exp(-(par.A*logit+par.B)));return Math.min(98,Math.max(2,cp*100));}
 function formMultiplier(form){if(!form||form.length===0)return 1;const s=form.reduce((a,r)=>a+(r==='w'?3:r==='d'?1:0),0);const adj=(s/(form.length*3)-0.38)*0.23;return Math.max(0.88,Math.min(1.12,1+adj));}
-
 function regressionBlend(tv,lm,n){const trust=Math.min(0.85,0.4+(n/MATCHES_TO_USE)*0.45);return tv*trust+lm*(1-trust);}
 function poissonExact(lambda,k){let t=Math.exp(-lambda);for(let i=0;i<k;i++)t*=lambda/(i+1);return t;}
 function poissonProb(lambda,k){let p=Math.exp(-lambda),t=p;for(let i=1;i<=k;i++){t*=lambda/i;p+=t;}return p;}
@@ -881,43 +851,10 @@ function renderOutput(o){
     let top3h='';if(rec.top3.length>1){top3h=rec.top3.slice(1).map((b,i)=>{const c=b.prob>=70?'var(--green)':b.prob>=60?'var(--yellow)':'var(--accent)';return`<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid rgba(255,255,255,0.05);"><span style="font-size:0.75rem;opacity:0.6;">#${i+2}</span><span style="flex:1;font-weight:600;font-size:0.8rem;">${b.label}</span><span style="font-family:'Bebas Neue';font-size:1rem;color:${c};">${b.prob.toFixed(0)}%</span>${b.diamond?`<span style="font-size:0.9rem;">${b.diamond}</span>`:''}</div>`;}).join('');}
     document.getElementById('recomendacion-container').innerHTML=`<div class="recomendacion animate-in" style="border-color:${rec.isAggressive?'rgba(255,77,90,0.4)':'rgba(46,204,113,0.4)'};"><div class="rec-title" style="color:${rec.isAggressive?'var(--accent)':'var(--green)'};">${rec.isAggressive?'⚡ APUESTA AGRESIVA':'🎯 MEJOR APUESTA'}</div><div class="rec-main" style="color:${cls};text-shadow:0 0 20px ${gl};">${tb.label} ${tb.diamond||''}</div><div class="rec-sub">${tb.desc}</div><div class="rec-confidence" style="border-color:${cls};"><span class="rc-pct" style="color:${cls}">${tb.prob.toFixed(0)}%</span><span class="rc-label">${conf}</span></div>${top3h?`<div style="margin-top:14px;text-align:left;"><div style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">🔎 OTRAS OPCIONES</div>${top3h}</div>`:''}</div>`;
     }
-    // Activar panel Kelly
-    document.getElementById('kelly-container').classList.remove('hidden');
-    updateKelly(all);
 }
 
 function renderResultBoxes(lH,lA){const rp=calcResultProbs(lH,lA,currentLeagueKey);const r={home:+plattCalibrate(rp.home,'resultado').toFixed(1),draw:+plattCalibrate(rp.draw,'resultado').toFixed(1),away:+plattCalibrate(rp.away,'resultado').toFixed(1)};const mx=Math.max(r.home,r.draw,r.away);const rc=v=>v===mx?'var(--green)':v>=30?'var(--yellow)':'var(--accent)';const rg=v=>v===mx?'rgba(46,204,113,0.3)':v>=30?'rgba(255,182,39,0.3)':'rgba(255,77,90,0.3)';return`<div class="result-boxes"><div class="result-box"><div class="rb-label">🏠 Local</div><div class="rb-pct" style="color:${rc(r.home)};text-shadow:0 0 15px ${rg(r.home)};">${r.home}%</div></div><div class="result-box rb-center"><div class="rb-label">🟡 Empate</div><div class="rb-pct" style="color:${rc(r.draw)};text-shadow:0 0 15px ${rg(r.draw)};">${r.draw}%</div></div><div class="result-box"><div class="rb-label">✈️ Visitante</div><div class="rb-pct" style="color:${rc(r.away)};text-shadow:0 0 15px ${rg(r.away)};">${r.away}%</div></div></div>`;}
 function animateBars(){document.querySelectorAll('.bar-fill[data-target]').forEach(b=>b.style.width=b.dataset.target+'%');}
-
-// ============  NUEVO: actualización dinámica de Kelly  ============
-let currentAllMarkets = [];
-function updateKelly(allMarkets){
-    currentAllMarkets = allMarkets;
-    computeKelly();
-}
-function computeKelly(){
-    const bank = parseFloat(document.getElementById('kelly-bank').value) || 1000;
-    const frac = parseFloat(document.getElementById('kelly-frac').value) || 0.25;
-    const odds = parseFloat(document.getElementById('kelly-odds').value) || 2.00;
-    const out = document.getElementById('kelly-output');
-    if (!currentAllMarkets.length) { out.innerHTML = 'Sin mercados disponibles.'; return; }
-    const best = currentAllMarkets.reduce((a,b)=>a.prob>b.prob?a:b);
-    const prob = best.prob;
-    const fairOdds = (100/prob).toFixed(2);
-    const stake = kellyStake(prob, odds, bank, frac);
-    const evPercent = (prob/100 * odds - 1)*100;
-    const evClass = evPercent>0?'var(--green)':'var(--accent)';
-    out.innerHTML = `
-        <div>Mejor mercado: <strong>${best.label}</strong> (${prob.toFixed(1)}%)</div>
-        <div>Cuota justa estimada: <strong>${fairOdds}</strong> | Cuota real ingresada: <strong>${odds.toFixed(2)}</strong></div>
-        <div>Valor esperado (EV): <span style="color:${evClass};font-weight:700;">${evPercent.toFixed(1)}%</span></div>
-        <div style="margin-top:8px;">Stake sugerido (Kelly ${(frac*100).toFixed(0)}%): <span class="kelly-stake">$${stake.toFixed(2)}</span></div>
-        <div style="font-size:0.65rem;margin-top:6px;color:var(--muted);">${stake>bank*0.1?'⚠️ Stake > 10% del bankroll. Reduce la fracción Kelly o ignora esta apuesta.':''}</div>
-    `;
-}
-document.getElementById('kelly-bank').addEventListener('input', computeKelly);
-document.getElementById('kelly-frac').addEventListener('input', computeKelly);
-document.getElementById('kelly-odds').addEventListener('input', computeKelly);
 
 window.onload=async()=>{
     renderLeaguePills();renderMarketToggles();
@@ -927,7 +864,7 @@ window.onload=async()=>{
         while(url&&p<5){const fp=fetch(url,{headers:{'Authorization':'Token '+BSD_TOKEN}});const tp=new Promise((_,reject)=>setTimeout(()=>reject(new Error('Timeout')),8000));const r=await Promise.race([fp,tp]);if(!r.ok)throw new Error('BSD '+r.status);const d=await r.json();all=all.concat(d.results||[]);url=d.next||null;p++;}
         all.forEach(l=>{if(l.is_women)return;if(!l.current_season?.id)return;for(const c of Object.keys(LIGAS)){if(matchLeagueName(l.name,c)&&!bsdLeagueMap[c]){bsdLeagueMap[c]={bsdId:l.id,seasonId:l.current_season.id};}}});
         const mapped=Object.keys(bsdLeagueMap).length;
-        if(mapped>0){setApiStatus('live','🟢 BSD API — '+mapped+'/'+Object.keys(LIGAS).length+' ligas activas');apiAvailable=true;document.getElementById('engine-badge').textContent='🛰 BSD + Elo + Atk×Def + xG + Altitud + Kelly · v2.3 PRO';}
+        if(mapped>0){setApiStatus('live','🟢 BSD API — '+mapped+'/'+Object.keys(LIGAS).length+' ligas activas');apiAvailable=true;document.getElementById('engine-badge').textContent='🛰 BSD + Elo + Atk×Def + xG + Altitud · v2.3 PRO';}
     }catch(e){setApiStatus('error','🟡 Sin conexión — usando datos offline');}
 };
 </script>
