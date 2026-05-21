@@ -261,7 +261,7 @@ background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);backdrop-f
 <div class="container">
 <div class="header">
 <div class="logo">FOOTBALL<span>BET</span></div>
-<div class="badge" id="engine-badge">⚡ Motor Avanzado · v2.3 PRO</div>
+<div class="badge" id="engine-badge">⚡ Motor Avanzado · v2.4 PRO</div>
 </div>
 <div class="card">
 <div class="api-status">
@@ -289,7 +289,7 @@ background:rgba(46,204,113,0.1);border:1px solid rgba(46,204,113,0.2);backdrop-f
 <div id="match-header-container"></div>
 <div id="all-markets-container"></div>
 <div id="recomendacion-container"></div>
-<p class="disclaimer">FOOTBALL BET v2.3 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración · Altitud/Contexto · Bandas incertidumbre realistas. Solo uso personal.</p>
+<p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Bandas incertidumbre realistas. Solo uso personal.</p>
 </div>
 </div>
 </div>
@@ -318,6 +318,22 @@ const LIGAS = {
 "EKS": {name:"🇵🇱 Ekstraklasa",cornersAvg:9.3,goalsAvg:2.55,negBinR:6.2,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Ekstraklasa",bsdNameAlt:["PKO Bank Polski Ekstraklasa","PKO BP Ekstraklasa","Poland Ekstraklasa"],teams:["Lech Poznań","Raków Częstochowa","Jagiellonia Białystok","Legia Warszawa","Pogoń Szczecin","Górnik Zabrze","Zagłębie Lubin","Piast Gliwice","Wisła Płock","Motor Lublin","GKS Katowice","Cracovia","Widzew Łódź","Korona Kielce","Radomiak Radom","Lechia Gdańsk","Arka Gdynia","Bruk-Bet Termalica Nieciecza"]},
 "SLG": {name:"🇬🇷 Super Liga Grecia",cornersAvg:9.0,goalsAvg:2.60,negBinR:6.3,markets:{ht:false,goles:true,btts:true,corn:true},bsdName:"Super League Greece",bsdNameAlt:["Stoiximan Super League","Super League 1","Greek Super League"],teams:["AEK Athens","PAOK","Olympiacos","Panathinaikos","Levadiakos","Aris","OFI Crete","Volos NFC","Atromitos","A.E. Kifisia","Panetolikos","Panserraikos","Asteras Tripolis","AEL"]},
 "WC26":{name:"🏆 Mundial 2026",cornersAvg:8.9,goalsAvg:2.50,negBinR:5.6,markets:{ht:true,goles:true,btts:true,corn:true},bsdName:"FIFA World Cup",bsdNameAlt:["World Cup 2026","FIFA World Cup 2026","2026 FIFA World Cup","Mundial 2026","World Cup"],teams:["Argentina","Brazil","Uruguay","Colombia","Ecuador","Paraguay","Chile","Bolivia","Germany","Spain","France","England","Portugal","Italy","Netherlands","Belgium","Croatia","Denmark","Switzerland","Austria","Ukraine","Turkey","Sweden","Wales","Japan","Iran","South Korea","Saudi Arabia","Australia","China","United Arab Emirates","Uzbekistan","Egypt","Morocco","Senegal","Ghana","Ivory Coast","Nigeria","Cameroon","Algeria","South Africa","United States","Mexico","Canada","Panama","Costa Rica","Honduras","Jamaica","New Zealand"]}
+};
+
+const HOME_ADVANTAGE_BY_LEAGUE = {
+"PL":1.08,"BL1":1.09,"SA":1.04,"PD":1.05,"FL1":1.06,"DED":1.08,
+"BSA":1.12,"ELC":1.07,"JPL":1.07,"MXL":1.06,"LIB":1.10,"MLS":1.11,
+"BSB":1.10,"PPT":1.06,"EKS":1.05,"SLG":1.05,"WC26":1.04
+};
+
+const PLATT_PARAMS_IMPROVED = {
+goals15:{A:0.951,B:-0.038},
+goals25:{A:0.933,B:-0.055},
+btts:{A:0.956,B:-0.034},
+corners:{A:0.970,B:-0.022},
+goals_ht05:{A:0.960,B:-0.030},
+goals_ht15:{A:0.938,B:-0.048},
+resultado:{A:0.918,B:-0.068}
 };
 
 const TEAM_ALIASES = {
@@ -451,13 +467,6 @@ const CORNER_POWER = {
 "Argentina":{home:6.2,away:5.3},"Brazil":{home:6.6,away:5.7},"Uruguay":{home:5.4,away:4.5},"Colombia":{home:5.3,away:4.4},"Germany":{home:6.8,away:5.9},"Spain":{home:6.4,away:5.5},"France":{home:6.5,away:5.6},"England":{home:6.3,away:5.4},"Portugal":{home:6.1,away:5.2},"Italy":{home:5.9,away:5.0},"Netherlands":{home:5.8,away:4.9},"Belgium":{home:5.7,away:4.8},"Croatia":{home:5.3,away:4.4},"Japan":{home:5.2,away:4.3},"Morocco":{home:5.0,away:4.1},"United States":{home:5.1,away:4.2},"Mexico":{home:5.2,away:4.3},"Senegal":{home:4.9,away:4.0},"Ecuador":{home:5.0,away:4.1},"South Korea":{home:4.8,away:3.9},"Iran":{home:4.5,away:3.7},"Australia":{home:4.6,away:3.8},"Canada":{home:4.7,away:3.9},"Egypt":{home:4.8,away:4.0},"Nigeria":{home:4.6,away:3.8},"Ghana":{home:4.5,away:3.7},"Cameroon":{home:4.7,away:3.9},"Ivory Coast":{home:4.8,away:4.0},"Algeria":{home:4.6,away:3.8},"South Africa":{home:4.5,away:3.7},"Denmark":{home:5.0,away:4.2},"Switzerland":{home:4.9,away:4.1},"Austria":{home:5.0,away:4.2},"Turkey":{home:5.1,away:4.3},"Sweden":{home:4.8,away:4.0},"Wales":{home:4.6,away:3.8},"Ukraine":{home:4.7,away:3.9},"Paraguay":{home:4.5,away:3.7},"Chile":{home:4.8,away:4.0},"Bolivia":{home:4.9,away:3.6},"Costa Rica":{home:4.4,away:3.6},"Panama":{home:4.3,away:3.5},"Honduras":{home:4.2,away:3.4},"Jamaica":{home:4.3,away:3.5},"Saudi Arabia":{home:4.4,away:3.6},"China":{home:4.3,away:3.5},"United Arab Emirates":{home:4.2,away:3.4},"Uzbekistan":{home:4.3,away:3.5},"New Zealand":{home:4.1,away:3.3}
 };
 
-const PLATT_PARAMS = {
-goals_over15:{A:0.935,B:-0.042},goals_over25:{A:0.918,B:-0.061},
-btts:{A:0.944,B:-0.038},corners:{A:0.962,B:-0.025},
-goals_ht05:{A:0.951,B:-0.035},goals_ht15:{A:0.924,B:-0.055},
-resultado:{A:0.908,B:-0.075}
-};
-
 const DIXON_COLES_RHO = {
 "PL":-0.065,"BL1":-0.085,"SA":-0.130,"PD":-0.098,"FL1":-0.105,"DED":-0.072,
 "BSA":-0.090,"ELC":-0.078,"JPL":-0.082,"MXL":-0.095,"LIB":-0.088,"MLS":-0.070,
@@ -471,25 +480,7 @@ const ALTITUDE_TEAMS = {
 "Bolivia":{advantage:1.15,altitude:"3600m (La Paz)"},"Ecuador":{advantage:1.07,altitude:"2800m (Quito)"}
 };
 
-// ============ INCERTIDUMBRE REALISTA ============
-function poissonLambdaCI(goalsScored, matches, roleFactor = 1.0) {
-const lambda = (goalsScored / Math.max(1, matches)) * roleFactor;
-const varLambda = lambda / Math.max(1, matches);
-const se = Math.sqrt(varLambda);
-return { lambda, low: lambda - 1.44*se, high: lambda + 1.44*se };
-}
-
-function uncertaintyBandReal(lambda, n, type='goals') {
-const seLambda = Math.sqrt(lambda / Math.max(1, n));
-const delta = 1.44 * seLambda;
-const f = (l) => poissonOver(l, type==='goals15'?1.5:type==='goals25'?2.5:type==='goals_ht05'?0.5:1.5);
-const mid = f(lambda);
-const low = f(Math.max(0.1, lambda - delta));
-const high = f(lambda + delta);
-return { mid, low: low.toFixed(0), high: high.toFixed(0) };
-}
-
-// ---------- Funciones auxiliares ----------
+// ============ FUNCIONES AUXILIARES ============
 function setApiStatus(s,t){
 document.getElementById('api-dot').className='api-dot '+s;
 document.getElementById('api-status-text').textContent=t;
@@ -760,12 +751,19 @@ for(const[t,s]of Object.entries(goals))if(s.p>0)teamSeasonStats[ck][t]={gf:s.gf/
 }catch(e){}
 }
 
+// ============ CALIBRACIÓN PLATT MEJORADA ============
 function plattCalibrate(raw,type){
 const p=Math.max(0.001,Math.min(0.999,raw/100));
 const logit=Math.log(p/(1-p));
-const par=PLATT_PARAMS[type]||{A:0.93,B:-0.04};
+const par=PLATT_PARAMS_IMPROVED[type]||{A:0.93,B:-0.04};
 const cp=1/(1+Math.exp(-(par.A*logit+par.B)));
 return Math.min(98,Math.max(2,cp*100));
+}
+
+// ============ REGRESIÓN A LA MEDIA CON DECAIMIENTO EXPONENCIAL ============
+function regressionBlend(tv,lm,n){
+const trust=1-Math.exp(-n/12);
+return tv*trust+lm*(1-trust);
 }
 
 function formMultiplier(form){
@@ -773,11 +771,6 @@ if(!form||form.length===0)return 1;
 const s=form.reduce((a,r)=>a+(r==='w'?3:r==='d'?1:0),0);
 const adj=(s/(form.length*3)-0.38)*0.23;
 return Math.max(0.88,Math.min(1.12,1+adj));
-}
-
-function regressionBlend(tv,lm,n){
-const trust=Math.min(0.85,0.4+(n/MATCHES_TO_USE)*0.45);
-return tv*trust+lm*(1-trust);
 }
 
 function poissonExact(lambda,k){let t=Math.exp(-lambda);for(let i=0;i<k;i++)t*=lambda/(i+1);return t;}
@@ -860,6 +853,24 @@ const base=liga.cornersAvg/2;
 return role==='home'?base*1.10:base*0.90;
 }
 
+// ============ BANDAS DE INCERTIDUMBRE REALISTAS ============
+function uncertaintyBandRealistic(lambda, n, type='goals') {
+const seLambda = Math.sqrt(lambda / Math.max(1, n));
+const delta = 1.44 * seLambda;
+const f = (l) => {
+if (type==='goals15') return poissonOver(l, 1.5);
+if (type==='goals25') return poissonOver(l, 2.5);
+if (type==='goals_ht05') return poissonOver(l, 0.5);
+if (type==='goals_ht15') return poissonOver(l, 1.5);
+if (type==='corners') return negBinOver(l, 8.5, 6);
+return poissonOver(l, 1.5);
+};
+const mid = f(lambda);
+const low = f(Math.max(0.1, lambda - delta));
+const high = f(lambda + delta);
+return { mid, low: low.toFixed(0), high: high.toFixed(0) };
+}
+
 function buildRecommendation(mkts){
 const sorted = [...mkts].sort((a,b) => b.prob - a.prob);
 const top3 = sorted.slice(0,3).map(c => ({
@@ -896,8 +907,9 @@ const seasonId=bsdInfo?.seasonId;
 const resEl=document.getElementById('results'),loadEl=document.getElementById('loading-indicator'),outEl=document.getElementById('output');
 resEl.classList.remove('hidden');loadEl.classList.remove('hidden');outEl.classList.add('hidden');
 
+const baseHomeAdv = HOME_ADVANTAGE_BY_LEAGUE[currentLeagueKey] || 1.08;
 const alt=getAltitudeAdjustment(homeOff,awayOff);
-let hAdv=alt.homeAdv;
+let hAdv=alt.homeAdv || baseHomeAdv;
 let hElo=1500,aElo=1500,hSgf=null,hSga=null,aSgf=null,aSga=null;
 
 if(bsdInfo){
@@ -944,13 +956,13 @@ let aGc=(aStats?.fromApi&&aStats.goalsConceded)?regressionBlend(aStats.goalsConc
 let hC=hStats?.fromApi?regressionBlend(hStats.corners??fallbackCorners(homeOff,'home',liga),cornersAvg/2*1.1,hMC):fallbackCorners(homeOff,'home',liga);
 let aC=aStats?.fromApi?regressionBlend(aStats.corners??fallbackCorners(awayOff,'away',liga),cornersAvg/2*0.9,aMC):fallbackCorners(awayOff,'away',liga);
 
-const eloDiff=(hElo-aElo)/400,eloAdj=1+eloDiff*0.12;
+const eloDiff=(hElo-aElo)/400,eloAdj=1+eloDiff*0.04;
 hGf*=Math.max(0.85,Math.min(1.15,eloAdj));
 aGf*=Math.max(0.85,Math.min(1.15,1/eloAdj));
-hG1t*=Math.max(0.88,Math.min(1.12,1+eloDiff*0.08));
-aG1t*=Math.max(0.88,Math.min(1.12,1-eloDiff*0.08));
-hC*=Math.max(0.9,Math.min(1.1,1+eloDiff*0.06));
-aC*=Math.max(0.9,Math.min(1.1,1-eloDiff*0.06));
+hG1t*=Math.max(0.88,Math.min(1.12,1+eloDiff*0.04));
+aG1t*=Math.max(0.88,Math.min(1.12,1-eloDiff*0.04));
+hC*=Math.max(0.9,Math.min(1.1,1+eloDiff*0.03));
+aC*=Math.max(0.9,Math.min(1.1,1-eloDiff*0.03));
 
 const hFm=formMultiplier(hStats?.form),aFm=formMultiplier(aStats?.form);
 hGf*=hFm;aGf*=aFm;hG1t*=hFm;aG1t*=aFm;hC*=hFm*0.5+0.5;aC*=aFm*0.5+0.5;
@@ -1084,7 +1096,7 @@ const p=+plattCalibrate(raw,type).toFixed(1);
 const c=colorFor(p),cl=cardClassFor(p);
 let bandLow, bandHigh;
 if(lambdaUsed && nUsed){
-const band = uncertaintyBandReal(lambdaUsed, nUsed, type);
+const band = uncertaintyBandRealistic(lambdaUsed, nUsed, type);
 bandLow = band.low; bandHigh = band.high;
 } else {
 bandLow = (p*0.85).toFixed(0); bandHigh = (p*1.12).toFixed(0);
@@ -1101,8 +1113,8 @@ return `<div class="market-card ${cl} animate-in" style="animation-delay:${idx*0
 if(mkt.goles){
 const l=lambdaH+lambdaA;
 html+=`<div class="section-header animate-in"><span class="section-icon">⚽</span><span class="section-title">GOLES</span><span class="section-lambda">λ <span>${l.toFixed(2)}</span></span><span class="cal-badge">✓ Atk×Def</span></div>`;
-html+=mktCard('+1.5',poissonOver(l,1.5),'goals_over15',0,'Under',l,totalMatchesUsed);
-html+=mktCard('+2.5',poissonOver(l,2.5),'goals_over25',1,'Under',l,totalMatchesUsed);
+html+=mktCard('+1.5',poissonOver(l,1.5),'goals15',0,'Under',l,totalMatchesUsed);
+html+=mktCard('+2.5',poissonOver(l,2.5),'goals25',1,'Under',l,totalMatchesUsed);
 html+='<div class="section-divider"></div>';
 }
 if(mkt.ht){
@@ -1135,8 +1147,8 @@ document.getElementById('all-markets-container').innerHTML=html;
 const all=[];
 if(mkt.goles){
 const l=lambdaH+lambdaA;
-all.push({label:'GOLES OVER 1.5',prob:+plattCalibrate(poissonOver(l,1.5),'goals_over15').toFixed(0),desc:'Alta prob. de partido con goles',type:'goles'});
-all.push({label:'GOLES OVER 2.5',prob:+plattCalibrate(poissonOver(l,2.5),'goals_over25').toFixed(0),desc:'3+ goles en el partido',type:'goles'});
+all.push({label:'GOLES OVER 1.5',prob:+plattCalibrate(poissonOver(l,1.5),'goals15').toFixed(0),desc:'Alta prob. de partido con goles',type:'goles'});
+all.push({label:'GOLES OVER 2.5',prob:+plattCalibrate(poissonOver(l,2.5),'goals25').toFixed(0),desc:'3+ goles en el partido',type:'goles'});
 }
 if(mkt.ht){
 all.push({label:'GOL HT OVER 0.5',prob:+plattCalibrate(poissonOver(lambdaGoal,0.5),'goals_ht05').toFixed(0),desc:'Al menos un gol antes del descanso',type:'ht'});
@@ -1227,7 +1239,7 @@ const mapped=Object.keys(bsdLeagueMap).length;
 if(mapped>0){
 setApiStatus('live','🟢 BSD API — '+mapped+'/'+Object.keys(LIGAS).length+' ligas activas');
 apiAvailable=true;
-document.getElementById('engine-badge').textContent='⚡ BSD + Elo + Atk×Def + xG + Altitud · v2.3 PRO';
+document.getElementById('engine-badge').textContent='⚡ BSD + Elo + Atk×Def + xG + Altitud · v2.4 PRO';
 }
 }catch(e){
 setApiStatus('error','🟡 Sin conexión — usando datos offline');
@@ -1236,4 +1248,3 @@ setApiStatus('error','🟡 Sin conexión — usando datos offline');
 </script>
 </body>
 </html>
-```
