@@ -76,9 +76,7 @@
         }
 
         @keyframes rotateGlow {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
         .header>* {
@@ -371,14 +369,8 @@
         }
 
         @keyframes shimmer {
-            0%,
-            100% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
         }
 
         .calc-btn::after {
@@ -416,9 +408,7 @@
         }
 
         @keyframes spin {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
         .match-header {
@@ -838,15 +828,8 @@
         }
 
         @keyframes fadeUp {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .animate-in {
@@ -854,115 +837,12 @@
         }
 
         @keyframes pulse {
-            0%,
-            100% {
-                opacity: 1;
-            }
-
-            50% {
-                opacity: 0.7;
-            }
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .pulse {
             animation: pulse 2s ease-in-out infinite;
-        }
-
-        /* NUEVOS ESTILOS PARA APUESTAS REALES */
-        .bankroll-section {
-            background: rgba(255, 255, 255, 0.02);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            padding: 14px;
-            margin-top: 12px;
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            flex-wrap: wrap;
-        }
-
-        .bankroll-input {
-            background: var(--glass-bg);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 8px 12px;
-            border-radius: 10px;
-            font-size: 0.9rem;
-            width: 100px;
-            text-align: center;
-        }
-
-        .odds-input {
-            background: var(--glass-bg);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 4px 8px;
-            border-radius: 8px;
-            font-size: 0.75rem;
-            width: 65px;
-            text-align: center;
-            margin-left: auto;
-        }
-
-        .stake-badge {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            padding: 2px 10px;
-            border-radius: 8px;
-            min-width: 60px;
-            text-align: center;
-        }
-
-        .stake-positive {
-            background: rgba(46, 204, 113, 0.15);
-            color: var(--green);
-            border: 1px solid var(--green);
-        }
-
-        .stake-negative {
-            background: rgba(255, 77, 90, 0.15);
-            color: var(--accent);
-            border: 1px solid var(--accent);
-        }
-
-        .toggle-betting-mode {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 8px;
-            font-size: 0.7rem;
-            color: var(--muted);
-            cursor: pointer;
-            user-select: none;
-        }
-
-        .toggle-switch {
-            width: 40px;
-            height: 22px;
-            background: var(--border);
-            border-radius: 11px;
-            position: relative;
-            transition: background 0.3s;
-        }
-
-        .toggle-switch::after {
-            content: '';
-            position: absolute;
-            width: 18px;
-            height: 18px;
-            background: white;
-            border-radius: 50%;
-            top: 2px;
-            left: 2px;
-            transition: left 0.3s;
-        }
-
-        .toggle-betting-mode.active .toggle-switch {
-            background: var(--accent);
-        }
-
-        .toggle-betting-mode.active .toggle-switch::after {
-            left: 20px;
         }
     </style>
 </head>
@@ -977,22 +857,6 @@
                 <div class="api-dot" id="api-dot"></div>
                 <span id="api-status-text">Conectando con BSD API...</span>
             </div>
-
-            <!-- Toggle Modo Apuestas Reales -->
-            <div class="toggle-betting-mode" id="toggle-betting" onclick="toggleBettingMode()">
-                <div class="toggle-switch"></div>
-                <span>💰 Modo Apuestas Reales</span>
-            </div>
-
-            <div id="betting-config" class="hidden">
-                <div class="bankroll-section">
-                    <label style="margin:0;">Bankroll:</label>
-                    <input type="number" id="bankroll-input" class="bankroll-input" placeholder="1000" value="1000" min="1" step="any">
-                    <span style="font-size:0.7rem;color:var(--muted);">€ / $ / unidades</span>
-                    <small style="flex-basis:100%;color:var(--muted);">Las cuotas se introducen en cada mercado tras calcular.</small>
-                </div>
-            </div>
-
             <label>Liga / Competencia</label>
             <div class="league-pills" id="league-pills"></div>
             <div class="vs-divider" style="margin-top:14px;">VS</div>
@@ -1044,29 +908,17 @@
             "EKS": { name: "🇵🇱 Ekstraklasa", cornersAvg: 9.3, goalsAvg: 2.55, negBinR: 6.2, markets: { ht: false, goles: true, btts: true, corn: true }, bsdName: "Ekstraklasa", bsdNameAlt: ["PKO Bank Polski Ekstraklasa", "PKO BP Ekstraklasa", "Poland Ekstraklasa"], teams: ["Lech Poznań", "Raków Częstochowa", "Jagiellonia Białystok", "Legia Warszawa", "Pogoń Szczecin", "Górnik Zabrze", "Zagłębie Lubin", "Piast Gliwice", "Wisła Płock", "Motor Lublin", "GKS Katowice", "Cracovia", "Widzew Łódź", "Korona Kielce", "Radomiak Radom", "Lechia Gdańsk", "Arka Gdynia", "Bruk-Bet Termalica Nieciecza"] },
             "SLG": { name: "🇬🇷 Super Liga Grecia", cornersAvg: 9.0, goalsAvg: 2.60, negBinR: 6.3, markets: { ht: false, goles: true, btts: true, corn: true }, bsdName: "Super League Greece", bsdNameAlt: ["Stoiximan Super League", "Super League 1", "Greek Super League"], teams: ["AEK Athens", "PAOK", "Olympiacos", "Panathinaikos", "Levadiakos", "Aris", "OFI Crete", "Volos NFC", "Atromitos", "A.E. Kifisia", "Panetolikos", "Panserraikos", "Asteras Tripolis", "AEL"] },
             "WC26": { name: "🏆 Mundial 2026", cornersAvg: 8.9, goalsAvg: 2.50, negBinR: 5.6, markets: { ht: true, goles: true, btts: true, corn: true }, bsdName: "FIFA World Cup", bsdNameAlt: ["World Cup 2026", "FIFA World Cup 2026", "2026 FIFA World Cup", "Mundial 2026", "World Cup"], teams: [
-                // GRUPO A
                 "Mexico", "South Africa", "South Korea", "Czech Republic",
-                // GRUPO B
                 "Canada", "Bosnia and Herzegovina", "Qatar", "Switzerland",
-                // GRUPO C
                 "Brazil", "Morocco", "Haiti", "Scotland",
-                // GRUPO D
                 "United States", "Paraguay", "Australia", "Turkey",
-                // GRUPO E
                 "Germany", "Curacao", "Côte d'Ivoire", "Ecuador",
-                // GRUPO F
                 "Netherlands", "Japan", "Sweden", "Tunisia",
-                // GRUPO G
                 "Belgium", "Egypt", "Iran", "New Zealand",
-                // GRUPO H
                 "Spain", "Cape Verde", "Saudi Arabia", "Uruguay",
-                // GRUPO I
                 "France", "Senegal", "Iraq", "Norway",
-                // GRUPO J
                 "Argentina", "Algeria", "Austria", "Jordan",
-                // GRUPO K
                 "Portugal", "Congo DR", "Uzbekistan", "Colombia",
-                // GRUPO L
                 "England", "Croatia", "Ghana", "Panama"
             ] }
         };
@@ -1255,22 +1107,21 @@
             "Hellas Verona FC": { home: 4.5, away: 3.7 }, "Udinese Calcio": { home: 4.6, away: 3.8 }, "Cagliari Calcio": { home: 4.5, away: 3.7 },
             "Empoli FC": { home: 4.7, away: 3.9 }, "Como 1907": { home: 5.0, away: 4.2 }, "Parma Calcio 1913": { home: 4.8, away: 4.0 },
             "US Lecce": { home: 4.4, away: 3.6 }, "Sassuolo": { home: 5.0, away: 4.2 },
-            // WC26 CORNER POWER
             "Argentina": { home: 6.2, away: 5.3 }, "Brazil": { home: 6.6, away: 5.7 }, "Uruguay": { home: 5.4, away: 4.5 },
             "Colombia": { home: 5.3, away: 4.4 }, "Germany": { home: 6.8, away: 5.9 }, "Spain": { home: 6.4, away: 5.5 },
             "France": { home: 6.5, away: 5.6 }, "England": { home: 6.3, away: 5.4 }, "Portugal": { home: 6.1, away: 5.2 },
-            "Italy": { home: 5.9, away: 5.0 }, "Netherlands": { home: 5.8, away: 4.9 }, "Belgium": { home: 5.7, away: 4.8 },
-            "Croatia": { home: 5.3, away: 4.4 }, "Japan": { home: 5.2, away: 4.3 }, "Morocco": { home: 5.0, away: 4.1 },
-            "United States": { home: 5.1, away: 4.2 }, "Mexico": { home: 5.2, away: 4.3 }, "Senegal": { home: 4.9, away: 4.0 },
-            "Ecuador": { home: 5.0, away: 4.1 }, "South Korea": { home: 4.8, away: 3.9 }, "Iran": { home: 4.5, away: 3.7 },
-            "Australia": { home: 4.6, away: 3.8 }, "Canada": { home: 4.7, away: 3.9 }, "Egypt": { home: 4.8, away: 4.0 },
-            "Ghana": { home: 4.5, away: 3.7 }, "Côte d'Ivoire": { home: 4.8, away: 4.0 }, "Algeria": { home: 4.9, away: 4.1 },
-            "South Africa": { home: 4.6, away: 3.8 }, "Denmark": { home: 5.0, away: 4.2 }, "Switzerland": { home: 5.3, away: 4.4 },
-            "Austria": { home: 5.0, away: 4.2 }, "Turkey": { home: 5.4, away: 4.5 }, "Sweden": { home: 5.1, away: 4.2 },
-            "Paraguay": { home: 4.5, away: 3.7 }, "Saudi Arabia": { home: 4.4, away: 3.6 }, "Panama": { home: 4.3, away: 3.5 },
-            "New Zealand": { home: 4.1, away: 3.3 }, "Iraq": { home: 4.4, away: 3.6 }, "Jordan": { home: 4.5, away: 3.7 },
-            "Qatar": { home: 4.7, away: 3.9 }, "Curacao": { home: 4.3, away: 3.5 }, "Haiti": { home: 4.2, away: 3.4 },
-            "Cape Verde": { home: 4.6, away: 3.8 }, "Congo DR": { home: 4.8, away: 4.0 }, "Czech Republic": { home: 5.3, away: 4.5 },
+            "Netherlands": { home: 5.8, away: 4.9 }, "Belgium": { home: 5.7, away: 4.8 }, "Croatia": { home: 5.3, away: 4.4 },
+            "Japan": { home: 5.2, away: 4.3 }, "Morocco": { home: 5.0, away: 4.1 }, "United States": { home: 5.1, away: 4.2 },
+            "Mexico": { home: 5.2, away: 4.3 }, "Senegal": { home: 4.9, away: 4.0 }, "Ecuador": { home: 5.0, away: 4.1 },
+            "South Korea": { home: 4.8, away: 3.9 }, "Iran": { home: 4.5, away: 3.7 }, "Australia": { home: 4.6, away: 3.8 },
+            "Canada": { home: 4.7, away: 3.9 }, "Egypt": { home: 4.8, away: 4.0 }, "Ghana": { home: 4.5, away: 3.7 },
+            "Côte d'Ivoire": { home: 4.8, away: 4.0 }, "Algeria": { home: 4.9, away: 4.1 }, "South Africa": { home: 4.6, away: 3.8 },
+            "Switzerland": { home: 5.3, away: 4.4 }, "Austria": { home: 5.0, away: 4.2 }, "Turkey": { home: 5.4, away: 4.5 },
+            "Sweden": { home: 5.1, away: 4.2 }, "Paraguay": { home: 4.5, away: 3.7 }, "Saudi Arabia": { home: 4.4, away: 3.6 },
+            "Panama": { home: 4.3, away: 3.5 }, "New Zealand": { home: 4.1, away: 3.3 },
+            "Iraq": { home: 4.4, away: 3.6 }, "Jordan": { home: 4.5, away: 3.7 }, "Qatar": { home: 4.7, away: 3.9 },
+            "Curacao": { home: 4.3, away: 3.5 }, "Haiti": { home: 4.2, away: 3.4 }, "Cape Verde": { home: 4.6, away: 3.8 },
+            "Congo DR": { home: 4.8, away: 4.0 }, "Czech Republic": { home: 5.3, away: 4.5 },
             "Bosnia and Herzegovina": { home: 5.0, away: 4.2 }, "Norway": { home: 6.0, away: 5.1 }, "Scotland": { home: 5.8, away: 4.9 },
             "Tunisia": { home: 4.5, away: 3.7 }, "Uzbekistan": { home: 4.3, away: 3.5 }
         };
@@ -1286,7 +1137,6 @@
             "LDU Quito": { advantage: 1.08, altitude: "2800m" }, "Cusco FC": { advantage: 1.06, altitude: "3400m" },
             "Universitario": { advantage: 1.04, altitude: "2800m" }, "Independiente del Valle": { advantage: 1.03, altitude: "2500m" },
             "Ecuador": { advantage: 1.07, altitude: "2800m (Quito)" }
-            // Bolivia NO clasificó al Mundial 2026
         };
 
         const TEAM_STRENGTH_DB = {
@@ -1305,7 +1155,7 @@
                 "SC Freiburg": [1.09, 0.98, 1.07], "TSG 1899 Hoffenheim": [1.10, 0.97, 1.07], "SV Werder Bremen": [1.05, 1.02, 1.06],
                 "1. FC Heidenheim 1846": [0.94, 1.08, 1.04], "FC Augsburg": [1.00, 1.05, 1.05], "VfL Wolfsburg": [1.04, 1.01, 1.06],
                 "1. FSV Mainz 05": [1.02, 1.03, 1.06], "Borussia Mönchengladbach": [1.08, 0.99, 1.07], "1. FC Union Berlin": [0.98, 1.06, 1.05],
-                "VfL Bochum 1848": [0.91, 1.11, 1.04], "FC St. Pauli": [0.96, 1.07, 1.05], "Holstein Kiel": [0.90, 1.12, 1.03]
+                "FC St. Pauli": [0.96, 1.07, 1.05]
             },
             "WC26": {
                 "Argentina": [1.35, 0.72, 1.08], "Brazil": [1.32, 0.75, 1.08], "Uruguay": [1.22, 0.82, 1.07],
@@ -1480,8 +1330,6 @@
         let currentLeagueKey = null, teamMap = {}, apiAvailable = false;
         let activeMarkets = { ht: true, goles: true, btts: true, corn: true };
         let bsdLeagueMap = {}, eloRatings = {}, teamSeasonStats = {};
-        let bettingMode = false;
-        let userBankroll = 1000;
 
         function selectLeague(key) {
             if (currentLeagueKey === key) return;
@@ -1715,40 +1563,6 @@
             return { top, top3, isAggressive };
         }
 
-        function calculateKellyStake(probabilityPercent, decimalOdds, bankroll) {
-            if (!decimalOdds || decimalOdds <= 1) return { stake: 0, ev: 0, kellyFraction: 0 };
-            const p = probabilityPercent / 100;
-            const ev = p * decimalOdds - 1;
-            let kellyFraction = 0;
-            if (decimalOdds > 1) {
-                kellyFraction = (p * decimalOdds - 1) / (decimalOdds - 1);
-            }
-            const quarterKelly = Math.max(0, kellyFraction * 0.25);
-            const stake = quarterKelly * bankroll;
-            return {
-                stake: Math.round(stake * 100) / 100,
-                ev: Math.round(ev * 100) / 100,
-                kellyFraction: Math.round(kellyFraction * 1000) / 1000
-            };
-        }
-
-        function toggleBettingMode() {
-            bettingMode = !bettingMode;
-            const toggle = document.getElementById('toggle-betting');
-            const config = document.getElementById('betting-config');
-            if (bettingMode) {
-                toggle.classList.add('active');
-                config.classList.remove('hidden');
-            } else {
-                toggle.classList.remove('active');
-                config.classList.add('hidden');
-            }
-            if (!document.getElementById('output').classList.contains('hidden') && window.lastRenderData) {
-                renderOutput(window.lastRenderData);
-                requestAnimationFrame(() => requestAnimationFrame(animateBars));
-            }
-        }
-
         document.getElementById('calc-btn').onclick = async () => {
             const hSel = document.getElementById('home-team'), aSel = document.getElementById('away-team');
             const home = hSel.value, away = aSel.value;
@@ -1840,8 +1654,7 @@
             const lH = +bl.home.toFixed(2), lA = +bl.away.toFixed(2), lGoal = +(hG1t + aG1t).toFixed(2), lCorn = +(hC + aC).toFixed(2);
 
             loadEl.classList.add('hidden');
-            const renderData = { home: homeOff, away: awayOff, lambdaCorn: lCorn, lambdaGoal: lGoal, lambdaH: lH, lambdaA: lA, homeStats: hStats, awayStats: aStats, negBinR, totalMatchesUsed: hMC + aMC, liga, homeElo: hElo, awayElo: aElo, altitude: alt };
-            renderOutput(renderData);
+            renderOutput({ home: homeOff, away: awayOff, lambdaCorn: lCorn, lambdaGoal: lGoal, lambdaH: lH, lambdaA: lA, homeStats: hStats, awayStats: aStats, negBinR, totalMatchesUsed: hMC + aMC, liga, homeElo: hElo, awayElo: aElo, altitude: alt });
             outEl.classList.remove('hidden');
             requestAnimationFrame(() => requestAnimationFrame(animateBars));
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -1951,10 +1764,7 @@
             return role === 'home' ? base * 1.10 : base * 0.90;
         }
 
-        window.lastRenderData = null;
-
         function renderOutput(o) {
-            window.lastRenderData = o;
             const { home, away, lambdaCorn, lambdaGoal, lambdaH, lambdaA, homeStats, awayStats, negBinR, totalMatchesUsed, liga, homeElo, awayElo, altitude } = o;
             const hF = homeStats?.form || [], aF = awayStats?.form || [];
             const hTag = homeStats?.fromApi ? '<span class="data-tag api">LIVE</span>' : '<span class="data-tag off">EST</span>';
@@ -1980,12 +1790,7 @@
             let html = '';
             const mkt = activeMarkets;
 
-            if (bettingMode) {
-                const bankrollInput = document.getElementById('bankroll-input');
-                if (bankrollInput) userBankroll = parseFloat(bankrollInput.value) || 1000;
-            }
-
-            const mktCardWithOdds = (label, raw, type, idx, sub, lambdaUsed, nUsed, threshold = null) => {
+            const mktCard = (label, raw, type, idx, sub, lambdaUsed, nUsed, threshold = null) => {
                 const p = +plattCalibrate(raw, type).toFixed(1);
                 const c = colorFor(p), cl = cardClassFor(p);
                 let bandLow, bandHigh;
@@ -1997,15 +1802,6 @@
                     bandLow = (p * 0.85).toFixed(0);
                     bandHigh = (p * 1.12).toFixed(0);
                 }
-
-                let oddsInputHtml = '';
-                let stakeHtml = '';
-                if (bettingMode) {
-                    const oddsId = `odds-${type}-${idx}`;
-                    oddsInputHtml = `<input type="number" id="${oddsId}" class="odds-input" placeholder="Cuota" step="0.01" min="1.01" onchange="window.updateStakeDisplay(this, ${p}, '${type}', ${idx})">`;
-                    stakeHtml = `<span id="stake-${type}-${idx}" class="stake-badge">--</span>`;
-                }
-
                 return `<div class="market-card ${cl} animate-in" style="animation-delay:${idx * 0.06}s;opacity:0;">
                     <div class="line-label">${label}<small>LÍNEA</small></div>
                     <div class="bar-wrap">
@@ -2013,38 +1809,42 @@
                         <div class="bar-sub">${sub}: ${(100 - p).toFixed(1)}%</div>
                         <div class="uncertainty-band">IC 85%: ${bandLow}–${bandHigh}%</div>
                     </div>
-                    <div style="display:flex; flex-direction:column; align-items:flex-end; gap:4px;">
-                        <div class="pct-label" style="color:${c}">${p.toFixed(0)}%<small>OVER</small></div>
-                        ${oddsInputHtml}
-                        ${stakeHtml}
-                    </div>
+                    <div class="pct-label" style="color:${c}">${p.toFixed(0)}%<small>OVER</small></div>
                 </div>`;
             };
 
             if (mkt.goles) {
                 const l = lambdaH + lambdaA;
                 html += `<div class="section-header animate-in"><span class="section-icon">⚽</span><span class="section-title">GOLES</span><span class="section-lambda">λ <span>${l.toFixed(2)}</span></span><span class="cal-badge">✓ Atk×Def</span></div>`;
-                html += mktCardWithOdds('+1.5', poissonOver(l, 1.5), 'goals15', 0, 'Under', l, totalMatchesUsed);
-                html += mktCardWithOdds('+2.5', poissonOver(l, 2.5), 'goals25', 1, 'Under', l, totalMatchesUsed);
+                html += mktCard('+1.5', poissonOver(l, 1.5), 'goals15', 0, 'Under', l, totalMatchesUsed);
+                html += mktCard('+2.5', poissonOver(l, 2.5), 'goals25', 1, 'Under', l, totalMatchesUsed);
                 html += '<div class="section-divider"></div>';
             }
             if (mkt.ht) {
                 html += `<div class="section-header animate-in"><span class="section-icon">⏱</span><span class="section-title">GOLES 1er TIEMPO</span><span class="section-lambda">λ <span>${lambdaGoal.toFixed(2)}</span></span><span class="cal-badge">✓ Calibrado</span></div>`;
-                html += mktCardWithOdds('+0.5', poissonOver(lambdaGoal, 0.5), 'goals_ht05', 2, 'Under', lambdaGoal, totalMatchesUsed);
-                html += mktCardWithOdds('+1.5', poissonOver(lambdaGoal, 1.5), 'goals_ht15', 3, 'Under', lambdaGoal, totalMatchesUsed);
+                html += mktCard('+0.5', poissonOver(lambdaGoal, 0.5), 'goals_ht05', 2, 'Under', lambdaGoal, totalMatchesUsed);
+                html += mktCard('+1.5', poissonOver(lambdaGoal, 1.5), 'goals_ht15', 3, 'Under', lambdaGoal, totalMatchesUsed);
                 html += '<div class="section-divider"></div>';
             }
             if (mkt.btts) {
                 const bttsR = calcBTTS(lambdaH, lambdaA, currentLeagueKey);
                 const bp = +plattCalibrate(bttsR, 'btts').toFixed(0);
                 html += `<div class="section-header animate-in"><span class="section-icon">🤝</span><span class="section-title">AMBOS MARCAN</span><span class="cal-badge">✓ ρ=${(DIXON_COLES_RHO[currentLeagueKey] || DIXON_COLES_RHO.default).toFixed(3)}</span></div>`;
-                html += mktCardWithOdds('BTTS', bttsR, 'btts', 0, 'No', lambdaH + lambdaA, totalMatchesUsed, 1.5);
+                html += `<div class="market-card ${cardClassFor(bp)} animate-in" style="opacity:0;">
+                    <div class="line-label">BTTS<small>AMBOS</small></div>
+                    <div class="bar-wrap">
+                        <div class="bar-bg"><div class="bar-fill" data-target="${bp}" style="background:${colorFor(bp)};width:0%;box-shadow:0 0 8px ${colorFor(bp)};"></div></div>
+                        <div class="bar-sub">No: ${(100 - bp).toFixed(1)}%</div>
+                        <div class="uncertainty-band">IC 85%: ${(bp * 0.85).toFixed(0)}–${(bp * 1.12).toFixed(0)}%</div>
+                    </div>
+                    <div class="pct-label" style="color:${colorFor(bp)}">${bp}%<small>SÍ</small></div>
+                </div>`;
                 html += '<div class="section-divider"></div>';
             }
             if (mkt.corn) {
                 html += `<div class="section-header animate-in"><span class="section-icon">⬡</span><span class="section-title">CÓRNERS</span><span class="section-lambda">λ <span>${lambdaCorn} · r=${negBinR}</span></span><span class="cal-badge">✓ Calibrado</span></div>`;
                 [7.5, 8.5, 9.5, 10.5].forEach((line, i) => {
-                    html += mktCardWithOdds('+' + line, negBinOver(lambdaCorn, line, negBinR), 'corners', i + 4, 'Under', lambdaCorn, totalMatchesUsed, line);
+                    html += mktCard('+' + line, negBinOver(lambdaCorn, line, negBinR), 'corners', i + 4, 'Under', lambdaCorn, totalMatchesUsed, line);
                 });
             }
 
@@ -2116,25 +1916,6 @@
         function animateBars() {
             document.querySelectorAll('.bar-fill[data-target]').forEach(b => b.style.width = b.dataset.target + '%');
         }
-
-        window.updateStakeDisplay = function (input, prob, type, idx) {
-            const odds = parseFloat(input.value);
-            const stakeSpan = document.getElementById(`stake-${type}-${idx}`);
-            if (!stakeSpan) return;
-            if (!odds || odds <= 1) {
-                stakeSpan.textContent = '--';
-                stakeSpan.className = 'stake-badge';
-                return;
-            }
-            const { stake, ev } = calculateKellyStake(prob, odds, userBankroll);
-            if (ev > 0) {
-                stakeSpan.textContent = stake.toFixed(2) + '€';
-                stakeSpan.className = 'stake-badge stake-positive';
-            } else {
-                stakeSpan.textContent = '0€';
-                stakeSpan.className = 'stake-badge stake-negative';
-            }
-        };
 
         window.onload = async () => {
             renderLeaguePills();
