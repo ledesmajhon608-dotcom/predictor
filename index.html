@@ -486,23 +486,9 @@
             backdrop-filter: blur(5px);
         }
 
-        .form-dot.w {
-            background: rgba(46, 204, 113, 0.25);
-            color: var(--green);
-            box-shadow: 0 0 6px rgba(46, 204, 113, 0.2);
-        }
-
-        .form-dot.d {
-            background: rgba(255, 182, 39, 0.25);
-            color: var(--yellow);
-            box-shadow: 0 0 6px rgba(255, 182, 39, 0.2);
-        }
-
-        .form-dot.l {
-            background: rgba(255, 77, 90, 0.25);
-            color: var(--accent);
-            box-shadow: 0 0 6px rgba(255, 77, 90, 0.2);
-        }
+        .form-dot.w { background: rgba(46, 204, 113, 0.25); color: var(--green); box-shadow: 0 0 6px rgba(46, 204, 113, 0.2); }
+        .form-dot.d { background: rgba(255, 182, 39, 0.25); color: var(--yellow); box-shadow: 0 0 6px rgba(255, 182, 39, 0.2); }
+        .form-dot.l { background: rgba(255, 77, 90, 0.25); color: var(--accent); box-shadow: 0 0 6px rgba(255, 77, 90, 0.2); }
 
         .data-tag {
             font-size: 0.58rem;
@@ -513,17 +499,8 @@
             text-transform: uppercase;
         }
 
-        .data-tag.api {
-            background: rgba(46, 204, 113, 0.12);
-            color: var(--green);
-            border: 1px solid rgba(46, 204, 113, 0.25);
-        }
-
-        .data-tag.off {
-            background: rgba(255, 182, 39, 0.12);
-            color: var(--yellow);
-            border: 1px solid rgba(255, 182, 39, 0.25);
-        }
+        .data-tag.api { background: rgba(46, 204, 113, 0.12); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.25); }
+        .data-tag.off { background: rgba(255, 182, 39, 0.12); color: var(--yellow); border: 1px solid rgba(255, 182, 39, 0.25); }
 
         .result-boxes {
             display: grid;
@@ -591,9 +568,7 @@
             color: var(--muted);
         }
 
-        .section-lambda span {
-            color: var(--yellow);
-        }
+        .section-lambda span { color: var(--yellow); }
 
         .section-divider {
             height: 1px;
@@ -635,20 +610,9 @@
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
         }
 
-        .market-card.high {
-            border-color: rgba(46, 204, 113, 0.35);
-            background: rgba(46, 204, 113, 0.03);
-        }
-
-        .market-card.mid {
-            border-color: rgba(255, 182, 39, 0.3);
-            background: rgba(255, 182, 39, 0.03);
-        }
-
-        .market-card.low {
-            border-color: rgba(255, 77, 90, 0.25);
-            background: rgba(255, 77, 90, 0.03);
-        }
+        .market-card.high { border-color: rgba(46, 204, 113, 0.35); background: rgba(46, 204, 113, 0.03); }
+        .market-card.mid { border-color: rgba(255, 182, 39, 0.3); background: rgba(255, 182, 39, 0.03); }
+        .market-card.low { border-color: rgba(255, 77, 90, 0.25); background: rgba(255, 77, 90, 0.03); }
 
         .line-label {
             font-family: 'Bebas Neue', sans-serif;
@@ -668,9 +632,7 @@
             letter-spacing: 1px;
         }
 
-        .bar-wrap {
-            flex: 1;
-        }
+        .bar-wrap { flex: 1; }
 
         .bar-bg {
             background: rgba(255, 255, 255, 0.05);
@@ -688,10 +650,7 @@
             box-shadow: 0 0 8px currentColor;
         }
 
-        .bar-sub {
-            font-size: 0.62rem;
-            color: var(--muted);
-        }
+        .bar-sub { font-size: 0.62rem; color: var(--muted); }
 
         .uncertainty-band {
             font-size: 0.58rem;
@@ -759,9 +718,7 @@
         .recomendacion::before {
             content: '';
             position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
+            top: 0; left: 0; right: 0;
             height: 2px;
             background: linear-gradient(90deg, transparent, var(--green), var(--blue), transparent);
         }
@@ -783,11 +740,7 @@
             line-height: 1.1;
         }
 
-        .rec-sub {
-            font-size: 0.7rem;
-            color: var(--muted);
-            margin-top: 6px;
-        }
+        .rec-sub { font-size: 0.7rem; color: var(--muted); margin-top: 6px; }
 
         .rec-confidence {
             display: inline-flex;
@@ -801,18 +754,8 @@
             backdrop-filter: blur(10px);
         }
 
-        .rc-pct {
-            font-family: 'Bebas Neue', sans-serif;
-            font-size: 1.2rem;
-            color: var(--green);
-        }
-
-        .rc-label {
-            font-size: 0.62rem;
-            color: var(--muted);
-            font-weight: 700;
-            letter-spacing: 1px;
-        }
+        .rc-pct { font-family: 'Bebas Neue', sans-serif; font-size: 1.2rem; color: var(--green); }
+        .rc-label { font-size: 0.62rem; color: var(--muted); font-weight: 700; letter-spacing: 1px; }
 
         .disclaimer {
             text-align: center;
@@ -823,26 +766,94 @@
             opacity: 0.6;
         }
 
-        .hidden {
-            display: none;
-        }
+        .hidden { display: none; }
 
         @keyframes fadeUp {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        .animate-in {
-            animation: fadeUp 0.5s ease-out forwards;
-        }
+        .animate-in { animation: fadeUp 0.5s ease-out forwards; }
 
         @keyframes pulse {
             0%, 100% { opacity: 1; }
             50% { opacity: 0.7; }
         }
+        .pulse { animation: pulse 2s ease-in-out infinite; }
 
-        .pulse {
-            animation: pulse 2s ease-in-out infinite;
+        /* Panel de Apuestas con Valor */
+        .value-bet-panel {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.08), rgba(77, 171, 247, 0.05));
+            border: 1px solid rgba(46, 204, 113, 0.3);
+            border-radius: 20px;
+            padding: 20px 18px;
+            margin-top: 16px;
+            backdrop-filter: blur(20px);
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+        }
+        .value-bet-panel::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, var(--green), var(--yellow), transparent);
+        }
+        .vb-header {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 0.9rem;
+            letter-spacing: 3px;
+            color: var(--green);
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .vb-card {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 14px;
+            margin-bottom: 10px;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 12px;
+            transition: 0.3s;
+        }
+        .vb-card:hover { border-color: var(--green); }
+        .vb-market-name { font-weight: 700; font-size: 0.85rem; min-width: 90px; }
+        .vb-odds { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--yellow); min-width: 50px; }
+        .vb-ev {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+        .vb-ev.positive { background: rgba(46,204,113,0.15); color: var(--green); }
+        .vb-stake {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            color: white;
+            margin-left: auto;
+        }
+        .vb-stake small { font-size: 0.6rem; color: var(--muted); display: block; }
+        .no-value-msg { text-align: center; color: var(--muted); padding: 10px; font-size: 0.8rem; }
+        .bankroll-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .bankroll-input {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            width: 90px;
+            text-align: center;
         }
     </style>
 </head>
@@ -878,7 +889,8 @@
                 <div id="match-header-container"></div>
                 <div id="all-markets-container"></div>
                 <div id="recomendacion-container"></div>
-                <p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Bandas incertidumbre realistas. Solo uso personal.</p>
+                <div id="value-bets-container"></div>
+                <p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Apuestas con Valor (BSD Odds). Solo uso personal.</p>
             </div>
         </div>
     </div>
@@ -1563,6 +1575,91 @@
             return { top, top3, isAggressive };
         }
 
+        // ============ NUEVAS FUNCIONES PARA APUESTAS CON VALOR ============
+        async function fetchBestOdds(eventId) {
+            try {
+                const data = await bsdFetch(`/odds/best/?event_id=${eventId}`);
+                return data;
+            } catch (e) {
+                console.warn('No se pudieron obtener cuotas:', e);
+                return null;
+            }
+        }
+
+        function mapMarketToBSDOdds(bestOdds, marketType, line = null) {
+            if (!bestOdds || !bestOdds.length) return null;
+            for (const item of bestOdds) {
+                if (marketType === '1x2' && item.market === '1x2') {
+                    return { home: item.home_odds, draw: item.draw_odds, away: item.away_odds };
+                }
+                if (marketType === 'over_under' && item.market === 'over_under') {
+                    if (item.line == line) {
+                        return { over: item.over_odds, under: item.under_odds };
+                    }
+                }
+                if (marketType === 'btts' && item.market === 'btts') {
+                    return { yes: item.yes_odds, no: item.no_odds };
+                }
+                if (marketType === 'corners' && item.market === 'corners') {
+                    if (item.line == line) {
+                        return { over: item.over_odds, under: item.under_odds };
+                    }
+                }
+            }
+            return null;
+        }
+
+        function renderValueBets(valueBets, bankroll) {
+            const container = document.getElementById('value-bets-container');
+            if (!valueBets || valueBets.length === 0) {
+                container.innerHTML = `<div class="value-bet-panel animate-in">
+                    <div class="vb-header">💰 APUESTAS CON VALOR</div>
+                    <div class="no-value-msg">No se encontraron apuestas con valor esperado positivo (+5%) en este partido.</div>
+                </div>`;
+                return;
+            }
+
+            let html = `<div class="value-bet-panel animate-in">
+                <div class="vb-header">💰 APUESTAS CON VALOR (EV > 5%)</div>
+                <div class="bankroll-row">
+                    <span style="font-size:0.7rem; color:var(--muted);">Bankroll:</span>
+                    <input type="number" id="bankroll-value-input" class="bankroll-input" value="${bankroll}" step="1" min="1" onchange="updateValueBetsBankroll()">
+                    <span style="font-size:0.6rem; color:var(--muted);">€/uds</span>
+                </div>`;
+
+            valueBets.forEach(bet => {
+                const evClass = bet.ev > 0.1 ? 'positive' : '';
+                const stakeColor = bet.ev > 0.1 ? 'var(--green)' : 'var(--yellow)';
+                html += `<div class="vb-card">
+                    <div class="vb-market-name">${bet.market}</div>
+                    <div class="vb-odds">@${bet.odds}</div>
+                    <div class="vb-ev ${evClass}">EV: ${(bet.ev * 100).toFixed(1)}%</div>
+                    <div class="vb-stake" style="color:${stakeColor}">
+                        ${bet.stake}€
+                        <small>¼ Kelly</small>
+                    </div>
+                </div>`;
+            });
+
+            html += '</div>';
+            container.innerHTML = html;
+            window.currentValueBets = valueBets;
+        }
+
+        window.updateValueBetsBankroll = function() {
+            const input = document.getElementById('bankroll-value-input');
+            if (!input || !window.currentValueBets) return;
+            const newBankroll = parseFloat(input.value) || 1000;
+            window.currentValueBets.forEach(bet => {
+                const prob = bet.probDecimal;
+                const odds = parseFloat(bet.odds);
+                const kelly = (prob * odds - 1) / (odds - 1);
+                bet.stake = (newBankroll * Math.max(0, kelly * 0.25)).toFixed(2);
+            });
+            renderValueBets(window.currentValueBets, newBankroll);
+        };
+
+        // ============ FLUJO PRINCIPAL ============
         document.getElementById('calc-btn').onclick = async () => {
             const hSel = document.getElementById('home-team'), aSel = document.getElementById('away-team');
             const home = hSel.value, away = aSel.value;
@@ -1643,18 +1740,142 @@
             aC *= Math.max(0.9, Math.min(1.1, 1 - eloDiff * 0.03));
 
             const hFm = formMultiplier(hStats?.form), aFm = formMultiplier(aStats?.form);
-            hGf *= hFm;
-            aGf *= aFm;
-            hG1t *= hFm;
-            aG1t *= aFm;
-            hC *= hFm * 0.5 + 0.5;
-            aC *= aFm * 0.5 + 0.5;
+            hGf *= hFm; aGf *= aFm; hG1t *= hFm; aG1t *= aFm;
+            hC *= hFm * 0.5 + 0.5; aC *= aFm * 0.5 + 0.5;
 
             const bl = bivariateLambdas(hGf, hGc, aGf, aGc, goalsAvg, hAdv);
             const lH = +bl.home.toFixed(2), lA = +bl.away.toFixed(2), lGoal = +(hG1t + aG1t).toFixed(2), lCorn = +(hC + aC).toFixed(2);
 
+            // --- OBTENER CUOTAS Y CALCULAR APUESTAS CON VALOR ---
+            let valueBets = [];
+            if (bsdInfo && homeId && awayId && seasonId) {
+                try {
+                    const events = await bsdFetchAll(`/events/?season=${seasonId}&league=${bsdInfo.bsdId}&home_team=${homeId}&away_team=${awayId}&limit=1`);
+                    if (events && events.length > 0) {
+                        const eventId = events[0].id;
+                        const bestOdds = await fetchBestOdds(eventId);
+                        if (bestOdds) {
+                            const bankroll = 1000;
+
+                            // 1X2
+                            const h2h = mapMarketToBSDOdds(bestOdds, '1x2');
+                            if (h2h) {
+                                const probs = calcResultProbs(lH, lA, currentLeagueKey);
+                                const markets = [
+                                    { prob: probs.home / 100, odd: h2h.home, name: '1 (Local)', probDecimal: probs.home / 100 },
+                                    { prob: probs.draw / 100, odd: h2h.draw, name: 'X (Empate)', probDecimal: probs.draw / 100 },
+                                    { prob: probs.away / 100, odd: h2h.away, name: '2 (Visitante)', probDecimal: probs.away / 100 }
+                                ];
+                                markets.forEach(m => {
+                                    if (m.odd && m.odd > 1) {
+                                        const ev = m.prob * m.odd - 1;
+                                        if (ev > 0.05) {
+                                            const kelly = (m.prob * m.odd - 1) / (m.odd - 1);
+                                            const quarter = Math.max(0, kelly * 0.25);
+                                            valueBets.push({
+                                                market: m.name,
+                                                odds: Number(m.odd).toFixed(2),
+                                                ev: ev,
+                                                stake: (bankroll * quarter).toFixed(2),
+                                                probDecimal: m.probDecimal
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+
+                            // Over/Under goles
+                            if (activeMarkets.goles) {
+                                [1.5, 2.5, 3.5].forEach(line => {
+                                    const ou = mapMarketToBSDOdds(bestOdds, 'over_under', line);
+                                    if (ou) {
+                                        const l = lH + lA;
+                                        const probOver = poissonOver(l, line) / 100;
+                                        const evOver = probOver * ou.over - 1;
+                                        if (evOver > 0.05) {
+                                            const kelly = (probOver * ou.over - 1) / (ou.over - 1);
+                                            valueBets.push({
+                                                market: `Over ${line} Goles`,
+                                                odds: Number(ou.over).toFixed(2),
+                                                ev: evOver,
+                                                stake: (bankroll * Math.max(0, kelly * 0.25)).toFixed(2),
+                                                probDecimal: probOver
+                                            });
+                                        }
+                                        const evUnder = (1 - probOver) * ou.under - 1;
+                                        if (evUnder > 0.05) {
+                                            const kellyU = ((1 - probOver) * ou.under - 1) / (ou.under - 1);
+                                            valueBets.push({
+                                                market: `Under ${line} Goles`,
+                                                odds: Number(ou.under).toFixed(2),
+                                                ev: evUnder,
+                                                stake: (bankroll * Math.max(0, kellyU * 0.25)).toFixed(2),
+                                                probDecimal: 1 - probOver
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+
+                            // BTTS
+                            if (activeMarkets.btts) {
+                                const bttsOdds = mapMarketToBSDOdds(bestOdds, 'btts');
+                                if (bttsOdds) {
+                                    const probBTTS = calcBTTS(lH, lA, currentLeagueKey) / 100;
+                                    const evYes = probBTTS * bttsOdds.yes - 1;
+                                    if (evYes > 0.05) {
+                                        const kellyY = (probBTTS * bttsOdds.yes - 1) / (bttsOdds.yes - 1);
+                                        valueBets.push({
+                                            market: 'BTTS Sí',
+                                            odds: Number(bttsOdds.yes).toFixed(2),
+                                            ev: evYes,
+                                            stake: (bankroll * Math.max(0, kellyY * 0.25)).toFixed(2),
+                                            probDecimal: probBTTS
+                                        });
+                                    }
+                                    const evNo = (1 - probBTTS) * bttsOdds.no - 1;
+                                    if (evNo > 0.05) {
+                                        const kellyN = ((1 - probBTTS) * bttsOdds.no - 1) / (bttsOdds.no - 1);
+                                        valueBets.push({
+                                            market: 'BTTS No',
+                                            odds: Number(bttsOdds.no).toFixed(2),
+                                            ev: evNo,
+                                            stake: (bankroll * Math.max(0, kellyN * 0.25)).toFixed(2),
+                                            probDecimal: 1 - probBTTS
+                                        });
+                                    }
+                                }
+                            }
+
+                            // Córners
+                            if (activeMarkets.corn) {
+                                [8.5, 9.5, 10.5].forEach(line => {
+                                    const cornOdds = mapMarketToBSDOdds(bestOdds, 'corners', line);
+                                    if (cornOdds) {
+                                        const probOverCorn = negBinOver(lCorn, line, negBinR) / 100;
+                                        const evOver = probOverCorn * cornOdds.over - 1;
+                                        if (evOver > 0.05) {
+                                            const kellyC = (probOverCorn * cornOdds.over - 1) / (cornOdds.over - 1);
+                                            valueBets.push({
+                                                market: `Over ${line} Córners`,
+                                                odds: Number(cornOdds.over).toFixed(2),
+                                                ev: evOver,
+                                                stake: (bankroll * Math.max(0, kellyC * 0.25)).toFixed(2),
+                                                probDecimal: probOverCorn
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+                        }
+                    }
+                } catch (e) {
+                    console.warn('Error obteniendo cuotas:', e);
+                }
+            }
+
             loadEl.classList.add('hidden');
-            renderOutput({ home: homeOff, away: awayOff, lambdaCorn: lCorn, lambdaGoal: lGoal, lambdaH: lH, lambdaA: lA, homeStats: hStats, awayStats: aStats, negBinR, totalMatchesUsed: hMC + aMC, liga, homeElo: hElo, awayElo: aElo, altitude: alt });
+            renderOutput({ home: homeOff, away: awayOff, lambdaCorn: lCorn, lambdaGoal: lGoal, lambdaH: lH, lambdaA: lA, homeStats: hStats, awayStats: aStats, negBinR, totalMatchesUsed: hMC + aMC, liga, homeElo: hElo, awayElo: aElo, altitude: alt, valueBets });
             outEl.classList.remove('hidden');
             requestAnimationFrame(() => requestAnimationFrame(animateBars));
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
@@ -1697,13 +1918,9 @@
                 lastMatches.slice(-5).forEach(m => {
                     const hs = Number(m.home_score || 0), as = Number(m.away_score || 0);
                     if (role === 'home') {
-                        if (hs > as) form.push('w');
-                        else if (hs === as) form.push('d');
-                        else form.push('l');
+                        if (hs > as) form.push('w'); else if (hs === as) form.push('d'); else form.push('l');
                     } else {
-                        if (as > hs) form.push('w');
-                        else if (as === hs) form.push('d');
-                        else form.push('l');
+                        if (as > hs) form.push('w'); else if (as === hs) form.push('d'); else form.push('l');
                     }
                 });
                 lastMatches.forEach((m, i) => {
@@ -1765,7 +1982,7 @@
         }
 
         function renderOutput(o) {
-            const { home, away, lambdaCorn, lambdaGoal, lambdaH, lambdaA, homeStats, awayStats, negBinR, totalMatchesUsed, liga, homeElo, awayElo, altitude } = o;
+            const { home, away, lambdaCorn, lambdaGoal, lambdaH, lambdaA, homeStats, awayStats, negBinR, totalMatchesUsed, liga, homeElo, awayElo, altitude, valueBets } = o;
             const hF = homeStats?.form || [], aF = awayStats?.form || [];
             const hTag = homeStats?.fromApi ? '<span class="data-tag api">LIVE</span>' : '<span class="data-tag off">EST</span>';
             const aTag = awayStats?.fromApi ? '<span class="data-tag api">LIVE</span>' : '<span class="data-tag off">EST</span>';
@@ -1796,11 +2013,9 @@
                 let bandLow, bandHigh;
                 if (lambdaUsed && nUsed) {
                     const band = uncertaintyBandRealistic(lambdaUsed, nUsed, type, threshold);
-                    bandLow = band.low;
-                    bandHigh = band.high;
+                    bandLow = band.low; bandHigh = band.high;
                 } else {
-                    bandLow = (p * 0.85).toFixed(0);
-                    bandHigh = (p * 1.12).toFixed(0);
+                    bandLow = (p * 0.85).toFixed(0); bandHigh = (p * 1.12).toFixed(0);
                 }
                 return `<div class="market-card ${cl} animate-in" style="animation-delay:${idx * 0.06}s;opacity:0;">
                     <div class="line-label">${label}<small>LÍNEA</small></div>
@@ -1897,6 +2112,12 @@
                         <div class="rec-confidence" style="border-color:${cls};"><span class="rc-pct" style="color:${cls}">${tb.prob.toFixed(0)}%</span><span class="rc-label">${conf}</span></div>
                         ${top3h ? `<div style="margin-top:14px;text-align:left;"><div style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">🔎 OTRAS OPCIONES</div>${top3h}</div>` : ''}
                     </div>`;
+            }
+
+            if (valueBets) {
+                renderValueBets(valueBets, 1000);
+            } else {
+                document.getElementById('value-bets-container').innerHTML = '';
             }
         }
 
