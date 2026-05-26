@@ -357,6 +357,12 @@
         }
         .comparison-table .ev-neg { color: var(--accent); }
         .comparison-table .ev-pos { color: var(--green); }
+        .manual-odds-input {
+            width: 65px; padding: 2px 5px; background: rgba(255,255,255,0.05);
+            border: 1px solid var(--border); color: var(--text); border-radius: 6px;
+            font-size: 0.75rem; text-align: center;
+        }
+        .manual-odds-input:focus { outline: none; border-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -392,7 +398,7 @@
                 <div id="all-markets-container"></div>
                 <div id="recomendacion-container"></div>
                 <div id="value-bets-container"></div>
-                <p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Apuestas con Valor (BSD Odds). Solo uso personal.</p>
+                <p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Apuestas con Valor (BSD Odds + Manual). Solo uso personal.</p>
             </div>
         </div>
     </div>
@@ -1077,16 +1083,152 @@
             return { top, top3, isAggressive };
         }
 
-        // ============ FUNCIONES DE APUESTAS CON VALOR ============
-        async function fetchBestOdds(eventId) {
-            try {
-                const data = await bsdFetch(`/odds/best/?event_id=${eventId}`);
-                return data;
-            } catch (e) {
-                console.warn('No se pudieron obtener cuotas:', e);
-                return null;
+        // ============ NUEVA TABLA COMPARATIVA CON ENTRADA MANUAL ============
+        function renderOddsComparison(bestOdds, modelData) {
+            const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
+
+            let html = `<div class="value-bet-panel animate-in">
+                <div class="vb-header">📊 COMPARATIVA CUOTA vs MODELO</div>
+                <table class="comparison-table">
+                    <thead>
+                        <tr><th>Mercado</th><th>Prob. modelo</th><th>Cuota manual</th><th>Prob. implícita</th><th>EV</th></tr>
+                    </thead>
+                    <tbody>`;
+
+            const addRow = (marketName, prob, odd) => {
+                const implied = odd ? (1 / odd) : null;
+                const ev = odd ? (prob * odd - 1) : null;
+                const evClass = ev !== null ? (ev >= 0 ? 'ev-pos' : 'ev-neg') : '';
+                const evText = ev !== null ? (ev * 100).toFixed(1) + '%' : '—';
+                const impliedText = implied ? (implied * 100).toFixed(1) + '%' : '—';
+
+                return `<tr>
+                    <td>${marketName}</td>
+                    <td>${(prob * 100).toFixed(1)}%</td>
+                    <td><input type="number" class="manual-odds-input" data-market="${marketName}" data-prob="${prob}" value="${odd || ''}" placeholder="Cuota" step="0.01" min="1.01"></td>
+                    <td class="implied-cell">${impliedText}</td>
+                    <td class="ev-cell ${evClass}">${evText}</td>
+                </tr>`;
+            };
+
+            const h2h = bestOdds ? mapMarketToBSDOdds(bestOdds, '1x2') : null;
+            const probs1X2 = calcResultProbs(lambdaH, lambdaA, currentLeagueKey);
+            html += addRow('1 (Local)', probs1X2.home / 100, h2h?.home || '');
+            html += addRow('X (Empate)', probs1X2.draw / 100, h2h?.draw || '');
+            html += addRow('2 (Visitante)', probs1X2.away / 100, h2h?.away || '');
+
+            if (activeMarkets.goles) {
+                [1.5, 2.5, 3.5].forEach(line => {
+                    const l = lambdaH + lambdaA;
+                    const probOver = poissonOver(l, line) / 100;
+                    const ou = bestOdds ? mapMarketToBSDOdds(bestOdds, 'over_under', line) : null;
+                    html += addRow(`Over ${line} Goles`, probOver, ou?.over || '');
+                    html += addRow(`Under ${line} Goles`, 1 - probOver, ou?.under || '');
+                });
             }
+
+            if (activeMarkets.btts) {
+                const probBTTS = calcBTTS(lambdaH, lambdaA, currentLeagueKey) / 100;
+                const bttsOdds = bestOdds ? mapMarketToBSDOdds(bestOdds, 'btts') : null;
+                html += addRow('BTTS Sí', probBTTS, bttsOdds?.yes || '');
+                html += addRow('BTTS No', 1 - probBTTS, bttsOdds?.no || '');
+            }
+
+            if (activeMarkets.corn) {
+                [8.5, 9.5, 10.5].forEach(line => {
+                    const probOver = negBinOver(lambdaCorn, line, negBinR) / 100;
+                    const cornOdds = bestOdds ? mapMarketToBSDOdds(bestOdds, 'corners', line) : null;
+                    html += addRow(`Over ${line} Córners`, probOver, cornOdds?.over || '');
+                    html += addRow(`Under ${line} Córners`, 1 - probOver, cornOdds?.under || '');
+                });
+            }
+
+            html += `</tbody></table>
+                <div class="bankroll-row" style="margin-top:12px;">
+                    <span style="font-size:0.7rem; color:var(--muted);">Bankroll:</span>
+                    <input type="number" id="bankroll-value-input" class="bankroll-input" value="1000" step="1" min="1">
+                    <span style="font-size:0.6rem; color:var(--muted);">€/uds</span>
+                    <button onclick="recalcularValueBets()" style="margin-left:auto;padding:4px 12px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:0.7rem;cursor:pointer;">🔄 Actualizar</button>
+                </div>
+            </div>`;
+
+            document.getElementById('value-bets-container').innerHTML = html;
+
+            document.querySelectorAll('.manual-odds-input').forEach(input => {
+                input.addEventListener('input', function() {
+                    const market = this.dataset.market;
+                    const prob = parseFloat(this.dataset.prob);
+                    const odds = parseFloat(this.value);
+                    const row = this.closest('tr');
+                    const impliedCell = row.querySelector('.implied-cell');
+                    const evCell = row.querySelector('.ev-cell');
+
+                    if (!isNaN(odds) && odds > 1) {
+                        const implied = 1 / odds;
+                        const ev = prob * odds - 1;
+                        impliedCell.textContent = (implied * 100).toFixed(1) + '%';
+                        evCell.textContent = (ev * 100).toFixed(1) + '%';
+                        evCell.className = 'ev-cell ' + (ev >= 0 ? 'ev-pos' : 'ev-neg');
+                    } else {
+                        impliedCell.textContent = '—';
+                        evCell.textContent = '—';
+                        evCell.className = 'ev-cell';
+                    }
+                    recalcularValueBets();
+                });
+            });
+
+            recalcularValueBets();
         }
+
+        window.recalcularValueBets = function() {
+            const bankroll = parseFloat(document.getElementById('bankroll-value-input')?.value) || 1000;
+            const inputs = document.querySelectorAll('.manual-odds-input');
+            const valueBets = [];
+
+            inputs.forEach(input => {
+                const prob = parseFloat(input.dataset.prob);
+                const odds = parseFloat(input.value);
+                if (!isNaN(odds) && odds > 1) {
+                    const ev = prob * odds - 1;
+                    if (ev > 0.05) {
+                        const kelly = (prob * odds - 1) / (odds - 1);
+                        const quarter = Math.max(0, kelly * 0.25);
+                        valueBets.push({
+                            market: input.dataset.market,
+                            odds: odds.toFixed(2),
+                            ev: ev,
+                            stake: (bankroll * quarter).toFixed(2),
+                            probDecimal: prob
+                        });
+                    }
+                }
+            });
+
+            const container = document.getElementById('value-bets-container');
+            let existingPanel = container.querySelector('.value-bet-panel:not(:first-child)');
+            if (existingPanel) existingPanel.remove();
+
+            if (valueBets.length > 0) {
+                let html = `<div class="value-bet-panel animate-in">
+                    <div class="vb-header">💰 APUESTAS CON VALOR (EV > 5%)</div>`;
+                valueBets.forEach(bet => {
+                    const evClass = bet.ev > 0.1 ? 'positive' : '';
+                    const stakeColor = bet.ev > 0.1 ? 'var(--green)' : 'var(--yellow)';
+                    html += `<div class="vb-card">
+                        <div class="vb-market-name">${bet.market}</div>
+                        <div class="vb-odds">@${bet.odds}</div>
+                        <div class="vb-ev ${evClass}">EV: ${(bet.ev * 100).toFixed(1)}%</div>
+                        <div class="vb-stake" style="color:${stakeColor}">
+                            ${bet.stake}€
+                            <small>¼ Kelly</small>
+                        </div>
+                    </div>`;
+                });
+                html += '</div>';
+                container.insertAdjacentHTML('beforeend', html);
+            }
+        };
 
         function mapMarketToBSDOdds(bestOdds, marketType, line = null) {
             if (!bestOdds || !bestOdds.length) return null;
@@ -1110,181 +1252,6 @@
             }
             return null;
         }
-
-        function renderOddsComparison(bestOdds, modelData) {
-            const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
-
-            let html = `<div class="value-bet-panel animate-in">
-                <div class="vb-header">📊 COMPARATIVA CUOTA vs MODELO</div>
-                <table class="comparison-table">
-                    <thead>
-                        <tr><th>Mercado</th><th>Prob. modelo</th><th>Mejor cuota</th><th>Prob. implícita</th><th>EV</th></tr>
-                    </thead>
-                    <tbody>`;
-
-            // 1X2
-            const h2h = mapMarketToBSDOdds(bestOdds, '1x2');
-            if (h2h) {
-                const probs = calcResultProbs(lambdaH, lambdaA, currentLeagueKey);
-                const markets = [
-                    { name: '1 (Local)', prob: probs.home / 100, odd: h2h.home },
-                    { name: 'X (Empate)', prob: probs.draw / 100, odd: h2h.draw },
-                    { name: '2 (Visitante)', prob: probs.away / 100, odd: h2h.away }
-                ];
-                markets.forEach(m => {
-                    if (m.odd && m.odd > 1) {
-                        const implied = 1 / m.odd;
-                        const ev = m.prob * m.odd - 1;
-                        html += `<tr>
-                            <td>${m.name}</td>
-                            <td>${(m.prob*100).toFixed(1)}%</td>
-                            <td>@${Number(m.odd).toFixed(2)}</td>
-                            <td>${(implied*100).toFixed(1)}%</td>
-                            <td class="${ev >= 0 ? 'ev-pos' : 'ev-neg'}">${(ev*100).toFixed(1)}%</td>
-                        </tr>`;
-                    }
-                });
-            }
-
-            // Over/Under goles
-            if (activeMarkets.goles) {
-                [1.5, 2.5, 3.5].forEach(line => {
-                    const ou = mapMarketToBSDOdds(bestOdds, 'over_under', line);
-                    if (ou) {
-                        const l = lambdaH + lambdaA;
-                        const probOver = poissonOver(l, line) / 100;
-                        const probUnder = 1 - probOver;
-                        const markets = [
-                            { name: `Over ${line}`, prob: probOver, odd: ou.over },
-                            { name: `Under ${line}`, prob: probUnder, odd: ou.under }
-                        ];
-                        markets.forEach(m => {
-                            if (m.odd && m.odd > 1) {
-                                const implied = 1 / m.odd;
-                                const ev = m.prob * m.odd - 1;
-                                html += `<tr>
-                                    <td>${m.name} Goles</td>
-                                    <td>${(m.prob*100).toFixed(1)}%</td>
-                                    <td>@${Number(m.odd).toFixed(2)}</td>
-                                    <td>${(implied*100).toFixed(1)}%</td>
-                                    <td class="${ev >= 0 ? 'ev-pos' : 'ev-neg'}">${(ev*100).toFixed(1)}%</td>
-                                </tr>`;
-                            }
-                        });
-                    }
-                });
-            }
-
-            // BTTS
-            if (activeMarkets.btts) {
-                const bttsOdds = mapMarketToBSDOdds(bestOdds, 'btts');
-                if (bttsOdds) {
-                    const probBTTS = calcBTTS(lambdaH, lambdaA, currentLeagueKey) / 100;
-                    const markets = [
-                        { name: 'BTTS Sí', prob: probBTTS, odd: bttsOdds.yes },
-                        { name: 'BTTS No', prob: 1 - probBTTS, odd: bttsOdds.no }
-                    ];
-                    markets.forEach(m => {
-                        if (m.odd && m.odd > 1) {
-                            const implied = 1 / m.odd;
-                            const ev = m.prob * m.odd - 1;
-                            html += `<tr>
-                                <td>${m.name}</td>
-                                <td>${(m.prob*100).toFixed(1)}%</td>
-                                <td>@${Number(m.odd).toFixed(2)}</td>
-                                <td>${(implied*100).toFixed(1)}%</td>
-                                <td class="${ev >= 0 ? 'ev-pos' : 'ev-neg'}">${(ev*100).toFixed(1)}%</td>
-                            </tr>`;
-                        }
-                    });
-                }
-            }
-
-            // Córners
-            if (activeMarkets.corn) {
-                [8.5, 9.5, 10.5].forEach(line => {
-                    const cornOdds = mapMarketToBSDOdds(bestOdds, 'corners', line);
-                    if (cornOdds) {
-                        const probOver = negBinOver(lambdaCorn, line, negBinR) / 100;
-                        const probUnder = 1 - probOver;
-                        const markets = [
-                            { name: `Over ${line}`, prob: probOver, odd: cornOdds.over },
-                            { name: `Under ${line}`, prob: probUnder, odd: cornOdds.under }
-                        ];
-                        markets.forEach(m => {
-                            if (m.odd && m.odd > 1) {
-                                const implied = 1 / m.odd;
-                                const ev = m.prob * m.odd - 1;
-                                html += `<tr>
-                                    <td>${m.name} Córners</td>
-                                    <td>${(m.prob*100).toFixed(1)}%</td>
-                                    <td>@${Number(m.odd).toFixed(2)}</td>
-                                    <td>${(implied*100).toFixed(1)}%</td>
-                                    <td class="${ev >= 0 ? 'ev-pos' : 'ev-neg'}">${(ev*100).toFixed(1)}%</td>
-                                </tr>`;
-                            }
-                        });
-                    }
-                });
-            }
-
-            html += `</tbody></table></div>`;
-            return html;
-        }
-
-        function renderValueBets(valueBets, bankroll, bestOdds, modelData) {
-            const container = document.getElementById('value-bets-container');
-            if (!valueBets || valueBets.length === 0) {
-                if (bestOdds) {
-                    container.innerHTML = renderOddsComparison(bestOdds, modelData);
-                    return;
-                }
-                container.innerHTML = `<div class="value-bet-panel animate-in">
-                    <div class="vb-header">💰 APUESTAS CON VALOR</div>
-                    <div class="no-value-msg">No se pudieron obtener cuotas o no hay valor.</div>
-                </div>`;
-                return;
-            }
-
-            let html = `<div class="value-bet-panel animate-in">
-                <div class="vb-header">💰 APUESTAS CON VALOR (EV > 5%)</div>
-                <div class="bankroll-row">
-                    <span style="font-size:0.7rem; color:var(--muted);">Bankroll:</span>
-                    <input type="number" id="bankroll-value-input" class="bankroll-input" value="${bankroll}" step="1" min="1" onchange="updateValueBetsBankroll()">
-                    <span style="font-size:0.6rem; color:var(--muted);">€/uds</span>
-                </div>`;
-
-            valueBets.forEach(bet => {
-                const evClass = bet.ev > 0.1 ? 'positive' : '';
-                const stakeColor = bet.ev > 0.1 ? 'var(--green)' : 'var(--yellow)';
-                html += `<div class="vb-card">
-                    <div class="vb-market-name">${bet.market}</div>
-                    <div class="vb-odds">@${bet.odds}</div>
-                    <div class="vb-ev ${evClass}">EV: ${(bet.ev * 100).toFixed(1)}%</div>
-                    <div class="vb-stake" style="color:${stakeColor}">
-                        ${bet.stake}€
-                        <small>¼ Kelly</small>
-                    </div>
-                </div>`;
-            });
-
-            html += '</div>';
-            container.innerHTML = html;
-            window.currentValueBets = valueBets;
-        }
-
-        window.updateValueBetsBankroll = function() {
-            const input = document.getElementById('bankroll-value-input');
-            if (!input || !window.currentValueBets) return;
-            const newBankroll = parseFloat(input.value) || 1000;
-            window.currentValueBets.forEach(bet => {
-                const prob = bet.probDecimal;
-                const odds = parseFloat(bet.odds);
-                const kelly = (prob * odds - 1) / (odds - 1);
-                bet.stake = (newBankroll * Math.max(0, kelly * 0.25)).toFixed(2);
-            });
-            renderValueBets(window.currentValueBets, newBankroll, null, null);
-        };
 
         // ============ FLUJO PRINCIPAL ============
         document.getElementById('calc-btn').onclick = async () => {
@@ -1373,106 +1340,13 @@
             const bl = bivariateLambdas(hGf, hGc, aGf, aGc, goalsAvg, hAdv);
             const lH = +bl.home.toFixed(2), lA = +bl.away.toFixed(2), lGoal = +(hG1t + aG1t).toFixed(2), lCorn = +(hC + aC).toFixed(2);
 
-            // --- OBTENER CUOTAS Y CALCULAR APUESTAS CON VALOR ---
-            let valueBets = [], bestOdds = null;
+            // Obtener cuotas de BSD (si falla, igualmente se muestra la tabla manual)
+            let bestOdds = null;
             if (bsdInfo && homeId && awayId && seasonId) {
                 try {
                     const events = await bsdFetchAll(`/events/?season=${seasonId}&league=${bsdInfo.bsdId}&home_team=${homeId}&away_team=${awayId}&limit=1`);
                     if (events && events.length > 0) {
-                        const eventId = events[0].id;
-                        bestOdds = await fetchBestOdds(eventId);
-                        if (bestOdds) {
-                            const bankroll = 1000;
-
-                            const h2h = mapMarketToBSDOdds(bestOdds, '1x2');
-                            if (h2h) {
-                                const probs = calcResultProbs(lH, lA, currentLeagueKey);
-                                const markets = [
-                                    { prob: probs.home / 100, odd: h2h.home, name: '1 (Local)', probDecimal: probs.home / 100 },
-                                    { prob: probs.draw / 100, odd: h2h.draw, name: 'X (Empate)', probDecimal: probs.draw / 100 },
-                                    { prob: probs.away / 100, odd: h2h.away, name: '2 (Visitante)', probDecimal: probs.away / 100 }
-                                ];
-                                markets.forEach(m => {
-                                    if (m.odd && m.odd > 1) {
-                                        const ev = m.prob * m.odd - 1;
-                                        if (ev > 0.05) {
-                                            const kelly = (m.prob * m.odd - 1) / (m.odd - 1);
-                                            const quarter = Math.max(0, kelly * 0.25);
-                                            valueBets.push({
-                                                market: m.name, odds: Number(m.odd).toFixed(2), ev: ev,
-                                                stake: (bankroll * quarter).toFixed(2), probDecimal: m.probDecimal
-                                            });
-                                        }
-                                    }
-                                });
-                            }
-
-                            if (activeMarkets.goles) {
-                                [1.5, 2.5, 3.5].forEach(line => {
-                                    const ou = mapMarketToBSDOdds(bestOdds, 'over_under', line);
-                                    if (ou) {
-                                        const l = lH + lA;
-                                        const probOver = poissonOver(l, line) / 100;
-                                        const evOver = probOver * ou.over - 1;
-                                        if (evOver > 0.05) {
-                                            const kelly = (probOver * ou.over - 1) / (ou.over - 1);
-                                            valueBets.push({
-                                                market: `Over ${line} Goles`, odds: Number(ou.over).toFixed(2), ev: evOver,
-                                                stake: (bankroll * Math.max(0, kelly * 0.25)).toFixed(2), probDecimal: probOver
-                                            });
-                                        }
-                                        const evUnder = (1 - probOver) * ou.under - 1;
-                                        if (evUnder > 0.05) {
-                                            const kellyU = ((1 - probOver) * ou.under - 1) / (ou.under - 1);
-                                            valueBets.push({
-                                                market: `Under ${line} Goles`, odds: Number(ou.under).toFixed(2), ev: evUnder,
-                                                stake: (bankroll * Math.max(0, kellyU * 0.25)).toFixed(2), probDecimal: 1 - probOver
-                                            });
-                                        }
-                                    }
-                                });
-                            }
-
-                            if (activeMarkets.btts) {
-                                const bttsOdds = mapMarketToBSDOdds(bestOdds, 'btts');
-                                if (bttsOdds) {
-                                    const probBTTS = calcBTTS(lH, lA, currentLeagueKey) / 100;
-                                    const evYes = probBTTS * bttsOdds.yes - 1;
-                                    if (evYes > 0.05) {
-                                        const kellyY = (probBTTS * bttsOdds.yes - 1) / (bttsOdds.yes - 1);
-                                        valueBets.push({
-                                            market: 'BTTS Sí', odds: Number(bttsOdds.yes).toFixed(2), ev: evYes,
-                                            stake: (bankroll * Math.max(0, kellyY * 0.25)).toFixed(2), probDecimal: probBTTS
-                                        });
-                                    }
-                                    const evNo = (1 - probBTTS) * bttsOdds.no - 1;
-                                    if (evNo > 0.05) {
-                                        const kellyN = ((1 - probBTTS) * bttsOdds.no - 1) / (bttsOdds.no - 1);
-                                        valueBets.push({
-                                            market: 'BTTS No', odds: Number(bttsOdds.no).toFixed(2), ev: evNo,
-                                            stake: (bankroll * Math.max(0, kellyN * 0.25)).toFixed(2), probDecimal: 1 - probBTTS
-                                        });
-                                    }
-                                }
-                            }
-
-                            if (activeMarkets.corn) {
-                                [8.5, 9.5, 10.5].forEach(line => {
-                                    const cornOdds = mapMarketToBSDOdds(bestOdds, 'corners', line);
-                                    if (cornOdds) {
-                                        const probOverCorn = negBinOver(lCorn, line, negBinR) / 100;
-                                        const evOver = probOverCorn * cornOdds.over - 1;
-                                        if (evOver > 0.05) {
-                                            const kellyC = (probOverCorn * cornOdds.over - 1) / (cornOdds.over - 1);
-                                            valueBets.push({
-                                                market: `Over ${line} Córners`, odds: Number(cornOdds.over).toFixed(2), ev: evOver,
-                                                stake: (bankroll * Math.max(0, kellyC * 0.25)).toFixed(2), probDecimal: probOverCorn
-                                            });
-                                        }
-                                    }
-                                });
-                            }
-                        }
+                        bestOdds = await fetchBestOdds(events[0].id);
                     }
                 } catch (e) { console.warn('Error obteniendo cuotas:', e); }
             }
@@ -1481,13 +1355,24 @@
             renderOutput({
                 home: homeOff, away: awayOff, lambdaCorn: lCorn, lambdaGoal: lGoal, lambdaH: lH, lambdaA: lA,
                 homeStats: hStats, awayStats: aStats, negBinR, totalMatchesUsed: hMC + aMC, liga,
-                homeElo: hElo, awayElo: aElo, altitude: alt, valueBets, bestOdds,
+                homeElo: hElo, awayElo: aElo, altitude: alt, bestOdds,
                 modelData: { lambdaH: lH, lambdaA: lA, lambdaGoal: lGoal, lambdaCorn: lCorn, negBinR, currentLeagueKey, activeMarkets }
             });
             outEl.classList.remove('hidden');
             requestAnimationFrame(() => requestAnimationFrame(animateBars));
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         };
+
+        async function fetchBestOdds(eventId) {
+            try {
+                const data = await bsdFetch(`/odds/best/?event_id=${eventId}`);
+                if (data && data.length > 0) return data;
+                return null;
+            } catch (e) {
+                console.warn('Error obteniendo cuotas de BSD:', e);
+                return null;
+            }
+        }
 
         function loadText(t, s) {
             document.getElementById('loading-text').textContent = t;
@@ -1585,7 +1470,7 @@
         }
 
         function renderOutput(o) {
-            const { home, away, lambdaCorn, lambdaGoal, lambdaH, lambdaA, homeStats, awayStats, negBinR, totalMatchesUsed, liga, homeElo, awayElo, altitude, valueBets, bestOdds, modelData } = o;
+            const { home, away, lambdaCorn, lambdaGoal, lambdaH, lambdaA, homeStats, awayStats, negBinR, totalMatchesUsed, liga, homeElo, awayElo, altitude, bestOdds, modelData } = o;
             const hF = homeStats?.form || [], aF = awayStats?.form || [];
             const hTag = homeStats?.fromApi ? '<span class="data-tag api">LIVE</span>' : '<span class="data-tag off">EST</span>';
             const aTag = awayStats?.fromApi ? '<span class="data-tag api">LIVE</span>' : '<span class="data-tag off">EST</span>';
@@ -1717,12 +1602,8 @@
                     </div>`;
             }
 
-            // Renderizar panel de apuestas con valor
-            if (valueBets !== undefined) {
-                renderValueBets(valueBets, 1000, bestOdds, modelData);
-            } else {
-                document.getElementById('value-bets-container').innerHTML = '';
-            }
+            // Siempre mostramos la tabla comparativa con campos editables
+            renderOddsComparison(bestOdds, modelData);
         }
 
         function renderResultBoxes(lH, lA) {
