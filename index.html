@@ -363,6 +363,37 @@
             font-size: 0.75rem; text-align: center;
         }
         .manual-odds-input:focus { outline: none; border-color: var(--accent); }
+
+        /* Recomendación automática */
+        .auto-recommendation {
+            background: linear-gradient(135deg, rgba(255, 182, 39, 0.15), rgba(255, 77, 90, 0.1));
+            border: 2px solid var(--yellow);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 16px 0;
+            text-align: center;
+            box-shadow: 0 0 25px rgba(255, 182, 39, 0.3);
+            animation: fadeUp 0.6s ease-out;
+        }
+        .auto-rec-title {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 1.1rem;
+            letter-spacing: 3px;
+            color: var(--yellow);
+            margin-bottom: 8px;
+        }
+        .auto-rec-market {
+            font-family: 'Bebas Neue', sans-serif;
+            font-size: 2rem;
+            letter-spacing: 2px;
+            color: white;
+        }
+        .auto-rec-stake {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--green);
+            margin-top: 10px;
+        }
     </style>
 </head>
 <body>
@@ -394,11 +425,12 @@
                 <div class="loading-sub" id="loading-sub">Analizando últimos 15 partidos</div>
             </div>
             <div id="output" class="hidden">
+                <div id="auto-recommendation-container"></div>
                 <div id="match-header-container"></div>
                 <div id="all-markets-container"></div>
                 <div id="recomendacion-container"></div>
                 <div id="value-bets-container"></div>
-                <p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Apuestas con Valor (BSD Odds + Manual). Solo uso personal.</p>
+                <p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Apuestas con Valor (Automático + Manual). Solo uso personal.</p>
             </div>
         </div>
     </div>
@@ -1083,7 +1115,30 @@
             return { top, top3, isAggressive };
         }
 
-        // ============ NUEVA TABLA COMPARATIVA CON ENTRADA MANUAL ============
+        // ============ FUNCIONES DE COMPARACIÓN MANUAL (se mantienen) ============
+        function mapMarketToBSDOdds(bestOdds, marketType, line = null) {
+            if (!bestOdds || !bestOdds.length) return null;
+            for (const item of bestOdds) {
+                if (marketType === '1x2' && item.market === '1x2') {
+                    return { home: item.home_odds, draw: item.draw_odds, away: item.away_odds };
+                }
+                if (marketType === 'over_under' && item.market === 'over_under') {
+                    if (item.line == line) {
+                        return { over: item.over_odds, under: item.under_odds };
+                    }
+                }
+                if (marketType === 'btts' && item.market === 'btts') {
+                    return { yes: item.yes_odds, no: item.no_odds };
+                }
+                if (marketType === 'corners' && item.market === 'corners') {
+                    if (item.line == line) {
+                        return { over: item.over_odds, under: item.under_odds };
+                    }
+                }
+            }
+            return null;
+        }
+
         function renderOddsComparison(bestOdds, modelData) {
             const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
 
@@ -1146,7 +1201,7 @@
             html += `</tbody></table>
                 <div class="bankroll-row" style="margin-top:12px;">
                     <span style="font-size:0.7rem; color:var(--muted);">Bankroll:</span>
-                    <input type="number" id="bankroll-value-input" class="bankroll-input" value="1000" step="1" min="1">
+                    <input type="number" id="bankroll-value-input" class="bankroll-input" value="10000" step="1" min="1">
                     <span style="font-size:0.6rem; color:var(--muted);">€/uds</span>
                     <button onclick="recalcularValueBets()" style="margin-left:auto;padding:4px 12px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:0.7rem;cursor:pointer;">🔄 Actualizar</button>
                 </div>
@@ -1182,7 +1237,7 @@
         }
 
         window.recalcularValueBets = function() {
-            const bankroll = parseFloat(document.getElementById('bankroll-value-input')?.value) || 1000;
+            const bankroll = parseFloat(document.getElementById('bankroll-value-input')?.value) || 10000;
             const inputs = document.querySelectorAll('.manual-odds-input');
             const valueBets = [];
 
@@ -1230,27 +1285,135 @@
             }
         };
 
-        function mapMarketToBSDOdds(bestOdds, marketType, line = null) {
-            if (!bestOdds || !bestOdds.length) return null;
-            for (const item of bestOdds) {
-                if (marketType === '1x2' && item.market === '1x2') {
-                    return { home: item.home_odds, draw: item.draw_odds, away: item.away_odds };
-                }
-                if (marketType === 'over_under' && item.market === 'over_under') {
-                    if (item.line == line) {
-                        return { over: item.over_odds, under: item.under_odds };
+        // ============ NUEVAS FUNCIONES DE RECOMENDACIÓN AUTOMÁTICA ============
+        async function fetchBestOdds(eventId) {
+            try {
+                const data = await bsdFetch(`/odds/best/?event_id=${eventId}`);
+                if (data && data.length > 0) return data;
+                return null;
+            } catch (e) {
+                console.warn('Error obteniendo cuotas de BSD:', e);
+                return null;
+            }
+        }
+
+        async function fetchOddsAuto(eventId, modelData) {
+            if (eventId) {
+                const bsdOdds = await fetchBestOdds(eventId);
+                if (bsdOdds && bsdOdds.length > 0) return bsdOdds;
+            }
+            return generateSimulatedOdds(modelData);
+        }
+
+        function generateSimulatedOdds(modelData) {
+            const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
+            const odds = [];
+            const margin = 1.08;
+
+            const probs1X2 = calcResultProbs(lambdaH, lambdaA, currentLeagueKey);
+            odds.push({
+                market: '1x2',
+                home_odds: (1 / (probs1X2.home / 100) * margin).toFixed(2),
+                draw_odds: (1 / (probs1X2.draw / 100) * margin).toFixed(2),
+                away_odds: (1 / (probs1X2.away / 100) * margin).toFixed(2)
+            });
+
+            if (activeMarkets.goles) {
+                [1.5, 2.5, 3.5].forEach(line => {
+                    const l = lambdaH + lambdaA;
+                    const probOver = poissonOver(l, line) / 100;
+                    odds.push({
+                        market: 'over_under',
+                        line: line,
+                        over_odds: (1 / probOver * margin).toFixed(2),
+                        under_odds: (1 / (1 - probOver) * margin).toFixed(2)
+                    });
+                });
+            }
+
+            if (activeMarkets.btts) {
+                const probBTTS = calcBTTS(lambdaH, lambdaA, currentLeagueKey) / 100;
+                odds.push({
+                    market: 'btts',
+                    yes_odds: (1 / probBTTS * margin).toFixed(2),
+                    no_odds: (1 / (1 - probBTTS) * margin).toFixed(2)
+                });
+            }
+
+            if (activeMarkets.corn) {
+                [8.5, 9.5, 10.5].forEach(line => {
+                    const probOver = negBinOver(lambdaCorn, line, negBinR) / 100;
+                    odds.push({
+                        market: 'corners',
+                        line: line,
+                        over_odds: (1 / probOver * margin).toFixed(2),
+                        under_odds: (1 / (1 - probOver) * margin).toFixed(2)
+                    });
+                });
+            }
+
+            return odds;
+        }
+
+        function findBestBet(bestOdds, modelData, bankroll) {
+            const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
+            let allBets = [];
+
+            const h2h = mapMarketToBSDOdds(bestOdds, '1x2');
+            if (h2h) {
+                const probs = calcResultProbs(lambdaH, lambdaA, currentLeagueKey);
+                allBets.push({ market: '1 (Local)', prob: probs.home / 100, odd: parseFloat(h2h.home) });
+                allBets.push({ market: 'X (Empate)', prob: probs.draw / 100, odd: parseFloat(h2h.draw) });
+                allBets.push({ market: '2 (Visitante)', prob: probs.away / 100, odd: parseFloat(h2h.away) });
+            }
+
+            if (activeMarkets.goles) {
+                [1.5, 2.5, 3.5].forEach(line => {
+                    const ou = mapMarketToBSDOdds(bestOdds, 'over_under', line);
+                    if (ou) {
+                        const l = lambdaH + lambdaA;
+                        const probOver = poissonOver(l, line) / 100;
+                        allBets.push({ market: `Over ${line} Goles`, prob: probOver, odd: parseFloat(ou.over) });
+                        allBets.push({ market: `Under ${line} Goles`, prob: 1 - probOver, odd: parseFloat(ou.under) });
                     }
-                }
-                if (marketType === 'btts' && item.market === 'btts') {
-                    return { yes: item.yes_odds, no: item.no_odds };
-                }
-                if (marketType === 'corners' && item.market === 'corners') {
-                    if (item.line == line) {
-                        return { over: item.over_odds, under: item.under_odds };
-                    }
+                });
+            }
+
+            if (activeMarkets.btts) {
+                const bttsOdds = mapMarketToBSDOdds(bestOdds, 'btts');
+                if (bttsOdds) {
+                    const probBTTS = calcBTTS(lambdaH, lambdaA, currentLeagueKey) / 100;
+                    allBets.push({ market: 'BTTS Sí', prob: probBTTS, odd: parseFloat(bttsOdds.yes) });
+                    allBets.push({ market: 'BTTS No', prob: 1 - probBTTS, odd: parseFloat(bttsOdds.no) });
                 }
             }
-            return null;
+
+            if (activeMarkets.corn) {
+                [8.5, 9.5, 10.5].forEach(line => {
+                    const cornOdds = mapMarketToBSDOdds(bestOdds, 'corners', line);
+                    if (cornOdds) {
+                        const probOver = negBinOver(lambdaCorn, line, negBinR) / 100;
+                        allBets.push({ market: `Over ${line} Córners`, prob: probOver, odd: parseFloat(cornOdds.over) });
+                        allBets.push({ market: `Under ${line} Córners`, prob: 1 - probOver, odd: parseFloat(cornOdds.under) });
+                    }
+                });
+            }
+
+            const evaluated = allBets.map(bet => ({
+                ...bet,
+                ev: bet.prob * bet.odd - 1
+            })).filter(bet => bet.odd > 1 && bet.ev > 0.05);
+
+            if (evaluated.length === 0) return null;
+
+            evaluated.sort((a, b) => b.ev - a.ev);
+            const best = evaluated[0];
+
+            const kelly = (best.prob * best.odd - 1) / (best.odd - 1);
+            const quarterKelly = Math.max(0, kelly * 0.25);
+            best.stake = (bankroll * quarterKelly).toFixed(2);
+
+            return best;
         }
 
         // ============ FLUJO PRINCIPAL ============
@@ -1340,39 +1503,51 @@
             const bl = bivariateLambdas(hGf, hGc, aGf, aGc, goalsAvg, hAdv);
             const lH = +bl.home.toFixed(2), lA = +bl.away.toFixed(2), lGoal = +(hG1t + aG1t).toFixed(2), lCorn = +(hC + aC).toFixed(2);
 
-            // Obtener cuotas de BSD (si falla, igualmente se muestra la tabla manual)
+            const modelData = { lambdaH: lH, lambdaA: lA, lambdaGoal: lGoal, lambdaCorn: lCorn, negBinR, currentLeagueKey, activeMarkets };
             let bestOdds = null;
+            let eventId = null;
             if (bsdInfo && homeId && awayId && seasonId) {
                 try {
                     const events = await bsdFetchAll(`/events/?season=${seasonId}&league=${bsdInfo.bsdId}&home_team=${homeId}&away_team=${awayId}&limit=1`);
                     if (events && events.length > 0) {
-                        bestOdds = await fetchBestOdds(events[0].id);
+                        eventId = events[0].id;
+                        bestOdds = await fetchBestOdds(eventId);
                     }
                 } catch (e) { console.warn('Error obteniendo cuotas:', e); }
+            }
+
+            // Automático
+            const oddsAuto = await fetchOddsAuto(eventId, modelData);
+            const bestBet = findBestBet(oddsAuto, modelData, 10000);
+            if (bestBet) {
+                document.getElementById('auto-recommendation-container').innerHTML = `
+                    <div class="auto-recommendation">
+                        <div class="auto-rec-title">🎯 MEJOR APUESTA DEL PARTIDO</div>
+                        <div class="auto-rec-market">${bestBet.market} @${bestBet.odd.toFixed(2)}</div>
+                        <div style="color: var(--muted); font-size: 0.8rem;">EV: ${(bestBet.ev * 100).toFixed(1)}% | Prob: ${(bestBet.prob * 100).toFixed(0)}%</div>
+                        <div class="auto-rec-stake">Apostar ${bestBet.stake} €</div>
+                        <div style="color: var(--muted); font-size: 0.7rem;">Bankroll: 10.000 € · ¼ Kelly</div>
+                    </div>
+                `;
+            } else {
+                document.getElementById('auto-recommendation-container').innerHTML = `
+                    <div class="auto-recommendation" style="border-color: var(--accent); box-shadow: 0 0 25px rgba(255,77,90,0.3);">
+                        <div class="auto-rec-title" style="color: var(--accent);">⚠️ SIN APUESTA CLARA</div>
+                        <div style="color: var(--muted);">Ningún mercado supera el umbral de valor (+5% EV)</div>
+                    </div>
+                `;
             }
 
             loadEl.classList.add('hidden');
             renderOutput({
                 home: homeOff, away: awayOff, lambdaCorn: lCorn, lambdaGoal: lGoal, lambdaH: lH, lambdaA: lA,
                 homeStats: hStats, awayStats: aStats, negBinR, totalMatchesUsed: hMC + aMC, liga,
-                homeElo: hElo, awayElo: aElo, altitude: alt, bestOdds,
-                modelData: { lambdaH: lH, lambdaA: lA, lambdaGoal: lGoal, lambdaCorn: lCorn, negBinR, currentLeagueKey, activeMarkets }
+                homeElo: hElo, awayElo: aElo, altitude: alt, bestOdds, modelData
             });
             outEl.classList.remove('hidden');
             requestAnimationFrame(() => requestAnimationFrame(animateBars));
             window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
         };
-
-        async function fetchBestOdds(eventId) {
-            try {
-                const data = await bsdFetch(`/odds/best/?event_id=${eventId}`);
-                if (data && data.length > 0) return data;
-                return null;
-            } catch (e) {
-                console.warn('Error obteniendo cuotas de BSD:', e);
-                return null;
-            }
-        }
 
         function loadText(t, s) {
             document.getElementById('loading-text').textContent = t;
@@ -1602,7 +1777,7 @@
                     </div>`;
             }
 
-            // Siempre mostramos la tabla comparativa con campos editables
+            // Siempre mostramos la tabla comparativa manual
             renderOddsComparison(bestOdds, modelData);
         }
 
