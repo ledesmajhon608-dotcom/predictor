@@ -312,58 +312,6 @@
         @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.7; } }
         .pulse { animation: pulse 2s ease-in-out infinite; }
 
-        /* Panel de Apuestas con Valor */
-        .value-bet-panel {
-            background: linear-gradient(135deg, rgba(46, 204, 113, 0.08), rgba(77, 171, 247, 0.05));
-            border: 1px solid rgba(46, 204, 113, 0.3); border-radius: 20px; padding: 20px 18px; margin-top: 16px;
-            backdrop-filter: blur(20px); position: relative; overflow: hidden; box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        .value-bet-panel::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--green), var(--yellow), transparent);
-        }
-        .vb-header {
-            font-family: 'Bebas Neue', sans-serif; font-size: 0.9rem; letter-spacing: 3px;
-            color: var(--green); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
-        }
-        .vb-card {
-            background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 14px;
-            padding: 14px; margin-bottom: 10px; display: flex; flex-wrap: wrap; align-items: center; gap: 12px; transition: 0.3s;
-        }
-        .vb-card:hover { border-color: var(--green); }
-        .vb-market-name { font-weight: 700; font-size: 0.85rem; min-width: 90px; }
-        .vb-odds { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; color: var(--yellow); min-width: 50px; }
-        .vb-ev { font-size: 0.75rem; font-weight: 700; padding: 2px 8px; border-radius: 6px; }
-        .vb-ev.positive { background: rgba(46,204,113,0.15); color: var(--green); }
-        .vb-stake { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; color: white; margin-left: auto; }
-        .vb-stake small { font-size: 0.6rem; color: var(--muted); display: block; }
-        .no-value-msg { text-align: center; color: var(--muted); padding: 10px; font-size: 0.8rem; }
-        .bankroll-row { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; }
-        .bankroll-input {
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text);
-            padding: 4px 10px; border-radius: 8px; font-size: 0.85rem; width: 90px; text-align: center;
-        }
-
-        /* Tabla comparativa */
-        .comparison-table {
-            width: 100%; border-collapse: collapse; margin: 12px 0 8px; font-size: 0.75rem;
-        }
-        .comparison-table th {
-            text-align: left; color: var(--muted); font-weight: 700; font-size: 0.65rem;
-            letter-spacing: 1px; padding: 6px 4px; border-bottom: 1px solid var(--border);
-        }
-        .comparison-table td {
-            padding: 6px 4px; border-bottom: 1px solid rgba(255,255,255,0.03); color: var(--text);
-        }
-        .comparison-table .ev-neg { color: var(--accent); }
-        .comparison-table .ev-pos { color: var(--green); }
-        .manual-odds-input {
-            width: 65px; padding: 2px 5px; background: rgba(255,255,255,0.05);
-            border: 1px solid var(--border); color: var(--text); border-radius: 6px;
-            font-size: 0.75rem; text-align: center;
-        }
-        .manual-odds-input:focus { outline: none; border-color: var(--accent); }
-
         /* Recomendación automática */
         .auto-recommendation {
             background: linear-gradient(135deg, rgba(255, 182, 39, 0.15), rgba(255, 77, 90, 0.1));
@@ -429,8 +377,7 @@
                 <div id="match-header-container"></div>
                 <div id="all-markets-container"></div>
                 <div id="recomendacion-container"></div>
-                <div id="value-bets-container"></div>
-                <p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Apuestas con Valor (Automático + Manual). Solo uso personal.</p>
+                <p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Apuestas con Valor (Automático). Solo uso personal.</p>
             </div>
         </div>
     </div>
@@ -1115,7 +1062,7 @@
             return { top, top3, isAggressive };
         }
 
-        // ============ FUNCIONES DE COMPARACIÓN MANUAL (se mantienen) ============
+        // ============ FUNCIONES DE RECOMENDACIÓN AUTOMÁTICA ============
         function mapMarketToBSDOdds(bestOdds, marketType, line = null) {
             if (!bestOdds || !bestOdds.length) return null;
             for (const item of bestOdds) {
@@ -1139,153 +1086,6 @@
             return null;
         }
 
-        function renderOddsComparison(bestOdds, modelData) {
-            const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
-
-            let html = `<div class="value-bet-panel animate-in">
-                <div class="vb-header">📊 COMPARATIVA CUOTA vs MODELO</div>
-                <table class="comparison-table">
-                    <thead>
-                        <tr><th>Mercado</th><th>Prob. modelo</th><th>Cuota manual</th><th>Prob. implícita</th><th>EV</th></tr>
-                    </thead>
-                    <tbody>`;
-
-            const addRow = (marketName, prob, odd) => {
-                const implied = odd ? (1 / odd) : null;
-                const ev = odd ? (prob * odd - 1) : null;
-                const evClass = ev !== null ? (ev >= 0 ? 'ev-pos' : 'ev-neg') : '';
-                const evText = ev !== null ? (ev * 100).toFixed(1) + '%' : '—';
-                const impliedText = implied ? (implied * 100).toFixed(1) + '%' : '—';
-
-                return `<tr>
-                    <td>${marketName}</td>
-                    <td>${(prob * 100).toFixed(1)}%</td>
-                    <td><input type="number" class="manual-odds-input" data-market="${marketName}" data-prob="${prob}" value="${odd || ''}" placeholder="Cuota" step="0.01" min="1.01"></td>
-                    <td class="implied-cell">${impliedText}</td>
-                    <td class="ev-cell ${evClass}">${evText}</td>
-                </tr>`;
-            };
-
-            const h2h = bestOdds ? mapMarketToBSDOdds(bestOdds, '1x2') : null;
-            const probs1X2 = calcResultProbs(lambdaH, lambdaA, currentLeagueKey);
-            html += addRow('1 (Local)', probs1X2.home / 100, h2h?.home || '');
-            html += addRow('X (Empate)', probs1X2.draw / 100, h2h?.draw || '');
-            html += addRow('2 (Visitante)', probs1X2.away / 100, h2h?.away || '');
-
-            if (activeMarkets.goles) {
-                [1.5, 2.5, 3.5].forEach(line => {
-                    const l = lambdaH + lambdaA;
-                    const probOver = poissonOver(l, line) / 100;
-                    const ou = bestOdds ? mapMarketToBSDOdds(bestOdds, 'over_under', line) : null;
-                    html += addRow(`Over ${line} Goles`, probOver, ou?.over || '');
-                    html += addRow(`Under ${line} Goles`, 1 - probOver, ou?.under || '');
-                });
-            }
-
-            if (activeMarkets.btts) {
-                const probBTTS = calcBTTS(lambdaH, lambdaA, currentLeagueKey) / 100;
-                const bttsOdds = bestOdds ? mapMarketToBSDOdds(bestOdds, 'btts') : null;
-                html += addRow('BTTS Sí', probBTTS, bttsOdds?.yes || '');
-                html += addRow('BTTS No', 1 - probBTTS, bttsOdds?.no || '');
-            }
-
-            if (activeMarkets.corn) {
-                [8.5, 9.5, 10.5].forEach(line => {
-                    const probOver = negBinOver(lambdaCorn, line, negBinR) / 100;
-                    const cornOdds = bestOdds ? mapMarketToBSDOdds(bestOdds, 'corners', line) : null;
-                    html += addRow(`Over ${line} Córners`, probOver, cornOdds?.over || '');
-                    html += addRow(`Under ${line} Córners`, 1 - probOver, cornOdds?.under || '');
-                });
-            }
-
-            html += `</tbody></table>
-                <div class="bankroll-row" style="margin-top:12px;">
-                    <span style="font-size:0.7rem; color:var(--muted);">Bankroll:</span>
-                    <input type="number" id="bankroll-value-input" class="bankroll-input" value="10000" step="1" min="1">
-                    <span style="font-size:0.6rem; color:var(--muted);">€/uds</span>
-                    <button onclick="recalcularValueBets()" style="margin-left:auto;padding:4px 12px;background:var(--accent);color:white;border:none;border-radius:8px;font-size:0.7rem;cursor:pointer;">🔄 Actualizar</button>
-                </div>
-            </div>`;
-
-            document.getElementById('value-bets-container').innerHTML = html;
-
-            document.querySelectorAll('.manual-odds-input').forEach(input => {
-                input.addEventListener('input', function() {
-                    const market = this.dataset.market;
-                    const prob = parseFloat(this.dataset.prob);
-                    const odds = parseFloat(this.value);
-                    const row = this.closest('tr');
-                    const impliedCell = row.querySelector('.implied-cell');
-                    const evCell = row.querySelector('.ev-cell');
-
-                    if (!isNaN(odds) && odds > 1) {
-                        const implied = 1 / odds;
-                        const ev = prob * odds - 1;
-                        impliedCell.textContent = (implied * 100).toFixed(1) + '%';
-                        evCell.textContent = (ev * 100).toFixed(1) + '%';
-                        evCell.className = 'ev-cell ' + (ev >= 0 ? 'ev-pos' : 'ev-neg');
-                    } else {
-                        impliedCell.textContent = '—';
-                        evCell.textContent = '—';
-                        evCell.className = 'ev-cell';
-                    }
-                    recalcularValueBets();
-                });
-            });
-
-            recalcularValueBets();
-        }
-
-        window.recalcularValueBets = function() {
-            const bankroll = parseFloat(document.getElementById('bankroll-value-input')?.value) || 10000;
-            const inputs = document.querySelectorAll('.manual-odds-input');
-            const valueBets = [];
-
-            inputs.forEach(input => {
-                const prob = parseFloat(input.dataset.prob);
-                const odds = parseFloat(input.value);
-                if (!isNaN(odds) && odds > 1) {
-                    const ev = prob * odds - 1;
-                    if (ev > 0.05) {
-                        const kelly = (prob * odds - 1) / (odds - 1);
-                        const quarter = Math.max(0, kelly * 0.25);
-                        valueBets.push({
-                            market: input.dataset.market,
-                            odds: odds.toFixed(2),
-                            ev: ev,
-                            stake: (bankroll * quarter).toFixed(2),
-                            probDecimal: prob
-                        });
-                    }
-                }
-            });
-
-            const container = document.getElementById('value-bets-container');
-            let existingPanel = container.querySelector('.value-bet-panel:not(:first-child)');
-            if (existingPanel) existingPanel.remove();
-
-            if (valueBets.length > 0) {
-                let html = `<div class="value-bet-panel animate-in">
-                    <div class="vb-header">💰 APUESTAS CON VALOR (EV > 5%)</div>`;
-                valueBets.forEach(bet => {
-                    const evClass = bet.ev > 0.1 ? 'positive' : '';
-                    const stakeColor = bet.ev > 0.1 ? 'var(--green)' : 'var(--yellow)';
-                    html += `<div class="vb-card">
-                        <div class="vb-market-name">${bet.market}</div>
-                        <div class="vb-odds">@${bet.odds}</div>
-                        <div class="vb-ev ${evClass}">EV: ${(bet.ev * 100).toFixed(1)}%</div>
-                        <div class="vb-stake" style="color:${stakeColor}">
-                            ${bet.stake}€
-                            <small>¼ Kelly</small>
-                        </div>
-                    </div>`;
-                });
-                html += '</div>';
-                container.insertAdjacentHTML('beforeend', html);
-            }
-        };
-
-        // ============ NUEVAS FUNCIONES DE RECOMENDACIÓN AUTOMÁTICA ============
         async function fetchBestOdds(eventId) {
             try {
                 const data = await bsdFetch(`/odds/best/?event_id=${eventId}`);
@@ -1504,19 +1304,14 @@
             const lH = +bl.home.toFixed(2), lA = +bl.away.toFixed(2), lGoal = +(hG1t + aG1t).toFixed(2), lCorn = +(hC + aC).toFixed(2);
 
             const modelData = { lambdaH: lH, lambdaA: lA, lambdaGoal: lGoal, lambdaCorn: lCorn, negBinR, currentLeagueKey, activeMarkets };
-            let bestOdds = null;
             let eventId = null;
             if (bsdInfo && homeId && awayId && seasonId) {
                 try {
                     const events = await bsdFetchAll(`/events/?season=${seasonId}&league=${bsdInfo.bsdId}&home_team=${homeId}&away_team=${awayId}&limit=1`);
-                    if (events && events.length > 0) {
-                        eventId = events[0].id;
-                        bestOdds = await fetchBestOdds(eventId);
-                    }
-                } catch (e) { console.warn('Error obteniendo cuotas:', e); }
+                    if (events && events.length > 0) eventId = events[0].id;
+                } catch (e) {}
             }
 
-            // Automático
             const oddsAuto = await fetchOddsAuto(eventId, modelData);
             const bestBet = findBestBet(oddsAuto, modelData, 10000);
             if (bestBet) {
@@ -1542,7 +1337,7 @@
             renderOutput({
                 home: homeOff, away: awayOff, lambdaCorn: lCorn, lambdaGoal: lGoal, lambdaH: lH, lambdaA: lA,
                 homeStats: hStats, awayStats: aStats, negBinR, totalMatchesUsed: hMC + aMC, liga,
-                homeElo: hElo, awayElo: aElo, altitude: alt, bestOdds, modelData
+                homeElo: hElo, awayElo: aElo, altitude: alt
             });
             outEl.classList.remove('hidden');
             requestAnimationFrame(() => requestAnimationFrame(animateBars));
@@ -1645,7 +1440,7 @@
         }
 
         function renderOutput(o) {
-            const { home, away, lambdaCorn, lambdaGoal, lambdaH, lambdaA, homeStats, awayStats, negBinR, totalMatchesUsed, liga, homeElo, awayElo, altitude, bestOdds, modelData } = o;
+            const { home, away, lambdaCorn, lambdaGoal, lambdaH, lambdaA, homeStats, awayStats, negBinR, totalMatchesUsed, liga, homeElo, awayElo, altitude } = o;
             const hF = homeStats?.form || [], aF = awayStats?.form || [];
             const hTag = homeStats?.fromApi ? '<span class="data-tag api">LIVE</span>' : '<span class="data-tag off">EST</span>';
             const aTag = awayStats?.fromApi ? '<span class="data-tag api">LIVE</span>' : '<span class="data-tag off">EST</span>';
@@ -1776,9 +1571,6 @@
                         ${top3h ? `<div style="margin-top:14px;text-align:left;"><div style="font-size:0.6rem;color:var(--muted);letter-spacing:2px;text-transform:uppercase;margin-bottom:6px;">🔎 OTRAS OPCIONES</div>${top3h}</div>` : ''}
                     </div>`;
             }
-
-            // Siempre mostramos la tabla comparativa manual
-            renderOddsComparison(bestOdds, modelData);
         }
 
         function renderResultBoxes(lH, lA) {
