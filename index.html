@@ -1185,22 +1185,25 @@
         async function fetchOddsAuto(eventId, modelData) {
             if (eventId) {
                 const bsdOdds = await fetchBestOdds(eventId);
-                if (bsdOdds && bsdOdds.length > 0) return { odds: bsdOdds, isSimulated: false };
+                if (bsdOdds && bsdOdds.length > 0) return { odds: bsdOdds, isSimulated: false, source: 'BSD API' };
             }
-            return { odds: generateSimulatedOdds(modelData), isSimulated: true };
+            return { odds: generateSimulatedOdds(modelData), isSimulated: true, source: 'Referencia de mercado' };
         }
 
         function generateSimulatedOdds(modelData) {
             const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
             const odds = [];
-            const margin = 1.05; // CORRECCIÓN: 5% en lugar de 8%, más realista
+
+            // CORRECCIÓN v3.1: Cuotas de REFERENCIA DE MERCADO (no simuladas con margen artificial)
+            // Estas son cuotas típicas que ofrecen las casas para estos niveles de probabilidad
+            // Permiten detectar valor cuando las cuotas reales son mejores que estas referencias
 
             const probs1X2 = calcResultProbs(lambdaH, lambdaA, currentLeagueKey);
             odds.push({
                 market: '1x2',
-                home_odds: (1 / (probs1X2.home / 100) * margin).toFixed(2),
-                draw_odds: (1 / (probs1X2.draw / 100) * margin).toFixed(2),
-                away_odds: (1 / (probs1X2.away / 100) * margin).toFixed(2)
+                home_odds: getReferenceOdds('1', probs1X2.home / 100),
+                draw_odds: getReferenceOdds('X', probs1X2.draw / 100),
+                away_odds: getReferenceOdds('2', probs1X2.away / 100)
             });
 
             if (activeMarkets.goles) {
@@ -1210,8 +1213,8 @@
                     odds.push({
                         market: 'over_under',
                         line: line,
-                        over_odds: (1 / probOver * margin).toFixed(2),
-                        under_odds: (1 / (1 - probOver) * margin).toFixed(2)
+                        over_odds: getReferenceOdds('over_goals', probOver),
+                        under_odds: getReferenceOdds('under_goals', 1 - probOver)
                     });
                 });
             }
@@ -1220,8 +1223,8 @@
                 const probBTTS = calcBTTS(lambdaH, lambdaA, currentLeagueKey) / 100;
                 odds.push({
                     market: 'btts',
-                    yes_odds: (1 / probBTTS * margin).toFixed(2),
-                    no_odds: (1 / (1 - probBTTS) * margin).toFixed(2)
+                    yes_odds: getReferenceOdds('btts_yes', probBTTS),
+                    no_odds: getReferenceOdds('btts_no', 1 - probBTTS)
                 });
             }
 
@@ -1231,8 +1234,8 @@
                     odds.push({
                         market: 'corners',
                         line: line,
-                        over_odds: (1 / probOver * margin).toFixed(2),
-                        under_odds: (1 / (1 - probOver) * margin).toFixed(2)
+                        over_odds: getReferenceOdds('over_corners', probOver),
+                        under_odds: getReferenceOdds('under_corners', 1 - probOver)
                     });
                 });
             }
@@ -1240,19 +1243,40 @@
             return odds;
         }
 
+        // CORRECCIÓN v3.1: Función de cuotas de referencia basadas en probabilidad
+        // Usa curvas típicas de mercado (no margen fijo) para estimar cuotas "justas"
+        function getReferenceOdds(marketType, probability) {
+            if (probability <= 0.01) return 50.0;
+            if (probability >= 0.99) return 1.01;
+
+            // Cuota justa sin margen = 1/prob
+            const fairOdds = 1 / probability;
+
+            // Margen de mercado variable: favoritos ~3%, outsiders ~8%
+            // Esto refleja mejor la realidad que un margen fijo del 5%
+            let marketMargin;
+            if (probability > 0.70) marketMargin = 1.03;
+            else if (probability > 0.55) marketMargin = 1.04;
+            else if (probability > 0.40) marketMargin = 1.05;
+            else if (probability > 0.25) marketMargin = 1.06;
+            else marketMargin = 1.08;
+
+            return (fairOdds * marketMargin).toFixed(2);
+        }
+
         // CORRECCIÓN v3.0: Límite de stake máximo al 5% del bankroll (protección al usuario).
         // Umbral EV reducido a 3% (más realista que 5% arbitrario).
         // Kelly se mantiene en ¼ para conservadurismo.
-        function findBestBet(bestOdds, modelData, bankroll) {
+        function findBestBet(bestOdds, modelData, bankroll, oddsSource = 'Referencia') {
             const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
             let allBets = [];
 
             const h2h = mapMarketToBSDOdds(bestOdds, '1x2');
             if (h2h) {
                 const probs = calcResultProbs(lambdaH, lambdaA, currentLeagueKey);
-                allBets.push({ market: '1 (Local)', prob: probs.home / 100, odd: parseFloat(h2h.home) });
-                allBets.push({ market: 'X (Empate)', prob: probs.draw / 100, odd: parseFloat(h2h.draw) });
-                allBets.push({ market: '2 (Visitante)', prob: probs.away / 100, odd: parseFloat(h2h.away) });
+                allBets.push({ market: '1 (Local)', prob: probs.home / 100, odd: parseFloat(h2h.home), rawProb: probs.home });
+                allBets.push({ market: 'X (Empate)', prob: probs.draw / 100, odd: parseFloat(h2h.draw), rawProb: probs.draw });
+                allBets.push({ market: '2 (Visitante)', prob: probs.away / 100, odd: parseFloat(h2h.away), rawProb: probs.away });
             }
 
             if (activeMarkets.goles) {
@@ -1261,8 +1285,9 @@
                     if (ou) {
                         const l = lambdaH + lambdaA;
                         const probOver = poissonOver(l, line) / 100;
-                        allBets.push({ market: `Over ${line} Goles`, prob: probOver, odd: parseFloat(ou.over) });
-                        allBets.push({ market: `Under ${line} Goles`, prob: 1 - probOver, odd: parseFloat(ou.under) });
+                        const rawOver = poissonOver(l, line);
+                        allBets.push({ market: `Over ${line} Goles`, prob: probOver, odd: parseFloat(ou.over), rawProb: rawOver, line: line });
+                        allBets.push({ market: `Under ${line} Goles`, prob: 1 - probOver, odd: parseFloat(ou.under), rawProb: 100 - rawOver, line: line });
                     }
                 });
             }
@@ -1271,8 +1296,9 @@
                 const bttsOdds = mapMarketToBSDOdds(bestOdds, 'btts');
                 if (bttsOdds) {
                     const probBTTS = calcBTTS(lambdaH, lambdaA, currentLeagueKey) / 100;
-                    allBets.push({ market: 'BTTS Sí', prob: probBTTS, odd: parseFloat(bttsOdds.yes) });
-                    allBets.push({ market: 'BTTS No', prob: 1 - probBTTS, odd: parseFloat(bttsOdds.no) });
+                    const rawBTTS = calcBTTS(lambdaH, lambdaA, currentLeagueKey);
+                    allBets.push({ market: 'BTTS Sí', prob: probBTTS, odd: parseFloat(bttsOdds.yes), rawProb: rawBTTS });
+                    allBets.push({ market: 'BTTS No', prob: 1 - probBTTS, odd: parseFloat(bttsOdds.no), rawProb: 100 - rawBTTS });
                 }
             }
 
@@ -1281,22 +1307,32 @@
                     const cornOdds = mapMarketToBSDOdds(bestOdds, 'corners', line);
                     if (cornOdds) {
                         const probOver = negBinOver(lambdaCorn, line, negBinR) / 100;
-                        allBets.push({ market: `Over ${line} Córners`, prob: probOver, odd: parseFloat(cornOdds.over) });
-                        allBets.push({ market: `Under ${line} Córners`, prob: 1 - probOver, odd: parseFloat(cornOdds.under) });
+                        const rawOver = negBinOver(lambdaCorn, line, negBinR);
+                        allBets.push({ market: `Over ${line} Córners`, prob: probOver, odd: parseFloat(cornOdds.over), rawProb: rawOver, line: line });
+                        allBets.push({ market: `Under ${line} Córners`, prob: 1 - probOver, odd: parseFloat(cornOdds.under), rawProb: 100 - rawOver, line: line });
                     }
                 });
             }
 
-            // CORRECCIÓN v3.0: EV mínimo 3% (más realista), filtrar odds inválidas
+            // CORRECCIÓN v3.1: Calcular EV para TODOS los mercados (para display)
+            // Umbral EV bajado a 1.5% para detectar más oportunidades con cuotas de referencia
             const evaluated = allBets.map(bet => ({
                 ...bet,
-                ev: bet.prob * bet.odd - 1
-            })).filter(bet => bet.odd > 1.01 && bet.ev > 0.03);
+                ev: bet.prob * bet.odd - 1,
+                evPct: ((bet.prob * bet.odd - 1) * 100).toFixed(1)
+            }));
 
-            if (evaluated.length === 0) return null;
+            // Separar: todos para display, filtrados para recomendación
+            const allForDisplay = evaluated.filter(bet => bet.odd > 1.01);
+            const forRecommendation = evaluated.filter(bet => bet.odd > 1.01 && bet.ev > 0.015);
 
-            evaluated.sort((a, b) => b.ev - a.ev);
-            const best = evaluated[0];
+            if (forRecommendation.length === 0) {
+                // Devolver null pero con info de todos los mercados para mostrar EV
+                return { best: null, allMarkets: allForDisplay, source: oddsSource };
+            }
+
+            forRecommendation.sort((a, b) => b.ev - a.ev);
+            const best = forRecommendation[0];
 
             const kelly = (best.prob * best.odd - 1) / (best.odd - 1);
             const quarterKelly = Math.max(0, kelly * 0.25);
@@ -1305,12 +1341,13 @@
             const maxStake = bankroll * 0.05;
             let rawStake = bankroll * quarterKelly;
             if (rawStake > maxStake) rawStake = maxStake;
-            if (rawStake < 1) rawStake = 0; // No apostar menos de 1€
+            if (rawStake < 1) rawStake = 0;
 
             best.stake = rawStake.toFixed(2);
             best.isValidStake = rawStake >= 1;
+            best.source = oddsSource;
 
-            return best;
+            return { best, allMarkets: allForDisplay, source: oddsSource };
         }
 
         // ============ FLUJO PRINCIPAL ============
@@ -1417,11 +1454,37 @@
             }
 
             const oddsResult = await fetchOddsAuto(eventId, modelData);
-            const bestBet = findBestBet(oddsResult.odds, modelData, bankroll);
+            const betResult = findBestBet(oddsResult.odds, modelData, bankroll, oddsResult.source);
+            const bestBet = betResult.best;
+            const allMarkets = betResult.allMarkets || [];
+
+            // CORRECCIÓN v3.1: Mostrar panel de EV para TODOS los mercados (opción D)
+            let evTableHtml = '';
+            if (allMarkets.length > 0) {
+                const top5 = allMarkets.sort((a, b) => b.ev - a.ev).slice(0, 5);
+                evTableHtml = `
+                    <div style="margin-top: 14px; text-align: left;">
+                        <div style="font-size: 0.6rem; color: var(--muted); letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px;">📊 EV POR MERCADO (${oddsResult.source})</div>
+                        ${top5.map(b => {
+                            const evColor = b.ev > 0.03 ? 'var(--green)' : b.ev > 0 ? 'var(--yellow)' : 'var(--accent)';
+                            const evSign = b.ev > 0 ? '+' : '';
+                            return `<div style="display: flex; align-items: center; gap: 8px; padding: 5px 0; border-top: 1px solid rgba(255,255,255,0.05); font-size: 0.75rem;">
+                                <span style="flex: 1; color: var(--text);">${b.market}</span>
+                                <span style="color: var(--muted);">@${b.odd.toFixed(2)}</span>
+                                <span style="color: ${evColor}; font-weight: 700;">${evSign}${b.evPct}% EV</span>
+                                <span style="color: var(--muted); font-size: 0.65rem;">${b.rawProb.toFixed(0)}% prob</span>
+                            </div>`;
+                        }).join('')}
+                        <div style="font-size: 0.58rem; color: var(--muted); margin-top: 6px; opacity: 0.7;">
+                            ${oddsResult.isSimulated ? '⚠️ Cuotas de referencia — comparar con casa real' : '✅ Cuotas reales BSD'}
+                        </div>
+                    </div>
+                `;
+            }
 
             if (bestBet && bestBet.isValidStake) {
                 const simWarning = oddsResult.isSimulated ? 
-                    '<div class="sim-warning">⚠️ Cuotas simuladas — verificar en casa real antes de apostar</div>' : '';
+                    '<div class="sim-warning">⚠️ Cuotas de referencia — verificar en casa real antes de apostar</div>' : '';
                 document.getElementById('auto-recommendation-container').innerHTML = `
                     <div class="auto-recommendation">
                         <div class="auto-rec-title">🎯 MEJOR APUESTA DEL PARTIDO</div>
@@ -1430,16 +1493,18 @@
                         <div class="auto-rec-stake">Apostar ${bestBet.stake} €</div>
                         <div style="color: var(--muted); font-size: 0.7rem;">Bankroll: ${bankroll.toLocaleString()} € · ¼ Kelly · Máx 5%</div>
                         ${simWarning}
+                        ${evTableHtml}
                     </div>
                 `;
             } else {
                 const simWarning = oddsResult.isSimulated ? 
-                    '<div class="sim-warning">Modo simulado activo — sin datos reales de cuotas</div>' : '';
+                    '<div class="sim-warning">⚠️ Cuotas de referencia — sin datos reales de API</div>' : '';
                 document.getElementById('auto-recommendation-container').innerHTML = `
                     <div class="auto-recommendation" style="border-color: var(--accent); box-shadow: 0 0 25px rgba(255,77,90,0.3);">
                         <div class="auto-rec-title" style="color: var(--accent);">⚠️ SIN APUESTA CLARA</div>
-                        <div style="color: var(--muted);">Ningún mercado supera el umbral de valor (+3% EV)</div>
+                        <div style="color: var(--muted);">Ningún mercado supera el umbral de valor (+1.5% EV)</div>
                         ${simWarning}
+                        ${evTableHtml}
                     </div>
                 `;
             }
