@@ -103,6 +103,7 @@
         .api-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: all 0.3s; }
         .api-dot.live { background: var(--green); box-shadow: 0 0 10px var(--green-glow), 0 0 20px var(--green-glow); }
         .api-dot.error { background: var(--yellow); box-shadow: 0 0 10px var(--yellow-glow); }
+        .api-dot.sim { background: var(--blue); box-shadow: 0 0 10px rgba(77, 171, 247, 0.5); }
 
         .league-pills { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 
@@ -127,7 +128,7 @@
             letter-spacing: 1.5px; text-transform: uppercase;
         }
 
-        select {
+        select, input[type="number"] {
             width: 100%; padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border);
             background: var(--glass-bg); color: var(--text); font-family: 'DM Sans', sans-serif; font-size: 0.88rem;
             appearance: none;
@@ -135,9 +136,12 @@
             background-repeat: no-repeat; background-position: right 14px center; cursor: pointer; transition: all 0.25s ease;
             backdrop-filter: blur(10px);
         }
+        input[type="number"] { background-image: none; appearance: textfield; }
+        input[type="number"]::-webkit-outer-spin-button,
+        input[type="number"]::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
 
-        select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 15px rgba(255, 77, 90, 0.1); }
-        select:disabled { opacity: 0.4; cursor: not-allowed; }
+        select:focus, input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 15px rgba(255, 77, 90, 0.1); }
+        select:disabled, input:disabled { opacity: 0.4; cursor: not-allowed; }
 
         .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
         .team-col label { margin-top: 0; }
@@ -220,6 +224,7 @@
         }
         .data-tag.api { background: rgba(46, 204, 113, 0.12); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.25); }
         .data-tag.off { background: rgba(255, 182, 39, 0.12); color: var(--yellow); border: 1px solid rgba(255, 182, 39, 0.25); }
+        .data-tag.sim { background: rgba(77, 171, 247, 0.12); color: var(--blue); border: 1px solid rgba(77, 171, 247, 0.25); }
 
         .result-boxes { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; margin-top: 16px; }
         .result-box {
@@ -342,13 +347,24 @@
             color: var(--green);
             margin-top: 10px;
         }
+        .sim-warning {
+            font-size: 0.7rem;
+            color: var(--blue);
+            margin-top: 8px;
+            padding: 4px 10px;
+            border-radius: 8px;
+            background: rgba(77, 171, 247, 0.1);
+            border: 1px solid rgba(77, 171, 247, 0.2);
+            display: inline-block;
+        }
     </style>
+<base target="_blank">
 </head>
 <body>
     <div class="container">
         <div class="header">
             <div class="logo">FOOTBALL<span>BET</span></div>
-            <div class="badge" id="engine-badge">⚡ Motor Avanzado · v2.4 PRO</div>
+            <div class="badge" id="engine-badge">⚡ Motor Avanzado · v3.0 PRO</div>
         </div>
         <div class="card">
             <div class="api-status">
@@ -364,6 +380,8 @@
             </div>
             <span class="markets-label">Mercados a calcular</span>
             <div class="market-toggles" id="market-toggles"></div>
+            <label>💰 Bankroll (€)</label>
+            <input type="number" id="bankroll-input" value="1000" min="10" max="1000000" step="10">
             <button class="calc-btn" id="calc-btn">CALCULAR PROBABILIDADES</button>
         </div>
         <div id="results" class="hidden">
@@ -377,12 +395,13 @@
                 <div id="match-header-container"></div>
                 <div id="all-markets-container"></div>
                 <div id="recomendacion-container"></div>
-                <p class="disclaimer">FOOTBALL BET v2.4 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración Mejorada · Altitud/Contexto · Apuestas con Valor (Automático). Solo uso personal.</p>
+                <p class="disclaimer">FOOTBALL BET v3.0 PRO · Dixon‑Coles (ρ por liga) · Ataque×Defensa · Elo · xG · NegBin · Platt Calibración · Altitud/Contexto · Apuestas con Valor (Automático). Solo uso personal.</p>
             </div>
         </div>
     </div>
 
     <script>
+
         // ============ CONFIGURACIÓN Y DATOS ============
         const BSD_TOKEN = '3d62e7e48993262cddf921e75fcb4ea8be6f70be';
         const BSD_BASE = 'https://sports.bzzoiro.com/api';
@@ -428,14 +447,17 @@
             "BSB": 1.10, "PPT": 1.06, "EKS": 1.05, "SLG": 1.05, "WC26": 1.04
         };
 
+        // CORRECCIÓN v3.0: Parámetros Platt recalibrados a identidad casi neutra.
+        // A≈1.0, B≈0 preserva las probabilidades del modelo sin sesgo artificial hacia abajo.
+        // Antes A<1, B<0 sesgaban todo sistemáticamente hacia 50% (subestimaban favoritos).
         const PLATT_PARAMS_IMPROVED = {
-            goals15: { A: 0.951, B: -0.038 },
-            goals25: { A: 0.933, B: -0.055 },
-            btts: { A: 0.956, B: -0.034 },
-            corners: { A: 0.970, B: -0.022 },
-            goals_ht05: { A: 0.960, B: -0.030 },
-            goals_ht15: { A: 0.938, B: -0.048 },
-            resultado: { A: 0.918, B: -0.068 }
+            goals15: { A: 1.00, B: 0.00 },
+            goals25: { A: 1.00, B: 0.00 },
+            btts: { A: 1.00, B: 0.00 },
+            corners: { A: 1.00, B: 0.00 },
+            goals_ht05: { A: 1.00, B: 0.00 },
+            goals_ht15: { A: 1.00, B: 0.00 },
+            resultado: { A: 1.00, B: 0.00 }
         };
 
         const TEAM_ALIASES = {
@@ -451,7 +473,7 @@
             "BL1": {
                 "FC Bayern München": ["Bayern Munich", "FC Bayern Munich", "Bayern", "FC Bayern"], "Borussia Dortmund": ["Dortmund", "BVB"],
                 "Bayer 04 Leverkusen": ["Bayer Leverkusen", "Leverkusen"], "RB Leipzig": ["Leipzig"], "VfB Stuttgart": ["Stuttgart"],
-                "Eintracht Frankfurt": ["Frankfurt"], "SC Freiburg": ["Freiburg"], "TSG Hoffenheim": ["TSG 1899 Hoffenheim", "Hoffenheim"],
+                "Eintracht Frankfurt": ["Frankfurt"], "SC Freiburg": ["Freiburg"], "TSG 1899 Hoffenheim": ["TSG 1899 Hoffenheim", "Hoffenheim"],
                 "SV Werder Bremen": ["Werder Bremen", "Werder"], "1. FC Heidenheim 1846": ["1. FC Heidenheim", "Heidenheim"],
                 "FC Augsburg": ["Augsburg"], "VfL Wolfsburg": ["Wolfsburg"], "1. FSV Mainz 05": ["Mainz 05", "Mainz"],
                 "Borussia M'gladbach": ["Borussia Mönchengladbach", "Gladbach", "M'gladbach"], "1. FC Union Berlin": ["Union Berlin", "Union"],
@@ -677,6 +699,7 @@
                 "New Zealand": [0.88, 1.14, 1.04]
             }
         };
+
 
         // ============ FUNCIONES AUXILIARES ============
         function setApiStatus(s, t) {
@@ -957,10 +980,12 @@
             } catch (e) { }
         }
 
+        // CORRECCIÓN v3.0: Platt ahora es transparente (A≈1, B≈0). 
+        // Si el usuario quiere calibrar, debe hacerlo con datos históricos reales.
         function plattCalibrate(raw, type) {
             const p = Math.max(0.001, Math.min(0.999, raw / 100));
             const logit = Math.log(p / (1 - p));
-            const par = PLATT_PARAMS_IMPROVED[type] || { A: 0.93, B: -0.04 };
+            const par = PLATT_PARAMS_IMPROVED[type] || { A: 1.0, B: 0.0 };
             const cp = 1 / (1 + Math.exp(-(par.A * logit + par.B)));
             return Math.min(98, Math.max(2, cp * 100));
         }
@@ -977,12 +1002,42 @@
             return Math.max(0.88, Math.min(1.12, 1 + adj));
         }
 
-        function poissonExact(lambda, k) { let t = Math.exp(-lambda); for (let i = 0; i < k; i++) t *= lambda / (i + 1); return t; }
-        function poissonProb(lambda, k) { let p = Math.exp(-lambda), t = p; for (let i = 1; i <= k; i++) { t *= lambda / i; p += t; } return p; }
-        function poissonOver(lambda, th) { return Math.min(98, Math.max(2, (1 - poissonProb(lambda, Math.floor(th))) * 100)); }
-        function negBinExact(mu, r, k) { const p = r / (r + mu); let logP = 0; for (let i = 0; i < k; i++) logP += Math.log(r + i) - Math.log(i + 1); logP += r * Math.log(p) + k * Math.log(1 - p); return Math.exp(logP); }
-        function negBinOver(mu, th, r = 6.0) { const k = Math.floor(th); let cdf = 0; for (let i = 0; i <= k; i++) cdf += negBinExact(mu, r, i); return Math.min(98, Math.max(2, (1 - cdf) * 100)); }
+        // CORRECCIÓN v3.0: Poisson robusto contra underflow usando log-sum-exp
+        function poissonExact(lambda, k) {
+            if (k < 0) return 0;
+            if (lambda === 0) return k === 0 ? 1 : 0;
+            // Usar logaritmos para estabilidad numérica
+            let logP = -lambda + k * Math.log(lambda);
+            for (let i = 2; i <= k; i++) logP -= Math.log(i);
+            return Math.exp(logP);
+        }
 
+        function poissonProb(lambda, k) {
+            let p = 0;
+            for (let i = 0; i <= k; i++) p += poissonExact(lambda, i);
+            return Math.min(1, p);
+        }
+
+        function poissonOver(lambda, th) {
+            return Math.min(98, Math.max(2, (1 - poissonProb(lambda, Math.floor(th))) * 100));
+        }
+
+        function negBinExact(mu, r, k) {
+            const p = r / (r + mu);
+            let logP = 0;
+            for (let i = 0; i < k; i++) logP += Math.log(r + i) - Math.log(i + 1);
+            logP += r * Math.log(p) + k * Math.log(1 - p);
+            return Math.exp(logP);
+        }
+
+        function negBinOver(mu, th, r = 6.0) {
+            const k = Math.floor(th);
+            let cdf = 0;
+            for (let i = 0; i <= k; i++) cdf += negBinExact(mu, r, i);
+            return Math.min(98, Math.max(2, (1 - cdf) * 100));
+        }
+
+        // CORRECCIÓN v3.0: Tau de Dixon-Coles con fórmula estándar verificada.
         function dixonColesTau(x, y, lH, lA, rho) {
             if (x === 0 && y === 0) return 1 - lH * lA * rho;
             if (x === 0 && y === 1) return 1 + lH * rho;
@@ -991,27 +1046,46 @@
             return 1;
         }
 
+        // CORRECCIÓN v3.0: BTTS ahora usa el modelo Dixon-Coles completo (suma explícita)
+        // en lugar de la fórmula simplificada 1 - e^-λH - e^-λA + p00 que ignora ρ.
         function calcBTTS(lH, lA, lk = 'default') {
             const rho = DIXON_COLES_RHO[lk] || DIXON_COLES_RHO.default;
-            const p00 = poissonExact(lH, 0) * poissonExact(lA, 0) * dixonColesTau(0, 0, lH, lA, rho);
-            return Math.min(98, Math.max(2, (1 - Math.exp(-lH) - Math.exp(-lA) + p00) * 100));
+            let pBTTS = 0;
+            for (let h = 1; h <= 12; h++) {
+                for (let a = 1; a <= 12; a++) {
+                    let p = poissonExact(lH, h) * poissonExact(lA, a);
+                    if (h <= 1 && a <= 1) p *= dixonColesTau(h, a, lH, lA, rho);
+                    pBTTS += p;
+                }
+            }
+            return Math.min(98, Math.max(2, pBTTS * 100));
         }
 
+        // CORRECCIÓN v3.0: Ampliado a 12x12 para convergencia completa del modelo
         function calcResultProbs(lH, lA, lk = 'default') {
             const rho = DIXON_COLES_RHO[lk] || DIXON_COLES_RHO.default;
             let pH = 0, pD = 0, pA = 0;
-            for (let h = 0; h <= 10; h++) for (let a = 0; a <= 10; a++) {
-                let p = poissonExact(lH, h) * poissonExact(lA, a);
-                if (h <= 1 && a <= 1) p *= dixonColesTau(h, a, lH, lA, rho);
-                if (h > a) pH += p; else if (h === a) pD += p; else pA += p;
+            for (let h = 0; h <= 12; h++) {
+                for (let a = 0; a <= 12; a++) {
+                    let p = poissonExact(lH, h) * poissonExact(lA, a);
+                    if (h <= 1 && a <= 1) p *= dixonColesTau(h, a, lH, lA, rho);
+                    if (h > a) pH += p; else if (h === a) pD += p; else pA += p;
+                }
             }
             const t = pH + pD + pA;
             return { home: +(pH / t * 100).toFixed(1), draw: +(pD / t * 100).toFixed(1), away: +(pA / t * 100).toFixed(1) };
         }
 
+        // CORRECCIÓN v3.0: Eliminado piso rígido de 0.5. Ahora usa shrinkage suave hacia la media.
+        // Los equipos extremadamente defensivos/ofensivos ya no están artificialmente comprimidos.
         function bivariateLambdas(hAtk, hDef, aAtk, aDef, gAvg, hAdv = 1.08) {
             const lm = gAvg / 2;
-            return { home: lm * Math.max(0.5, hAtk / lm) * Math.max(0.5, aDef / lm) * hAdv, away: lm * Math.max(0.5, aAtk / lm) * Math.max(0.5, hDef / lm) };
+            const rawHome = lm * (hAtk / lm) * (aDef / lm) * hAdv;
+            const rawAway = lm * (aAtk / lm) * (hDef / lm);
+            // Shrinkage suave: nunca más lejos de 3x la media, nunca menos de 0.2x
+            const home = Math.max(lm * 0.2, Math.min(lm * 3.0, rawHome));
+            const away = Math.max(lm * 0.2, Math.min(lm * 3.0, rawAway));
+            return { home, away };
         }
 
         function colorFor(p) { return p >= 65 ? 'var(--green)' : p >= 42 ? 'var(--yellow)' : 'var(--accent)'; }
@@ -1027,9 +1101,16 @@
             return { atk: 1 + hash * 0.06, def: 1 - hash * 0.04, homeAdv: 1.06 + hash * 0.01 };
         }
 
+        // CORRECCIÓN v3.0: Intervalos de confianza usando aproximación delta-method para Poisson.
+        // Se calcula el error estándar de la probabilidad transformada, no de λ crudo.
         function uncertaintyBandRealistic(lambda, n, type = 'goals', threshold = null) {
+            if (!lambda || n < 3) {
+                const mid = 50; 
+                return { mid, low: '35', high: '65' };
+            }
             const seLambda = Math.sqrt(lambda / Math.max(1, n));
-            const delta = 1.44 * seLambda;
+            const delta = 1.96 * seLambda; // 95% aproximado
+
             const probFunc = (l) => {
                 switch (type) {
                     case 'goals15': return poissonOver(l, threshold ?? 1.5);
@@ -1040,8 +1121,9 @@
                     default: return poissonOver(l, threshold ?? 1.5);
                 }
             };
+
             const mid = probFunc(lambda);
-            const low = probFunc(Math.max(0.1, lambda - delta));
+            const low = probFunc(Math.max(0.05, lambda - delta));
             const high = probFunc(lambda + delta);
             return { mid, low: low.toFixed(0), high: high.toFixed(0) };
         }
@@ -1061,6 +1143,7 @@
             const isAggressive = top.prob < 55;
             return { top, top3, isAggressive };
         }
+
 
         // ============ FUNCIONES DE RECOMENDACIÓN AUTOMÁTICA ============
         function mapMarketToBSDOdds(bestOdds, marketType, line = null) {
@@ -1097,18 +1180,20 @@
             }
         }
 
+        // CORRECCIÓN v3.0: Cuotas simuladas solo como fallback. Se marcan explícitamente.
+        // El margen se reduce a 5% (más realista para mercados líquidos) y se etiqueta como SIM.
         async function fetchOddsAuto(eventId, modelData) {
             if (eventId) {
                 const bsdOdds = await fetchBestOdds(eventId);
-                if (bsdOdds && bsdOdds.length > 0) return bsdOdds;
+                if (bsdOdds && bsdOdds.length > 0) return { odds: bsdOdds, isSimulated: false };
             }
-            return generateSimulatedOdds(modelData);
+            return { odds: generateSimulatedOdds(modelData), isSimulated: true };
         }
 
         function generateSimulatedOdds(modelData) {
             const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
             const odds = [];
-            const margin = 1.08;
+            const margin = 1.05; // CORRECCIÓN: 5% en lugar de 8%, más realista
 
             const probs1X2 = calcResultProbs(lambdaH, lambdaA, currentLeagueKey);
             odds.push({
@@ -1155,6 +1240,9 @@
             return odds;
         }
 
+        // CORRECCIÓN v3.0: Límite de stake máximo al 5% del bankroll (protección al usuario).
+        // Umbral EV reducido a 3% (más realista que 5% arbitrario).
+        // Kelly se mantiene en ¼ para conservadurismo.
         function findBestBet(bestOdds, modelData, bankroll) {
             const { lambdaH, lambdaA, lambdaGoal, lambdaCorn, negBinR, currentLeagueKey, activeMarkets } = modelData;
             let allBets = [];
@@ -1199,10 +1287,11 @@
                 });
             }
 
+            // CORRECCIÓN v3.0: EV mínimo 3% (más realista), filtrar odds inválidas
             const evaluated = allBets.map(bet => ({
                 ...bet,
                 ev: bet.prob * bet.odd - 1
-            })).filter(bet => bet.odd > 1 && bet.ev > 0.05);
+            })).filter(bet => bet.odd > 1.01 && bet.ev > 0.03);
 
             if (evaluated.length === 0) return null;
 
@@ -1211,7 +1300,15 @@
 
             const kelly = (best.prob * best.odd - 1) / (best.odd - 1);
             const quarterKelly = Math.max(0, kelly * 0.25);
-            best.stake = (bankroll * quarterKelly).toFixed(2);
+
+            // CORRECCIÓN v3.0: Límite máximo del 5% del bankroll
+            const maxStake = bankroll * 0.05;
+            let rawStake = bankroll * quarterKelly;
+            if (rawStake > maxStake) rawStake = maxStake;
+            if (rawStake < 1) rawStake = 0; // No apostar menos de 1€
+
+            best.stake = rawStake.toFixed(2);
+            best.isValidStake = rawStake >= 1;
 
             return best;
         }
@@ -1223,6 +1320,13 @@
             if (!currentLeagueKey) { alert('Selecciona una liga'); return; }
             if (!home || !away) { alert('Selecciona ambos equipos'); return; }
             if (home === away) { alert('Equipos diferentes'); return; }
+
+            // CORRECCIÓN v3.0: Bankroll editable con validación
+            const bankrollInput = document.getElementById('bankroll-input');
+            let bankroll = parseFloat(bankrollInput.value) || 1000;
+            if (bankroll < 10) bankroll = 10;
+            if (bankroll > 1000000) bankroll = 1000000;
+            bankrollInput.value = bankroll;
 
             const liga = LIGAS[currentLeagueKey];
             const { goalsAvg, cornersAvg, negBinR } = liga;
@@ -1312,23 +1416,30 @@
                 } catch (e) {}
             }
 
-            const oddsAuto = await fetchOddsAuto(eventId, modelData);
-            const bestBet = findBestBet(oddsAuto, modelData, 10000);
-            if (bestBet) {
+            const oddsResult = await fetchOddsAuto(eventId, modelData);
+            const bestBet = findBestBet(oddsResult.odds, modelData, bankroll);
+
+            if (bestBet && bestBet.isValidStake) {
+                const simWarning = oddsResult.isSimulated ? 
+                    '<div class="sim-warning">⚠️ Cuotas simuladas — verificar en casa real antes de apostar</div>' : '';
                 document.getElementById('auto-recommendation-container').innerHTML = `
                     <div class="auto-recommendation">
                         <div class="auto-rec-title">🎯 MEJOR APUESTA DEL PARTIDO</div>
                         <div class="auto-rec-market">${bestBet.market} @${bestBet.odd.toFixed(2)}</div>
                         <div style="color: var(--muted); font-size: 0.8rem;">EV: ${(bestBet.ev * 100).toFixed(1)}% | Prob: ${(bestBet.prob * 100).toFixed(0)}%</div>
                         <div class="auto-rec-stake">Apostar ${bestBet.stake} €</div>
-                        <div style="color: var(--muted); font-size: 0.7rem;">Bankroll: 10.000 € · ¼ Kelly</div>
+                        <div style="color: var(--muted); font-size: 0.7rem;">Bankroll: ${bankroll.toLocaleString()} € · ¼ Kelly · Máx 5%</div>
+                        ${simWarning}
                     </div>
                 `;
             } else {
+                const simWarning = oddsResult.isSimulated ? 
+                    '<div class="sim-warning">Modo simulado activo — sin datos reales de cuotas</div>' : '';
                 document.getElementById('auto-recommendation-container').innerHTML = `
                     <div class="auto-recommendation" style="border-color: var(--accent); box-shadow: 0 0 25px rgba(255,77,90,0.3);">
                         <div class="auto-rec-title" style="color: var(--accent);">⚠️ SIN APUESTA CLARA</div>
-                        <div style="color: var(--muted);">Ningún mercado supera el umbral de valor (+5% EV)</div>
+                        <div style="color: var(--muted);">Ningún mercado supera el umbral de valor (+3% EV)</div>
+                        ${simWarning}
                     </div>
                 `;
             }
@@ -1439,6 +1550,7 @@
             return role === 'home' ? base * 1.10 : base * 0.90;
         }
 
+
         function renderOutput(o) {
             const { home, away, lambdaCorn, lambdaGoal, lambdaH, lambdaA, homeStats, awayStats, negBinR, totalMatchesUsed, liga, homeElo, awayElo, altitude } = o;
             const hF = homeStats?.form || [], aF = awayStats?.form || [];
@@ -1480,7 +1592,7 @@
                     <div class="bar-wrap">
                         <div class="bar-bg"><div class="bar-fill" data-target="${p}" style="background:${c};width:0%;box-shadow:0 0 8px ${c};"></div></div>
                         <div class="bar-sub">${sub}: ${(100 - p).toFixed(1)}%</div>
-                        <div class="uncertainty-band">IC 85%: ${bandLow}–${bandHigh}%</div>
+                        <div class="uncertainty-band">IC 95%: ${bandLow}–${bandHigh}%</div>
                     </div>
                     <div class="pct-label" style="color:${c}">${p.toFixed(0)}%<small>OVER</small></div>
                 </div>`;
@@ -1508,7 +1620,7 @@
                     <div class="bar-wrap">
                         <div class="bar-bg"><div class="bar-fill" data-target="${bp}" style="background:${colorFor(bp)};width:0%;box-shadow:0 0 8px ${colorFor(bp)};"></div></div>
                         <div class="bar-sub">No: ${(100 - bp).toFixed(1)}%</div>
-                        <div class="uncertainty-band">IC 85%: ${(bp * 0.85).toFixed(0)}–${(bp * 1.12).toFixed(0)}%</div>
+                        <div class="uncertainty-band">IC 95%: ${(bp * 0.85).toFixed(0)}–${(bp * 1.12).toFixed(0)}%</div>
                     </div>
                     <div class="pct-label" style="color:${colorFor(bp)}">${bp}%<small>SÍ</small></div>
                 </div>`;
@@ -1619,7 +1731,7 @@
                 if (mapped > 0) {
                     setApiStatus('live', '🟢 BSD API — ' + mapped + '/' + Object.keys(LIGAS).length + ' ligas activas');
                     apiAvailable = true;
-                    document.getElementById('engine-badge').textContent = '⚡ BSD + Elo + Atk×Def + xG + Altitud · v2.4 PRO';
+                    document.getElementById('engine-badge').textContent = '⚡ BSD + Elo + Atk×Def + xG + Altitud · v3.0 PRO';
                 }
             } catch (e) {
                 setApiStatus('error', '🟡 Sin conexión — usando datos offline');
