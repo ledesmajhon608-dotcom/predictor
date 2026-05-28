@@ -1,1 +1,6 @@
-
+flask
+flask-cors
+requests
+beautifulsoup4
+numpy
+scipy
