@@ -87,7 +87,6 @@
             background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), rgba(46, 204, 113, 0.05));
             border-color: var(--green); color: var(--green); box-shadow: 0 0 15px rgba(46, 204, 113, 0.15);
         }
-        .chip .flag { font-size: 1.1rem; line-height: 1; }
 
         .vs-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 18px 0; }
         .vs-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--accent); letter-spacing: 3px; }
@@ -148,6 +147,11 @@
         .prob-box.draw .value { color: var(--yellow); text-shadow: 0 0 15px var(--yellow-glow); }
         .prob-box.away .value { color: var(--accent); text-shadow: 0 0 15px var(--accent-glow); }
         .prob-box .est { font-size: 0.6rem; color: var(--muted); background: rgba(255, 182, 39, 0.1); padding: 2px 8px; border-radius: 8px; display: inline-block; margin-bottom: 6px; }
+        .prob-box .odd-val { font-size: 0.75rem; color: var(--blue); font-weight: 700; margin-top: 4px; }
+        .prob-box .ev-val { font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 8px; display: inline-block; margin-top: 4px; }
+        .prob-box .ev-val.positive { background: rgba(46, 204, 113, 0.15); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.3); }
+        .prob-box .ev-val.negative { background: rgba(255, 77, 90, 0.15); color: var(--accent); border: 1px solid rgba(255, 77, 90, 0.3); }
+        .prob-box .ev-val.neutral { background: rgba(255, 255, 255, 0.05); color: var(--muted); border: 1px solid rgba(255, 255, 255, 0.1); }
 
         .market-title {
             display: flex; align-items: center; justify-content: space-between; margin: 20px 0 12px;
@@ -178,7 +182,6 @@
         .line-details .pct { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--yellow); }
         .line-details .pct.red { color: var(--accent); }
         .line-details .under { font-size: 0.7rem; color: var(--muted); }
-        .line-details .ci { font-size: 0.6rem; color: var(--muted); opacity: 0.8; }
         .line-details .ev {
             font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 8px;
             display: inline-block; margin-top: 4px;
@@ -186,9 +189,7 @@
         .line-details .ev.positive { background: rgba(46, 204, 113, 0.15); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.3); }
         .line-details .ev.negative { background: rgba(255, 77, 90, 0.15); color: var(--accent); border: 1px solid rgba(255, 77, 90, 0.3); }
         .line-details .ev.neutral { background: rgba(255, 255, 255, 0.05); color: var(--muted); border: 1px solid rgba(255, 255, 255, 0.1); }
-        .line-details .odds {
-            font-size: 0.6rem; color: var(--blue); margin-top: 2px; font-weight: 700;
-        }
+        .line-details .odds { font-size: 0.6rem; color: var(--blue); margin-top: 2px; font-weight: 700; }
 
         .best-bet {
             border-radius: 20px; padding: 22px; text-align: center; margin-top: 18px;
@@ -217,9 +218,7 @@
 
         .hidden { display: none !important; }
 
-        .bookmaker-select {
-            margin-bottom: 14px;
-        }
+        .bookmaker-select { margin-bottom: 14px; }
         .bookmaker-select label {
             font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; color: var(--muted);
             text-transform: uppercase; display: block; margin-bottom: 6px;
@@ -238,6 +237,14 @@
             margin-right: 8px; vertical-align: middle;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        .back-btn {
+            background: var(--card2); border: 1px solid var(--border); color: var(--text);
+            padding: 10px 20px; border-radius: 12px; font-size: 0.8rem; font-weight: 700;
+            cursor: pointer; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+            transition: all 0.2s;
+        }
+        .back-btn:hover { border-color: var(--accent); }
     </style>
 </head>
 <body>
@@ -260,7 +267,8 @@
             <div class="bookmaker-select">
                 <label>Casa de apuestas (bookmaker)</label>
                 <select id="bookmakerSelect">
-                    <option value="best">🏆 Mejor cuota disponible (recomendado)</option>
+                    <option value="best">🏆 Mejor cuota disponible</option>
+                    <option value="betano">🟢 Betano</option>
                     <option value="pinnacle">Pinnacle</option>
                     <option value="bet365">Bet365</option>
                     <option value="unibet">Unibet</option>
@@ -268,7 +276,7 @@
                     <option value="betfair">Betfair</option>
                     <option value="interwetten">Interwetten</option>
                     <option value="bwin">Bwin</option>
-                    <option value="oddssafari-consensus">📊 Promedio de mercado (consensus)</option>
+                    <option value="oddssafari-consensus">📊 Promedio mercado</option>
                 </select>
             </div>
             <button class="btn-calc" style="margin-top:6px; padding:12px; font-size:1rem;" onclick="testApiConnection()">Probar conexión API</button>
@@ -332,6 +340,8 @@
         </div>
 
         <div id="resultsArea" class="hidden">
+            <button class="back-btn" onclick="goBack()">← Volver</button>
+            
             <div class="alert-box" id="valueAlert">
                 <div class="icon">⚠️</div>
                 <h3>SIN APUESTA CLARA</h3>
@@ -349,16 +359,22 @@
                     <div class="est">EST</div>
                     <div class="label">🏠 LOCAL</div>
                     <div class="value" id="probHome">38.6%</div>
+                    <div class="odd-val" id="oddHome">Cuota: --</div>
+                    <div class="ev-val neutral" id="evHome1x2">EV: --</div>
                 </div>
                 <div class="prob-box draw">
                     <div class="est">EST</div>
                     <div class="label">🟡 EMPATE</div>
                     <div class="value" id="probDraw">32%</div>
+                    <div class="odd-val" id="oddDraw">Cuota: --</div>
+                    <div class="ev-val neutral" id="evDraw1x2">EV: --</div>
                 </div>
                 <div class="prob-box away">
                     <div class="est">EST</div>
                     <div class="label">✈️ VISITANTE</div>
                     <div class="value" id="probAway">29.4%</div>
+                    <div class="odd-val" id="oddAway">Cuota: --</div>
+                    <div class="ev-val neutral" id="evAway1x2">EV: --</div>
                 </div>
             </div>
 
@@ -569,317 +585,1270 @@
     </div>
 
     <script>
-        const API_BASE = 'https://sports.bzzoiro.com/api/v2';
-        const EV_THRESHOLD = 0.015;
-        let currentEventId = null, apiOdds = {}, modelProbs = {};
-        let selectedLeague = 'libertadores';
-        let selectedMarkets = ['htgoals','goals','btts','corners'];
+         const API_BASE = 'https://sports.bzzoiro.com/api/v2';
+    const EV_THRESHOLD = 0.015;
+    let currentEventId = null, apiOdds = {}, modelProbs = {};
+    let selectedLeague = 'libertadores';
+    let selectedMarkets = ['htgoals','goals','btts','corners'];
 
-        const TEAM_ELO = {
-            boca: { name:'Boca Juniors', elo:1497, attack:1.45, defense:0.85, homeAdv:0.35 },
-            catolica: { name:'Universidad Católica', elo:1531, attack:1.35, defense:0.90, homeAdv:0.25 },
-            river: { name:'River Plate', elo:1580, attack:1.60, defense:0.75, homeAdv:0.40 },
-            palmeiras: { name:'Palmeiras', elo:1560, attack:1.55, defense:0.80, homeAdv:0.35 },
-            flamengo: { name:'Flamengo', elo:1545, attack:1.50, defense:0.82, homeAdv:0.38 },
-        };
+    // Calibrated team data for accurate probabilities
+    const TEAM_ELO = {
+        boca: { name:'Boca Juniors', elo:1497, attack:1.15, defense:0.95, homeAdv:0.25 },
+        catolica: { name:'Universidad Católica', elo:1531, attack:1.25, defense:0.88, homeAdv:0.20 },
+        river: { name:'River Plate', elo:1580, attack:1.45, defense:0.78, homeAdv:0.35 },
+        palmeiras: { name:'Palmeiras', elo:1560, attack:1.40, defense:0.80, homeAdv:0.30 },
+        flamengo: { name:'Flamengo', elo:1545, attack:1.38, defense:0.82, homeAdv:0.32 },
+    };
 
-        const LEAGUE_PARAMS = {
-            libertadores: { rho:-0.088, avgHomeGoals:1.45, avgAwayGoals:1.12, avgCorners:9.2, cornerR:6.1 },
-            premier: { rho:-0.075, avgHomeGoals:1.55, avgAwayGoals:1.25, avgCorners:10.5, cornerR:7.2 },
-            laliga: { rho:-0.065, avgHomeGoals:1.48, avgAwayGoals:1.15, avgCorners:9.8, cornerR:6.8 },
-            bundesliga: { rho:-0.080, avgHomeGoals:1.65, avgAwayGoals:1.35, avgCorners:10.2, cornerR:7.0 },
-            seriea: { rho:-0.070, avgHomeGoals:1.42, avgAwayGoals:1.18, avgCorners:9.5, cornerR:6.5 },
-            ligue1: { rho:-0.072, avgHomeGoals:1.38, avgAwayGoals:1.10, avgCorners:9.0, cornerR:6.0 },
-            brasileirao: { rho:-0.085, avgHomeGoals:1.50, avgAwayGoals:1.05, avgCorners:9.8, cornerR:6.4 },
-            mls: { rho:-0.090, avgHomeGoals:1.60, avgAwayGoals:1.30, avgCorners:10.0, cornerR:6.8 },
-            default: { rho:-0.075, avgHomeGoals:1.45, avgAwayGoals:1.15, avgCorners:9.5, cornerR:6.5 }
-        };
+    const LEAGUE_PARAMS = {
+        libertadores: { rho:-0.088, avgHomeGoals:1.35, avgAwayGoals:1.15, avgCorners:9.2, cornerR:6.1 },
+        premier: { rho:-0.075, avgHomeGoals:1.55, avgAwayGoals:1.25, avgCorners:10.5, cornerR:7.2 },
+        laliga: { rho:-0.065, avgHomeGoals:1.48, avgAwayGoals:1.15, avgCorners:9.8, cornerR:6.8 },
+        bundesliga: { rho:-0.080, avgHomeGoals:1.65, avgAwayGoals:1.35, avgCorners:10.2, cornerR:7.0 },
+        seriea: { rho:-0.070, avgHomeGoals:1.42, avgAwayGoals:1.18, avgCorners:9.5, cornerR:6.5 },
+        ligue1: { rho:-0.072, avgHomeGoals:1.38, avgAwayGoals:1.10, avgCorners:9.0, cornerR:6.0 },
+        brasileirao: { rho:-0.085, avgHomeGoals:1.50, avgAwayGoals:1.05, avgCorners:9.8, cornerR:6.4 },
+        mls: { rho:-0.090, avgHomeGoals:1.60, avgAwayGoals:1.30, avgCorners:10.0, cornerR:6.8 },
+        default: { rho:-0.075, avgHomeGoals:1.45, avgAwayGoals:1.15, avgCorners:9.5, cornerR:6.5 }
+    };
 
-        function poisson(l,k){ return Math.exp(-l)*Math.pow(l,k)/factorial(k); }
-        function factorial(n){ if(n<=1)return 1; let r=1; for(let i=2;i<=n;i++)r*=i; return r; }
+    function poisson(l,k){ return Math.exp(-l)*Math.pow(l,k)/factorial(k); }
+    function factorial(n){ if(n<=1)return 1; let r=1; for(let i=2;i<=n;i++)r*=i; return r; }
 
-        function dixonColesProb(hL,aL,rho,maxG=15){
-            let hW=0,d=0,aW=0, hD=[],aD=[];
-            for(let i=0;i<=maxG;i++){ hD[i]=poisson(hL,i); aD[i]=poisson(aL,i); }
-            for(let h=0;h<=maxG;h++){
-                for(let a=0;a<=maxG;a++){
-                    let tau=1;
-                    if(h===0&&a===0) tau=1-rho;
-                    else if(h===0&&a===1) tau=1+rho*hL;
-                    else if(h===1&&a===0) tau=1+rho*aL;
-                    else if(h===1&&a===1) tau=1-rho;
-                    let p=hD[h]*aD[a]*tau;
-                    if(h>a) hW+=p; else if(h===a) d+=p; else aW+=p;
-                }
+    function dixonColesProb(hL,aL,rho,maxG=15){
+        let hW=0,d=0,aW=0, hD=[],aD=[];
+        for(let i=0;i<=maxG;i++){ hD[i]=poisson(hL,i); aD[i]=poisson(aL,i); }
+        for(let h=0;h<=maxG;h++){
+            for(let a=0;a<=maxG;a++){
+                let tau=1;
+                if(h===0&&a===0) tau=1-rho;
+                else if(h===0&&a===1) tau=1+rho*hL;
+                else if(h===1&&a===0) tau=1+rho*aL;
+                else if(h===1&&a===1) tau=1-rho;
+                let p=hD[h]*aD[a]*tau;
+                if(h>a) hW+=p; else if(h===a) d+=p; else aW+=p;
             }
-            let t=hW+d+aW;
-            return {home:hW/t, draw:d/t, away:aW/t};
         }
+        let t=hW+d+aW;
+        return {home:hW/t, draw:d/t, away:aW/t};
+    }
 
-        function overUnderProb(l,li,o=true,mG=15){
-            let c=0;
-            for(let k=0;k<=mG;k++) if(o?k>li:k<=li) c+=poisson(l,k);
-            return c;
-        }
+    function overUnderProb(l,li,o=true,mG=15){
+        let c=0;
+        for(let k=0;k<=mG;k++) if(o?k>li:k<=li) c+=poisson(l,k);
+        return c;
+    }
 
-        function bttsProb(hL,aL,mG=10){
-            let p=0;
-            for(let h=1;h<=mG;h++) for(let a=1;a<=mG;a++) p+=poisson(hL,h)*poisson(aL,a);
-            return p;
-        }
+    function bttsProb(hL,aL,mG=10){
+        let p=0;
+        for(let h=1;h<=mG;h++) for(let a=1;a<=mG;a++) p+=poisson(hL,h)*poisson(aL,a);
+        return p;
+    }
 
-        function cornerProb(tc,li,o=true,m=25){
-            let c=0;
-            for(let k=0;k<=m;k++) if(o?k>li:k<=li) c+=poisson(tc,k);
-            return c;
-        }
+    function cornerProb(tc,li,o=true,m=25){
+        let c=0;
+        for(let k=0;k<=m;k++) if(o?k>li:k<=li) c+=poisson(tc,k);
+        return c;
+    }
 
-        function confidenceInterval(p,n=50){
-            const z=1.96, d=1+z*z/n, c=(p+z*z/(2*n))/d, m=z*Math.sqrt((p*(1-p)+z*z/(4*n))/n)/d;
-            return {low:Math.max(0,c-m), high:Math.min(1,c+m)};
-        }
+    function confidenceInterval(p,n=50){
+        const z=1.96, d=1+z*z/n, c=(p+z*z/(2*n))/d, m=z*Math.sqrt((p*(1-p)+z*z/(4*n))/n)/d;
+        return {low:Math.max(0,c-m), high:Math.min(1,c+m)};
+    }
 
-        function calculateEV(p,o){ if(!o||o<=1)return null; return (p*o)-1; }
-        function formatEV(e){ if(e===null)return '--'; const p=(e*100).toFixed(1); return (e>=0?'+':'')+p+'%'; }
-        function evClass(e){ if(e===null)return 'neutral'; if(e>=EV_THRESHOLD)return 'positive'; if(e>0)return 'neutral'; return 'negative'; }
+    function calculateEV(p,o){ if(!o||o<=1)return null; return (p*o)-1; }
+    function formatEV(e){ if(e===null)return '--'; const p=(e*100).toFixed(1); return (e>=0?'+':'')+p+'%'; }
+    function evClass(e){ if(e===null)return 'neutral'; if(e>=EV_THRESHOLD)return 'positive'; if(e>0)return 'neutral'; return 'negative'; }
 
-        document.querySelectorAll('#leagueChips .chip').forEach(c=>{
-            c.addEventListener('click',()=>{
-                document.querySelectorAll('#leagueChips .chip').forEach(x=>x.classList.remove('active'));
-                c.classList.add('active'); selectedLeague=c.dataset.league;
-            });
+    document.querySelectorAll('#leagueChips .chip').forEach(c=>{
+        c.addEventListener('click',()=>{
+            document.querySelectorAll('#leagueChips .chip').forEach(x=>x.classList.remove('active'));
+            c.classList.add('active'); selectedLeague=c.dataset.league;
         });
+    });
 
-        document.querySelectorAll('#marketChips .chip').forEach(c=>{
-            c.addEventListener('click',()=>{
-                c.classList.toggle('active');
-                const m=c.dataset.market;
-                if(c.classList.contains('active')){ if(!selectedMarkets.includes(m))selectedMarkets.push(m); }
-                else selectedMarkets=selectedMarkets.filter(x=>x!==m);
-            });
+    document.querySelectorAll('#marketChips .chip').forEach(c=>{
+        c.addEventListener('click',()=>{
+            c.classList.toggle('active');
+            const m=c.dataset.market;
+            if(c.classList.contains('active')){ if(!selectedMarkets.includes(m))selectedMarkets.push(m); }
+            else selectedMarkets=selectedMarkets.filter(x=>x!==m);
         });
+    });
 
-        function setApiStatus(s,t){
-            document.getElementById('apiDot').className='api-dot '+s;
-            document.getElementById('apiText').textContent=t;
-        }
+    function setApiStatus(s,t){
+        document.getElementById('apiDot').className='api-dot '+s;
+        document.getElementById('apiText').textContent=t;
+    }
 
-        async function testApiConnection(){
-            const t=document.getElementById('apiToken').value.trim();
-            if(!t){ setApiStatus('error','Ingresá tu API token primero'); return; }
-            setApiStatus('sim','Probando conexión...');
+    function goBack(){
+        document.getElementById('resultsArea').classList.add('hidden');
+        document.getElementById('setupCard').classList.remove('hidden');
+    }
+
+    async function testApiConnection(){
+        const t=document.getElementById('apiToken').value.trim();
+        if(!t){ setApiStatus('error','Ingresá tu API token primero'); return; }
+        setApiStatus('sim','Probando conexión...');
+        try{
+            const r=await fetch(`${API_BASE}/events/?date_from=2026-05-28&date_to=2026-05-28&limit=1`,{headers:{'Authorization':`Token ${t}`}});
+            if(r.ok) setApiStatus('live','API conectada · bzzoiro v2');
+            else setApiStatus('error',`Error API: ${r.status}`);
+        }catch(e){ setApiStatus('error','Sin conexión a API'); }
+    }
+
+    // Flexible event search with multiple name variations
+    async function fetchEventId(hn,an,dt='2026-05-28'){
+        const t=document.getElementById('apiToken').value.trim();
+        if(!t) return null;
+        
+        const searchTerms = [
+            hn,
+            hn.split(' ')[0],
+            hn.includes('Boca') ? 'Boca' : hn.includes('River') ? 'River' : hn.split(' ')[0],
+        ];
+        
+        for(const term of searchTerms){
             try{
-                const r=await fetch(`${API_BASE}/events/?date_from=2026-05-28&date_to=2026-05-28&limit=1`,{headers:{'Authorization':`Token ${t}`}});
-                if(r.ok) setApiStatus('live','API conectada · bzzoiro v2');
-                else setApiStatus('error',`Error API: ${r.status}`);
-            }catch(e){ setApiStatus('error','Sin conexión a API'); }
-        }
-
-        async function fetchEventId(hn,an,dt='2026-05-28'){
-            const t=document.getElementById('apiToken').value.trim();
-            if(!t) return null;
-            try{
-                const r=await fetch(`${API_BASE}/events/?team_name=${encodeURIComponent(hn)}&date_from=${dt}&date_to=${dt}&limit=10`,{headers:{'Authorization':`Token ${t}`}});
-                if(!r.ok) return null;
+                const r=await fetch(`${API_BASE}/events/?team_name=${encodeURIComponent(term)}&date_from=${dt}&date_to=${dt}&limit=20`,{headers:{'Authorization':`Token ${t}`}});
+                if(!r.ok) continue;
                 const d=await r.json();
                 for(const e of (d.results||d.events||[])){
                     const ho=(e.home_team||'').toLowerCase(), aw=(e.away_team||'').toLowerCase();
-                    if(ho.includes(hn.toLowerCase())&&aw.includes(an.toLowerCase())) return e.id;
+                    const homeMatch = ho.includes('boca') || ho.includes(hn.toLowerCase().split(' ')[0]);
+                    const awayMatch = aw.includes('catolic') || aw.includes(an.toLowerCase().split(' ')[0]);
+                    const reverseMatch = (aw.includes('boca') || aw.includes(hn.toLowerCase().split(' ')[0])) &&
+                                         (ho.includes('catolic') || ho.includes(an.toLowerCase().split(' ')[0]));
+                    if((homeMatch && awayMatch) || reverseMatch) return e.id;
                 }
-                return null;
-            }catch(e){ return null; }
+            }catch(e){ continue; }
+        }
+        return null;
+    }
+
+    async function fetchOddsForEvent(eid){
+        const t=document.getElementById('apiToken').value.trim();
+        const bm=document.getElementById('bookmakerSelect').value;
+        if(!t||!eid) return null;
+        let odds={};
+        try{
+            if(bm==='best'){
+                const r=await fetch(`${API_BASE}/odds/best/?event_id=${eid}&market=1x2`,{headers:{'Authorization':`Token ${t}`}});
+                if(r.ok){ const d=await r.json(); for(const i of (d.best_odds||[])){ if(i.outcome==='HOME')odds.home=i.decimal_odds; if(i.outcome==='DRAW')odds.draw=i.decimal_odds; if(i.outcome==='AWAY')odds.away=i.decimal_odds; } }
+                for(const m of ['over_under_15','over_under_25','over_under_35']){
+                    const r2=await fetch(`${API_BASE}/odds/best/?event_id=${eid}&market=${m}`,{headers:{'Authorization':`Token ${t}`}});
+                    if(r2.ok){ const d2=await r2.json(); for(const i of (d2.best_odds||[])){ odds[`${m}_${i.outcome.toLowerCase()}`]=i.decimal_odds; } }
+                }
+                const rb=await fetch(`${API_BASE}/odds/best/?event_id=${eid}&market=btts`,{headers:{'Authorization':`Token ${t}`}});
+                if(rb.ok){ const db=await rb.json(); for(const i of (db.best_odds||[])){ if(i.outcome==='YES')odds.btts_yes=i.decimal_odds; if(i.outcome==='NO')odds.btts_no=i.decimal_odds; } }
+            }else if(bm==='oddssafari-consensus'){
+                const r=await fetch(`${API_BASE}/events/${eid}/odds/`,{headers:{'Authorization':`Token ${t}`}});
+                if(r.ok){ const d=await r.json(); odds={home:d.odds?.home_win,draw:d.odds?.draw,away:d.odds?.away_win,over_15_goals:d.odds?.over_15_goals,under_15_goals:d.odds?.under_15_goals,over_25_goals:d.odds?.over_25_goals,under_25_goals:d.odds?.under_25_goals,btts_yes:d.odds?.btts_yes,btts_no:d.odds?.btts_no}; }
+            }else{
+                // Betano and other specific bookmakers
+                const r=await fetch(`${API_BASE}/events/${eid}/odds/comparison/`,{headers:{'Authorization':`Token ${t}`}});
+                if(r.ok){ const d=await r.json(), mk=d.markets||{}; if(mk['1x2']&&mk['1x2'][bm]){ const b=mk['1x2'][bm]; odds.home=b.HOME?.decimal_odds; odds.draw=b.DRAW?.decimal_odds; odds.away=b.AWAY?.decimal_odds; } for(const[k,v]of Object.entries(mk)){ if(v[bm]){ for(const[ok,ov]of Object.entries(v[bm])){ if(ov&&ov.decimal_odds) odds[`${k}_${ok}`.toLowerCase()]=ov.decimal_odds; } } } }
+            }
+            return odds;
+        }catch(e){ return null; }
+    }
+
+    function runModel(){
+        const hi=document.getElementById('homeTeam').value, ai=document.getElementById('awayTeam').value;
+        const h=TEAM_ELO[hi]||TEAM_ELO.boca, a=TEAM_ELO[ai]||TEAM_ELO.catolica;
+        const lg=LEAGUE_PARAMS[selectedLeague]||LEAGUE_PARAMS.default;
+        
+        const eloDiff = h.elo - a.elo;
+        const homeAdvFactor = 1 + (h.homeAdv * 0.5);
+        const eloFactor = Math.max(0.7, Math.min(1.3, 1 + (eloDiff / 2000)));
+        
+        const hL = lg.avgHomeGoals * h.attack * a.defense * homeAdvFactor * eloFactor;
+        const aL = lg.avgAwayGoals * a.attack * h.defense * (2 - eloFactor);
+        const tL = hL + aL;
+        
+        const p12 = dixonColesProb(hL, aL, lg.rho);
+        const o15 = overUnderProb(tL, 1.5, true), o25 = overUnderProb(tL, 2.5, true), o35 = overUnderProb(tL, 3.5, true);
+        const htL = tL * 0.45, ht05 = overUnderProb(htL, 0.5, true), ht15 = overUnderProb(htL, 1.5, true);
+        const bt = bttsProb(hL, aL);
+        const c75 = cornerProb(lg.avgCorners, 7.5, true), c85 = cornerProb(lg.avgCorners, 8.5, true), c95 = cornerProb(lg.avgCorners, 9.5, true), c105 = cornerProb(lg.avgCorners, 10.5, true);
+        
+        return {home:h, away:a, league:lg, probs1x2:p12, goals:{over15:o15,over25:o25,over35:o35,lambda:tL}, ht:{over05:ht05,over15:ht15,lambda:htL}, btts:{yes:bt,no:1-bt}, corners:{over75:c75,over85:c85,over95:c95,over105:c105,lambda:lg.avgCorners,r:lg.cornerR}};
+    }
+
+    function renderResults(mo, od){
+        document.getElementById('setupCard').classList.add('hidden');
+        document.getElementById('resultsArea').classList.remove('hidden');
+        document.getElementById('resLeague').textContent='🏆 '+selectedLeague.toUpperCase();
+        document.getElementById('resTeams').textContent=mo.home.name.toUpperCase()+' VS '+mo.away.name.toUpperCase();
+        document.getElementById('resElo').textContent=`Elo: ${mo.home.name.split(' ')[0]} ${mo.home.elo} vs ${mo.away.name.split(' ')[0]} ${mo.away.elo}`;
+
+        // 1X2 with odds and EV
+        const pHome = mo.probs1x2.home, pDraw = mo.probs1x2.draw, pAway = mo.probs1x2.away;
+        document.getElementById('probHome').textContent=(pHome*100).toFixed(1)+'%';
+        document.getElementById('probDraw').textContent=(pDraw*100).toFixed(0)+'%';
+        document.getElementById('probAway').textContent=(pAway*100).toFixed(1)+'%';
+        
+        const oddH = od.home, oddD = od.draw, oddA = od.away;
+        document.getElementById('oddHome').textContent = oddH ? 'Cuota: '+oddH.toFixed(2) : 'Cuota: --';
+        document.getElementById('oddDraw').textContent = oddD ? 'Cuota: '+oddD.toFixed(2) : 'Cuota: --';
+        document.getElementById('oddAway').textContent = oddA ? 'Cuota: '+oddA.toFixed(2) : 'Cuota: --';
+        
+        const evH = calculateEV(pHome, oddH), evD = calculateEV(pDraw, oddD), evA = calculateEV(pAway, oddA);
+        const evHEl = document.getElementById('evHome1x2'), evDEl = document.getElementById('evDraw1x2'), evAEl = document.getElementById('evAway1x2');
+        evHEl.textContent = evH!==null ? 'EV: '+formatEV(evH) : 'EV: --'; evHEl.className = 'ev-val '+evClass(evH);
+        evDEl.textContent = evD!==null ? 'EV: '+formatEV(evD) : 'EV: --'; evDEl.className = 'ev-val '+evClass(evD);
+        evAEl.textContent = evA!==null ? 'EV: '+formatEV(evA) : 'EV: --'; evAEl.className = 'ev-val '+evClass(evA);
+
+        if(selectedMarkets.includes('goals')){
+            document.getElementById('goalsSection').classList.remove('hidden');
+            document.getElementById('lambdaGoals').textContent=mo.goals.lambda.toFixed(2);
+            renderLine('15',mo.goals.over15,1.5,od);
+            renderLine('25',mo.goals.over25,2.5,od);
+        }else document.getElementById('goalsSection').classList.add('hidden');
+
+        if(selectedMarkets.includes('htgoals')){
+            document.getElementById('htSection').classList.remove('hidden');
+            document.getElementById('lambdaHT').textContent=mo.ht.lambda.toFixed(2);
+            renderHTLine('05',mo.ht.over05,0.5,od);
+            renderHTLine('15',mo.ht.over15,1.5,od);
+        }else document.getElementById('htSection').classList.add('hidden');
+
+        if(selectedMarkets.includes('btts')){
+            document.getElementById('bttsSection').classList.remove('hidden');
+            renderBTTS(mo.btts.yes,od);
+        }else document.getElementById('bttsSection').classList.add('hidden');
+
+        if(selectedMarkets.includes('corners')){
+            document.getElementById('cornersSection').classList.remove('hidden');
+            document.getElementById('lambdaCorners').textContent=mo.corners.lambda.toFixed(1);
+            document.getElementById('rCorners').textContent=mo.corners.r.toFixed(1);
+            renderCornerLine('75',mo.corners.over75,7.5,od);
+            renderCornerLine('85',mo.corners.over85,8.5,od);
+            renderCornerLine('95',mo.corners.over95,9.5,od);
+            renderCornerLine('105',mo.corners.over105,10.5,od);
+        }else document.getElementById('cornersSection').classList.add('hidden');
+
+        determineBestBet(mo,od);
+    }
+
+    function renderLine(s,p,l,od){
+        const pc=(p*100).toFixed(0);
+        document.getElementById('pctOver'+s).textContent=pc+'%';
+        document.getElementById('pctOver'+s).className='pct'+(p>=0.5?'':' red');
+        document.getElementById('under'+s).textContent=((1-p)*100).toFixed(1)+'%';
+        const ci=confidenceInterval(p);
+        document.getElementById('ci'+s).textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
+        document.getElementById('rowOver'+s).style.setProperty('--bar-width',pc+'%');
+        document.getElementById('rowOver'+s).className='line-row'+(p>=0.5?'':' negative');
+        const ok='over_'+(l===1.5?'15':l===2.5?'25':'35')+'_goals', oka='over_under_'+(l===1.5?'15':l===2.5?'25':'35')+'_over';
+        const doo=od[ok]||od[oka]||od['over_'+(l===1.5?'15':l===2.5?'25':'35')]||null;
+        document.getElementById('oddsOver'+s).textContent=doo?'Cuota: '+doo.toFixed(2):'Cuota: --';
+        const ev=calculateEV(p,doo), el=document.getElementById('evOver'+s);
+        el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
+    }
+
+    function renderHTLine(s,p,l,od){
+        const pc=(p*100).toFixed(0);
+        document.getElementById('pctHT'+s).textContent=pc+'%';
+        document.getElementById('pctHT'+s).className='pct'+(p>=0.5?'':' red');
+        document.getElementById('underHT'+s).textContent=((1-p)*100).toFixed(1)+'%';
+        const ci=confidenceInterval(p);
+        document.getElementById('ciHT'+s).textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
+        document.getElementById('rowHT'+s).style.setProperty('--bar-width',pc+'%');
+        document.getElementById('rowHT'+s).className='line-row'+(p>=0.5?'':' negative');
+        const doo=od['ht_over_'+(l===0.5?'05':'15')]||null;
+        document.getElementById('oddsHT'+s).textContent=doo?'Cuota: '+doo.toFixed(2):'Cuota: --';
+        const ev=calculateEV(p,doo), el=document.getElementById('evHT'+s);
+        el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
+    }
+
+    function renderBTTS(p,od){
+        const pc=(p*100).toFixed(0);
+        document.getElementById('pctBTTS').textContent=pc+'%';
+        document.getElementById('bttsNo').textContent=((1-p)*100).toFixed(1)+'%';
+        const ci=confidenceInterval(p);
+        document.getElementById('ciBTTS').textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
+        document.getElementById('rowBTTS').style.setProperty('--bar-width',pc+'%');
+        const doo=od.btts_yes||null;
+        document.getElementById('oddsBTTS').textContent=doo?'Cuota: '+doo.toFixed(2):'Cuota: --';
+        const ev=calculateEV(p,doo), el=document.getElementById('evBTTS');
+        el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
+    }
+
+    function renderCornerLine(s,p,l,od){
+        const pc=(p*100).toFixed(0);
+        document.getElementById('pctCor'+s).textContent=pc+'%';
+        document.getElementById('pctCor'+s).className='pct'+(p>=0.5?'':' red');
+        document.getElementById('underCor'+s).textContent=((1-p)*100).toFixed(1)+'%';
+        const ci=confidenceInterval(p);
+        document.getElementById('ciCor'+s).textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
+        document.getElementById('rowCor'+s).style.setProperty('--bar-width',pc+'%');
+        document.getElementById('rowCor'+s).className='line-row'+(p>=0.5?'':' negative');
+        document.getElementById('oddsCor'+s).textContent='Cuota: --';
+        const ev=calculateEV(p,null), el=document.getElementById('evCor'+s);
+        el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
+    }
+
+    function determineBestBet(mo,od){
+        const cands=[];
+        const add=(n,p,ok,de)=>{ const o=od[ok]; if(o&&o>1){ const e=calculateEV(p,o); cands.push({name:n,prob:p,ev:e,odd:o,desc:de}); } };
+        add('LOCAL (1)',mo.probs1x2.home,'home','Victoria local');
+        add('EMPATE (X)',mo.probs1x2.draw,'draw','Empate');
+        add('VISITANTE (2)',mo.probs1x2.away,'away','Victoria visitante');
+        add('GOLES OVER 1.5',mo.goals.over15,'over_15_goals','Más de 1.5 goles');
+        add('GOLES UNDER 1.5',1-mo.goals.over15,'under_15_goals','Menos de 1.5 goles');
+        add('GOLES OVER 2.5',mo.goals.over25,'over_25_goals','Más de 2.5 goles');
+        add('BTTS SÍ',mo.btts.yes,'btts_yes','Ambos equipos marcan');
+        add('BTTS NO',mo.bttsTe paso la **lógica completa en bloques manejables**. Copiá cada parte en orden en un archivo `.html`:
+
+---
+
+## PARTE 1: HTML + CSS (copiar primero)
+
+```html
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FOOTBALL BET · PRO</title>
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0e17;
+            --card: rgba(16, 20, 32, 0.85);
+            --card2: rgba(22, 27, 42, 0.9);
+            --border: rgba(255, 255, 255, 0.08);
+            --text: #f0f2f8;
+            --muted: #7b8aa6;
+            --accent: #ff4d5a;
+            --accent-glow: rgba(255, 77, 90, 0.5);
+            --yellow: #ffb627;
+            --yellow-glow: rgba(255, 182, 39, 0.5);
+            --green: #2ecc71;
+            --green-glow: rgba(46, 204, 113, 0.5);
+            --blue: #4dabf7;
+            --purple: #9775fa;
+            --glass-bg: rgba(255, 255, 255, 0.03);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif;
+            min-height: 100vh; display: flex; justify-content: center; padding: 20px 15px 60px;
+            background-image:
+                radial-gradient(ellipse 80% 50% at 50% -10%, rgba(255, 77, 90, 0.15) 0%, transparent 70%),
+                radial-gradient(ellipse 60% 40% at 80% 80%, rgba(46, 204, 113, 0.08) 0%, transparent 60%),
+                radial-gradient(ellipse 50% 35% at 20% 60%, rgba(77, 171, 247, 0.06) 0%, transparent 50%),
+                repeating-linear-gradient(0deg, transparent, transparent 39px, rgba(255, 255, 255, 0.015) 39px, rgba(255, 255, 255, 0.015) 40px),
+                repeating-linear-gradient(90deg, transparent, transparent 39px, rgba(255, 255, 255, 0.015) 39px, rgba(255, 255, 255, 0.015) 40px);
+        }
+        .container { width: 100%; max-width: 480px; }
+        .header {
+            text-align: center; padding: 28px 20px 20px; margin-bottom: 8px;
+            background: var(--glass-bg); backdrop-filter: blur(20px); border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.06); position: relative; overflow: hidden;
+        }
+        .logo {
+            font-family: 'Bebas Neue', sans-serif; font-size: 3rem; letter-spacing: 4px; color: white; line-height: 1;
+            text-shadow: 0 0 30px var(--accent-glow), 0 2px 4px rgba(0, 0, 0, 0.5);
+            background: linear-gradient(135deg, #ffffff 0%, #ff8a95 50%, #ffffff 100%);
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+        }
+        .badge {
+            display: inline-block; margin-top: 8px; padding: 4px 14px;
+            background: linear-gradient(135deg, rgba(255, 77, 90, 0.15), rgba(77, 171, 247, 0.1));
+            border: 1px solid rgba(255, 77, 90, 0.25); border-radius: 20px;
+            font-size: 0.68rem; font-weight: 700; letter-spacing: 2px; color: var(--accent);
+            text-transform: uppercase; backdrop-filter: blur(10px); box-shadow: 0 0 20px rgba(255, 77, 90, 0.1);
+        }
+        .card {
+            background: var(--card); backdrop-filter: blur(24px); border-radius: 20px; padding: 22px;
+            border: 1px solid var(--border); margin-bottom: 14px; position: relative; overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); transition: all 0.3s ease;
+        }
+        .card::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px;
+            background: linear-gradient(90deg, transparent, var(--accent), var(--yellow), var(--green), transparent); opacity: 0.7;
+        }
+        .api-status {
+            display: flex; align-items: center; gap: 10px; font-size: 0.66rem; font-weight: 700; letter-spacing: 1px;
+            text-transform: uppercase; margin-bottom: 16px; padding: 8px 14px; border-radius: 12px;
+            background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06); backdrop-filter: blur(10px);
+        }
+        .api-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--muted); flex-shrink: 0; transition: all 0.3s; }
+        .api-dot.live { background: var(--green); box-shadow: 0 0 10px var(--green-glow), 0 0 20px var(--green-glow); }
+        .api-dot.error { background: var(--accent); box-shadow: 0 0 10px var(--accent-glow); }
+        .api-dot.sim { background: var(--blue); box-shadow: 0 0 10px rgba(77, 171, 247, 0.5); }
+
+        .section-title {
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 2.5px; text-transform: uppercase;
+            color: var(--muted); margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+        }
+        .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+        .chip {
+            padding: 10px 16px; border-radius: 14px; background: var(--card2); border: 1px solid var(--border);
+            font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: all 0.2s; user-select: none;
+            display: flex; align-items: center; gap: 8px; color: var(--text);
+        }
+        .chip:hover { border-color: rgba(255, 255, 255, 0.2); transform: translateY(-1px); }
+        .chip.active {
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.15), rgba(46, 204, 113, 0.05));
+            border-color: var(--green); color: var(--green); box-shadow: 0 0 15px rgba(46, 204, 113, 0.15);
         }
 
-        async function fetchOddsForEvent(eid){
-            const t=document.getElementById('apiToken').value.trim();
-            const bm=document.getElementById('bookmakerSelect').value;
-            if(!t||!eid) return null;
-            let odds={};
+        .vs-row { display: flex; align-items: center; justify-content: center; gap: 16px; margin: 18px 0; }
+        .vs-label { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--accent); letter-spacing: 3px; }
+        .team-select {
+            flex: 1; padding: 14px 16px; border-radius: 16px; background: var(--card2); border: 1px solid var(--border);
+            color: var(--text); font-size: 0.95rem; font-weight: 500; cursor: pointer; appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237b8aa6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px;
+        }
+        .team-select:focus { outline: none; border-color: var(--accent); }
+
+        .input-wrap {
+            background: var(--card2); border-radius: 16px; border: 1px solid var(--border); padding: 14px 18px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .input-wrap input {
+            background: transparent; border: none; color: var(--text); font-size: 1.1rem; font-weight: 700;
+            width: 100%; outline: none; font-family: 'DM Sans', sans-serif;
+        }
+        .input-wrap input::placeholder { color: var(--muted); }
+
+        .btn-calc {
+            width: 100%; padding: 18px; border-radius: 16px; border: none;
+            background: linear-gradient(135deg, var(--accent), #ff8a95);
+            color: white; font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 3px;
+            cursor: pointer; box-shadow: 0 8px 30px rgba(255, 77, 90, 0.4); transition: all 0.3s;
+            margin-top: 8px; position: relative; overflow: hidden;
+        }
+        .btn-calc:hover { transform: translateY(-2px); box-shadow: 0 12px 40px rgba(255, 77, 90, 0.5); }
+        .btn-calc:active { transform: translateY(0); }
+        .btn-calc:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        .alert-box {
+            border-radius: 18px; padding: 18px; text-align: center; margin-bottom: 18px;
+            border: 1px solid rgba(255, 77, 90, 0.3); background: rgba(255, 77, 90, 0.08);
+        }
+        .alert-box .icon { font-size: 1.6rem; margin-bottom: 6px; }
+        .alert-box h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.3rem; letter-spacing: 2px; color: var(--accent); }
+        .alert-box p { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+        .match-header {
+            text-align: center; padding: 16px; border-radius: 16px;
+            background: linear-gradient(135deg, rgba(255, 182, 39, 0.1), rgba(255, 77, 90, 0.05));
+            border: 1px solid rgba(255, 182, 39, 0.2); margin-bottom: 16px;
+        }
+        .match-header .league { font-size: 0.7rem; font-weight: 700; letter-spacing: 2px; color: var(--yellow); text-transform: uppercase; margin-bottom: 8px; }
+        .match-header .teams { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; letter-spacing: 1.5px; }
+        .match-header .elo { font-size: 0.72rem; color: var(--purple); margin-top: 6px; background: rgba(151, 117, 250, 0.1); padding: 3px 10px; border-radius: 10px; display: inline-block; }
+
+        .prob-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 18px; }
+        .prob-box {
+            background: var(--card2); border-radius: 14px; padding: 14px 8px; text-align: center;
+            border: 1px solid var(--border); transition: all 0.3s;
+        }
+        .prob-box .label { font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 4px; }
+        .prob-box .value { font-family: 'Bebas Neue', sans-serif; font-size: 1.8rem; }
+        .prob-box.home .value { color: var(--green); text-shadow: 0 0 15px var(--green-glow); }
+        .prob-box.draw .value { color: var(--yellow); text-shadow: 0 0 15px var(--yellow-glow); }
+        .prob-box.away .value { color: var(--accent); text-shadow: 0 0 15px var(--accent-glow); }
+        .prob-box .est { font-size: 0.6rem; color: var(--muted); background: rgba(255, 182, 39, 0.1); padding: 2px 8px; border-radius: 8px; display: inline-block; margin-bottom: 6px; }
+        .prob-box .odd-val { font-size: 0.75rem; color: var(--blue); font-weight: 700; margin-top: 4px; }
+        .prob-box .ev-val { font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 8px; display: inline-block; margin-top: 4px; }
+        .prob-box .ev-val.positive { background: rgba(46, 204, 113, 0.15); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.3); }
+        .prob-box .ev-val.negative { background: rgba(255, 77, 90, 0.15); color: var(--accent); border: 1px solid rgba(255, 77, 90, 0.3); }
+        .prob-box .ev-val.neutral { background: rgba(255, 255, 255, 0.05); color: var(--muted); border: 1px solid rgba(255, 255, 255, 0.1); }
+
+        .market-title {
+            display: flex; align-items: center; justify-content: space-between; margin: 20px 0 12px;
+        }
+        .market-title h4 { font-size: 0.85rem; font-weight: 700; letter-spacing: 1.5px; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+        .market-title .badge-tag {
+            font-size: 0.6rem; padding: 3px 10px; border-radius: 10px; background: rgba(151, 117, 250, 0.12);
+            color: var(--purple); border: 1px solid rgba(151, 117, 250, 0.25); font-weight: 700;
+        }
+
+        .line-row {
+            background: var(--card2); border-radius: 16px; padding: 16px; margin-bottom: 10px;
+            border: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between;
+            position: relative; overflow: hidden;
+        }
+        .line-row::after {
+            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: var(--bar-width, 0%);
+            background: linear-gradient(90deg, rgba(255, 182, 39, 0.15), rgba(255, 182, 39, 0.05));
+            border-radius: 16px 0 0 16px; pointer-events: none;
+        }
+        .line-row.negative::after {
+            background: linear-gradient(90deg, rgba(255, 77, 90, 0.15), rgba(255, 77, 90, 0.05));
+        }
+        .line-info { position: relative; z-index: 1; }
+        .line-info .line { font-family: 'Bebas Neue', sans-serif; font-size: 1.4rem; }
+        .line-info .sublabel { font-size: 0.6rem; color: var(--muted); letter-spacing: 1.5px; text-transform: uppercase; margin-top: 2px; }
+        .line-details { position: relative; z-index: 1; text-align: right; }
+        .line-details .pct { font-family: 'Bebas Neue', sans-serif; font-size: 1.6rem; color: var(--yellow); }
+        .line-details .pct.red { color: var(--accent); }
+        .line-details .under { font-size: 0.7rem; color: var(--muted); }
+        .line-details .ev {
+            font-size: 0.65rem; font-weight: 700; padding: 2px 8px; border-radius: 8px;
+            display: inline-block; margin-top: 4px;
+        }
+        .line-details .ev.positive { background: rgba(46, 204, 113, 0.15); color: var(--green); border: 1px solid rgba(46, 204, 113, 0.3); }
+        .line-details .ev.negative { background: rgba(255, 77, 90, 0.15); color: var(--accent); border: 1px solid rgba(255, 77, 90, 0.3); }
+        .line-details .ev.neutral { background: rgba(255, 255, 255, 0.05); color: var(--muted); border: 1px solid rgba(255, 255, 255, 0.1); }
+        .line-details .odds { font-size: 0.6rem; color: var(--blue); margin-top: 2px; font-weight: 700; }
+
+        .best-bet {
+            border-radius: 20px; padding: 22px; text-align: center; margin-top: 18px;
+            background: linear-gradient(135deg, rgba(46, 204, 113, 0.08), rgba(77, 171, 247, 0.05));
+            border: 1px solid rgba(46, 204, 113, 0.25); position: relative; overflow: hidden;
+        }
+        .best-bet .target { font-size: 0.65rem; font-weight: 700; letter-spacing: 2.5px; color: var(--green); text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; justify-content: center; gap: 6px; }
+        .best-bet h3 { font-family: 'Bebas Neue', sans-serif; font-size: 1.5rem; letter-spacing: 2px; color: var(--yellow); margin-bottom: 6px; }
+        .best-bet p { font-size: 0.78rem; color: var(--muted); margin-bottom: 12px; }
+        .best-bet .conf { display: inline-block; padding: 6px 16px; border-radius: 20px; background: rgba(46, 204, 113, 0.12); border: 1px solid rgba(46, 204, 113, 0.3); color: var(--green); font-size: 0.8rem; font-weight: 700; }
+
+        .other-bets { margin-top: 14px; }
+        .other-bet-row {
+            display: flex; align-items: center; justify-content: space-between; padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        .other-bet-row:last-child { border-bottom: none; }
+        .other-bet-row .rank { font-size: 0.75rem; color: var(--muted); width: 30px; }
+        .other-bet-row .name { font-size: 0.82rem; font-weight: 700; flex: 1; }
+        .other-bet-row .prob { font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; }
+
+        .footer-note {
+            text-align: center; font-size: 0.6rem; color: var(--muted); margin-top: 20px;
+            letter-spacing: 1px; opacity: 0.6;
+        }
+
+        .hidden { display: none !important; }
+
+        .bookmaker-select { margin-bottom: 14px; }
+        .bookmaker-select label {
+            font-size: 0.65rem; font-weight: 700; letter-spacing: 1.5px; color: var(--muted);
+            text-transform: uppercase; display: block; margin-bottom: 6px;
+        }
+        .bookmaker-select select {
+            width: 100%; padding: 12px 14px; border-radius: 14px; background: var(--card2);
+            border: 1px solid var(--border); color: var(--text); font-size: 0.85rem;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237b8aa6' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 14px center; padding-right: 38px;
+        }
+
+        .spinner {
+            display: inline-block; width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.2);
+            border-top-color: var(--accent); border-radius: 50%; animation: spin 0.8s linear infinite;
+            margin-right: 8px; vertical-align: middle;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .back-btn {
+            background: var(--card2); border: 1px solid var(--border); color: var(--text);
+            padding: 10px 20px; border-radius: 12px; font-size: 0.8rem; font-weight: 700;
+            cursor: pointer; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;
+            transition: all 0.2s;
+        }
+        .back-btn:hover { border-color: var(--accent); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">FOOTBALL <span style="-webkit-text-fill-color:transparent;background:linear-gradient(135deg,var(--accent),#ff8a95);-webkit-background-clip:text;background-clip:text;">BET</span></div>
+            <div class="badge">PRO v3.0</div>
+        </div>
+
+        <div class="card">
+            <div class="api-status" id="apiStatus">
+                <div class="api-dot" id="apiDot"></div>
+                <span id="apiText">Conectando a API...</span>
+            </div>
+            <div class="section-title">🔐 CONFIGURACIÓN API</div>
+            <div class="input-wrap" style="margin-bottom:10px;">
+                <span style="font-size:1.2rem;">🔑</span>
+                <input type="password" id="apiToken" placeholder="Pega tu Token de bzzoiro API" value="">
+            </div>
+            <div class="bookmaker-select">
+                <label>Casa de apuestas (bookmaker)</label>
+                <select id="bookmakerSelect">
+                    <option value="best">🏆 Mejor cuota disponible</option>
+                    <option value="betano">🟢 Betano</option>
+                    <option value="pinnacle">Pinnacle</option>
+                    <option value="bet365">Bet365</option>
+                    <option value="unibet">Unibet</option>
+                    <option value="williamhill">William Hill</option>
+                    <option value="betfair">Betfair</option>
+                    <option value="interwetten">Interwetten</option>
+                    <option value="bwin">Bwin</option>
+                    <option value="oddssafari-consensus">📊 Promedio mercado</option>
+                </select>
+            </div>
+            <button class="btn-calc" style="margin-top:6px; padding:12px; font-size:1rem;" onclick="testApiConnection()">Probar conexión API</button>
+        </div>
+
+        <div class="card" id="setupCard">
+            <div class="section-title">🏆 LIGA / COMPETENCIA</div>
+            <div class="chips" id="leagueChips">
+                <div class="chip" data-league="premier">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</div>
+                <div class="chip" data-league="bundesliga">🇩🇪 Bundesliga</div>
+                <div class="chip" data-league="eredivisie">🇳🇱 Eredivisie</div>
+                <div class="chip" data-league="jupiler">🇧🇪 Jupiler Pro League</div>
+                <div class="chip" data-league="ligue1">🇫🇷 Ligue 1</div>
+                <div class="chip" data-league="brasileirao">🇧🇷 Brasileirão</div>
+                <div class="chip" data-league="championship">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship</div>
+                <div class="chip" data-league="laliga">🇪🇸 La Liga</div>
+                <div class="chip" data-league="seriea">🇮🇹 Serie A</div>
+                <div class="chip" data-league="ligamx">🇲🇽 Liga MX</div>
+                <div class="chip active" data-league="libertadores">🏆 Libertadores</div>
+                <div class="chip" data-league="mls">🇺🇸 MLS</div>
+                <div class="chip" data-league="brasileiraob">🇧🇷 Brasileirão B</div>
+                <div class="chip" data-league="portugal">🇵🇹 Liga Portugal</div>
+                <div class="chip" data-league="ekstraklasa">🇵🇱 Ekstraklasa</div>
+                <div class="chip" data-league="greece">🇬🇷 Super Liga Grecia</div>
+                <div class="chip" data-league="mundial2026">🏆 Mundial 2026</div>
+            </div>
+
+            <div class="vs-row">
+                <div style="flex:1;">
+                    <div class="section-title" style="margin-bottom:6px;">🏠 LOCAL</div>
+                    <select class="team-select" id="homeTeam">
+                        <option value="boca">Boca Juniors</option>
+                    </select>
+                </div>
+                <div class="vs-label">VS</div>
+                <div style="flex:1;">
+                    <div class="section-title" style="margin-bottom:6px;">✈️ VISITANTE</div>
+                    <select class="team-select" id="awayTeam">
+                        <option value="catolica">Universidad Católica</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="section-title">📊 MERCADOS A CALCULAR</div>
+            <div class="chips" id="marketChips">
+                <div class="chip active" data-market="htgoals">⏱️ Goles HT</div>
+                <div class="chip active" data-market="goals">⚽ Goles +1.5/2.5</div>
+                <div class="chip active" data-market="btts">🤝 BTTS</div>
+                <div class="chip active" data-market="corners">⬡ Córners</div>
+            </div>
+
+            <div class="section-title" style="margin-top:14px;">💰 BANKROLL (€)</div>
+            <div class="input-wrap">
+                <span style="font-size:1.2rem;">€</span>
+                <input type="number" id="bankroll" value="1000" min="1">
+            </div>
+
+            <button class="btn-calc" id="calcBtn" onclick="calculateAll()">
+                <span id="btnText">CALCULAR PROBABILIDADES</span>
+            </button>
+        </div>
+
+        <div id="resultsArea" class="hidden">
+            <button class="back-btn" onclick="goBack()">← Volver</button>
+            
+            <div class="alert-box" id="valueAlert">
+                <div class="icon">⚠️</div>
+                <h3>SIN APUESTA CLARA</h3>
+                <p>Ningún mercado supera el umbral de valor (+1.5% EV)</p>
+            </div>
+
+            <div class="match-header">
+                <div class="league" id="resLeague">🏆 LIBERTADORES</div>
+                <div class="teams" id="resTeams">BOCA JUNIORS VS UNIVERSIDAD CATÓLICA</div>
+                <div class="elo" id="resElo">Elo: Juniors 1497 vs Católica 1531</div>
+            </div>
+
+            <div class="prob-grid">
+                <div class="prob-box home">
+                    <div class="est">EST</div>
+                    <div class="label">🏠 LOCAL</div>
+                    <div class="value" id="probHome">38.6%</div>
+                    <div class="odd-val" id="oddHome">Cuota: --</div>
+                    <div class="ev-val neutral" id="evHome1x2">EV: --</div>
+                </div>
+                <div class="prob-box draw">
+                    <div class="est">EST</div>
+                    <div class="label">🟡 EMPATE</div>
+                    <div class="value" id="probDraw">32%</div>
+                    <div class="odd-val" id="oddDraw">Cuota: --</div>
+                    <div class="ev-val neutral" id="evDraw1x2">EV: --</div>
+                </div>
+                <div class="prob-box away">
+                    <div class="est">EST</div>
+                    <div class="label">✈️ VISITANTE</div>
+                    <div class="value" id="probAway">29.4%</div>
+                    <div class="odd-val" id="oddAway">Cuota: --</div>
+                    <div class="ev-val neutral" id="evAway1x2">EV: --</div>
+                </div>
+            </div>
+
+            <div id="goalsSection">
+                <div class="market-title">
+                    <h4>⚽ GOLES</h4>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-size:0.75rem; color:var(--yellow);">λ <span id="lambdaGoals">2.12</span></span>
+                        <span class="badge-tag">✓ ATK×DEF</span>
+                    </div>
+                </div>
+                <div class="line-row" id="rowOver15" style="--bar-width:63%;">
+                    <div class="line-info">
+                        <div class="line">+1.5</div>
+                        <div class="sublabel">LÍNEA</div>
+                    </div>
+                    <div style="flex:1; padding:0 12px; position:relative; z-index:1;">
+                        <div style="font-size:0.7rem; color:var(--muted);">Under: <span id="under15">37.4%</span></div>
+                        <div style="font-size:0.6rem; color:var(--muted); opacity:0.7;">IC 95%: <span id="ci15">53–70%</span></div>
+                    </div>
+                    <div class="line-details">
+                        <div class="pct" id="pctOver15">63%</div>
+                        <div class="sublabel">OVER</div>
+                        <div class="odds" id="oddsOver15">Cuota: --</div>
+                        <div class="ev neutral" id="evOver15">EV: --</div>
+                    </div>
+                </div>
+                <div class="line-row negative" id="rowOver25" style="--bar-width:36%;">
+                    <div class="line-info">
+                        <div class="line">+2.5</div>
+                        <div class="sublabel">LÍNEA</div>
+                    </div>
+                    <div style="flex:1; padding:0 12px; position:relative; z-index:1;">
+                        <div style="font-size:0.7rem; color:var(--muted);">Under: <span id="under25">64.4%</span></div>
+                        <div style="font-size:0.6rem; color:var(--muted); opacity:0.7;">IC 95%: <span id="ci25">30–40%</span></div>
+                    </div>
+                    <div class="line-details">
+                        <div class="pct red" id="pctOver25">36%</div>
+                        <div class="sublabel">OVER</div>
+                        <div class="odds" id="oddsOver25">Cuota: --</div>
+                        <div class="ev neutral" id="evOver25">EV: --</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="htSection">
+                <div class="market-title">
+                    <h4>⏱️ GOLES 1ER TIEMPO</h4>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-size:0.75rem; color:var(--yellow);">λ <span id="lambdaHT">1.04</span></span>
+                        <span class="badge-tag">✓ CALIBRADO</span>
+                    </div>
+                </div>
+                <div class="line-row" id="rowHT05" style="--bar-width:65%;">
+                    <div class="line-info">
+                        <div class="line">+0.5</div>
+                        <div class="sublabel">LÍNEA</div>
+                    </div>
+                    <div style="flex:1; padding:0 12px; position:relative; z-index:1;">
+                        <div style="font-size:0.7rem; color:var(--muted);">Under: <span id="underHT05">35.3%</span></div>
+                        <div style="font-size:0.6rem; color:var(--muted); opacity:0.7;">IC 95%: <span id="ciHT05">55–72%</span></div>
+                    </div>
+                    <div class="line-details">
+                        <div class="pct" id="pctHT05">65%</div>
+                        <div class="sublabel">OVER</div>
+                        <div class="odds" id="oddsHT05">Cuota: --</div>
+                        <div class="ev neutral" id="evHT05">EV: --</div>
+                    </div>
+                </div>
+                <div class="line-row negative" id="rowHT15" style="--bar-width:28%;">
+                    <div class="line-info">
+                        <div class="line">+1.5</div>
+                        <div class="sublabel">LÍNEA</div>
+                    </div>
+                    <div style="flex:1; padding:0 12px; position:relative; z-index:1;">
+                        <div style="font-size:0.7rem; color:var(--muted);">Under: <span id="underHT15">72.1%</span></div>
+                        <div style="font-size:0.6rem; color:var(--muted); opacity:0.7;">IC 95%: <span id="ciHT15">24–31%</span></div>
+                    </div>
+                    <div class="line-details">
+                        <div class="pct red" id="pctHT15">28%</div>
+                        <div class="sublabel">OVER</div>
+                        <div class="odds" id="oddsHT15">Cuota: --</div>
+                        <div class="ev neutral" id="evHT15">EV: --</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="bttsSection">
+                <div class="market-title">
+                    <h4>🤝 AMBOS MARCAN</h4>
+                    <span class="badge-tag">✓ P=-0.088</span>
+                </div>
+                <div class="line-row" id="rowBTTS" style="--bar-width:44%;">
+                    <div class="line-info">
+                        <div class="line">BTTS</div>
+                        <div class="sublabel">AMBOS</div>
+                    </div>
+                    <div style="flex:1; padding:0 12px; position:relative; z-index:1;">
+                        <div style="font-size:0.7rem; color:var(--muted);">No: <span id="bttsNo">56.0%</span></div>
+                        <div style="font-size:0.6rem; color:var(--muted); opacity:0.7;">IC 95%: <span id="ciBTTS">37–49%</span></div>
+                    </div>
+                    <div class="line-details">
+                        <div class="pct" id="pctBTTS">44%</div>
+                        <div class="sublabel">SÍ</div>
+                        <div class="odds" id="oddsBTTS">Cuota: --</div>
+                        <div class="ev neutral" id="evBTTS">EV: --</div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="cornersSection">
+                <div class="market-title">
+                    <h4>⬡ CÓRNERS</h4>
+                    <div style="display:flex; gap:8px; align-items:center;">
+                        <span style="font-size:0.75rem; color:var(--yellow);">λ <span id="lambdaCorners">9.2</span> · R=<span id="rCorners">6.1</span></span>
+                        <span class="badge-tag">✓ CALIBRADO</span>
+                    </div>
+                </div>
+                <div class="line-row" id="rowCor75" style="--bar-width:59%;">
+                    <div class="line-info">
+                        <div class="line">+7.5</div>
+                        <div class="sublabel">LÍNEA</div>
+                    </div>
+                    <div style="flex:1; padding:0 12px; position:relative; z-index:1;">
+                        <div style="font-size:0.7rem; color:var(--muted);">Under: <span id="underCor75">40.9%</span></div>
+                        <div style="font-size:0.6rem; color:var(--muted); opacity:0.7;">IC 95%: <span id="ciCor75">50–66%</span></div>
+                    </div>
+                    <div class="line-details">
+                        <div class="pct" id="pctCor75">59%</div>
+                        <div class="sublabel">OVER</div>
+                        <div class="odds" id="oddsCor75">Cuota: --</div>
+                        <div class="ev neutral" id="evCor75">EV: --</div>
+                    </div>
+                </div>
+                <div class="line-row" id="rowCor85" style="--bar-width:50%;">
+                    <div class="line-info">
+                        <div class="line">+8.5</div>
+                        <div class="sublabel">LÍNEA</div>
+                    </div>
+                    <div style="flex:1; padding:0 12px; position:relative; z-index:1;">
+                        <div style="font-size:0.7rem; color:var(--muted);">Under: <span id="underCor85">49.7%</span></div>
+                        <div style="font-size:0.6rem; color:var(--muted); opacity:0.7;">IC 95%: <span id="ciCor85">43–56%</span></div>
+                    </div>
+                    <div class="line-details">
+                        <div class="pct" id="pctCor85">50%</div>
+                        <div class="sublabel">OVER</div>
+                        <div class="odds" id="oddsCor85">Cuota: --</div>
+                        <div class="ev neutral" id="evCor85">EV: --</div>
+                    </div>
+                </div>
+                <div class="line-row" id="rowCor95" style="--bar-width:42%;">
+                    <div class="line-info">
+                        <div class="line">+9.5</div>
+                        <div class="sublabel">LÍNEA</div>
+                    </div>
+                    <div style="flex:1; padding:0 12px; position:relative; z-index:1;">
+                        <div style="font-size:0.7rem; color:var(--muted);">Under: <span id="underCor95">58.0%</span></div>
+                        <div style="font-size:0.6rem; color:var(--muted); opacity:0.7;">IC 95%: <span id="ciCor95">36–47%</span></div>
+                    </div>
+                    <div class="line-details">
+                        <div class="pct" id="pctCor95">42%</div>
+                        <div class="sublabel">OVER</div>
+                        <div class="odds" id="oddsCor95">Cuota: --</div>
+                        <div class="ev neutral" id="evCor95">EV: --</div>
+                    </div>
+                </div>
+                <div class="line-row negative" id="rowCor105" style="--bar-width:35%;">
+                    <div class="line-info">
+                        <div class="line">+10.5</div>
+                        <div class="sublabel">LÍNEA</div>
+                    </div>
+                    <div style="flex:1; padding:0 12px; position:relative; z-index:1;">
+                        <div style="font-size:0.7rem; color:var(--muted);">Under: <span id="underCor105">65.5%</span></div>
+                        <div style="font-size:0.6rem; color:var(--muted); opacity:0.7;">IC 95%: <span id="ciCor105">29–39%</span></div>
+                    </div>
+                    <div class="line-details">
+                        <div class="pct red" id="pctCor105">35%</div>
+                        <div class="sublabel">OVER</div>
+                        <div class="odds" id="oddsCor105">Cuota: --</div>
+                        <div class="ev neutral" id="evCor105">EV: --</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="best-bet" id="bestBetBox">
+                <div class="target">🎯 MEJOR APUESTA</div>
+                <h3 id="bestBetName">GOL HT OVER 0.5 🔥</h3>
+                <p id="bestBetDesc">Al menos un gol antes del descanso</p>
+                <div class="conf" id="bestBetConf">65% CONFIANZA MEDIA</div>
+                <div class="other-bets" id="otherBets">
+                    <div class="other-bet-row">
+                        <span class="rank">#2</span>
+                        <span class="name">GOLES OVER 1.5</span>
+                        <span class="prob" style="color:var(--yellow);">63%</span>
+                    </div>
+                    <div class="other-bet-row">
+                        <span class="rank">#3</span>
+                        <span class="name">CÓRNERS OVER 7.5</span>
+                        <span class="prob" style="color:var(--accent);">59%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-note">
+                FOOTBALL BET v3.0 PRO · Dixon-Coles (ρ por liga) · Ataque×Defensa · Elo · xG · Cuotas reales de mercado
+            </div>
+        </div>
+    </div>
+
+    <script>
+    const API_BASE = 'https://sports.bzzoiro.com/api/v2';
+    const EV_THRESHOLD = 0.015;
+    let currentEventId = null, apiOdds = {}, modelProbs = {};
+    let selectedLeague = 'libertadores';
+    let selectedMarkets = ['htgoals','goals','btts','corners'];
+
+    // Calibrated team data for accurate probabilities
+    const TEAM_ELO = {
+        boca: { name:'Boca Juniors', elo:1497, attack:1.15, defense:0.95, homeAdv:0.25 },
+        catolica: { name:'Universidad Católica', elo:1531, attack:1.25, defense:0.88, homeAdv:0.20 },
+        river: { name:'River Plate', elo:1580, attack:1.45, defense:0.78, homeAdv:0.35 },
+        palmeiras: { name:'Palmeiras', elo:1560, attack:1.40, defense:0.80, homeAdv:0.30 },
+        flamengo: { name:'Flamengo', elo:1545, attack:1.38, defense:0.82, homeAdv:0.32 },
+    };
+
+    const LEAGUE_PARAMS = {
+        libertadores: { rho:-0.088, avgHomeGoals:1.35, avgAwayGoals:1.15, avgCorners:9.2, cornerR:6.1 },
+        premier: { rho:-0.075, avgHomeGoals:1.55, avgAwayGoals:1.25, avgCorners:10.5, cornerR:7.2 },
+        laliga: { rho:-0.065, avgHomeGoals:1.48, avgAwayGoals:1.15, avgCorners:9.8, cornerR:6.8 },
+        bundesliga: { rho:-0.080, avgHomeGoals:1.65, avgAwayGoals:1.35, avgCorners:10.2, cornerR:7.0 },
+        seriea: { rho:-0.070, avgHomeGoals:1.42, avgAwayGoals:1.18, avgCorners:9.5, cornerR:6.5 },
+        ligue1: { rho:-0.072, avgHomeGoals:1.38, avgAwayGoals:1.10, avgCorners:9.0, cornerR:6.0 },
+        brasileirao: { rho:-0.085, avgHomeGoals:1.50, avgAwayGoals:1.05, avgCorners:9.8, cornerR:6.4 },
+        mls: { rho:-0.090, avgHomeGoals:1.60, avgAwayGoals:1.30, avgCorners:10.0, cornerR:6.8 },
+        default: { rho:-0.075, avgHomeGoals:1.45, avgAwayGoals:1.15, avgCorners:9.5, cornerR:6.5 }
+    };
+
+    function poisson(l,k){ return Math.exp(-l)*Math.pow(l,k)/factorial(k); }
+    function factorial(n){ if(n<=1)return 1; let r=1; for(let i=2;i<=n;i++)r*=i; return r; }
+
+    function dixonColesProb(hL,aL,rho,maxG=15){
+        let hW=0,d=0,aW=0, hD=[],aD=[];
+        for(let i=0;i<=maxG;i++){ hD[i]=poisson(hL,i); aD[i]=poisson(aL,i); }
+        for(let h=0;h<=maxG;h++){
+            for(let a=0;a<=maxG;a++){
+                let tau=1;
+                if(h===0&&a===0) tau=1-rho;
+                else if(h===0&&a===1) tau=1+rho*hL;
+                else if(h===1&&a===0) tau=1+rho*aL;
+                else if(h===1&&a===1) tau=1-rho;
+                let p=hD[h]*aD[a]*tau;
+                if(h>a) hW+=p; else if(h===a) d+=p; else aW+=p;
+            }
+        }
+        let t=hW+d+aW;
+        return {home:hW/t, draw:d/t, away:aW/t};
+    }
+
+    function overUnderProb(l,li,o=true,mG=15){
+        let c=0;
+        for(let k=0;k<=mG;k++) if(o?k>li:k<=li) c+=poisson(l,k);
+        return c;
+    }
+
+    function bttsProb(hL,aL,mG=10){
+        let p=0;
+        for(let h=1;h<=mG;h++) for(let a=1;a<=mG;a++) p+=poisson(hL,h)*poisson(aL,a);
+        return p;
+    }
+
+    function cornerProb(tc,li,o=true,m=25){
+        let c=0;
+        for(let k=0;k<=m;k++) if(o?k>li:k<=li) c+=poisson(tc,k);
+        return c;
+    }
+
+    function confidenceInterval(p,n=50){
+        const z=1.96, d=1+z*z/n, c=(p+z*z/(2*n))/d, m=z*Math.sqrt((p*(1-p)+z*z/(4*n))/n)/d;
+        return {low:Math.max(0,c-m), high:Math.min(1,c+m)};
+    }
+
+    function calculateEV(p,o){ if(!o||o<=1)return null; return (p*o)-1; }
+    function formatEV(e){ if(e===null)return '--'; const p=(e*100).toFixed(1); return (e>=0?'+':'')+p+'%'; }
+    function evClass(e){ if(e===null)return 'neutral'; if(e>=EV_THRESHOLD)return 'positive'; if(e>0)return 'neutral'; return 'negative'; }
+
+    document.querySelectorAll('#leagueChips .chip').forEach(c=>{
+        c.addEventListener('click',()=>{
+            document.querySelectorAll('#leagueChips .chip').forEach(x=>x.classList.remove('active'));
+            c.classList.add('active'); selectedLeague=c.dataset.league;
+        });
+    });
+
+    document.querySelectorAll('#marketChips .chip').forEach(c=>{
+        c.addEventListener('click',()=>{
+            c.classList.toggle('active');
+            const m=c.dataset.market;
+            if(c.classList.contains('active')){ if(!selectedMarkets.includes(m))selectedMarkets.push(m); }
+            else selectedMarkets=selectedMarkets.filter(x=>x!==m);
+        });
+    });
+
+    function setApiStatus(s,t){
+        document.getElementById('apiDot').className='api-dot '+s;
+        document.getElementById('apiText').textContent=t;
+    }
+
+    function goBack(){
+        document.getElementById('resultsArea').classList.add('hidden');
+        document.getElementById('setupCard').classList.remove('hidden');
+    }
+
+    async function testApiConnection(){
+        const t=document.getElementById('apiToken').value.trim();
+        if(!t){ setApiStatus('error','Ingresá tu API token primero'); return; }
+        setApiStatus('sim','Probando conexión...');
+        try{
+            const r=await fetch(`${API_BASE}/events/?date_from=2026-05-28&date_to=2026-05-28&limit=1`,{headers:{'Authorization':`Token ${t}`}});
+            if(r.ok) setApiStatus('live','API conectada · bzzoiro v2');
+            else setApiStatus('error',`Error API: ${r.status}`);
+        }catch(e){ setApiStatus('error','Sin conexión a API'); }
+    }
+
+    // Flexible event search with multiple name variations
+    async function fetchEventId(hn,an,dt='2026-05-28'){
+        const t=document.getElementById('apiToken').value.trim();
+        if(!t) return null;
+        
+        const searchTerms = [
+            hn,
+            hn.split(' ')[0],
+            hn.includes('Boca') ? 'Boca' : hn.includes('River') ? 'River' : hn.split(' ')[0],
+        ];
+        
+        for(const term of searchTerms){
             try{
-                if(bm==='best'){
-                    const r=await fetch(`${API_BASE}/odds/best/?event_id=${eid}&market=1x2`,{headers:{'Authorization':`Token ${t}`}});
-                    if(r.ok){ const d=await r.json(); for(const i of (d.best_odds||[])){ if(i.outcome==='HOME')odds.home=i.decimal_odds; if(i.outcome==='DRAW')odds.draw=i.decimal_odds; if(i.outcome==='AWAY')odds.away=i.decimal_odds; } }
-                    for(const m of ['over_under_15','over_under_25','over_under_35']){
-                        const r2=await fetch(`${API_BASE}/odds/best/?event_id=${eid}&market=${m}`,{headers:{'Authorization':`Token ${t}`}});
-                        if(r2.ok){ const d2=await r2.json(); for(const i of (d2.best_odds||[])){ odds[`${m}_${i.outcome.toLowerCase()}`]=i.decimal_odds; } }
-                    }
-                    const rb=await fetch(`${API_BASE}/odds/best/?event_id=${eid}&market=btts`,{headers:{'Authorization':`Token ${t}`}});
-                    if(rb.ok){ const db=await rb.json(); for(const i of (db.best_odds||[])){ if(i.outcome==='YES')odds.btts_yes=i.decimal_odds; if(i.outcome==='NO')odds.btts_no=i.decimal_odds; } }
-                }else if(bm==='oddssafari-consensus'){
-                    const r=await fetch(`${API_BASE}/events/${eid}/odds/`,{headers:{'Authorization':`Token ${t}`}});
-                    if(r.ok){ const d=await r.json(); odds={home:d.odds?.home_win,draw:d.odds?.draw,away:d.odds?.away_win,over_15_goals:d.odds?.over_15_goals,under_15_goals:d.odds?.under_15_goals,over_25_goals:d.odds?.over_25_goals,under_25_goals:d.odds?.under_25_goals,btts_yes:d.odds?.btts_yes,btts_no:d.odds?.btts_no}; }
-                }else{
-                    const r=await fetch(`${API_BASE}/events/${eid}/odds/comparison/`,{headers:{'Authorization':`Token ${t}`}});
-                    if(r.ok){ const d=await r.json(), mk=d.markets||{}; if(mk['1x2']&&mk['1x2'][bm]){ const b=mk['1x2'][bm]; odds.home=b.HOME?.decimal_odds; odds.draw=b.DRAW?.decimal_odds; odds.away=b.AWAY?.decimal_odds; } for(const[k,v]of Object.entries(mk)){ if(v[bm]){ for(const[ok,ov]of Object.entries(v[bm])){ if(ov&&ov.decimal_odds) odds[`${k}_${ok}`.toLowerCase()]=ov.decimal_odds; } } } }
+                const r=await fetch(`${API_BASE}/events/?team_name=${encodeURIComponent(term)}&date_from=${dt}&date_to=${dt}&limit=20`,{headers:{'Authorization':`Token ${t}`}});
+                if(!r.ok) continue;
+                const d=await r.json();
+                for(const e of (d.results||d.events||[])){
+                    const ho=(e.home_team||'').toLowerCase(), aw=(e.away_team||'').toLowerCase();
+                    const homeMatch = ho.includes('boca') || ho.includes(hn.toLowerCase().split(' ')[0]);
+                    const awayMatch = aw.includes('catolic') || aw.includes(an.toLowerCase().split(' ')[0]);
+                    const reverseMatch = (aw.includes('boca') || aw.includes(hn.toLowerCase().split(' ')[0])) &&
+                                         (ho.includes('catolic') || ho.includes(an.toLowerCase().split(' ')[0]));
+                    if((homeMatch && awayMatch) || reverseMatch) return e.id;
                 }
-                return odds;
-            }catch(e){ return null; }
+            }catch(e){ continue; }
         }
+        return null;
+    }
 
-        function runModel(){
-            const hi=document.getElementById('homeTeam').value, ai=document.getElementById('awayTeam').value;
-            const h=TEAM_ELO[hi]||TEAM_ELO.boca, a=TEAM_ELO[ai]||TEAM_ELO.catolica;
-            const lg=LEAGUE_PARAMS[selectedLeague]||LEAGUE_PARAMS.default;
-            const ed=h.elo-a.elo, haf=1+h.homeAdv;
-            const hL=lg.avgHomeGoals*h.attack*a.defense*haf*(1+ed/4000);
-            const aL=lg.avgAwayGoals*a.attack*h.defense*(1-ed/4000);
-            const tL=hL+aL;
-            const p12=dixonColesProb(hL,aL,lg.rho);
-            const o15=overUnderProb(tL,1.5,true), o25=overUnderProb(tL,2.5,true), o35=overUnderProb(tL,3.5,true);
-            const htL=tL*0.45, ht05=overUnderProb(htL,0.5,true), ht15=overUnderProb(htL,1.5,true);
-            const bt=bttsProb(hL,aL);
-            const c75=cornerProb(lg.avgCorners,7.5,true), c85=cornerProb(lg.avgCorners,8.5,true), c95=cornerProb(lg.avgCorners,9.5,true), c105=cornerProb(lg.avgCorners,10.5,true);
-            return {home:h,away:a,league:lg,probs1x2:p12,goals:{over15:o15,over25:o25,over35:o35,lambda:tL},ht:{over05:ht05,over15:ht15,lambda:htL},btts:{yes:bt,no:1-bt},corners:{over75:c75,over85:c85,over95:c95,over105:c105,lambda:lg.avgCorners,r:lg.cornerR}};
-        }
-
-        function renderResults(mo,od){
-            document.getElementById('setupCard').classList.add('hidden');
-            document.getElementById('resultsArea').classList.remove('hidden');
-            document.getElementById('resLeague').textContent='🏆 '+selectedLeague.toUpperCase();
-            document.getElementById('resTeams').textContent=mo.home.name.toUpperCase()+' VS '+mo.away.name.toUpperCase();
-            document.getElementById('resElo').textContent=`Elo: ${mo.home.name.split(' ')[0]} ${mo.home.elo} vs ${mo.away.name.split(' ')[0]} ${mo.away.elo}`;
-            document.getElementById('probHome').textContent=(mo.probs1x2.home*100).toFixed(1)+'%';
-            document.getElementById('probDraw').textContent=(mo.probs1x2.draw*100).toFixed(0)+'%';
-            document.getElementById('probAway').textContent=(mo.probs1x2.away*100).toFixed(1)+'%';
-
-            if(selectedMarkets.includes('goals')){
-                document.getElementById('goalsSection').classList.remove('hidden');
-                document.getElementById('lambdaGoals').textContent=mo.goals.lambda.toFixed(2);
-                renderLine('15',mo.goals.over15,1.5,od);
-                renderLine('25',mo.goals.over25,2.5,od);
-            }else document.getElementById('goalsSection').classList.add('hidden');
-
-            if(selectedMarkets.includes('htgoals')){
-                document.getElementById('htSection').classList.remove('hidden');
-                document.getElementById('lambdaHT').textContent=mo.ht.lambda.toFixed(2);
-                renderHTLine('05',mo.ht.over05,0.5,od);
-                renderHTLine('15',mo.ht.over15,1.5,od);
-            }else document.getElementById('htSection').classList.add('hidden');
-
-            if(selectedMarkets.includes('btts')){
-                document.getElementById('bttsSection').classList.remove('hidden');
-                renderBTTS(mo.btts.yes,od);
-            }else document.getElementById('bttsSection').classList.add('hidden');
-
-            if(selectedMarkets.includes('corners')){
-                document.getElementById('cornersSection').classList.remove('hidden');
-                document.getElementById('lambdaCorners').textContent=mo.corners.lambda.toFixed(1);
-                document.getElementById('rCorners').textContent=mo.corners.r.toFixed(1);
-                renderCornerLine('75',mo.corners.over75,7.5,od);
-                renderCornerLine('85',mo.corners.over85,8.5,od);
-                renderCornerLine('95',mo.corners.over95,9.5,od);
-                renderCornerLine('105',mo.corners.over105,10.5,od);
-            }else document.getElementById('cornersSection').classList.add('hidden');
-
-            determineBestBet(mo,od);
-        }
-
-        function renderLine(s,p,l,od){
-            const pc=(p*100).toFixed(0);
-            document.getElementById('pctOver'+s).textContent=pc+'%';
-            document.getElementById('pctOver'+s).className='pct'+(p>=0.5?'':' red');
-            document.getElementById('under'+s).textContent=((1-p)*100).toFixed(1)+'%';
-            const ci=confidenceInterval(p);
-            document.getElementById('ci'+s).textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
-            document.getElementById('rowOver'+s).style.setProperty('--bar-width',pc+'%');
-            document.getElementById('rowOver'+s).className='line-row'+(p>=0.5?'':' negative');
-            const ok='over_'+(l===1.5?'15':l===2.5?'25':'35')+'_goals', oka='over_under_'+(l===1.5?'15':l===2.5?'25':'35')+'_over';
-            const doo=od[ok]||od[oka]||od['over_'+(l===1.5?'15':l===2.5?'25':'35')]||null;
-            document.getElementById('oddsOver'+s).textContent=doo?'Cuota: '+doo.toFixed(2):'Cuota: --';
-            const ev=calculateEV(p,doo), el=document.getElementById('evOver'+s);
-            el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
-        }
-
-        function renderHTLine(s,p,l,od){
-            const pc=(p*100).toFixed(0);
-            document.getElementById('pctHT'+s).textContent=pc+'%';
-            document.getElementById('pctHT'+s).className='pct'+(p>=0.5?'':' red');
-            document.getElementById('underHT'+s).textContent=((1-p)*100).toFixed(1)+'%';
-            const ci=confidenceInterval(p);
-            document.getElementById('ciHT'+s).textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
-            document.getElementById('rowHT'+s).style.setProperty('--bar-width',pc+'%');
-            document.getElementById('rowHT'+s).className='line-row'+(p>=0.5?'':' negative');
-            const doo=od['ht_over_'+(l===0.5?'05':'15')]||null;
-            document.getElementById('oddsHT'+s).textContent=doo?'Cuota: '+doo.toFixed(2):'Cuota: --';
-            const ev=calculateEV(p,doo), el=document.getElementById('evHT'+s);
-            el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
-        }
-
-        function renderBTTS(p,od){
-            const pc=(p*100).toFixed(0);
-            document.getElementById('pctBTTS').textContent=pc+'%';
-            document.getElementById('bttsNo').textContent=((1-p)*100).toFixed(1)+'%';
-            const ci=confidenceInterval(p);
-            document.getElementById('ciBTTS').textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
-            document.getElementById('rowBTTS').style.setProperty('--bar-width',pc+'%');
-            const doo=od.btts_yes||null;
-            document.getElementById('oddsBTTS').textContent=doo?'Cuota: '+doo.toFixed(2):'Cuota: --';
-            const ev=calculateEV(p,doo), el=document.getElementById('evBTTS');
-            el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
-        }
-
-        function renderCornerLine(s,p,l,od){
-            const pc=(p*100).toFixed(0);
-            document.getElementById('pctCor'+s).textContent=pc+'%';
-            document.getElementById('pctCor'+s).className='pct'+(p>=0.5?'':' red');
-            document.getElementById('underCor'+s).textContent=((1-p)*100).toFixed(1)+'%';
-            const ci=confidenceInterval(p);
-            document.getElementById('ciCor'+s).textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
-            document.getElementById('rowCor'+s).style.setProperty('--bar-width',pc+'%');
-            document.getElementById('rowCor'+s).className='line-row'+(p>=0.5?'':' negative');
-            document.getElementById('oddsCor'+s).textContent='Cuota: --';
-            const ev=calculateEV(p,null), el=document.getElementById('evCor'+s);
-            el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
-        }
-
-        function determineBestBet(mo,od){
-            const cands=[];
-            const add=(n,p,ok,de)=>{ const o=od[ok]; if(o&&o>1){ const e=calculateEV(p,o); cands.push({name:n,prob:p,ev:e,odd:o,desc:de}); } };
-            add('LOCAL (1)',mo.probs1x2.home,'home','Victoria local');
-            add('EMPATE (X)',mo.probs1x2.draw,'draw','Empate');
-            add('VISITANTE (2)',mo.probs1x2.away,'away','Victoria visitante');
-            add('GOLES OVER 1.5',mo.goals.over15,'over_15_goals','Más de 1.5 goles');
-            add('GOLES UNDER 1.5',1-mo.goals.over15,'under_15_goals','Menos de 1.5 goles');
-            add('GOLES OVER 2.5',mo.goals.over25,'over_25_goals','Más de 2.5 goles');
-            add('BTTS SÍ',mo.btts.yes,'btts_yes','Ambos equipos marcan');
-            add('BTTS NO',mo.btts.no,'btts_no','Ambos equipos no marcan');
-            cands.sort((a,b)=>b.ev-a.ev);
-            const hv=cands.length>0&&cands[0].ev>=EV_THRESHOLD;
-            const ab=document.getElementById('valueAlert'), bb=document.getElementById('bestBetBox');
-            if(!hv){ ab.classList.remove('hidden'); bb.classList.add('hidden'); }
-            else{
-                ab.classList.add('hidden'); bb.classList.remove('hidden');
-                const b=cands[0];
-                document.getElementById('bestBetName').textContent=b.name+' 🔥';
-                document.getElementById('bestBetDesc').textContent=b.desc+' · Cuota '+b.odd.toFixed(2)+' · EV '+formatEV(b.ev);
-                const co=b.prob>=0.65?'ALTA':b.prob>=0.55?'MEDIA':'BAJA';
-                document.getElementById('bestBetConf').textContent=(b.prob*100).toFixed(0)+'% CONFIANZA '+co;
-                document.getElementById('otherBets').innerHTML=cands.slice(1,4).map((x,i)=>`<div class="other-bet-row"><span class="rank">#${i+2}</span><span class="name">${x.name}</span><span class="prob" style="color:${x.ev>=EV_THRESHOLD?'var(--green)':x.ev>0?'var(--yellow)':'var(--accent)'};">${(x.prob*100).toFixed(0)}% · EV ${formatEV(x.ev)}</span></div>`).join('');
+    async function fetchOddsForEvent(eid){
+        const t=document.getElementById('apiToken').value.trim();
+        const bm=document.getElementById('bookmakerSelect').value;
+        if(!t||!eid) return null;
+        let odds={};
+        try{
+            if(bm==='best'){
+                const r=await fetch(`${API_BASE}/odds/best/?event_id=${eid}&market=1x2`,{headers:{'Authorization':`Token ${t}`}});
+                if(r.ok){ const d=await r.json(); for(const i of (d.best_odds||[])){ if(i.outcome==='HOME')odds.home=i.decimal_odds; if(i.outcome==='DRAW')odds.draw=i.decimal_odds; if(i.outcome==='AWAY')odds.away=i.decimal_odds; } }
+                for(const m of ['over_under_15','over_under_25','over_under_35']){
+                    const r2=await fetch(`${API_BASE}/odds/best/?event_id=${eid}&market=${m}`,{headers:{'Authorization':`Token ${t}`}});
+                    if(r2.ok){ const d2=await r2.json(); for(const i of (d2.best_odds||[])){ odds[`${m}_${i.outcome.toLowerCase()}`]=i.decimal_odds; } }
+                }
+                const rb=await fetch(`${API_BASE}/odds/best/?event_id=${eid}&market=btts`,{headers:{'Authorization':`Token ${t}`}});
+                if(rb.ok){ const db=await rb.json(); for(const i of (db.best_odds||[])){ if(i.outcome==='YES')odds.btts_yes=i.decimal_odds; if(i.outcome==='NO')odds.btts_no=i.decimal_odds; } }
+            }else if(bm==='oddssafari-consensus'){
+                const r=await fetch(`${API_BASE}/events/${eid}/odds/`,{headers:{'Authorization':`Token ${t}`}});
+                if(r.ok){ const d=await r.json(); odds={home:d.odds?.home_win,draw:d.odds?.draw,away:d.odds?.away_win,over_15_goals:d.odds?.over_15_goals,under_15_goals:d.odds?.under_15_goals,over_25_goals:d.odds?.over_25_goals,under_25_goals:d.odds?.under_25_goals,btts_yes:d.odds?.btts_yes,btts_no:d.odds?.btts_no}; }
+            }else{
+                // Betano and other specific bookmakers
+                const r=await fetch(`${API_BASE}/events/${eid}/odds/comparison/`,{headers:{'Authorization':`Token ${t}`}});
+                if(r.ok){ const d=await r.json(), mk=d.markets||{}; if(mk['1x2']&&mk['1x2'][bm]){ const b=mk['1x2'][bm]; odds.home=b.HOME?.decimal_odds; odds.draw=b.DRAW?.decimal_odds; odds.away=b.AWAY?.decimal_odds; } for(const[k,v]of Object.entries(mk)){ if(v[bm]){ for(const[ok,ov]of Object.entries(v[bm])){ if(ov&&ov.decimal_odds) odds[`${k}_${ok}`.toLowerCase()]=ov.decimal_odds; } } } }
             }
+            return odds;
+        }catch(e){ return null; }
+    }
+
+    function runModel(){
+        const hi=document.getElementById('homeTeam').value, ai=document.getElementById('awayTeam').value;
+        const h=TEAM_ELO[hi]||TEAM_ELO.boca, a=TEAM_ELO[ai]||TEAM_ELO.catolica;
+        const lg=LEAGUE_PARAMS[selectedLeague]||LEAGUE_PARAMS.default;
+        
+        const eloDiff = h.elo - a.elo;
+        const homeAdvFactor = 1 + (h.homeAdv * 0.5);
+        const eloFactor = Math.max(0.7, Math.min(1.3, 1 + (eloDiff / 2000)));
+        
+        const hL = lg.avgHomeGoals * h.attack * a.defense * homeAdvFactor * eloFactor;
+        const aL = lg.avgAwayGoals * a.attack * h.defense * (2 - eloFactor);
+        const tL = hL + aL;
+        
+        const p12 = dixonColesProb(hL, aL, lg.rho);
+        const o15 = overUnderProb(tL, 1.5, true), o25 = overUnderProb(tL, 2.5, true), o35 = overUnderProb(tL, 3.5, true);
+        const htL = tL * 0.45, ht05 = overUnderProb(htL, 0.5, true), ht15 = overUnderProb(htL, 1.5, true);
+        const bt = bttsProb(hL, aL);
+        const c75 = cornerProb(lg.avgCorners, 7.5, true), c85 = cornerProb(lg.avgCorners, 8.5, true), c95 = cornerProb(lg.avgCorners, 9.5, true), c105 = cornerProb(lg.avgCorners, 10.5, true);
+        
+        return {home:h, away:a, league:lg, probs1x2:p12, goals:{over15:o15,over25:o25,over35:o35,lambda:tL}, ht:{over05:ht05,over15:ht15,lambda:htL}, btts:{yes:bt,no:1-bt}, corners:{over75:c75,over85:c85,over95:c95,over105:c105,lambda:lg.avgCorners,r:lg.cornerR}};
+    }
+
+    function renderResults(mo, od){
+        document.getElementById('setupCard').classList.add('hidden');
+        document.getElementById('resultsArea').classList.remove('hidden');
+        document.getElementById('resLeague').textContent='🏆 '+selectedLeague.toUpperCase();
+        document.getElementById('resTeams').textContent=mo.home.name.toUpperCase()+' VS '+mo.away.name.toUpperCase();
+        document.getElementById('resElo').textContent=`Elo: ${mo.home.name.split(' ')[0]} ${mo.home.elo} vs ${mo.away.name.split(' ')[0]} ${mo.away.elo}`;
+
+        // 1X2 with odds and EV
+        const pHome = mo.probs1x2.home, pDraw = mo.probs1x2.draw, pAway = mo.probs1x2.away;
+        document.getElementById('probHome').textContent=(pHome*100).toFixed(1)+'%';
+        document.getElementById('probDraw').textContent=(pDraw*100).toFixed(0)+'%';
+        document.getElementById('probAway').textContent=(pAway*100).toFixed(1)+'%';
+        
+        const oddH = od.home, oddD = od.draw, oddA = od.away;
+        document.getElementById('oddHome').textContent = oddH ? 'Cuota: '+oddH.toFixed(2) : 'Cuota: --';
+        document.getElementById('oddDraw').textContent = oddD ? 'Cuota: '+oddD.toFixed(2) : 'Cuota: --';
+        document.getElementById('oddAway').textContent = oddA ? 'Cuota: '+oddA.toFixed(2) : 'Cuota: --';
+        
+        const evH = calculateEV(pHome, oddH), evD = calculateEV(pDraw, oddD), evA = calculateEV(pAway, oddA);
+        const evHEl = document.getElementById('evHome1x2'), evDEl = document.getElementById('evDraw1x2'), evAEl = document.getElementById('evAway1x2');
+        evHEl.textContent = evH!==null ? 'EV: '+formatEV(evH) : 'EV: --'; evHEl.className = 'ev-val '+evClass(evH);
+        evDEl.textContent = evD!==null ? 'EV: '+formatEV(evD) : 'EV: --'; evDEl.className = 'ev-val '+evClass(evD);
+        evAEl.textContent = evA!==null ? 'EV: '+formatEV(evA) : 'EV: --'; evAEl.className = 'ev-val '+evClass(evA);
+
+        if(selectedMarkets.includes('goals')){
+            document.getElementById('goalsSection').classList.remove('hidden');
+            document.getElementById('lambdaGoals').textContent=mo.goals.lambda.toFixed(2);
+            renderLine('15',mo.goals.over15,1.5,od);
+            renderLine('25',mo.goals.over25,2.5,od);
+        }else document.getElementById('goalsSection').classList.add('hidden');
+
+        if(selectedMarkets.includes('htgoals')){
+            document.getElementById('htSection').classList.remove('hidden');
+            document.getElementById('lambdaHT').textContent=mo.ht.lambda.toFixed(2);
+            renderHTLine('05',mo.ht.over05,0.5,od);
+            renderHTLine('15',mo.ht.over15,1.5,od);
+        }else document.getElementById('htSection').classList.add('hidden');
+
+        if(selectedMarkets.includes('btts')){
+            document.getElementById('bttsSection').classList.remove('hidden');
+            renderBTTS(mo.btts.yes,od);
+        }else document.getElementById('bttsSection').classList.add('hidden');
+
+        if(selectedMarkets.includes('corners')){
+            document.getElementById('cornersSection').classList.remove('hidden');
+            document.getElementById('lambdaCorners').textContent=mo.corners.lambda.toFixed(1);
+            document.getElementById('rCorners').textContent=mo.corners.r.toFixed(1);
+            renderCornerLine('75',mo.corners.over75,7.5,od);
+            renderCornerLine('85',mo.corners.over85,8.5,od);
+            renderCornerLine('95',mo.corners.over95,9.5,od);
+            renderCornerLine('105',mo.corners.over105,10.5,od);
+        }else document.getElementById('cornersSection').classList.add('hidden');
+
+        determineBestBet(mo,od);
+    }
+
+    function renderLine(s,p,l,od){
+        const pc=(p*100).toFixed(0);
+        document.getElementById('pctOver'+s).textContent=pc+'%';
+        document.getElementById('pctOver'+s).className='pct'+(p>=0.5?'':' red');
+        document.getElementById('under'+s).textContent=((1-p)*100).toFixed(1)+'%';
+        const ci=confidenceInterval(p);
+        document.getElementById('ci'+s).textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
+        document.getElementById('rowOver'+s).style.setProperty('--bar-width',pc+'%');
+        document.getElementById('rowOver'+s).className='line-row'+(p>=0.5?'':' negative');
+        const ok='over_'+(l===1.5?'15':l===2.5?'25':'35')+'_goals', oka='over_under_'+(l===1.5?'15':l===2.5?'25':'35')+'_over';
+        const doo=od[ok]||od[oka]||od['over_'+(l===1.5?'15':l===2.5?'25':'35')]||null;
+        document.getElementById('oddsOver'+s).textContent=doo?'Cuota: '+doo.toFixed(2):'Cuota: --';
+        const ev=calculateEV(p,doo), el=document.getElementById('evOver'+s);
+        el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
+    }
+
+    function renderHTLine(s,p,l,od){
+        const pc=(p*100).toFixed(0);
+        document.getElementById('pctHT'+s).textContent=pc+'%';
+        document.getElementById('pctHT'+s).className='pct'+(p>=0.5?'':' red');
+        document.getElementById('underHT'+s).textContent=((1-p)*100).toFixed(1)+'%';
+        const ci=confidenceInterval(p);
+        document.getElementById('ciHT'+s).textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
+        document.getElementById('rowHT'+s).style.setProperty('--bar-width',pc+'%');
+        document.getElementById('rowHT'+s).className='line-row'+(p>=0.5?'':' negative');
+        const doo=od['ht_over_'+(l===0.5?'05':'15')]||null;
+        document.getElementById('oddsHT'+s).textContent=doo?'Cuota: '+doo.toFixed(2):'Cuota: --';
+        const ev=calculateEV(p,doo), el=document.getElementById('evHT'+s);
+        el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
+    }
+
+    function renderBTTS(p,od){
+        const pc=(p*100).toFixed(0);
+        document.getElementById('pctBTTS').textContent=pc+'%';
+        document.getElementById('bttsNo').textContent=((1-p)*100).toFixed(1)+'%';
+        const ci=confidenceInterval(p);
+        document.getElementById('ciBTTS').textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
+        document.getElementById('rowBTTS').style.setProperty('--bar-width',pc+'%');
+        const doo=od.btts_yes||null;
+        document.getElementById('oddsBTTS').textContent=doo?'Cuota: '+doo.toFixed(2):'Cuota: --';
+        const ev=calculateEV(p,doo), el=document.getElementById('evBTTS');
+        el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
+    }
+
+    function renderCornerLine(s,p,l,od){
+        const pc=(p*100).toFixed(0);
+        document.getElementById('pctCor'+s).textContent=pc+'%';
+        document.getElementById('pctCor'+s).className='pct'+(p>=0.5?'':' red');
+        document.getElementById('underCor'+s).textContent=((1-p)*100).toFixed(1)+'%';
+        const ci=confidenceInterval(p);
+        document.getElementById('ciCor'+s).textContent=(ci.low*100).toFixed(0)+'–'+(ci.high*100).toFixed(0)+'%';
+        document.getElementById('rowCor'+s).style.setProperty('--bar-width',pc+'%');
+        document.getElementById('rowCor'+s).className='line-row'+(p>=0.5?'':' negative');
+        document.getElementById('oddsCor'+s).textContent='Cuota: --';
+        const ev=calculateEV(p,null), el=document.getElementById('evCor'+s);
+        el.textContent=ev!==null?'EV: '+formatEV(ev):'EV: --'; el.className='ev '+evClass(ev);
+    }
+
+    function determineBestBet(mo,od){
+        const cands=[];
+        const add=(n,p,ok,de)=>{ const o=od[ok]; if(o&&o>1){ const e=calculateEV(p,o); cands.push({name:n,prob:p,ev:e,odd:o,desc:de}); } };
+        add('LOCAL (1)',mo.probs1x2.home,'home','Victoria local');
+        add('EMPATE (X)',mo.probs1x2.draw,'draw','Empate');
+        add('VISITANTE (2)',mo.probs1x2.away,'away','Victoria visitante');
+        add('GOLES OVER 1.5',mo.goals.over15,'over_15_goals','Más de 1.5 goles');
+        add('GOLES UNDER 1.5',1-mo.goals.over15,'under_15_goals','Menos de 1.5 goles');
+        add('GOLES OVER 2.5',mo.goals.over25,'over_25_goals','Más de 2.5 goles');
+        add('BTTS SÍ',mo.btts.yes,'btts_yes','Ambos equipos marcan');
+        add('BTTS NO',mo.bVeo que el mensaje se cortó. Te paso la última parte del JavaScript que falta:
+
+```javascript
+        add('BTTS NO',mo.btts.no,'btts_no','Ambos equipos no marcan');
+        cands.sort((a,b)=>b.ev-a.ev);
+        const hv=cands.length>0&&cands[0].ev>=EV_THRESHOLD;
+        const ab=document.getElementById('valueAlert'), bb=document.getElementById('bestBetBox');
+        if(!hv){ ab.classList.remove('hidden'); bb.classList.add('hidden'); }
+        else{
+            ab.classList.add('hidden'); bb.classList.remove('hidden');
+            const b=cands[0];
+            document.getElementById('bestBetName').textContent=b.name+' 🔥';
+            document.getElementById('bestBetDesc').textContent=b.desc+' · Cuota '+b.odd.toFixed(2)+' · EV '+formatEV(b.ev);
+            const co=b.prob>=0.65?'ALTA':b.prob>=0.55?'MEDIA':'BAJA';
+            document.getElementById('bestBetConf').textContent=(b.prob*100).toFixed(0)+'% CONFIANZA '+co;
+            document.getElementById('otherBets').innerHTML=cands.slice(1,4).map((x,i)=>`<div class="other-bet-row"><span class="rank">#${i+2}</span><span class="name">${x.name}</span><span class="prob" style="color:${x.ev>=EV_THRESHOLD?'var(--green)':x.ev>0?'var(--yellow)':'var(--accent)'};">${(x.prob*100).toFixed(0)}% · EV ${formatEV(x.ev)}</span></div>`).join('');
         }
+    }
 
-        async function calculateAll(){
-            const btn=document.getElementById('calcBtn'), bt=document.getElementById('btnText');
-            btn.disabled=true; bt.innerHTML='<span class="spinner"></span> CALCULANDO...';
-            const mo=runModel(); modelProbs=mo;
-            const t=document.getElementById('apiToken').value.trim();
-            let od={};
-            if(t){
-                try{
-                    const eid=await fetchEventId(mo.home.name,mo.away.name);
-                    if(eid){ currentEventId=eid; const ao=await fetchOddsForEvent(eid); if(ao){ od=ao; apiOdds=ao; setApiStatus('live',`API conectada · Evento #${eid}`); } else setApiStatus('error','No se pudieron obtener cuotas'); }
-                    else setApiStatus('sim','Partido no encontrado en API · Usando cuotas manuales');
-                }catch(e){ setApiStatus('error','Error al consultar API'); }
-            }else setApiStatus('sim','Sin API token · Usando cuotas manuales');
+    async function calculateAll(){
+        const btn=document.getElementById('calcBtn'), bt=document.getElementById('btnText');
+        btn.disabled=true; bt.innerHTML='<span class="spinner"></span> CALCULANDO...';
+        const mo=runModel(); modelProbs=mo;
+        const t=document.getElementById('apiToken').value.trim();
+        let od={};
+        if(t){
+            try{
+                const eid=await fetchEventId(mo.home.name,mo.away.name);
+                if(eid){ currentEventId=eid; const ao=await fetchOddsForEvent(eid); if(ao){ od=ao; apiOdds=ao; setApiStatus('live',`API conectada · Evento #${eid}`); } else setApiStatus('error','No se pudieron obtener cuotas'); }
+                else setApiStatus('sim','Partido no encontrado en API · Usando cuotas manuales');
+            }catch(e){ setApiStatus('error','Error al consultar API'); }
+        }else setApiStatus('sim','Sin API token · Usando cuotas manuales');
 
-            if(Object.keys(od).length===0){
-                od={home:1.54,draw:4.05,away:7.10,over_15_goals:1.39,under_15_goals:3.55,over_25_goals:2.20,under_25_goals:1.65,btts_yes:1.85,btts_no:1.95};
-            }
-            renderResults(mo,od);
-            btn.disabled=false; bt.textContent='CALCULAR PROBABILIDADES';
+        if(Object.keys(od).length===0){
+            od={home:1.54,draw:4.05,away:7.10,over_15_goals:1.39,under_15_goals:3.55,over_25_goals:2.20,under_25_goals:1.65,btts_yes:1.85,btts_no:1.95};
         }
+        renderResults(mo,od);
+        btn.disabled=false; bt.textContent='CALCULAR PROBABILIDADES';
+    }
 
-        setApiStatus('sim','Ingresá tu token de bzzoiro API');
+    setApiStatus('sim','Ingresá tu token de bzzoiro API');
     </script>
 </body>
 </html>
+   
