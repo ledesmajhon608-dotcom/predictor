@@ -1249,19 +1249,44 @@
             if (probability <= 0.01) return 50.0;
             if (probability >= 0.99) return 1.01;
 
-            // Cuota justa sin margen = 1/prob
+            // CORRECCIÓN v3.2: Cuotas de referencia basadas en MARGENES REALES DEL MERCADO
+            // Investigación de mercado: márgenes varían enormemente según tipo de mercado y popularidad
+
             const fairOdds = 1 / probability;
 
-            // Margen de mercado variable: favoritos ~3%, outsiders ~8%
-            // Esto refleja mejor la realidad que un margen fijo del 5%
-            let marketMargin;
-            if (probability > 0.70) marketMargin = 1.03;
-            else if (probability > 0.55) marketMargin = 1.04;
-            else if (probability > 0.40) marketMargin = 1.05;
-            else if (probability > 0.25) marketMargin = 1.06;
-            else marketMargin = 1.08;
+            // Margen base según probabilidad (ajustado a la realidad)
+            let baseMargin;
+            if (probability > 0.65) baseMargin = 1.04;      // Favoritos fuertes: 4%
+            else if (probability > 0.50) baseMargin = 1.05;    // Favoritos moderados: 5%
+            else if (probability > 0.35) baseMargin = 1.07;    // Equilibrados: 7%
+            else if (probability > 0.20) baseMargin = 1.10;    // Underdogs: 10%
+            else baseMargin = 1.15;                            // Outsiders largos: 15%
 
-            return (fairOdds * marketMargin).toFixed(2);
+            // Multiplicador adicional según tipo de mercado (mercados de nicho tienen más margen)
+            let marketMultiplier = 1.0;
+
+            if (marketType.includes('corners')) {
+                // Córners: mercado de nicho, márgenes altos (10-20% extra)
+                marketMultiplier = 1.12;
+            } else if (marketType.includes('over_goals') || marketType.includes('under_goals')) {
+                // Goles over/under: depende de la línea
+                if (marketType.includes('3.5') || marketType.includes('4.5')) {
+                    // Líneas altas: poco liquidez, mucho margen
+                    marketMultiplier = 1.15;
+                } else {
+                    // Líneas estándar (1.5, 2.5): liquidez normal
+                    marketMultiplier = 1.05;
+                }
+            } else if (marketType === '1' || marketType === '2' || marketType === 'X') {
+                // 1X2: mercado principal, menos margen
+                marketMultiplier = 1.0;
+            } else if (marketType.includes('btts')) {
+                // BTTS: mercado popular, margen moderado
+                marketMultiplier = 1.06;
+            }
+
+            const finalMargin = baseMargin * marketMultiplier;
+            return (fairOdds * finalMargin).toFixed(2);
         }
 
         // CORRECCIÓN v3.0: Límite de stake máximo al 5% del bankroll (protección al usuario).
