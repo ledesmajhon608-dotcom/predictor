@@ -137,6 +137,7 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            flex-wrap: wrap;
         }
         .prob-row {
             display: flex;
@@ -261,6 +262,7 @@
             display: flex;
             gap: 4px;
             margin-bottom: 16px;
+            flex-wrap: wrap;
         }
         .tab {
             flex: 1;
@@ -275,6 +277,7 @@
             letter-spacing: 1px;
             color: var(--muted);
             transition: all 0.2s;
+            min-width: 60px;
         }
         .tab.active {
             background: rgba(255,77,90,0.15);
@@ -330,6 +333,66 @@
             85% { opacity: 1; transform: translateX(-50%) translateY(0); }
             100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
         }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .stat-box {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: 800;
+            color: var(--text);
+        }
+        .stat-label {
+            font-size: 0.55rem;
+            color: var(--muted);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-top: 4px;
+        }
+        .chart-container {
+            background: rgba(255,255,255,0.02);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 10px;
+            margin-top: 10px;
+        }
+        .config-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 8px 0;
+            font-size: 0.8rem;
+        }
+        .config-row input {
+            width: 120px;
+            margin: 0;
+        }
+        .small-note {
+            font-size: 0.6rem;
+            color: var(--muted);
+            margin-top: 4px;
+            font-style: italic;
+        }
+        .disclaimer {
+            font-size: 0.6rem;
+            color: var(--muted);
+            text-align: center;
+            margin-top: 8px;
+            opacity: 0.7;
+        }
+        .file-input {
+            padding: 8px;
+            font-size: 0.75rem;
+        }
     </style>
 </head>
 <body>
@@ -337,7 +400,7 @@
     <div id="main-screen">
         <div class="card">
             <h2>⚽ BET ANALYTICS PRO</h2>
-            <div class="subtitle">SISTEMA DE VALUE BETTING</div>
+            <div class="subtitle">SISTEMA DE VALUE BETTING v2.0</div>
             
             <div class="bankroll-display">
                 <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">💰 Bankroll Actual</div>
@@ -348,6 +411,8 @@
             <div class="tabs">
                 <div class="tab active" onclick="switchTab('analyzer')">🔍 ANALIZAR</div>
                 <div class="tab" onclick="switchTab('history')">📊 HISTORIAL</div>
+                <div class="tab" onclick="switchTab('stats')">📈 STATS</div>
+                <div class="tab" onclick="switchTab('config')">⚙️ CONFIG</div>
             </div>
             
             <div id="tab-analyzer">
@@ -375,25 +440,31 @@
                 <select id="away" disabled><option>-- Liga --</option></select>
                 
                 <label>💵 Cuota Over 0.5 goles 1T</label>
-                <input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01">
+                <input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01" max="50">
                 
                 <label>💵 Cuota Over 1.5 goles totales</label>
-                <input type="number" id="odds-over15" placeholder="Ej: 1.25" step="0.01" min="1.01">
+                <input type="number" id="odds-over15" placeholder="Ej: 1.25" step="0.01" min="1.01" max="50">
                 
                 <label>💵 Cuota Over 2.5 goles totales</label>
-                <input type="number" id="odds-over25" placeholder="Ej: 1.85" step="0.01" min="1.01">
+                <input type="number" id="odds-over25" placeholder="Ej: 1.85" step="0.01" min="1.01" max="50">
                 
                 <label>💵 Cuota BTTS (Sí)</label>
-                <input type="number" id="odds-btts" placeholder="Ej: 1.75" step="0.01" min="1.01">
+                <input type="number" id="odds-btts" placeholder="Ej: 1.75" step="0.01" min="1.01" max="50">
                 
                 <label>💵 Cuota Over 7.5 córners</label>
-                <input type="number" id="odds-corners75" placeholder="Ej: 1.90" step="0.01" min="1.01">
+                <input type="number" id="odds-corners75" placeholder="Ej: 1.90" step="0.01" min="1.01" max="50">
                 
                 <label>💵 Cuota Over 8.5 córners</label>
-                <input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01">
+                <input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01" max="50">
                 
-                <label>💵 Cuota Local (opcional)</label>
-                <input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01">
+                <label>💵 Cuota Local (1X2)</label>
+                <input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01" max="50">
+                
+                <label>💵 Cuota Empate (1X2, opcional)</label>
+                <input type="number" id="odds-draw" placeholder="Para calcular vig real" step="0.01" min="1.01" max="50">
+                
+                <label>💵 Cuota Visitante (1X2, opcional)</label>
+                <input type="number" id="odds-away" placeholder="Para calcular vig real" step="0.01" min="1.01" max="50">
                 
                 <button class="btn-primary" id="analyze-btn" disabled>🎯 ANALIZAR Y BUSCAR VALOR</button>
                 
@@ -405,11 +476,72 @@
             <div id="tab-history" class="hidden">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                     <h3 style="margin:0;">📊 Historial de Apuestas</h3>
-                    <button class="btn-secondary" onclick="exportHistory()" style="width:auto;padding:8px 14px;">📥 Exportar</button>
+                    <div style="display:flex;gap:6px;">
+                        <button class="btn-secondary" onclick="exportHistory()" style="width:auto;padding:8px 14px;">📥 CSV</button>
+                        <button class="btn-secondary" onclick="exportJSON()" style="width:auto;padding:8px 14px;">💾 JSON</button>
+                    </div>
                 </div>
                 <div class="bet-log" id="bet-log">
                     <p style="color:var(--muted);text-align:center;padding:20px;">No hay apuestas registradas aún.</p>
                 </div>
+                <div style="margin-top:10px;">
+                    <label>📂 Importar respaldo JSON</label>
+                    <input type="file" id="import-file" class="file-input" accept=".json" onchange="importJSON(this)">
+                </div>
+            </div>
+            
+            <div id="tab-stats" class="hidden">
+                <h3>📈 Estadísticas</h3>
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-total">0</div>
+                        <div class="stat-label">Apuestas</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-winrate">0%</div>
+                        <div class="stat-label">Win Rate</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-yield">0%</div>
+                        <div class="stat-label">Yield</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-roi">0%</div>
+                        <div class="stat-label">ROI</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-profit">$0</div>
+                        <div class="stat-label">Profit Neto</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-value" id="stat-streak">-</div>
+                        <div class="stat-label">Racha Actual</div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Evolución Bankroll</div>
+                    <svg id="bankroll-chart" width="100%" height="120" style="overflow:visible;"></svg>
+                </div>
+                <div id="market-stats" style="margin-top:12px;"></div>
+            </div>
+            
+            <div id="tab-config" class="hidden">
+                <h3>⚙️ Configuración</h3>
+                <div class="config-row">
+                    <span>Bankroll Inicial ($)</span>
+                    <input type="number" id="cfg-initial" step="100" min="0">
+                </div>
+                <div class="config-row">
+                    <span>Fracción Kelly</span>
+                    <input type="number" id="cfg-kelly" step="0.05" min="0.05" max="1">
+                </div>
+                <div class="config-row">
+                    <span>Stake Máximo (%)</span>
+                    <input type="number" id="cfg-maxstake" step="0.01" min="0.01" max="1">
+                </div>
+                <button class="btn-primary" onclick="saveConfig()" style="margin-top:10px;">💾 Guardar Config</button>
+                <button class="btn-secondary" onclick="resetData()" style="margin-top:8px;background:rgba(255,77,90,0.1);color:var(--accent);border-color:rgba(255,77,90,0.3);">🗑️ Resetear Todo</button>
+                <p class="small-note">El stake nunca superará el % máximo del bankroll actual, independientemente de Kelly.</p>
             </div>
         </div>
     </div>
@@ -422,6 +554,24 @@
 </div>
 
 <script>
+// ============ CONFIGURACIÓN GLOBAL ============
+const DEFAULT_CONFIG = {
+    initialBankroll: 20000,
+    kellyFraction: 0.25,
+    maxStakePct: 0.05
+};
+
+let config = JSON.parse(localStorage.getItem('betConfig')) || {...DEFAULT_CONFIG};
+let bankroll = parseFloat(localStorage.getItem('bankroll')) || config.initialBankroll;
+let betHistory = JSON.parse(localStorage.getItem('betHistory')) || '[]';
+if (typeof betHistory === 'string') betHistory = JSON.parse(betHistory);
+
+function saveAll() {
+    localStorage.setItem('bankroll', bankroll.toString());
+    localStorage.setItem('betHistory', JSON.stringify(betHistory));
+    localStorage.setItem('betConfig', JSON.stringify(config));
+}
+
 // ============ DATOS DE EQUIPOS Y RATINGS ============
 const TEAMS_DB = {
     "EPL": ["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Crystal Palace","Everton","Fulham","Ipswich Town","Leicester City","Liverpool","Manchester City","Manchester United","Newcastle United","Nottingham Forest","Southampton","Tottenham","West Ham United","Wolves"],
@@ -434,9 +584,9 @@ const TEAMS_DB = {
     "Sudamericana": ["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells Old Boys","Rosario Central","Universitario","Sporting Cristal","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza","América de Cali","Macará"],
     "Mundial_2026": [
         "Alemania","Arabia Saudita","Argentina","Australia","Austria","Bélgica","Bolivia","Brasil",
-        "Canadá","Catar","Chile","Colombia","Corea del Sur","Costa Rica","Croacia","Dinamarca",
+        "Canadá","Catar","Colombia","Corea del Sur","Costa Rica","Croacia","Dinamarca",
         "Ecuador","Egipto","Emiratos Árabes Unidos","España","Estados Unidos","Francia","Ghana",
-        "Honduras","Inglaterra","Irán","Italia","Jamaica","Japón","Marruecos","México","Nigeria",
+        "Honduras","Inglaterra","Irán","Jamaica","Japón","Marruecos","México","Nigeria",
         "Nueva Zelanda","Países Bajos","Panamá","Paraguay","Perú","Polonia","Portugal","Senegal",
         "Serbia","Sudáfrica","Suecia","Suiza","Túnez","Ucrania","Uruguay","Venezuela"
     ],
@@ -446,18 +596,18 @@ const TEAMS_DB = {
 };
 
 const LEAGUES_CONFIG = {
-    "EPL": { name: "Premier League", goals_avg: 2.85, corners_avg: 10.1 },
-    "La_liga": { name: "La Liga", goals_avg: 2.55, corners_avg: 9.5 },
-    "Serie_A": { name: "Serie A", goals_avg: 2.65, corners_avg: 9.0 },
-    "Bundesliga": { name: "Bundesliga", goals_avg: 3.00, corners_avg: 9.8 },
-    "Ligue_1": { name: "Ligue 1", goals_avg: 2.70, corners_avg: 9.3 },
-    "Eredivisie": { name: "Eredivisie", goals_avg: 3.10, corners_avg: 9.6 },
-    "Libertadores": { name: "Copa Libertadores", goals_avg: 2.50, corners_avg: 9.2 },
-    "Sudamericana": { name: "Copa Sudamericana", goals_avg: 2.30, corners_avg: 9.0 },
-    "Mundial_2026": { name: "Mundial 2026", goals_avg: 2.40, corners_avg: 9.5 },
-    "Championship": { name: "Championship", goals_avg: 2.65, corners_avg: 9.7 },
-    "MLS": { name: "MLS", goals_avg: 2.85, corners_avg: 9.1 },
-    "Brasileirao": { name: "Brasileirão Série A", goals_avg: 2.45, corners_avg: 9.4 }
+    "EPL": { name: "Premier League", goals_avg: 2.85, corners_avg: 10.1, hfa: 1.06 },
+    "La_liga": { name: "La Liga", goals_avg: 2.55, corners_avg: 9.5, hfa: 1.05 },
+    "Serie_A": { name: "Serie A", goals_avg: 2.65, corners_avg: 9.0, hfa: 1.05 },
+    "Bundesliga": { name: "Bundesliga", goals_avg: 3.00, corners_avg: 9.8, hfa: 1.06 },
+    "Ligue_1": { name: "Ligue 1", goals_avg: 2.70, corners_avg: 9.3, hfa: 1.05 },
+    "Eredivisie": { name: "Eredivisie", goals_avg: 3.10, corners_avg: 9.6, hfa: 1.05 },
+    "Libertadores": { name: "Copa Libertadores", goals_avg: 2.50, corners_avg: 9.2, hfa: 1.04 },
+    "Sudamericana": { name: "Copa Sudamericana", goals_avg: 2.30, corners_avg: 9.0, hfa: 1.04 },
+    "Mundial_2026": { name: "Mundial 2026", goals_avg: 2.40, corners_avg: 9.5, hfa: 1.03 },
+    "Championship": { name: "Championship", goals_avg: 2.65, corners_avg: 9.7, hfa: 1.05 },
+    "MLS": { name: "MLS", goals_avg: 2.85, corners_avg: 9.1, hfa: 1.05 },
+    "Brasileirao": { name: "Brasileirão Série A", goals_avg: 2.45, corners_avg: 9.4, hfa: 1.05 }
 };
 
 const TEAM_STRENGTH = {
@@ -543,12 +693,12 @@ const TEAM_STRENGTH = {
         "Alemania":[1.23,0.86,1.06],"Arabia Saudita":[0.93,1.15,1.00],"Argentina":[1.30,0.80,1.08],
         "Australia":[1.04,1.04,1.02],"Austria":[1.06,1.02,1.03],"Bélgica":[1.17,0.91,1.05],
         "Bolivia":[0.90,1.18,1.00],"Brasil":[1.28,0.82,1.08],"Canadá":[1.06,1.02,1.03],
-        "Catar":[0.92,1.16,1.00],"Chile":[1.03,1.05,1.02],"Colombia":[1.14,0.94,1.04],
+        "Catar":[0.92,1.16,1.00],"Colombia":[1.14,0.94,1.04],
         "Corea del Sur":[1.08,1.00,1.03],"Costa Rica":[0.97,1.11,1.01],"Croacia":[1.16,0.92,1.05],
         "Dinamarca":[1.08,1.00,1.03],"Ecuador":[1.07,1.01,1.03],"Egipto":[1.06,1.02,1.03],
         "Emiratos Árabes Unidos":[0.91,1.17,1.00],"España":[1.25,0.85,1.07],"Estados Unidos":[1.13,0.95,1.04],
         "Francia":[1.27,0.83,1.07],"Ghana":[1.02,1.06,1.02],"Honduras":[0.95,1.13,1.01],
-        "Inglaterra":[1.26,0.84,1.07],"Irán":[1.05,1.03,1.03],"Italia":[1.18,0.90,1.05],
+        "Inglaterra":[1.26,0.84,1.07],"Irán":[1.05,1.03,1.03],
         "Jamaica":[0.96,1.12,1.01],"Japón":[1.12,0.96,1.04],"Marruecos":[1.14,0.94,1.04],
         "México":[1.12,0.96,1.04],"Nigeria":[1.04,1.04,1.02],"Nueva Zelanda":[0.85,1.23,1.00],
         "Países Bajos":[1.20,0.88,1.06],"Panamá":[0.94,1.14,1.01],"Paraguay":[1.03,1.05,1.02],
@@ -589,30 +739,6 @@ const TEAM_STRENGTH = {
     }
 };
 
-// ============ GESTIÓN DE BANKROLL ============
-let bankroll = parseFloat(localStorage.getItem('bankroll') || '20000');
-let betHistory = JSON.parse(localStorage.getItem('betHistory') || '[]');
-
-function saveBankroll() { localStorage.setItem('bankroll', bankroll.toString()); }
-function saveHistory() { localStorage.setItem('betHistory', JSON.stringify(betHistory)); }
-
-function updateBankrollDisplay() {
-    document.getElementById('bankroll-display').textContent = '$' + bankroll.toFixed(2);
-    const initialBankroll = 20000;
-    const pnl = bankroll - initialBankroll;
-    const pnlPct = ((pnl / initialBankroll) * 100).toFixed(1);
-    const pnlEl = document.getElementById('pnl-display');
-    pnlEl.textContent = `P&L: $${pnl.toFixed(2)} (${pnlPct}%)`;
-    pnlEl.className = pnl >= 0 ? 'profit' : 'loss';
-}
-
-function kellyFraction(prob, odds, fraction = 0.25) {
-    const q = 1 - prob;
-    const b = odds - 1;
-    const kelly = (prob * b - q) / b;
-    return Math.max(0, kelly * fraction);
-}
-
 // ============ MODELO MATEMÁTICO ============
 function poissonPMF(k, lambda) {
     if (lambda <= 0 || k < 0) return 0;
@@ -633,25 +759,27 @@ function probOver(lambda, threshold) {
 
 function getTeamStrength(league, team) {
     const leagueData = TEAM_STRENGTH[league] || {};
-    return leagueData[team] || [1.0, 1.0, 1.06];
+    const arr = leagueData[team] || [1.0, 1.0, 1.06];
+    return { atk: arr[0], def: arr[1], hfa: arr[2] || 1.06 };
 }
 
 function predictMatch(leagueCode, home, away) {
     const config = LEAGUES_CONFIG[leagueCode];
     const goalsAvg = config.goals_avg;
     const cornersAvg = config.corners_avg;
+    const leagueHFA = config.hfa || 1.06;
     
-    const [hAtk, hDef, hAdv] = getTeamStrength(leagueCode, home);
-    const [aAtk, aDef] = getTeamStrength(leagueCode, away);
+    const homeStr = getTeamStrength(leagueCode, home);
+    const awayStr = getTeamStrength(leagueCode, away);
     
-    const homeAdv = hAdv || 1.06;
-    const lh = (goalsAvg / 2) * hAtk * aDef * homeAdv;
-    const la = (goalsAvg / 2) * aAtk * hDef * (1 / homeAdv);
+    const homeAdv = homeStr.hfa * (leagueHFA / 1.06); // normalizar para que 1.06 sea base
+    const lh = (goalsAvg / 2) * homeStr.atk * awayStr.def * homeAdv;
+    const la = (goalsAvg / 2) * awayStr.atk * homeStr.def * (1 / homeAdv);
     const totalLambda = lh + la;
     
     let homeWin = 0, awayWin = 0;
-    for (let i = 0; i <= 12; i++) {
-        for (let j = 0; j <= 12; j++) {
+    for (let i = 0; i <= 15; i++) {
+        for (let j = 0; j <= 15; j++) {
             const prob = poissonPMF(i, lh) * poissonPMF(j, la);
             if (i > j) homeWin += prob;
             else if (j > i) awayWin += prob;
@@ -669,9 +797,10 @@ function predictMatch(leagueCode, home, away) {
     const htLambda = totalLambda * 0.42;
     const htOver05 = probOver(htLambda, 0.5);
     
-    const lambdaCorners = cornersAvg * 1.02;
-    const cornersOver75 = probOver(lambdaCorners, 7.5);
-    const cornersOver85 = probOver(lambdaCorners, 8.5);
+    // Modelo de córners basado en matchup (ataque vs defensa)
+    const cornerLambda = cornersAvg * ((homeStr.atk * awayStr.def * homeAdv) + (awayStr.atk * homeStr.def)) / 2;
+    const cornersOver75 = probOver(cornerLambda, 7.5);
+    const cornersOver85 = probOver(cornerLambda, 8.5);
     
     return {
         home, away, league: config.name,
@@ -681,15 +810,35 @@ function predictMatch(leagueCode, home, away) {
         draw: (draw * 100).toFixed(1),
         away_win: (awayWin * 100).toFixed(1),
         htOver05,
-        cornersOver75, cornersOver85
+        cornersOver75, cornersOver85,
+        cornerLambda: cornerLambda.toFixed(2)
     };
 }
 
 function calcValue(probPercent, odds) {
     if (!odds || odds <= 1) return null;
     const prob = probPercent / 100;
-    const implied = 1 / odds;
-    return (prob - implied) * 100;
+    return (prob * odds - 1) * 100; // EV% real contra cuota del bookie
+}
+
+function calcFairProb(odds1, oddsX, odds2) {
+    if (!odds1 || !oddsX || !odds2 || odds1 <= 1 || oddsX <= 1 || odds2 <= 1) return null;
+    const inv1 = 1 / odds1;
+    const invX = 1 / oddsX;
+    const inv2 = 1 / odds2;
+    const sum = inv1 + invX + inv2;
+    return { home: inv1 / sum, draw: invX / sum, away: inv2 / sum, vig: sum - 1 };
+}
+
+// ============ GESTIÓN DE BANKROLL Y STAKE ============
+function kellyStake(prob, odds) {
+    const q = 1 - prob;
+    const b = odds - 1;
+    const kelly = (prob * b - q) / b;
+    const fraction = Math.max(0, kelly * config.kellyFraction);
+    const rawStake = bankroll * fraction;
+    const maxStake = bankroll * config.maxStakePct;
+    return Math.min(rawStake, maxStake);
 }
 
 // ============ INTERFAZ DE USUARIO ============
@@ -742,27 +891,36 @@ analyzeBtn.addEventListener('click', () => {
     const pred = predictMatch(league, home, away);
     const markets = [];
     
+    // 1X2 vig info
+    const oddsH = parseFloat(document.getElementById('odds-home').value) || 0;
+    const oddsD = parseFloat(document.getElementById('odds-draw').value) || 0;
+    const oddsA = parseFloat(document.getElementById('odds-away').value) || 0;
+    const fair = calcFairProb(oddsH, oddsD, oddsA);
+    
     const marketDefs = [
-        { name: 'Over 0.5 Goles 1T', prob: pred.htOver05, oddsId: 'odds-ht05' },
+        { name: 'Over 0.5 Goles 1T', prob: pred.htOver05, oddsId: 'odds-ht05', note: 'λ 1T ≈ 42% del total' },
         { name: 'Over 1.5 Goles', prob: pred.over15, oddsId: 'odds-over15' },
         { name: 'Over 2.5 Goles', prob: pred.over25, oddsId: 'odds-over25' },
         { name: 'BTTS (Sí)', prob: pred.btts, oddsId: 'odds-btts' },
-        { name: 'Over 7.5 Córners', prob: pred.cornersOver75, oddsId: 'odds-corners75' },
-        { name: 'Over 8.5 Córners', prob: pred.cornersOver85, oddsId: 'odds-corners85' },
-        { name: 'Victoria Local', prob: parseFloat(pred.home_win), oddsId: 'odds-home' }
+        { name: 'Over 7.5 Córners', prob: pred.cornersOver75, oddsId: 'odds-corners75', note: `λ córners ≈ ${pred.cornerLambda}` },
+        { name: 'Over 8.5 Córners', prob: pred.cornersOver85, oddsId: 'odds-corners85', note: `λ córners ≈ ${pred.cornerLambda}` },
+        { name: 'Victoria Local', prob: parseFloat(pred.home_win), oddsId: 'odds-home', fair: fair ? fair.home : null, vig: fair ? fair.vig : null }
     ];
     
     marketDefs.forEach(def => {
         const oddsEl = document.getElementById(def.oddsId);
         const odds = oddsEl ? parseFloat(oddsEl.value) || 0 : 0;
-        const hasOdds = odds > 1;
+        const hasOdds = odds > 1 && odds <= 50;
         const value = hasOdds ? calcValue(def.prob, odds) : null;
         markets.push({
             name: def.name,
             prob: def.prob,
             odds: hasOdds ? odds : 0,
             value: value,
-            hasValue: value !== null && value > 0
+            hasValue: value !== null && value > 0,
+            note: def.note || null,
+            fairProb: def.fair,
+            vig: def.vig
         });
     });
     
@@ -786,218 +944,16 @@ function renderResults(pred, markets) {
         
         const barColor = m.hasValue ? 'var(--green)' : (isValued ? 'var(--accent)' : 'var(--blue)');
         
+        let vigHtml = '';
+        if (m.vig !== null && m.vig > 0) {
+            vigHtml = `<div class="small-note">Vig mercado: ${(m.vig*100).toFixed(1)}% · Prob justa: ${(m.fairProb*100).toFixed(1)}%</div>`;
+        }
+        
+        let noteHtml = m.note ? `<div class="small-note">${m.note}</div>` : '';
+        
         let stakeHtml = '';
         if (m.hasValue && m.odds > 1) {
             const prob = m.prob / 100;
-            const kelly = kellyFraction(prob, m.odds, 0.25);
-            const stake = bankroll * kelly;
+            const stake = kellyStake(prob, m.odds);
             if (stake > 0) {
-                stakeHtml = `
-                    <div class="stake-suggestion">
-                        <div style="font-size:0.65rem;color:var(--muted);">💰 Apuesta sugerida (Kelly 25%)</div>
-                        <div style="font-size:1.2rem;font-weight:800;color:var(--blue);">$${stake.toFixed(2)}</div>
-                        <div style="font-size:0.6rem;color:var(--muted);">${(kelly*100).toFixed(1)}% del bankroll</div>
-                        <button class="btn-secondary" onclick="placeBet('${m.name}', ${m.prob}, ${m.odds}, ${stake.toFixed(2)}, '${pred.home} vs ${pred.away}')" style="margin-top:8px;width:100%;">✅ REGISTRAR APUESTA</button>
-                    </div>`;
-            }
-        }
-        
-        marketsHtml += `
-            <div class="market" style="border-color:${m.hasValue ? 'rgba(46,204,113,0.3)' : (isValued ? 'rgba(255,77,90,0.15)' : 'rgba(77,171,247,0.2)')};">
-                <div class="market-header">
-                    ${m.name} ${badge}
-                </div>
-                <div class="prob-row">
-                    <span class="prob-label">Probabilidad</span>
-                    <div class="bar-wrap">
-                        <div class="bar-fill" data-width="${Math.round(m.prob)}%" style="background:${barColor};box-shadow:0 0 8px ${barColor};"></div>
-                    </div>
-                    <span class="prob-value ${cls}">${Math.round(m.prob)}%</span>
-                </div>
-                ${isValued ? `
-                <div class="prob-row">
-                    <span class="prob-label">Cuota</span>
-                    <span></span>
-                    <span class="prob-value">${m.odds.toFixed(2)}</span>
-                </div>
-                <div class="ev-row">
-                    <span class="ev-label">EV</span>
-                    <span class="ev-value ${m.value > 0 ? 'green' : 'red'}">${m.value > 0 ? '+' : ''}${m.value.toFixed(1)}%</span>
-                </div>` : ''}
-                ${stakeHtml}
-            </div>`;
-    });
-    
-    document.getElementById('result-card').innerHTML = `
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-            <h3 style="margin:0;">${pred.home} vs ${pred.away}</h3>
-            <button class="btn-secondary" onclick="goBack()" style="width:auto;padding:8px 14px;">← Volver</button>
-        </div>
-        <p style="text-align:center;font-size:0.7rem;color:var(--muted);margin-bottom:14px;">
-            ${pred.league} · λ: ${pred.l_home}/${pred.l_away}
-        </p>
-        
-        ${hasAnyValue ? '<div class="bankroll-display" style="margin-bottom:14px;">🎯 ¡MERCADOS CON VALOR ENCONTRADOS!</div>' : ''}
-        ${!hasAnyValue ? '<div class="warning-box">⚠️ No se encontraron apuestas con valor positivo. NO apuestes en este partido.</div>' : ''}
-        
-        ${marketsHtml}
-        
-        <div style="margin-top:12px;font-size:0.6rem;color:var(--muted);text-align:center;">
-            Solo apuesta si el Valor Esperado es POSITIVO (+EV). Registra todas tus apuestas.
-        </div>
-    `;
-    
-    setTimeout(() => {
-        document.querySelectorAll('.bar-fill[data-width]').forEach(bar => {
-            bar.style.width = bar.dataset.width + '%';
-        });
-    }, 100);
-    
-    document.getElementById('result-screen').scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-function placeBet(marketName, prob, odds, stake, match) {
-    bankroll -= parseFloat(stake);
-    saveBankroll();
-    
-    betHistory.push({
-        date: new Date().toISOString(),
-        match: match,
-        market: marketName,
-        prob: prob,
-        odds: odds,
-        stake: parseFloat(stake),
-        status: 'pending',
-        result: null
-    });
-    saveHistory();
-    
-    updateBankrollDisplay();
-    updateHistoryDisplay();
-    
-    const notification = document.createElement('div');
-    notification.className = 'toast-notification';
-    notification.textContent = '✅ Apuesta registrada';
-    document.body.appendChild(notification);
-    setTimeout(() => notification.remove(), 2000);
-}
-
-function updateBetResult(index, won) {
-    const bet = betHistory[index];
-    if (bet.status !== 'pending') return;
-    
-    bet.status = 'settled';
-    bet.result = won ? 'win' : 'loss';
-    
-    if (won) {
-        const profit = bet.stake * bet.odds - bet.stake;
-        bankroll += bet.stake + profit;
-    }
-    
-    saveBankroll();
-    saveHistory();
-    updateBankrollDisplay();
-    updateHistoryDisplay();
-}
-
-function deleteBet(index) {
-    const bet = betHistory[index];
-    if (!bet) return;
-    
-    // Si la apuesta está pendiente, devolver el stake al bankroll
-    if (bet.status === 'pending') {
-        bankroll += bet.stake;
-        saveBankroll();
-        updateBankrollDisplay();
-    }
-    // Eliminar la apuesta del array
-    betHistory.splice(index, 1);
-    saveHistory();
-    updateHistoryDisplay();
-}
-
-function updateHistoryDisplay() {
-    const logEl = document.getElementById('bet-log');
-    if (betHistory.length === 0) {
-        logEl.innerHTML = '<p style="color:var(--muted);text-align:center;padding:20px;">No hay apuestas registradas aún.</p>';
-        return;
-    }
-    
-    let html = '';
-    // Mostrar del más reciente al más antiguo
-    for (let i = betHistory.length - 1; i >= 0; i--) {
-        const bet = betHistory[i];
-        const date = new Date(bet.date).toLocaleDateString();
-        const statusClass = bet.status === 'pending' ? 'log-pending' : (bet.result === 'win' ? 'log-win' : 'log-loss');
-        const statusEmoji = bet.status === 'pending' ? '⏳' : (bet.result === 'win' ? '✅' : '❌');
-        const profit = bet.status === 'settled' ? (bet.result === 'win' ? `+$${(bet.stake * bet.odds - bet.stake).toFixed(2)}` : `-$${bet.stake.toFixed(2)}`) : 'Pendiente';
-        const profitClass = bet.status === 'settled' ? (bet.result === 'win' ? 'profit' : 'loss') : '';
-        
-        html += `
-            <div class="log-item ${statusClass}">
-                <div style="flex:1;">
-                    <div style="font-weight:600;">${bet.match}</div>
-                    <div style="font-size:0.65rem;color:var(--muted);">${bet.market} · Cuota ${bet.odds} · Stake $${bet.stake.toFixed(2)}</div>
-                    <div style="font-size:0.6rem;color:var(--muted);">${date}</div>
-                </div>
-                <div style="text-align:right;display:flex;align-items:center;gap:4px;">
-                    <div>
-                        <div style="font-size:1rem;">${statusEmoji}</div>
-                        <div class="${profitClass}" style="font-weight:700;font-size:0.75rem;">${profit}</div>
-                        ${bet.status === 'pending' ? `
-                        <div style="margin-top:4px;">
-                            <button onclick="updateBetResult(${i}, true)" style="background:var(--green);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Ganó</button>
-                            <button onclick="updateBetResult(${i}, false)" style="background:var(--accent);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Perdió</button>
-                        </div>` : ''}
-                    </div>
-                    <button class="delete-btn" onclick="deleteBet(${i})" title="Eliminar apuesta">🗑️</button>
-                </div>
-            </div>`;
-    }
-    
-    logEl.innerHTML = html;
-}
-
-function exportHistory() {
-    if (betHistory.length === 0) {
-        alert('No hay apuestas para exportar.');
-        return;
-    }
-    const csv = 'Fecha,Partido,Mercado,Probabilidad,Cuota,Stake,Estado,Resultado,Ganancia\n' + 
-        betHistory.map(b => {
-            const profit = b.status === 'settled' ? (b.result === 'win' ? (b.stake * b.odds - b.stake).toFixed(2) : (-b.stake).toFixed(2)) : '0';
-            return `${new Date(b.date).toLocaleDateString()},${b.match},${b.market},${b.prob}%,${b.odds},$${b.stake.toFixed(2)},${b.status},${b.result || 'N/A'},${profit}`;
-        }).join('\n');
-    
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'apuestas_' + new Date().toISOString().split('T')[0] + '.csv';
-    a.click();
-}
-
-function switchTab(tab) {
-    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-    document.querySelectorAll('.tab').forEach(t => {
-        if (t.textContent.includes(tab === 'analyzer' ? 'ANALIZAR' : 'HISTORIAL')) {
-            t.classList.add('active');
-        }
-    });
-    document.getElementById('tab-analyzer').classList.toggle('hidden', tab !== 'analyzer');
-    document.getElementById('tab-history').classList.toggle('hidden', tab !== 'history');
-    if (tab === 'history') updateHistoryDisplay();
-}
-
-function goBack() {
-    document.getElementById('main-screen').classList.remove('hidden');
-    document.getElementById('result-screen').classList.add('hidden');
-    document.getElementById('main-screen').scrollIntoView({ behavior: 'smooth' });
-}
-
-// ============ INICIALIZACIÓN ============
-updateBankrollDisplay();
-updateHistoryDisplay();
-</script>
-</body>
-</html>
+                const kellyRaw = ((prob * (m.odds-1) -
