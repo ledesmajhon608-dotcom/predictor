@@ -275,26 +275,22 @@
 </head>
 <body>
 <div class="container">
-    <!-- ============ PANTALLA PRINCIPAL ============ -->
     <div id="main-screen">
         <div class="card">
             <h2>⚽ BET ANALYTICS PRO</h2>
             <div class="subtitle">SISTEMA DE VALUE BETTING</div>
             
-            <!-- Bankroll -->
             <div class="bankroll-display">
                 <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">💰 Bankroll Actual</div>
-                <div class="bankroll-amount" id="bankroll-display">$1,000.00</div>
+                <div class="bankroll-amount" id="bankroll-display">$20,000.00</div>
                 <div style="font-size:0.6rem;color:var(--muted);" id="pnl-display">P&L: $0.00 (0.0%)</div>
             </div>
             
-            <!-- Tabs -->
             <div class="tabs">
                 <div class="tab active" onclick="switchTab('analyzer')">🔍 ANALIZAR</div>
                 <div class="tab" onclick="switchTab('history')">📊 HISTORIAL</div>
             </div>
             
-            <!-- Panel Analizar -->
             <div id="tab-analyzer">
                 <label>🏆 Liga</label>
                 <select id="league">
@@ -305,6 +301,8 @@
                     <option value="Bundesliga">🇩🇪 Bundesliga</option>
                     <option value="Ligue_1">🇫🇷 Ligue 1</option>
                     <option value="Eredivisie">🇳🇱 Eredivisie</option>
+                    <option value="Libertadores">🏆 Copa Libertadores</option>
+                    <option value="Sudamericana">🏆 Copa Sudamericana</option>
                 </select>
                 
                 <label>🏠 Local</label>
@@ -322,6 +320,18 @@
                 <label>💵 Cuota Local</label>
                 <input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01">
                 
+                <label>💵 Cuota Over 7.5 córners</label>
+                <input type="number" id="odds-corners75" placeholder="Ej: 1.90" step="0.01" min="1.01">
+                
+                <label>💵 Cuota Over 8.5 córners</label>
+                <input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01">
+                
+                <label>💵 Cuota Over 0.5 goles 1er tiempo</label>
+                <input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01">
+                
+                <label>💵 Cuota Over 1.5 goles 1er tiempo</label>
+                <input type="number" id="odds-ht15" placeholder="Ej: 2.80" step="0.01" min="1.01">
+                
                 <button class="btn-primary" id="analyze-btn" disabled>🎯 ANALIZAR Y BUSCAR VALOR</button>
                 
                 <div class="warning-box hidden" id="no-value-warning">
@@ -329,7 +339,6 @@
                 </div>
             </div>
             
-            <!-- Panel Historial -->
             <div id="tab-history" class="hidden">
                 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
                     <h3 style="margin:0;">📊 Historial de Apuestas</h3>
@@ -342,7 +351,6 @@
         </div>
     </div>
     
-    <!-- ============ PANTALLA DE RESULTADOS ============ -->
     <div id="result-screen" class="hidden">
         <div class="card" id="result-card"></div>
     </div>
@@ -358,7 +366,9 @@ const TEAMS_DB = {
     "Serie_A": ["AC Milan","Atalanta","Bologna","Cagliari","Como","Empoli","Fiorentina","Genoa","Hellas Verona","Inter Milan","Juventus","Lazio","Lecce","Monza","Napoli","Parma","Roma","Torino","Udinese","Venezia"],
     "Bundesliga": ["Augsburg","Bayer Leverkusen","Bayern Munich","Bochum","Borussia Dortmund","Borussia Monchengladbach","Eintracht Frankfurt","Freiburg","Heidenheim","Hoffenheim","Holstein Kiel","Mainz 05","RB Leipzig","St. Pauli","Stuttgart","Union Berlin","Werder Bremen","Wolfsburg"],
     "Ligue_1": ["Angers","Auxerre","Brest","Le Havre","Lens","Lille","Lyon","Marseille","Monaco","Montpellier","Nantes","Nice","PSG","Reims","Rennes","Saint-Etienne","Strasbourg","Toulouse"],
-    "Eredivisie": ["Ajax","AZ Alkmaar","Feyenoord","PSV Eindhoven","Twente","Utrecht","Sparta Rotterdam","Heerenveen","NEC Nijmegen","Go Ahead Eagles","Fortuna Sittard","PEC Zwolle","Almere City","Heracles Almelo","RKC Waalwijk","Willem II","NAC Breda","Groningen"]
+    "Eredivisie": ["Ajax","AZ Alkmaar","Feyenoord","PSV Eindhoven","Twente","Utrecht","Sparta Rotterdam","Heerenveen","NEC Nijmegen","Go Ahead Eagles","Fortuna Sittard","PEC Zwolle","Almere City","Heracles Almelo","RKC Waalwijk","Willem II","NAC Breda","Groningen"],
+    "Libertadores": ["Flamengo","Palmeiras","River Plate","Boca Juniors","Nacional","Penarol","Olimpia","Barcelona SC","Independiente del Valle","LDU Quito","Estudiantes","Racing","Colo Colo","Cerro Porteno","Atletico Mineiro","Sao Paulo","Gremio","Internacional"],
+    "Sudamericana": ["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells Old Boys","Rosario Central","Universitario","Sporting Cristal","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza"]
 };
 
 const LEAGUES_CONFIG = {
@@ -367,7 +377,9 @@ const LEAGUES_CONFIG = {
     "Serie_A": { name: "Serie A", goals_avg: 2.65, corners_avg: 9.0 },
     "Bundesliga": { name: "Bundesliga", goals_avg: 3.00, corners_avg: 9.8 },
     "Ligue_1": { name: "Ligue 1", goals_avg: 2.70, corners_avg: 9.3 },
-    "Eredivisie": { name: "Eredivisie", goals_avg: 3.10, corners_avg: 9.6 }
+    "Eredivisie": { name: "Eredivisie", goals_avg: 3.10, corners_avg: 9.6 },
+    "Libertadores": { name: "Copa Libertadores", goals_avg: 2.50, corners_avg: 9.2 },
+    "Sudamericana": { name: "Copa Sudamericana", goals_avg: 2.30, corners_avg: 9.0 }
 };
 
 const TEAM_STRENGTH = {
@@ -422,11 +434,31 @@ const TEAM_STRENGTH = {
         "AZ Alkmaar":[1.14,0.92,1.07],"Twente":[1.12,0.94,1.06],"Utrecht":[1.06,1.00,1.05],
         "Sparta Rotterdam":[1.00,1.05,1.04],"Heerenveen":[0.98,1.06,1.04],
         "NEC Nijmegen":[0.96,1.08,1.03],"Go Ahead Eagles":[0.94,1.08,1.03]
+    },
+    "Libertadores": {
+        "Flamengo":[1.30,0.78,1.10],"Palmeiras":[1.28,0.80,1.09],"River Plate":[1.26,0.82,1.10],
+        "Boca Juniors":[1.22,0.84,1.08],"Nacional":[1.12,0.92,1.06],"Penarol":[1.10,0.94,1.06],
+        "Olimpia":[1.05,1.00,1.05],"Barcelona SC":[1.08,0.96,1.05],
+        "Independiente del Valle":[1.10,0.94,1.06],"LDU Quito":[1.08,0.96,1.05],
+        "Estudiantes":[1.06,1.00,1.04],"Racing":[1.08,0.98,1.05],
+        "Colo Colo":[1.02,1.04,1.04],"Cerro Porteno":[1.00,1.05,1.04],
+        "Atletico Mineiro":[1.20,0.86,1.08],"Sao Paulo":[1.18,0.88,1.07],
+        "Gremio":[1.14,0.92,1.06],"Internacional":[1.12,0.94,1.06]
+    },
+    "Sudamericana": {
+        "Athletico Paranaense":[1.10,0.94,1.05],"Bragantino":[1.08,0.96,1.05],
+        "Santos":[1.06,1.00,1.04],"Cruzeiro":[1.04,1.02,1.04],
+        "Defensa y Justicia":[1.02,1.04,1.04],"Lanus":[1.00,1.05,1.03],
+        "Newells Old Boys":[0.98,1.06,1.03],"Rosario Central":[1.00,1.04,1.03],
+        "Universitario":[1.04,1.02,1.04],"Sporting Cristal":[1.02,1.04,1.03],
+        "Emelec":[1.00,1.05,1.03],"Deportivo Cali":[0.98,1.06,1.03],
+        "Junior":[1.02,1.04,1.04],"Once Caldas":[0.96,1.08,1.03],
+        "La Equidad":[0.94,1.10,1.02],"Fortaleza":[1.06,1.00,1.04]
     }
 };
 
 // ============ GESTIÓN DE BANKROLL ============
-let bankroll = parseFloat(localStorage.getItem('bankroll') || '1000');
+let bankroll = parseFloat(localStorage.getItem('bankroll') || '20000');
 let betHistory = JSON.parse(localStorage.getItem('betHistory') || '[]');
 
 function saveBankroll() { localStorage.setItem('bankroll', bankroll.toString()); }
@@ -434,7 +466,7 @@ function saveHistory() { localStorage.setItem('betHistory', JSON.stringify(betHi
 
 function updateBankrollDisplay() {
     document.getElementById('bankroll-display').textContent = '$' + bankroll.toFixed(2);
-    const initialBankroll = 1000;
+    const initialBankroll = 20000;
     const pnl = bankroll - initialBankroll;
     const pnlPct = ((pnl / initialBankroll) * 100).toFixed(1);
     const pnlEl = document.getElementById('pnl-display');
@@ -475,6 +507,7 @@ function getTeamStrength(league, team) {
 function predictMatch(leagueCode, home, away) {
     const config = LEAGUES_CONFIG[leagueCode];
     const goalsAvg = config.goals_avg;
+    const cornersAvg = config.corners_avg;
     
     const [hAtk, hDef, hAdv] = getTeamStrength(leagueCode, home);
     const [aAtk, aDef] = getTeamStrength(leagueCode, away);
@@ -484,6 +517,7 @@ function predictMatch(leagueCode, home, away) {
     const la = (goalsAvg / 2) * aAtk * hDef * (1 / homeAdv);
     const totalLambda = lh + la;
     
+    // Resultado
     let homeWin = 0, awayWin = 0;
     for (let i = 0; i <= 12; i++) {
         for (let j = 0; j <= 12; j++) {
@@ -494,12 +528,24 @@ function predictMatch(leagueCode, home, away) {
     }
     const draw = 1 - homeWin - awayWin;
     
+    // BTTS
     const p0h = poissonPMF(0, lh);
     const p0a = poissonPMF(0, la);
     const btts = Math.max(0, Math.min(100, (1 - p0h - p0a + p0h * p0a) * 100));
     
+    // Goles totales
     const over15 = probOver(totalLambda, 1.5);
     const over25 = probOver(totalLambda, 2.5);
+    
+    // Primera mitad (aprox 42% de goles totales)
+    const htLambda = totalLambda * 0.42;
+    const htOver05 = probOver(htLambda, 0.5);
+    const htOver15 = probOver(htLambda, 1.5);
+    
+    // Córners (modelo simple con media de liga)
+    const lambdaCorners = cornersAvg * 1.02; // pequeño ajuste
+    const cornersOver75 = probOver(lambdaCorners, 7.5);
+    const cornersOver85 = probOver(lambdaCorners, 8.5);
     
     return {
         home, away, league: config.name,
@@ -507,7 +553,9 @@ function predictMatch(leagueCode, home, away) {
         over15, over25, btts,
         home_win: (homeWin * 100).toFixed(1),
         draw: (draw * 100).toFixed(1),
-        away_win: (awayWin * 100).toFixed(1)
+        away_win: (awayWin * 100).toFixed(1),
+        htOver05, htOver15,
+        cornersOver75, cornersOver85
     };
 }
 
@@ -544,66 +592,51 @@ leagueSelect.addEventListener('change', function() {
 function checkAnalyzeButton() {
     const home = homeSelect.value;
     const away = awaySelect.value;
-    const oddsOver = document.getElementById('odds-over25').value;
-    const oddsBtts = document.getElementById('odds-btts').value;
-    const oddsHome = document.getElementById('odds-home').value;
-    analyzeBtn.disabled = !(home && away && home !== away && (oddsOver || oddsBtts || oddsHome));
+    const anyOdd = document.getElementById('odds-over25').value ||
+                   document.getElementById('odds-btts').value ||
+                   document.getElementById('odds-home').value ||
+                   document.getElementById('odds-corners75').value ||
+                   document.getElementById('odds-corners85').value ||
+                   document.getElementById('odds-ht05').value ||
+                   document.getElementById('odds-ht15').value;
+    analyzeBtn.disabled = !(home && away && home !== away && anyOdd);
 }
 
 homeSelect.addEventListener('change', checkAnalyzeButton);
 awaySelect.addEventListener('change', checkAnalyzeButton);
-document.getElementById('odds-over25').addEventListener('input', checkAnalyzeButton);
-document.getElementById('odds-btts').addEventListener('input', checkAnalyzeButton);
-document.getElementById('odds-home').addEventListener('input', checkAnalyzeButton);
+document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('input', checkAnalyzeButton);
+});
 
 analyzeBtn.addEventListener('click', () => {
     const league = leagueSelect.value;
     const home = homeSelect.value;
     const away = awaySelect.value;
-    const oddsOver25 = parseFloat(document.getElementById('odds-over25').value) || 0;
-    const oddsBtts = parseFloat(document.getElementById('odds-btts').value) || 0;
-    const oddsHome = parseFloat(document.getElementById('odds-home').value) || 0;
     
     const pred = predictMatch(league, home, away);
     const markets = [];
     
-    // Over 2.5
-    if (oddsOver25 > 1) {
-        const val = calcValue(pred.over25, oddsOver25);
-        markets.push({
-            name: 'Over 2.5 Goles',
-            prob: pred.over25,
-            odds: oddsOver25,
-            value: val,
-            hasValue: val > 0
-        });
+    // Función auxiliar para agregar mercado
+    function addMarket(name, prob, oddsInputId) {
+        const odds = parseFloat(document.getElementById(oddsInputId).value) || 0;
+        if (odds > 1) {
+            const val = calcValue(prob, odds);
+            markets.push({
+                name, prob, odds, value: val,
+                hasValue: val > 0
+            });
+        }
     }
     
-    // BTTS
-    if (oddsBtts > 1) {
-        const val = calcValue(pred.btts, oddsBtts);
-        markets.push({
-            name: 'BTTS (Sí)',
-            prob: pred.btts,
-            odds: oddsBtts,
-            value: val,
-            hasValue: val > 0
-        });
-    }
+    addMarket('Over 2.5 Goles', pred.over25, 'odds-over25');
+    addMarket('BTTS (Sí)', pred.btts, 'odds-btts');
+    addMarket('Victoria Local', parseFloat(pred.home_win), 'odds-home');
+    addMarket('Over 7.5 Córners', pred.cornersOver75, 'odds-corners75');
+    addMarket('Over 8.5 Córners', pred.cornersOver85, 'odds-corners85');
+    addMarket('Over 0.5 Goles 1T', pred.htOver05, 'odds-ht05');
+    addMarket('Over 1.5 Goles 1T', pred.htOver15, 'odds-ht15');
     
-    // Victoria Local
-    if (oddsHome > 1) {
-        const val = calcValue(parseFloat(pred.home_win), oddsHome);
-        markets.push({
-            name: 'Victoria Local',
-            prob: parseFloat(pred.home_win),
-            odds: oddsHome,
-            value: val,
-            hasValue: val > 0
-        });
-    }
-    
-    // Over 1.5 (sugerencia conservadora)
+    // Over 1.5 (conservador, sin cuota)
     markets.push({
         name: 'Over 1.5 Goles',
         prob: pred.over15,
@@ -621,7 +654,6 @@ function renderResults(pred, markets) {
     document.getElementById('result-screen').classList.remove('hidden');
     
     const hasAnyValue = markets.some(m => m.hasValue);
-    const noValueWarning = document.getElementById('no-value-warning');
     
     let marketsHtml = '';
     markets.forEach(m => {
