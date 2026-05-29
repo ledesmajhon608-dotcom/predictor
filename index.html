@@ -313,6 +313,7 @@
                     <option value="Eredivisie">🇳🇱 Eredivisie</option>
                     <option value="Libertadores">🏆 Copa Libertadores</option>
                     <option value="Sudamericana">🏆 Copa Sudamericana</option>
+                    <option value="Mundial_2026">🌍 Mundial 2026</option>
                 </select>
                 
                 <label>🏠 Local</label>
@@ -380,8 +381,16 @@ const TEAMS_DB = {
     "Bundesliga": ["Augsburg","Bayer Leverkusen","Bayern Munich","Bochum","Borussia Dortmund","Borussia Monchengladbach","Eintracht Frankfurt","Freiburg","Heidenheim","Hoffenheim","Holstein Kiel","Mainz 05","RB Leipzig","St. Pauli","Stuttgart","Union Berlin","Werder Bremen","Wolfsburg"],
     "Ligue_1": ["Angers","Auxerre","Brest","Le Havre","Lens","Lille","Lyon","Marseille","Monaco","Montpellier","Nantes","Nice","PSG","Reims","Rennes","Saint-Etienne","Strasbourg","Toulouse"],
     "Eredivisie": ["Ajax","AZ Alkmaar","Feyenoord","PSV Eindhoven","Twente","Utrecht","Sparta Rotterdam","Heerenveen","NEC Nijmegen","Go Ahead Eagles","Fortuna Sittard","PEC Zwolle","Almere City","Heracles Almelo","RKC Waalwijk","Willem II","NAC Breda","Groningen"],
-    "Libertadores": ["Flamengo","Palmeiras","River Plate","Boca Juniors","Nacional","Penarol","Olimpia","Barcelona SC","Independiente del Valle","LDU Quito","Estudiantes","Racing","Colo Colo","Cerro Porteno","Atletico Mineiro","Sao Paulo","Gremio","Internacional"],
-    "Sudamericana": ["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells Old Boys","Rosario Central","Universitario","Sporting Cristal","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza"]
+    "Libertadores": ["Flamengo","Palmeiras","Universidad Católica","River Plate","Boca Juniors","Nacional","Penarol","Olimpia","Barcelona SC","Independiente del Valle","LDU Quito","Estudiantes","Racing","Colo Colo","Cerro Porteno","Atletico Mineiro","Sao Paulo","Gremio","Internacional"],
+    "Sudamericana": ["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells Old Boys","Rosario Central","Universitario","Sporting Cristal","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza"],
+    "Mundial_2026": [
+        "Alemania","Arabia Saudita","Argentina","Australia","Austria","Bélgica","Bolivia","Brasil",
+        "Canadá","Catar","Chile","Colombia","Corea del Sur","Costa Rica","Croacia","Dinamarca",
+        "Ecuador","Egipto","Emiratos Árabes Unidos","España","Estados Unidos","Francia","Ghana",
+        "Honduras","Inglaterra","Irán","Italia","Jamaica","Japón","Marruecos","México","Nigeria",
+        "Nueva Zelanda","Países Bajos","Panamá","Paraguay","Perú","Polonia","Portugal","Senegal",
+        "Serbia","Sudáfrica","Suecia","Suiza","Túnez","Ucrania","Uruguay","Venezuela"
+    ]
 };
 
 const LEAGUES_CONFIG = {
@@ -392,10 +401,12 @@ const LEAGUES_CONFIG = {
     "Ligue_1": { name: "Ligue 1", goals_avg: 2.70, corners_avg: 9.3 },
     "Eredivisie": { name: "Eredivisie", goals_avg: 3.10, corners_avg: 9.6 },
     "Libertadores": { name: "Copa Libertadores", goals_avg: 2.50, corners_avg: 9.2 },
-    "Sudamericana": { name: "Copa Sudamericana", goals_avg: 2.30, corners_avg: 9.0 }
+    "Sudamericana": { name: "Copa Sudamericana", goals_avg: 2.30, corners_avg: 9.0 },
+    "Mundial_2026": { name: "Mundial 2026", goals_avg: 2.40, corners_avg: 9.5 }
 };
 
 const TEAM_STRENGTH = {
+    // ... (se mantienen los ratings anteriores para las otras ligas) ...
     "EPL": {
         "Manchester City":[1.30,0.77,1.13],"Liverpool":[1.28,0.79,1.12],"Arsenal":[1.24,0.82,1.10],
         "Chelsea":[1.15,0.89,1.09],"Tottenham":[1.16,0.90,1.09],"Manchester United":[1.18,0.88,1.09],
@@ -459,7 +470,7 @@ const TEAM_STRENGTH = {
         "Independiente del Valle":[1.10,0.94,1.06],"LDU Quito":[1.08,0.96,1.05],
         "Estudiantes":[1.06,1.00,1.04],"Racing":[1.08,0.98,1.05],
         "Colo Colo":[1.02,1.04,1.04],"Cerro Porteno":[1.00,1.05,1.04],
-        "Atletico Mineiro":[1.20,0.86,1.08],"Sao Paulo":[1.18,0.88,1.07],
+        "Atletico Mineiro":[1.20,0.86,1.08],"Sao Paulo":[1.18,0.88,1.07],"Universidad Católica":[1.02,1.04,1.04],
         "Gremio":[1.14,0.92,1.06],"Internacional":[1.12,0.94,1.06]
     },
     "Sudamericana": {
@@ -471,7 +482,54 @@ const TEAM_STRENGTH = {
         "Emelec":[1.00,1.05,1.03],"Deportivo Cali":[0.98,1.06,1.03],
         "Junior":[1.02,1.04,1.04],"Once Caldas":[0.96,1.08,1.03],
         "La Equidad":[0.94,1.10,1.02],"Fortaleza":[1.06,1.00,1.04]
+    },
+    "Mundial_2026": {
+        // Potencias
+        "Argentina":[1.30,0.80,1.08],"Brasil":[1.28,0.82,1.08],"Francia":[1.27,0.83,1.07],
+        "España":[1.25,0.85,1.07],"Inglaterra":[1.26,0.84,1.07],"Alemania":[1.23,0.86,1.06],
+        "Portugal":[1.22,0.87,1.06],"Países Bajos":[1.20,0.88,1.06],"Italia":[1.18,0.90,1.05],
+        "Croacia":[1.16,0.92,1.05],"Bélgica":[1.17,0.91,1.05],"Uruguay":[1.15,0.93,1.05],
+        "Colombia":[1.14,0.94,1.04],"México":[1.12,0.96,1.04],"Estados Unidos":[1.13,0.95,1.04],
+        "Marruecos":[1.14,0.94,1.04],"Senegal":[1.11,0.97,1.03],"Japón":[1.12,0.96,1.04],
+        "Corea del Sur":[1.08,1.00,1.03],"Irán":[1.05,1.03,1.03],"Australia":[1.04,1.04,1.02],
+        "Egipto":[1.06,1.02,1.03],"Nigeria":[1.04,1.04,1.02],"Ghana":[1.02,1.06,1.02],
+        "Camerún":[1.00,1.08,1.02],"Costa de Marfil":[1.03,1.05,1.02],
+        "Serbia":[1.05,1.03,1.03],"Suiza":[1.09,0.99,1.03],"Dinamarca":[1.08,1.00,1.03],
+        "Austria":[1.06,1.02,1.03],"Ucrania":[1.03,1.05,1.02],"Suecia":[1.04,1.04,1.02],
+        "Polonia":[1.05,1.03,1.03],"Canadá":[1.06,1.02,1.03],
+        "Costa Rica":[0.97,1.11,1.01],"Honduras":[0.95,1.13,1.01],"Jamaica":[0.96,1.12,1.01],
+        "Panamá":[0.94,1.14,1.01],"Paraguay":[1.03,1.05,1.02],"Perú":[1.02,1.06,1.02],
+        "Chile":[1.03,1.05,1.02],"Ecuador":[1.07,1.01,1.03],"Bolivia":[0.90,1.18,1.00],
+        "Venezuela":[0.98,1.10,1.02],"Sudáfrica":[0.96,1.12,1.01],"Túnez":[0.97,1.11,1.01],
+        "Argelia":[1.00,1.08,1.02],"Catar":[0.92,1.16,1.00],"Emiratos Árabes Unidos":[0.91,1.17,1.00],
+        "Nueva Zelanda":[0.85,1.23,1.00],"Arabia Saudita":[0.93,1.15,1.00],
+        // Otros para completar 48
+        "Sudáfrica":[0.96,1.12,1.01],"Túnez":[0.97,1.11,1.01],"Argelia":[1.00,1.08,1.02],
+        "Catar":[0.92,1.16,1.00],"Emiratos Árabes Unidos":[0.91,1.17,1.00],
+        "Nueva Zelanda":[0.85,1.23,1.00],"Arabia Saudita":[0.93,1.15,1.00]
+        // Nota: algunos repetidos, pero la lista es correcta en TEAMS_DB, aquí solo puse ratings para los que aparecen.
+        // En realidad en TEAMS_DB están todos los 48, y aquí sus ratings deben coincidir. Corregiré abajo.
     }
+};
+
+// Corregir duplicados y completar ratings para Mundial_2026 correctamente:
+TEAM_STRENGTH["Mundial_2026"] = {
+    "Alemania":[1.23,0.86,1.06],"Arabia Saudita":[0.93,1.15,1.00],"Argentina":[1.30,0.80,1.08],
+    "Australia":[1.04,1.04,1.02],"Austria":[1.06,1.02,1.03],"Bélgica":[1.17,0.91,1.05],
+    "Bolivia":[0.90,1.18,1.00],"Brasil":[1.28,0.82,1.08],"Canadá":[1.06,1.02,1.03],
+    "Catar":[0.92,1.16,1.00],"Chile":[1.03,1.05,1.02],"Colombia":[1.14,0.94,1.04],
+    "Corea del Sur":[1.08,1.00,1.03],"Costa Rica":[0.97,1.11,1.01],"Croacia":[1.16,0.92,1.05],
+    "Dinamarca":[1.08,1.00,1.03],"Ecuador":[1.07,1.01,1.03],"Egipto":[1.06,1.02,1.03],
+    "Emiratos Árabes Unidos":[0.91,1.17,1.00],"España":[1.25,0.85,1.07],"Estados Unidos":[1.13,0.95,1.04],
+    "Francia":[1.27,0.83,1.07],"Ghana":[1.02,1.06,1.02],"Honduras":[0.95,1.13,1.01],
+    "Inglaterra":[1.26,0.84,1.07],"Irán":[1.05,1.03,1.03],"Italia":[1.18,0.90,1.05],
+    "Jamaica":[0.96,1.12,1.01],"Japón":[1.12,0.96,1.04],"Marruecos":[1.14,0.94,1.04],
+    "México":[1.12,0.96,1.04],"Nigeria":[1.04,1.04,1.02],"Nueva Zelanda":[0.85,1.23,1.00],
+    "Países Bajos":[1.20,0.88,1.06],"Panamá":[0.94,1.14,1.01],"Paraguay":[1.03,1.05,1.02],
+    "Perú":[1.02,1.06,1.02],"Polonia":[1.05,1.03,1.03],"Portugal":[1.22,0.87,1.06],
+    "Senegal":[1.11,0.97,1.03],"Serbia":[1.05,1.03,1.03],"Sudáfrica":[0.96,1.12,1.01],
+    "Suecia":[1.04,1.04,1.02],"Suiza":[1.09,0.99,1.03],"Túnez":[0.97,1.11,1.01],
+    "Ucrania":[1.03,1.05,1.02],"Uruguay":[1.15,0.93,1.05],"Venezuela":[0.98,1.10,1.02]
 };
 
 // ============ GESTIÓN DE BANKROLL ============
@@ -534,7 +592,6 @@ function predictMatch(leagueCode, home, away) {
     const la = (goalsAvg / 2) * aAtk * hDef * (1 / homeAdv);
     const totalLambda = lh + la;
     
-    // Resultado
     let homeWin = 0, awayWin = 0;
     for (let i = 0; i <= 12; i++) {
         for (let j = 0; j <= 12; j++) {
@@ -545,21 +602,17 @@ function predictMatch(leagueCode, home, away) {
     }
     const draw = 1 - homeWin - awayWin;
     
-    // BTTS
     const p0h = poissonPMF(0, lh);
     const p0a = poissonPMF(0, la);
     const btts = Math.max(0, Math.min(100, (1 - p0h - p0a + p0h * p0a) * 100));
     
-    // Goles totales
     const over15 = probOver(totalLambda, 1.5);
     const over25 = probOver(totalLambda, 2.5);
     
-    // Primera mitad (aprox 42% de goles totales)
     const htLambda = totalLambda * 0.42;
     const htOver05 = probOver(htLambda, 0.5);
     const htOver15 = probOver(htLambda, 1.5);
     
-    // Córners (modelo simple con media de liga)
     const lambdaCorners = cornersAvg * 1.02;
     const cornersOver75 = probOver(lambdaCorners, 7.5);
     const cornersOver85 = probOver(lambdaCorners, 8.5);
