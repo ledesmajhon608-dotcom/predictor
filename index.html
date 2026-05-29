@@ -298,6 +298,26 @@
             font-weight: 700;
             font-size: 0.9rem;
         }
+        .toast-notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--green);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            font-weight: 700;
+            z-index: 999;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+            animation: fadeInOut 2s ease;
+        }
+        @keyframes fadeInOut {
+            0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+        }
     </style>
 </head>
 <body>
@@ -399,7 +419,7 @@ const TEAMS_DB = {
     "Ligue_1": ["Angers","Auxerre","Brest","Le Havre","Lens","Lille","Lyon","Marseille","Monaco","Montpellier","Nantes","Nice","PSG","Reims","Rennes","Saint-Etienne","Strasbourg","Toulouse"],
     "Eredivisie": ["Ajax","AZ Alkmaar","Feyenoord","PSV Eindhoven","Twente","Utrecht","Sparta Rotterdam","Heerenveen","NEC Nijmegen","Go Ahead Eagles","Fortuna Sittard","PEC Zwolle","Almere City","Heracles Almelo","RKC Waalwijk","Willem II","NAC Breda","Groningen"],
     "Libertadores": ["Flamengo","Palmeiras","River Plate","Boca Juniors","Nacional","Penarol","Olimpia","Barcelona SC","Independiente del Valle","LDU Quito","Estudiantes","Racing","Colo Colo","Cerro Porteno","Atletico Mineiro","Sao Paulo","Gremio","Internacional","Universidad Católica"],
-    "Sudamericana": ["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells Old Boys","Rosario Central","Universitario","Sporting Cristal","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza"],
+    "Sudamericana": ["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells Old Boys","Rosario Central","Universitario","Sporting Cristal","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza","América de Cali","Macará"],
     "Mundial_2026": [
         "Alemania","Arabia Saudita","Argentina","Australia","Austria","Bélgica","Bolivia","Brasil",
         "Canadá","Catar","Chile","Colombia","Corea del Sur","Costa Rica","Croacia","Dinamarca",
@@ -504,7 +524,8 @@ const TEAM_STRENGTH = {
         "Universitario":[1.04,1.02,1.04],"Sporting Cristal":[1.02,1.04,1.03],
         "Emelec":[1.00,1.05,1.03],"Deportivo Cali":[0.98,1.06,1.03],
         "Junior":[1.02,1.04,1.04],"Once Caldas":[0.96,1.08,1.03],
-        "La Equidad":[0.94,1.10,1.02],"Fortaleza":[1.06,1.00,1.04]
+        "La Equidad":[0.94,1.10,1.02],"Fortaleza":[1.06,1.00,1.04],
+        "América de Cali":[1.02,1.06,1.03],"Macará":[0.95,1.12,1.02]
     },
     "Mundial_2026": {
         "Alemania":[1.23,0.86,1.06],"Arabia Saudita":[0.93,1.15,1.00],"Argentina":[1.30,0.80,1.08],
@@ -635,7 +656,6 @@ function predictMatch(leagueCode, home, away) {
     
     const htLambda = totalLambda * 0.42;
     const htOver05 = probOver(htLambda, 0.5);
-    // Over 1.5 HT eliminado
     
     const lambdaCorners = cornersAvg * 1.02;
     const cornersOver75 = probOver(lambdaCorners, 7.5);
@@ -778,7 +798,7 @@ function renderResults(pred, markets) {
                 <div class="prob-row">
                     <span class="prob-label">Probabilidad</span>
                     <div class="bar-wrap">
-                        <div class="bar-fill" data-width="${m.prob}%" style="background:${barColor};box-shadow:0 0 8px ${barColor};"></div>
+                        <div class="bar-fill" data-width="${Math.round(m.prob)}%" style="background:${barColor};box-shadow:0 0 8px ${barColor};"></div>
                     </div>
                     <span class="prob-value ${cls}">${Math.round(m.prob)}%</span>
                 </div>
@@ -817,7 +837,7 @@ function renderResults(pred, markets) {
     
     setTimeout(() => {
         document.querySelectorAll('.bar-fill[data-width]').forEach(bar => {
-            bar.style.width = bar.dataset.width;
+            bar.style.width = bar.dataset.width + '%';
         });
     }, 100);
     
@@ -825,10 +845,6 @@ function renderResults(pred, markets) {
 }
 
 function placeBet(marketName, prob, odds, stake, match) {
-    if (!confirm(`¿Registrar apuesta?\n\n${match}\n${marketName}\nCuota: ${odds}\nStake: $${stake}\n\n(Esto es solo un registro, no ejecuta la apuesta real)`)) {
-        return;
-    }
-    
     bankroll -= parseFloat(stake);
     saveBankroll();
     
@@ -846,8 +862,13 @@ function placeBet(marketName, prob, odds, stake, match) {
     
     updateBankrollDisplay();
     updateHistoryDisplay();
-    alert('✅ Apuesta registrada. Recuerda actualizar el resultado cuando termine el partido.');
-    goBack();
+    
+    // Mostrar notificación flotante sin salir de la pantalla de resultados
+    const notification = document.createElement('div');
+    notification.className = 'toast-notification';
+    notification.textContent = '✅ Apuesta registrada';
+    document.body.appendChild(notification);
+    setTimeout(() => notification.remove(), 2000);
 }
 
 function updateBetResult(index, won) {
