@@ -780,7 +780,7 @@ function renderResults(pred, markets) {
                     <div class="bar-wrap">
                         <div class="bar-fill" data-width="${m.prob}%" style="background:${barColor};box-shadow:0 0 8px ${barColor};"></div>
                     </div>
-                    <span class="prob-value ${cls}">${m.prob}%</span>
+                    <span class="prob-value ${cls}">${Math.round(m.prob)}%</span>
                 </div>
                 ${isValued ? `
                 <div class="prob-row">
