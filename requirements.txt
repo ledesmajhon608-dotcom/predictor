@@ -1,6 +1,6 @@
-flask
-flask-cors
-requests
-beautifulsoup4
-numpy
-scipy
+flask==3.0.0
+flask-cors==4.0.0
+requests==2.31.0
+beautifulsoup4==4.12.3
+numpy==1.26.4
+scipy==1.12.0
