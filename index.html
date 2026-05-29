@@ -145,7 +145,7 @@
             margin: 7px 0;
             gap: 8px;
         }
-        .prob-label { min-width: 100px; font-size: 0.78rem; font-weight: 500; }
+        .prob-label { min-width: 120px; font-size: 0.78rem; font-weight: 500; }
         .bar-wrap {
             flex: 1;
             height: 7px;
@@ -189,6 +189,16 @@
             border-radius: 20px;
             background: rgba(255,77,90,0.15);
             color: var(--accent);
+            letter-spacing: 1px;
+        }
+        .info-badge {
+            display: inline-block;
+            font-size: 0.6rem;
+            font-weight: 700;
+            padding: 3px 10px;
+            border-radius: 20px;
+            background: rgba(255,255,255,0.05);
+            color: var(--muted);
             letter-spacing: 1px;
         }
         .bankroll-display {
@@ -311,14 +321,17 @@
                 <label>✈️ Visitante</label>
                 <select id="away" disabled><option>-- Liga --</option></select>
                 
-                <label>💵 Cuota Over 2.5 goles</label>
+                <label>💵 Cuota Over 0.5 goles 1T</label>
+                <input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01">
+                
+                <label>💵 Cuota Over 1.5 goles totales</label>
+                <input type="number" id="odds-over15" placeholder="Ej: 1.25" step="0.01" min="1.01">
+                
+                <label>💵 Cuota Over 2.5 goles totales</label>
                 <input type="number" id="odds-over25" placeholder="Ej: 1.85" step="0.01" min="1.01">
                 
                 <label>💵 Cuota BTTS (Sí)</label>
                 <input type="number" id="odds-btts" placeholder="Ej: 1.75" step="0.01" min="1.01">
-                
-                <label>💵 Cuota Local</label>
-                <input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01">
                 
                 <label>💵 Cuota Over 7.5 córners</label>
                 <input type="number" id="odds-corners75" placeholder="Ej: 1.90" step="0.01" min="1.01">
@@ -326,10 +339,10 @@
                 <label>💵 Cuota Over 8.5 córners</label>
                 <input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01">
                 
-                <label>💵 Cuota Over 0.5 goles 1er tiempo</label>
-                <input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01">
+                <label>💵 Cuota Local (opcional)</label>
+                <input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01">
                 
-                <label>💵 Cuota Over 1.5 goles 1er tiempo</label>
+                <label>💵 Cuota Over 1.5 goles 1T (opcional)</label>
                 <input type="number" id="odds-ht15" placeholder="Ej: 2.80" step="0.01" min="1.01">
                 
                 <button class="btn-primary" id="analyze-btn" disabled>🎯 ANALIZAR Y BUSCAR VALOR</button>
@@ -359,7 +372,7 @@
 </div>
 
 <script>
-// ============ DATOS DE EQUIPOS Y RATINGS ============
+// ============ DATOS DE EQUIPOS Y RATINGS (COMPLETOS) ============
 const TEAMS_DB = {
     "EPL": ["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Crystal Palace","Everton","Fulham","Ipswich Town","Leicester City","Liverpool","Manchester City","Manchester United","Newcastle United","Nottingham Forest","Southampton","Tottenham","West Ham United","Wolves"],
     "La_liga": ["Alaves","Athletic Club","Atletico Madrid","Barcelona","Celta Vigo","Espanyol","Getafe","Girona","Las Palmas","Leganes","Mallorca","Osasuna","Rayo Vallecano","Real Betis","Real Madrid","Real Sociedad","Sevilla","Valencia","Valladolid","Villarreal"],
@@ -433,7 +446,11 @@ const TEAM_STRENGTH = {
         "PSV Eindhoven":[1.26,0.80,1.10],"Ajax":[1.24,0.82,1.10],"Feyenoord":[1.22,0.84,1.09],
         "AZ Alkmaar":[1.14,0.92,1.07],"Twente":[1.12,0.94,1.06],"Utrecht":[1.06,1.00,1.05],
         "Sparta Rotterdam":[1.00,1.05,1.04],"Heerenveen":[0.98,1.06,1.04],
-        "NEC Nijmegen":[0.96,1.08,1.03],"Go Ahead Eagles":[0.94,1.08,1.03]
+        "NEC Nijmegen":[0.96,1.08,1.03],"Go Ahead Eagles":[0.94,1.08,1.03],
+        "Fortuna Sittard":[0.92,1.10,1.03],"PEC Zwolle":[0.90,1.12,1.03],
+        "Almere City":[0.88,1.14,1.02],"Heracles Almelo":[0.90,1.12,1.03],
+        "RKC Waalwijk":[0.86,1.16,1.02],"Willem II":[0.94,1.08,1.03],
+        "NAC Breda":[0.92,1.10,1.03],"Groningen":[0.90,1.12,1.03]
     },
     "Libertadores": {
         "Flamengo":[1.30,0.78,1.10],"Palmeiras":[1.28,0.80,1.09],"River Plate":[1.26,0.82,1.10],
@@ -543,7 +560,7 @@ function predictMatch(leagueCode, home, away) {
     const htOver15 = probOver(htLambda, 1.5);
     
     // Córners (modelo simple con media de liga)
-    const lambdaCorners = cornersAvg * 1.02; // pequeño ajuste
+    const lambdaCorners = cornersAvg * 1.02;
     const cornersOver75 = probOver(lambdaCorners, 7.5);
     const cornersOver85 = probOver(lambdaCorners, 8.5);
     
@@ -563,7 +580,7 @@ function calcValue(probPercent, odds) {
     if (!odds || odds <= 1) return null;
     const prob = probPercent / 100;
     const implied = 1 / odds;
-    return (prob - implied) * 100; // valor en porcentaje
+    return (prob - implied) * 100;
 }
 
 // ============ INTERFAZ DE USUARIO ============
@@ -598,7 +615,8 @@ function checkAnalyzeButton() {
                    document.getElementById('odds-corners75').value ||
                    document.getElementById('odds-corners85').value ||
                    document.getElementById('odds-ht05').value ||
-                   document.getElementById('odds-ht15').value;
+                   document.getElementById('odds-ht15').value ||
+                   document.getElementById('odds-over15').value;
     analyzeBtn.disabled = !(home && away && home !== away && anyOdd);
 }
 
@@ -616,34 +634,29 @@ analyzeBtn.addEventListener('click', () => {
     const pred = predictMatch(league, home, away);
     const markets = [];
     
-    // Función auxiliar para agregar mercado
-    function addMarket(name, prob, oddsInputId) {
-        const odds = parseFloat(document.getElementById(oddsInputId).value) || 0;
-        if (odds > 1) {
-            const val = calcValue(prob, odds);
-            markets.push({
-                name, prob, odds, value: val,
-                hasValue: val > 0
-            });
-        }
-    }
+    const marketDefs = [
+        { name: 'Over 0.5 Goles 1T', prob: pred.htOver05, oddsId: 'odds-ht05' },
+        { name: 'Over 1.5 Goles', prob: pred.over15, oddsId: 'odds-over15' },
+        { name: 'Over 2.5 Goles', prob: pred.over25, oddsId: 'odds-over25' },
+        { name: 'BTTS (Sí)', prob: pred.btts, oddsId: 'odds-btts' },
+        { name: 'Over 7.5 Córners', prob: pred.cornersOver75, oddsId: 'odds-corners75' },
+        { name: 'Over 8.5 Córners', prob: pred.cornersOver85, oddsId: 'odds-corners85' },
+        { name: 'Victoria Local', prob: parseFloat(pred.home_win), oddsId: 'odds-home' },
+        { name: 'Over 1.5 Goles 1T', prob: pred.htOver15, oddsId: 'odds-ht15' }
+    ];
     
-    addMarket('Over 2.5 Goles', pred.over25, 'odds-over25');
-    addMarket('BTTS (Sí)', pred.btts, 'odds-btts');
-    addMarket('Victoria Local', parseFloat(pred.home_win), 'odds-home');
-    addMarket('Over 7.5 Córners', pred.cornersOver75, 'odds-corners75');
-    addMarket('Over 8.5 Córners', pred.cornersOver85, 'odds-corners85');
-    addMarket('Over 0.5 Goles 1T', pred.htOver05, 'odds-ht05');
-    addMarket('Over 1.5 Goles 1T', pred.htOver15, 'odds-ht15');
-    
-    // Over 1.5 (conservador, sin cuota)
-    markets.push({
-        name: 'Over 1.5 Goles',
-        prob: pred.over15,
-        odds: 1.20,
-        value: calcValue(pred.over15, 1.20),
-        hasValue: false,
-        conservative: true
+    marketDefs.forEach(def => {
+        const oddsEl = document.getElementById(def.oddsId);
+        const odds = oddsEl ? parseFloat(oddsEl.value) || 0 : 0;
+        const hasOdds = odds > 1;
+        const value = hasOdds ? calcValue(def.prob, odds) : null;
+        markets.push({
+            name: def.name,
+            prob: def.prob,
+            odds: hasOdds ? odds : 0,
+            value: value,
+            hasValue: value !== null && value > 0
+        });
     });
     
     renderResults(pred, markets);
@@ -657,9 +670,14 @@ function renderResults(pred, markets) {
     
     let marketsHtml = '';
     markets.forEach(m => {
-        const cls = m.hasValue ? 'green' : 'red';
-        const badge = m.hasValue ? '<span class="value-badge">+EV</span>' : (m.conservative ? '' : '<span class="no-value-badge">SIN VALOR</span>');
-        const barColor = m.hasValue ? 'var(--green)' : 'var(--accent)';
+        const isValued = m.odds > 1;
+        const cls = m.hasValue ? 'green' : (isValued ? 'red' : '');
+        let badge = '';
+        if (m.hasValue) badge = '<span class="value-badge">+EV</span>';
+        else if (isValued) badge = '<span class="no-value-badge">SIN VALOR</span>';
+        else badge = '<span class="info-badge">PROBABILIDAD</span>';
+        
+        const barColor = m.hasValue ? 'var(--green)' : (isValued ? 'var(--accent)' : 'var(--blue)');
         
         let stakeHtml = '';
         if (m.hasValue && m.odds > 1) {
@@ -678,7 +696,7 @@ function renderResults(pred, markets) {
         }
         
         marketsHtml += `
-            <div class="market" style="border-color:${m.hasValue ? 'rgba(46,204,113,0.3)' : 'rgba(255,77,90,0.15)'};">
+            <div class="market" style="border-color:${m.hasValue ? 'rgba(46,204,113,0.3)' : (isValued ? 'rgba(255,77,90,0.15)' : 'rgba(77,171,247,0.2)')};">
                 <div class="market-header">
                     ${m.name} ${badge}
                 </div>
@@ -689,7 +707,7 @@ function renderResults(pred, markets) {
                     </div>
                     <span class="prob-value ${cls}">${m.prob}%</span>
                 </div>
-                ${m.odds > 1 ? `
+                ${isValued ? `
                 <div class="prob-row">
                     <span class="prob-label">Cuota</span>
                     <span></span>
