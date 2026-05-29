@@ -234,10 +234,22 @@
             padding: 8px 10px;
             border-bottom: 1px solid var(--border);
             font-size: 0.72rem;
+            position: relative;
         }
         .log-win { border-left: 3px solid var(--green); }
         .log-loss { border-left: 3px solid var(--accent); }
         .log-pending { border-left: 3px solid var(--yellow); }
+        .delete-btn {
+            background: none;
+            border: none;
+            color: var(--muted);
+            cursor: pointer;
+            font-size: 1rem;
+            padding: 0 0 0 8px;
+            margin-left: auto;
+            transition: color 0.2s;
+        }
+        .delete-btn:hover { color: var(--accent); }
         .powered-by {
             text-align: center;
             font-size: 0.55rem;
@@ -863,7 +875,6 @@ function placeBet(marketName, prob, odds, stake, match) {
     updateBankrollDisplay();
     updateHistoryDisplay();
     
-    // Mostrar notificación flotante sin salir de la pantalla de resultados
     const notification = document.createElement('div');
     notification.className = 'toast-notification';
     notification.textContent = '✅ Apuesta registrada';
@@ -889,6 +900,22 @@ function updateBetResult(index, won) {
     updateHistoryDisplay();
 }
 
+function deleteBet(index) {
+    const bet = betHistory[index];
+    if (!bet) return;
+    
+    // Si la apuesta está pendiente, devolver el stake al bankroll
+    if (bet.status === 'pending') {
+        bankroll += bet.stake;
+        saveBankroll();
+        updateBankrollDisplay();
+    }
+    // Eliminar la apuesta del array
+    betHistory.splice(index, 1);
+    saveHistory();
+    updateHistoryDisplay();
+}
+
 function updateHistoryDisplay() {
     const logEl = document.getElementById('bet-log');
     if (betHistory.length === 0) {
@@ -897,8 +924,9 @@ function updateHistoryDisplay() {
     }
     
     let html = '';
-    betHistory.slice().reverse().forEach((bet, i) => {
-        const realIndex = betHistory.length - 1 - i;
+    // Mostrar del más reciente al más antiguo
+    for (let i = betHistory.length - 1; i >= 0; i--) {
+        const bet = betHistory[i];
         const date = new Date(bet.date).toLocaleDateString();
         const statusClass = bet.status === 'pending' ? 'log-pending' : (bet.result === 'win' ? 'log-win' : 'log-loss');
         const statusEmoji = bet.status === 'pending' ? '⏳' : (bet.result === 'win' ? '✅' : '❌');
@@ -907,22 +935,25 @@ function updateHistoryDisplay() {
         
         html += `
             <div class="log-item ${statusClass}">
-                <div>
+                <div style="flex:1;">
                     <div style="font-weight:600;">${bet.match}</div>
                     <div style="font-size:0.65rem;color:var(--muted);">${bet.market} · Cuota ${bet.odds} · Stake $${bet.stake.toFixed(2)}</div>
                     <div style="font-size:0.6rem;color:var(--muted);">${date}</div>
                 </div>
-                <div style="text-align:right;">
-                    <div style="font-size:1rem;">${statusEmoji}</div>
-                    <div class="${profitClass}" style="font-weight:700;font-size:0.75rem;">${profit}</div>
-                    ${bet.status === 'pending' ? `
+                <div style="text-align:right;display:flex;align-items:center;gap:4px;">
+                    <div>
+                        <div style="font-size:1rem;">${statusEmoji}</div>
+                        <div class="${profitClass}" style="font-weight:700;font-size:0.75rem;">${profit}</div>
+                        ${bet.status === 'pending' ? `
                         <div style="margin-top:4px;">
-                            <button onclick="updateBetResult(${realIndex}, true)" style="background:var(--green);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Ganó</button>
-                            <button onclick="updateBetResult(${realIndex}, false)" style="background:var(--accent);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Perdió</button>
+                            <button onclick="updateBetResult(${i}, true)" style="background:var(--green);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Ganó</button>
+                            <button onclick="updateBetResult(${i}, false)" style="background:var(--accent);color:white;border:none;padding:2px 8px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Perdió</button>
                         </div>` : ''}
+                    </div>
+                    <button class="delete-btn" onclick="deleteBet(${i})" title="Eliminar apuesta">🗑️</button>
                 </div>
             </div>`;
-    });
+    }
     
     logEl.innerHTML = html;
 }
