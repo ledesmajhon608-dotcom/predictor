@@ -19,9 +19,6 @@
             --text: #f0f2f8;
             --muted: #8899aa;
             --border: rgba(255,255,255,0.08);
-            --prob-low: #ff4d5a;
-            --prob-mid: #f1c40f;
-            --prob-high: #2ecc71;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -169,10 +166,10 @@
             font-weight: 700;
             font-size: 0.85rem;
         }
-        /* Colores semáforo para probabilidad */
-        .prob-low { color: var(--prob-low); }
-        .prob-mid { color: var(--prob-mid); }
-        .prob-high { color: var(--prob-high); }
+        /* Colores semáforo directamente en hex */
+        .prob-low { color: #ff4d5a; }
+        .prob-mid { color: #f1c40f; }
+        .prob-high { color: #2ecc71; }
         .green { color: var(--green); }
         .yellow { color: var(--yellow); }
         .red { color: var(--accent); }
@@ -949,10 +946,11 @@ analyzeBtn.addEventListener('click', () => {
     renderResults(pred, markets);
 });
 
+// 🔴🟡🟢 Función corregida con colores hexadecimales directos
 function getProbColor(prob) {
-    if (prob >= 70) return { cssClass: 'prob-high', hex: 'var(--prob-high)' };
-    if (prob >= 41) return { cssClass: 'prob-mid', hex: 'var(--prob-mid)' };
-    return { cssClass: 'prob-low', hex: 'var(--prob-low)' };
+    if (prob >= 70) return { cssClass: 'prob-high', hex: '#2ecc71' };
+    if (prob >= 41) return { cssClass: 'prob-mid', hex: '#f1c40f' };
+    return { cssClass: 'prob-low', hex: '#ff4d5a' };
 }
 
 function renderResults(pred, markets) {
@@ -1034,8 +1032,7 @@ function renderResults(pred, markets) {
         ${!hasAnyValue ? '<div class="warning-box">⚠️ No se encontraron apuestas con valor positivo. NO apuestes en este partido.</div>' : ''}
         ${marketsHtml}
         <div style="margin-top:12px;font-size:0.6rem;color:var(--muted);text-align:center;">
-            🚦 Semáforo de probabilidad: 🔴≤40% 🟡41-69% 🟢≥70%<br>
-            Solo apuesta si el Valor Esperado es POSITIVO (+EV).
+            🚦 Semáforo: 🔴≤40% 🟡41-69% 🟢≥70% | Solo apuesta con +EV
         </div>
     `;
     
