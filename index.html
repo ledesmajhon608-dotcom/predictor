@@ -19,6 +19,9 @@
             --text: #f0f2f8;
             --muted: #8899aa;
             --border: rgba(255,255,255,0.08);
+            --prob-low: #ff4d5a;
+            --prob-mid: #f1c40f;
+            --prob-high: #2ecc71;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
         body {
@@ -166,6 +169,10 @@
             font-weight: 700;
             font-size: 0.85rem;
         }
+        /* Colores semáforo para probabilidad */
+        .prob-low { color: var(--prob-low); }
+        .prob-mid { color: var(--prob-mid); }
+        .prob-high { color: var(--prob-high); }
         .green { color: var(--green); }
         .yellow { color: var(--yellow); }
         .red { color: var(--accent); }
@@ -564,7 +571,7 @@ function saveAll() {
     localStorage.setItem('betConfig', JSON.stringify(config));
 }
 
-// ============ DATOS DE EQUIPOS (ACTUALIZADOS CON LA TABLA DEL USUARIO) ============
+// ============ DATOS DE EQUIPOS (ACTUALIZADOS) ============
 const TEAMS_DB = {
     "EPL": ["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Crystal Palace","Everton","Fulham","Ipswich Town","Leicester City","Liverpool","Manchester City","Manchester United","Newcastle United","Nottingham Forest","Southampton","Tottenham","West Ham United","Wolves"],
     "La_liga": ["Alaves","Athletic Club","Atletico Madrid","Barcelona","Celta Vigo","Espanyol","Getafe","Girona","Las Palmas","Leganes","Mallorca","Osasuna","Rayo Vallecano","Real Betis","Real Madrid","Real Sociedad","Sevilla","Valencia","Valladolid","Villarreal"],
@@ -942,6 +949,12 @@ analyzeBtn.addEventListener('click', () => {
     renderResults(pred, markets);
 });
 
+function getProbColor(prob) {
+    if (prob >= 70) return { cssClass: 'prob-high', hex: 'var(--prob-high)' };
+    if (prob >= 41) return { cssClass: 'prob-mid', hex: 'var(--prob-mid)' };
+    return { cssClass: 'prob-low', hex: 'var(--prob-low)' };
+}
+
 function renderResults(pred, markets) {
     document.getElementById('main-screen').classList.add('hidden');
     document.getElementById('result-screen').classList.remove('hidden');
@@ -950,14 +963,14 @@ function renderResults(pred, markets) {
     
     let marketsHtml = '';
     markets.forEach(m => {
+        const probPercent = Math.round(m.prob);
+        const probColor = getProbColor(probPercent);
         const isValued = m.odds > 1;
         const cls = m.hasValue ? 'green' : (isValued ? 'red' : '');
         let badge = '';
         if (m.hasValue) badge = '<span class="value-badge">+EV</span>';
         else if (isValued) badge = '<span class="no-value-badge">SIN VALOR</span>';
         else badge = '<span class="info-badge">PROBABILIDAD</span>';
-        
-        const barColor = m.hasValue ? 'var(--green)' : (isValued ? 'var(--accent)' : 'var(--blue)');
         
         let vigHtml = '';
         if (m.vig !== null && m.vig > 0) {
@@ -989,9 +1002,9 @@ function renderResults(pred, markets) {
                 <div class="prob-row">
                     <span class="prob-label">Probabilidad</span>
                     <div class="bar-wrap">
-                        <div class="bar-fill" data-width="${Math.round(m.prob)}%" style="background:${barColor};box-shadow:0 0 8px ${barColor};"></div>
+                        <div class="bar-fill" data-width="${probPercent}%" style="background:${probColor.hex};box-shadow:0 0 8px ${probColor.hex};"></div>
                     </div>
-                    <span class="prob-value ${cls}">${Math.round(m.prob)}%</span>
+                    <span class="prob-value ${probColor.cssClass}">${probPercent}%</span>
                 </div>
                 ${isValued ? `
                 <div class="prob-row">
@@ -1021,7 +1034,8 @@ function renderResults(pred, markets) {
         ${!hasAnyValue ? '<div class="warning-box">⚠️ No se encontraron apuestas con valor positivo. NO apuestes en este partido.</div>' : ''}
         ${marketsHtml}
         <div style="margin-top:12px;font-size:0.6rem;color:var(--muted);text-align:center;">
-            Solo apuesta si el Valor Esperado es POSITIVO (+EV). Registra todas tus apuestas.
+            🚦 Semáforo de probabilidad: 🔴≤40% 🟡41-69% 🟢≥70%<br>
+            Solo apuesta si el Valor Esperado es POSITIVO (+EV).
         </div>
     `;
     
