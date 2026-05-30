@@ -147,23 +147,6 @@
             gap: 8px;
         }
         .prob-label { min-width: 100px; font-size: 0.78rem; font-weight: 500; }
-        .bar-wrap {
-            flex: 1;
-            height: 7px;
-            background: rgba(255,255,255,0.06);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        .bar-fill {
-            height: 100%;
-            border-radius: 4px;
-            width: 0%;
-            transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-        }
-        /* Clases de semáforo para la barra */
-        .bar-fill.bar-low  { background-color: #ff4d5a; }
-        .bar-fill.bar-mid  { background-color: #f1c40f; }
-        .bar-fill.bar-high { background-color: #2ecc71; }
         .prob-value {
             min-width: 45px;
             text-align: right;
@@ -572,7 +555,7 @@ function saveAll() {
     localStorage.setItem('betConfig', JSON.stringify(config));
 }
 
-// ============ DATOS DE EQUIPOS (ACTUALIZADOS) ============
+// ============ DATOS DE EQUIPOS ============
 const TEAMS_DB = {
     "EPL": ["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Crystal Palace","Everton","Fulham","Ipswich Town","Leicester City","Liverpool","Manchester City","Manchester United","Newcastle United","Nottingham Forest","Southampton","Tottenham","West Ham United","Wolves"],
     "La_liga": ["Alaves","Athletic Club","Atletico Madrid","Barcelona","Celta Vigo","Espanyol","Getafe","Girona","Las Palmas","Leganes","Mallorca","Osasuna","Rayo Vallecano","Real Betis","Real Madrid","Real Sociedad","Sevilla","Valencia","Valladolid","Villarreal"],
@@ -585,13 +568,7 @@ const TEAMS_DB = {
     "Mundial_2026": ["Alemania","Arabia Saudita","Argentina","Australia","Austria","Belgica","Bolivia","Brasil","Camerun","Canada","Catar","Chile","Colombia","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Dinamarca","Ecuador","Egipto","Espana","Estados Unidos","Francia","Ghana","Honduras","Inglaterra","Iran","Italia","Jamaica","Japon","Marruecos","Mexico","Nigeria","Nueva Zelanda","Paises Bajos","Panama","Paraguay","Peru","Polonia","Portugal","Senegal","Serbia","Sudafrica","Suecia","Suiza","Tunez","Ucrania","Uruguay","Venezuela"],
     "Championship": ["Blackburn Rovers","Bristol City","Burnley","Cardiff City","Coventry City","Derby County","Hull City","Leeds United","Luton Town","Middlesbrough","Millwall","Norwich City","Oxford United","Plymouth Argyle","Portsmouth","Preston North End","QPR","Sheffield United","Sheffield Wednesday","Stoke City","Sunderland","Swansea City","Watford","West Bromwich Albion"],
     "MLS": ["Atlanta United","Austin FC","CF Montreal","Charlotte FC","Chicago Fire FC","FC Cincinnati","Colorado Rapids","Columbus Crew","D.C. United","FC Dallas","Houston Dynamo FC","Inter Miami CF","LA Galaxy","Los Angeles FC","Minnesota United FC","Nashville SC","New England Revolution","New York City FC","New York Red Bulls","Orlando City SC","Philadelphia Union","Portland Timbers","Real Salt Lake","San Jose Earthquakes","Seattle Sounders FC","Sporting Kansas City","St. Louis City SC","Toronto FC","Vancouver Whitecaps FC"],
-    "Brasileirao": [
-        "Athletico Paranaense", "Atletico Mineiro", "Bahia", "Botafogo",
-        "Chapecoense", "Corinthians", "Coritiba", "Cruzeiro",
-        "Flamengo", "Fluminense", "Gremio", "Internacional",
-        "Mirassol", "Palmeiras", "RB Bragantino", "Remo",
-        "Santos", "Sao Paulo", "Vasco da Gama", "Vitoria"
-    ]
+    "Brasileirao": ["Athletico Paranaense","Atletico Mineiro","Bahia","Botafogo","Chapecoense","Corinthians","Coritiba","Cruzeiro","Flamengo","Fluminense","Gremio","Internacional","Mirassol","Palmeiras","RB Bragantino","Remo","Santos","Sao Paulo","Vasco da Gama","Vitoria"]
 };
 
 const LEAGUES_CONFIG = {
@@ -742,26 +719,16 @@ const TEAM_STRENGTH = {
         "Toronto FC":[0.87,1.17,1.00],"St. Louis City SC":[0.86,1.18,1.00]
     },
     "Brasileirao": {
-        "Athletico Paranaense":[1.10,0.94,1.05],
-        "Atletico Mineiro":[1.20,0.86,1.08],
-        "Bahia":[1.02,1.04,1.03],
-        "Botafogo":[1.08,0.98,1.05],
-        "Chapecoense":[0.88,1.16,1.02],
-        "Corinthians":[1.05,1.01,1.04],
-        "Coritiba":[0.95,1.10,1.03],
-        "Cruzeiro":[1.04,1.02,1.04],
-        "Flamengo":[1.30,0.78,1.10],
-        "Fluminense":[1.10,0.96,1.05],
-        "Gremio":[1.14,0.92,1.06],
-        "Internacional":[1.12,0.94,1.06],
-        "Mirassol":[0.93,1.15,1.02],
-        "Palmeiras":[1.28,0.80,1.09],
-        "RB Bragantino":[1.08,0.96,1.05],
-        "Remo":[0.90,1.14,1.01],
-        "Santos":[1.10,0.94,1.06],
-        "Sao Paulo":[1.18,0.88,1.07],
-        "Vasco da Gama":[1.00,1.06,1.03],
-        "Vitoria":[0.94,1.12,1.02]
+        "Athletico Paranaense":[1.10,0.94,1.05],"Atletico Mineiro":[1.20,0.86,1.08],
+        "Bahia":[1.02,1.04,1.03],"Botafogo":[1.08,0.98,1.05],
+        "Chapecoense":[0.88,1.16,1.02],"Corinthians":[1.05,1.01,1.04],
+        "Coritiba":[0.95,1.10,1.03],"Cruzeiro":[1.04,1.02,1.04],
+        "Flamengo":[1.30,0.78,1.10],"Fluminense":[1.10,0.96,1.05],
+        "Gremio":[1.14,0.92,1.06],"Internacional":[1.12,0.94,1.06],
+        "Mirassol":[0.93,1.15,1.02],"Palmeiras":[1.28,0.80,1.09],
+        "RB Bragantino":[1.08,0.96,1.05],"Remo":[0.90,1.14,1.01],
+        "Santos":[1.10,0.94,1.06],"Sao Paulo":[1.18,0.88,1.07],
+        "Vasco da Gama":[1.00,1.06,1.03],"Vitoria":[0.94,1.12,1.02]
     }
 };
 
@@ -950,11 +917,10 @@ analyzeBtn.addEventListener('click', () => {
     renderResults(pred, markets);
 });
 
-// 🔴🟡🟢 Función que devuelve clase de semáforo
 function getProbColor(prob) {
-    if (prob >= 70) return { cssClass: 'prob-high', barClass: 'bar-high' };
-    if (prob >= 41) return { cssClass: 'prob-mid', barClass: 'bar-mid' };
-    return { cssClass: 'prob-low', barClass: 'bar-low' };
+    if (prob >= 70) return 'prob-high';
+    if (prob >= 41) return 'prob-mid';
+    return 'prob-low';
 }
 
 function renderResults(pred, markets) {
@@ -966,9 +932,8 @@ function renderResults(pred, markets) {
     let marketsHtml = '';
     markets.forEach(m => {
         const probPercent = Math.round(m.prob);
-        const probColor = getProbColor(probPercent);
+        const probClass = getProbColor(probPercent);
         const isValued = m.odds > 1;
-        const cls = m.hasValue ? 'green' : (isValued ? 'red' : '');
         let badge = '';
         if (m.hasValue) badge = '<span class="value-badge">+EV</span>';
         else if (isValued) badge = '<span class="no-value-badge">SIN VALOR</span>';
@@ -1003,15 +968,11 @@ function renderResults(pred, markets) {
                 </div>
                 <div class="prob-row">
                     <span class="prob-label">Probabilidad</span>
-                    <div class="bar-wrap">
-                        <div class="bar-fill ${probColor.barClass}" data-width="${probPercent}%"></div>
-                    </div>
-                    <span class="prob-value ${probColor.cssClass}">${probPercent}%</span>
+                    <span class="prob-value ${probClass}">${probPercent}%</span>
                 </div>
                 ${isValued ? `
                 <div class="prob-row">
                     <span class="prob-label">Cuota</span>
-                    <span></span>
                     <span class="prob-value">${m.odds.toFixed(2)}</span>
                 </div>
                 <div class="ev-row">
@@ -1040,15 +1001,10 @@ function renderResults(pred, markets) {
         </div>
     `;
     
-    setTimeout(() => {
-        document.querySelectorAll('.bar-fill[data-width]').forEach(bar => {
-            bar.style.width = bar.dataset.width + '%';
-        });
-    }, 100);
-    
     document.getElementById('result-screen').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
+// ... (resto de funciones placeBet, updateBetResult, deleteBet, etc., igual que antes) ...
 function placeBet(marketName, prob, odds, stake, match) {
     bankroll -= parseFloat(stake);
     saveAll();
