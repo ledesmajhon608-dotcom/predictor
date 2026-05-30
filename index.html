@@ -160,15 +160,19 @@
             width: 0%;
             transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
         }
+        /* Clases de semáforo para la barra */
+        .bar-fill.bar-low  { background-color: #ff4d5a; }
+        .bar-fill.bar-mid  { background-color: #f1c40f; }
+        .bar-fill.bar-high { background-color: #2ecc71; }
         .prob-value {
             min-width: 45px;
             text-align: right;
             font-weight: 700;
             font-size: 0.85rem;
         }
-        /* Colores semáforo directamente en hex */
-        .prob-low { color: #ff4d5a; }
-        .prob-mid { color: #f1c40f; }
+        /* Colores semáforo para el número */
+        .prob-low  { color: #ff4d5a; }
+        .prob-mid  { color: #f1c40f; }
         .prob-high { color: #2ecc71; }
         .green { color: var(--green); }
         .yellow { color: var(--yellow); }
@@ -946,11 +950,11 @@ analyzeBtn.addEventListener('click', () => {
     renderResults(pred, markets);
 });
 
-// 🔴🟡🟢 Función corregida con colores hexadecimales directos
+// 🔴🟡🟢 Función que devuelve clase de semáforo
 function getProbColor(prob) {
-    if (prob >= 70) return { cssClass: 'prob-high', hex: '#2ecc71' };
-    if (prob >= 41) return { cssClass: 'prob-mid', hex: '#f1c40f' };
-    return { cssClass: 'prob-low', hex: '#ff4d5a' };
+    if (prob >= 70) return { cssClass: 'prob-high', barClass: 'bar-high' };
+    if (prob >= 41) return { cssClass: 'prob-mid', barClass: 'bar-mid' };
+    return { cssClass: 'prob-low', barClass: 'bar-low' };
 }
 
 function renderResults(pred, markets) {
@@ -1000,7 +1004,7 @@ function renderResults(pred, markets) {
                 <div class="prob-row">
                     <span class="prob-label">Probabilidad</span>
                     <div class="bar-wrap">
-                        <div class="bar-fill" data-width="${probPercent}%" style="background-color:${probColor.hex} !important; box-shadow:0 0 8px ${probColor.hex};"></div>
+                        <div class="bar-fill ${probColor.barClass}" data-width="${probPercent}%"></div>
                     </div>
                     <span class="prob-value ${probColor.cssClass}">${probPercent}%</span>
                 </div>
