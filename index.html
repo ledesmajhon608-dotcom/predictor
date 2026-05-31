@@ -153,7 +153,6 @@
             font-weight: 700;
             font-size: 0.85rem;
         }
-        /* Colores semáforo para el número */
         .prob-low  { color: #ff4d5a; }
         .prob-mid  { color: #f1c40f; }
         .prob-high { color: #2ecc71; }
@@ -423,6 +422,16 @@
                 <label>✈️ Visitante</label>
                 <select id="away" disabled><option value="">-- Selecciona liga primero --</option></select>
                 
+                <!-- ORDEN SOLICITADO: Local, Empate, Visitante, HT, Over1.5, Over2.5, BTTS, Córners -->
+                <label>💵 Cuota Local (1X2)</label>
+                <input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01" max="50">
+                
+                <label>💵 Cuota Empate (1X2, opcional)</label>
+                <input type="number" id="odds-draw" placeholder="Ej: 3.50" step="0.01" min="1.01" max="50">
+                
+                <label>💵 Cuota Visitante (1X2, opcional)</label>
+                <input type="number" id="odds-away" placeholder="Ej: 3.80" step="0.01" min="1.01" max="50">
+                
                 <label>💵 Cuota Over 0.5 goles 1T</label>
                 <input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01" max="50">
                 
@@ -440,15 +449,6 @@
                 
                 <label>💵 Cuota Over 8.5 córners</label>
                 <input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01" max="50">
-                
-                <label>💵 Cuota Local (1X2)</label>
-                <input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01" max="50">
-                
-                <label>💵 Cuota Empate (1X2, opcional)</label>
-                <input type="number" id="odds-draw" placeholder="Para calcular vig real" step="0.01" min="1.01" max="50">
-                
-                <label>💵 Cuota Visitante (1X2, opcional)</label>
-                <input type="number" id="odds-away" placeholder="Para calcular vig real" step="0.01" min="1.01" max="50">
                 
                 <button class="btn-primary" id="analyze-btn" disabled>🎯 ANALIZAR Y BUSCAR VALOR</button>
                 
@@ -864,7 +864,9 @@ function checkAnalyzeButton() {
                    document.getElementById('odds-corners75').value ||
                    document.getElementById('odds-corners85').value ||
                    document.getElementById('odds-ht05').value ||
-                   document.getElementById('odds-over15').value;
+                   document.getElementById('odds-over15').value ||
+                   document.getElementById('odds-draw').value ||
+                   document.getElementById('odds-away').value;
     analyzeBtn.disabled = !(home && away && home !== away && anyOdd);
 }
 
@@ -880,23 +882,24 @@ analyzeBtn.addEventListener('click', () => {
     const away = awaySelect.value;
     
     const pred = predictMatch(league, home, away);
-    const markets = [];
-    
     const oddsH = parseFloat(document.getElementById('odds-home').value) || 0;
     const oddsD = parseFloat(document.getElementById('odds-draw').value) || 0;
     const oddsA = parseFloat(document.getElementById('odds-away').value) || 0;
     const fair = calcFairProb(oddsH, oddsD, oddsA);
     
     const marketDefs = [
+        { name: 'Victoria Local', prob: parseFloat(pred.home_win), oddsId: 'odds-home', fair: fair ? fair.home : null, vig: fair ? fair.vig : null },
+        { name: 'Empate', prob: parseFloat(pred.draw), oddsId: 'odds-draw', fair: fair ? fair.draw : null, vig: fair ? fair.vig : null },
+        { name: 'Victoria Visitante', prob: parseFloat(pred.away_win), oddsId: 'odds-away', fair: fair ? fair.away : null, vig: fair ? fair.vig : null },
         { name: 'Over 0.5 Goles 1T', prob: pred.htOver05, oddsId: 'odds-ht05', note: 'λ 1T ≈ 42% del total' },
         { name: 'Over 1.5 Goles', prob: pred.over15, oddsId: 'odds-over15' },
         { name: 'Over 2.5 Goles', prob: pred.over25, oddsId: 'odds-over25' },
         { name: 'BTTS (Sí)', prob: pred.btts, oddsId: 'odds-btts' },
         { name: 'Over 7.5 Córners', prob: pred.cornersOver75, oddsId: 'odds-corners75', note: `λ córners ≈ ${pred.cornerLambda}` },
-        { name: 'Over 8.5 Córners', prob: pred.cornersOver85, oddsId: 'odds-corners85', note: `λ córners ≈ ${pred.cornerLambda}` },
-        { name: 'Victoria Local', prob: parseFloat(pred.home_win), oddsId: 'odds-home', fair: fair ? fair.home : null, vig: fair ? fair.vig : null }
+        { name: 'Over 8.5 Córners', prob: pred.cornersOver85, oddsId: 'odds-corners85', note: `λ córners ≈ ${pred.cornerLambda}` }
     ];
     
+    const markets = [];
     marketDefs.forEach(def => {
         const oddsEl = document.getElementById(def.oddsId);
         const odds = oddsEl ? parseFloat(oddsEl.value) || 0 : 0;
@@ -1004,7 +1007,6 @@ function renderResults(pred, markets) {
     document.getElementById('result-screen').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
-// ... (resto de funciones placeBet, updateBetResult, deleteBet, etc., igual que antes) ...
 function placeBet(marketName, prob, odds, stake, match) {
     bankroll -= parseFloat(stake);
     saveAll();
