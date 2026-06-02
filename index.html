@@ -1,33 +1,45 @@
 <!DOCTYPE html>
 <html>
-<head><meta charset="UTF-8"><title>Test API BSD</title></head>
+<head>
+  <meta charset="UTF-8">
+  <title>Prueba API BSD</title>
+</head>
 <body>
-  <h2>Probando API de sports.bzzoiro.com</h2>
-  <p>Abre la consola (F12 → Consola) para ver los resultados.</p>
+  <h3>Resultado de la API:</h3>
+  <pre id="salida" style="background:#eee;padding:10px;">Esperando...</pre>
+
   <script>
-    const API_KEY = 'd1c591c865f3f9dd0d9f8d60337c895a94c4683e';
-    const BASE = 'https://sports.bzzoiro.com'; // Ajusta si es otra URL
+    (async function() {
+      const API_KEY = 'd1c591c865f3f9dd0d9f8d60337c895a94c4683e';
+      const BASE = 'https://sports.bzzoiro.com';
 
-    async function testEndpoint(endpoint) {
-      try {
-        const res = await fetch(`${BASE}${endpoint}`, {
-          headers: { 'Authorization': `Bearer ${API_KEY}` } // o según la doc
-        });
-        const data = await res.json();
-        console.log(`✅ ${endpoint}`, data);
-        return data;
-      } catch (err) {
-        console.error(`❌ ${endpoint}`, err);
+      // endpoints de ejemplo (ajusta según la documentación de tu API)
+      const endpoints = [
+        '/api/v1/leagues',
+        '/api/v1/teams?league=39&season=2025',
+        '/api/v1/teams/statistics?league=39&season=2025'
+      ];
+
+      const salida = document.getElementById('salida');
+      salida.textContent = 'Conectando...';
+
+      let resultados = '';
+      for (let url of endpoints) {
+        try {
+          const res = await fetch(BASE + url, {
+            headers: { 'Authorization': 'Bearer ' + API_KEY }
+          });
+          if (!res.ok) {
+            resultados += `❌ ${url}: ${res.status} ${res.statusText}\n`;
+            continue;
+          }
+          const data = await res.json();
+          resultados += `✅ ${url}:\n${JSON.stringify(data, null, 2)}\n\n`;
+        } catch (err) {
+          resultados += `❌ ${url}: ${err.message}\n`;
+        }
       }
-    }
-
-    (async () => {
-      // Prueba varios endpoints comunes de estadísticas
-      await testEndpoint('/api/v1/leagues');               // Lista de ligas
-      await testEndpoint('/api/v1/teams/statistics?league=39&season=2025'); // Premier League (ID 39 suele ser EPL en algunas APIs)
-      await testEndpoint('/api/v1/teams?league=39&season=2025'); // Equipos de una liga
-      // Añade aquí más endpoints que veas en la documentación
-      console.log('--- Pruebas completadas ---');
+      salida.textContent = resultados || 'Sin respuesta.';
     })();
   </script>
 </body>
