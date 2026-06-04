@@ -1,908 +1,391 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <title>Bet Analytics PRO · Value Betting</title>
-  <style>
-    :root {
-      --bg: #0a0e17;
-      --card: #131925;
-      --accent: #ff4d5a;
-      --accent2: #ff6b7a;
-      --green: #2ecc71;
-      --green2: #27ae60;
-      --yellow: #f1c40f;
-      --blue: #4dabf7;
-      --text: #f0f2f8;
-      --muted: #8899aa;
-      --border: rgba(255,255,255,0.08);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-      padding: 12px;
-      min-height: 100vh;
-      background-image: radial-gradient(ellipse at top, rgba(255,77,90,0.06) 0%, transparent 50%),
-                      radial-gradient(ellipse at bottom, rgba(46,204,113,0.04) 0%, transparent 50%);
-    }
-    .container { max-width: 550px; margin: 0 auto; }
-    .card {
-      background: var(--card);
-      border-radius: 18px;
-      padding: 20px;
-      margin-bottom: 16px;
-      border: 1px solid var(--border);
-      box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    }
-    h2 {
-      text-align: center;
-      margin-bottom: 4px;
-      font-size: 1.5rem;
-      font-weight: 800;
-      background: linear-gradient(135deg, #fff, #ff8a95);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .subtitle {
-      text-align: center;
-      font-size: 0.6rem;
-      color: var(--muted);
-      margin-bottom: 16px;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-    h3 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
-    label {
-      display: block;
-      font-size: 0.65rem;
-      font-weight: 700;
-      text-transform: uppercase;
-      letter-spacing: 1.5px;
-      color: var(--muted);
-      margin: 10px 0 4px;
-    }
-    select, input, button {
-      width: 100%;
-      padding: 12px 14px;
-      margin: 4px 0;
-      border-radius: 12px;
-      background: rgba(255,255,255,0.04);
-      color: white;
-      border: 1px solid var(--border);
-      font-size: 14px;
-      font-family: inherit;
-      -webkit-appearance: none;
-      appearance: none;
-      transition: all 0.2s;
-    }
-    select {
-      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238899aa' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-      background-repeat: no-repeat;
-      background-position: right 14px center;
-      padding-right: 36px;
-    }
-    input[type="number"] { -webkit-appearance: textfield; appearance: textfield; }
-    select:focus, input:focus, button:focus { outline: none; border-color: var(--accent); }
-    .btn-primary {
-      background: linear-gradient(135deg, var(--accent), var(--accent2));
-      font-weight: 700;
-      border: none;
-      cursor: pointer;
-      letter-spacing: 0.5px;
-      box-shadow: 0 4px 20px rgba(255,77,90,0.25);
-      margin-top: 12px;
-      font-size: 15px;
-      padding: 14px;
-    }
-    .btn-primary:active { transform: scale(0.98); }
-    .btn-primary:disabled {
-      background: rgba(255,255,255,0.06);
-      color: rgba(255,255,255,0.3);
-      box-shadow: none;
-      cursor: not-allowed;
-    }
-    .btn-secondary {
-      background: rgba(255,255,255,0.06);
-      border: 1px solid var(--border);
-      cursor: pointer;
-      font-weight: 600;
-      font-size: 13px;
-      padding: 10px;
-    }
-    .market {
-      background: rgba(255,255,255,0.02);
-      border-radius: 12px;
-      padding: 14px;
-      margin: 10px 0;
-      border: 1px solid var(--border);
-    }
-    .market-header {
-      font-weight: 700;
-      font-size: 0.68rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      color: var(--accent);
-      margin-bottom: 10px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-    }
-    .prob-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 7px 0;
-      gap: 8px;
-    }
-    .prob-label { min-width: 100px; font-size: 0.78rem; font-weight: 500; }
-    .prob-value { min-width: 45px; text-align: right; font-weight: 700; font-size: 0.85rem; }
-    .prob-low  { color: #ff4d5a; }
-    .prob-mid  { color: #f1c40f; }
-    .prob-high { color: #2ecc71; }
-    .green { color: var(--green); }
-    .yellow { color: var(--yellow); }
-    .red { color: var(--accent); }
-    .blue { color: var(--blue); }
-    .hidden { display: none; }
-    .value-badge {
-      display: inline-block;
-      font-size: 0.6rem;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 20px;
-      background: rgba(46,204,113,0.2);
-      color: var(--green);
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-    .no-value-badge {
-      display: inline-block;
-      font-size: 0.6rem;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 20px;
-      background: rgba(255,77,90,0.15);
-      color: var(--accent);
-      letter-spacing: 1px;
-    }
-    .info-badge {
-      display: inline-block;
-      font-size: 0.6rem;
-      font-weight: 700;
-      padding: 3px 10px;
-      border-radius: 20px;
-      background: rgba(255,255,255,0.05);
-      color: var(--muted);
-      letter-spacing: 1px;
-    }
-    .bankroll-display {
-      background: rgba(46,204,113,0.1);
-      border: 1px solid rgba(46,204,113,0.3);
-      border-radius: 12px;
-      padding: 12px;
-      text-align: center;
-      margin-bottom: 16px;
-    }
-    .bankroll-amount { font-size: 1.8rem; font-weight: 800; color: var(--green); }
-    .stake-suggestion {
-      background: rgba(77,171,247,0.1);
-      border: 1px solid rgba(77,171,247,0.3);
-      border-radius: 12px;
-      padding: 12px;
-      margin-top: 12px;
-      text-align: center;
-    }
-    .bet-log { max-height: 300px; overflow-y: auto; margin-top: 10px; }
-    .log-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 8px 10px;
-      border-bottom: 1px solid var(--border);
-      font-size: 0.72rem;
-    }
-    .log-win { border-left: 3px solid var(--green); }
-    .log-loss { border-left: 3px solid var(--accent); }
-    .log-pending { border-left: 3px solid var(--yellow); }
-    .delete-btn {
-      background: none;
-      border: none;
-      color: var(--muted);
-      cursor: pointer;
-      font-size: 1rem;
-      padding: 0 0 0 8px;
-    }
-    .delete-btn:hover { color: var(--accent); }
-    .powered-by {
-      text-align: center;
-      font-size: 0.55rem;
-      color: var(--muted);
-      margin-top: 10px;
-      opacity: 0.5;
-    }
-    .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
-    .tab {
-      flex: 1;
-      padding: 10px;
-      text-align: center;
-      background: rgba(255,255,255,0.03);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      cursor: pointer;
-      font-size: 0.7rem;
-      font-weight: 700;
-      letter-spacing: 1px;
-      color: var(--muted);
-    }
-    .tab.active { background: rgba(255,77,90,0.15); border-color: var(--accent); color: white; }
-    .warning-box {
-      background: rgba(255,77,90,0.1);
-      border: 1px solid rgba(255,77,90,0.3);
-      border-radius: 10px;
-      padding: 12px;
-      margin: 10px 0;
-      font-size: 0.7rem;
-      color: var(--accent);
-      text-align: center;
-    }
-    .profit { color: var(--green); }
-    .loss { color: var(--accent); }
-    .ev-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-    .ev-label {
-      font-size: 0.65rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      font-weight: 700;
-    }
-    .ev-value { font-weight: 700; font-size: 0.9rem; }
-    .toast-notification {
-      position: fixed;
-      top: 20px;
-      left: 50%;
-      transform: translateX(-50%);
-      background: var(--green);
-      color: white;
-      padding: 12px 24px;
-      border-radius: 12px;
-      font-weight: 700;
-      z-index: 999;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5);
-      animation: fadeInOut 2s ease;
-    }
-    @keyframes fadeInOut {
-      0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-      15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-      85% { opacity: 1; transform: translateX(-50%) translateY(0); }
-      100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-    }
-    .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-    .stat-box {
-      background: rgba(255,255,255,0.02);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 10px;
-      text-align: center;
-    }
-    .stat-value { font-size: 1.2rem; font-weight: 800; color: var(--text); }
-    .stat-label {
-      font-size: 0.55rem;
-      color: var(--muted);
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-top: 4px;
-    }
-    .config-row {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin: 8px 0;
-      font-size: 0.8rem;
-    }
-    .config-row input { width: 120px; margin: 0; }
-    .small-note { font-size: 0.6rem; color: var(--muted); margin-top: 4px; font-style: italic; }
-  </style>
-</head>
-<body>
-<div class="container">
-  <div id="main-screen">
-    <div class="card">
-      <h2>⚽ BET ANALYTICS PRO</h2>
-      <div class="subtitle">SISTEMA DE VALUE BETTING v2.0 · OFFLINE</div>
-      <div class="bankroll-display">
-        <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">💰 Bankroll Actual</div>
-        <div class="bankroll-amount" id="bankroll-display">$20,000.00</div>
-        <div style="font-size:0.6rem;color:var(--muted);" id="pnl-display">P&L: $0.00 (0.0%)</div>
-      </div>
-      <div class="tabs">
-        <div class="tab active" onclick="switchTab('analyzer')">🔍 ANALIZAR</div>
-        <div class="tab" onclick="switchTab('history')">📊 HISTORIAL</div>
-        <div class="tab" onclick="switchTab('stats')">📈 STATS</div>
-        <div class="tab" onclick="switchTab('config')">⚙️ CONFIG</div>
-      </div>
-      <div id="tab-analyzer">
-        <label>🏆 Liga</label>
-        <select id="league"><option value="">-- Selecciona liga --</option></select>
-        <label>🏠 Local</label>
-        <select id="home" disabled><option value="">-- Selecciona liga primero --</option></select>
-        <label>✈️ Visitante</label>
-        <select id="away" disabled><option value="">-- Selecciona liga primero --</option></select>
-        <label>💵 Cuota Local (1X2)</label>
-        <input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01" max="50">
-        <label>💵 Cuota Empate</label>
-        <input type="number" id="odds-draw" placeholder="Ej: 3.50" step="0.01" min="1.01" max="50">
-        <label>💵 Cuota Visitante</label>
-        <input type="number" id="odds-away" placeholder="Ej: 3.80" step="0.01" min="1.01" max="50">
-        <label>💵 Cuota Over 0.5 goles 1T</label>
-        <input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01" max="50">
-        <label>💵 Cuota Over 1.5 goles</label>
-        <input type="number" id="odds-over15" placeholder="Ej: 1.25" step="0.01" min="1.01" max="50">
-        <label>💵 Cuota Over 2.5 goles</label>
-        <input type="number" id="odds-over25" placeholder="Ej: 1.85" step="0.01" min="1.01" max="50">
-        <label>💵 Cuota BTTS (Sí)</label>
-        <input type="number" id="odds-btts" placeholder="Ej: 1.75" step="0.01" min="1.01" max="50">
-        <label>💵 Cuota Over 7.5 córners</label>
-        <input type="number" id="odds-corners75" placeholder="Ej: 1.90" step="0.01" min="1.01" max="50">
-        <label>💵 Cuota Over 8.5 córners</label>
-        <input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01" max="50">
-        <button class="btn-primary" id="analyze-btn" disabled>🎯 ANALIZAR Y BUSCAR VALOR</button>
-        <div class="warning-box hidden" id="no-value-warning">⚠️ Ningún mercado muestra valor positivo.</div>
-      </div>
-      <div id="tab-history" class="hidden">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-          <h3 style="margin:0;">📊 Historial</h3>
-          <div style="display:flex;gap:6px;">
-            <button class="btn-secondary" onclick="exportHistory()" style="width:auto;padding:8px 14px;">📥 CSV</button>
-            <button class="btn-secondary" onclick="exportJSON()" style="width:auto;padding:8px 14px;">💾 JSON</button>
-          </div>
-        </div>
-        <div class="bet-log" id="bet-log"><p style="color:var(--muted);text-align:center;padding:20px;">No hay apuestas aún.</p></div>
-        <div style="margin-top:10px;">
-          <label>📂 Importar JSON</label>
-          <input type="file" id="import-file" accept=".json" onchange="importJSON(this)">
-        </div>
-      </div>
-      <div id="tab-stats" class="hidden">
-        <h3>📈 Estadísticas</h3>
-        <div class="stats-grid">
-          <div class="stat-box"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Apuestas</div></div>
-          <div class="stat-box"><div class="stat-value" id="stat-winrate">0%</div><div class="stat-label">Win Rate</div></div>
-          <div class="stat-box"><div class="stat-value" id="stat-yield">0%</div><div class="stat-label">Yield</div></div>
-          <div class="stat-box"><div class="stat-value" id="stat-roi">0%</div><div class="stat-label">ROI</div></div>
-          <div class="stat-box"><div class="stat-value" id="stat-profit">$0</div><div class="stat-label">Profit Neto</div></div>
-          <div class="stat-box"><div class="stat-value" id="stat-streak">-</div><div class="stat-label">Racha</div></div>
-        </div>
-        <div class="chart-container">
-          <div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Evolución Bankroll</div>
-          <svg id="bankroll-chart" width="100%" height="120"></svg>
-        </div>
-      </div>
-      <div id="tab-config" class="hidden">
-        <h3>⚙️ Configuración</h3>
-        <div class="config-row"><span>Bankroll Inicial ($)</span><input type="number" id="cfg-initial" step="100" min="0"></div>
-        <div class="config-row"><span>Fracción Kelly</span><input type="number" id="cfg-kelly" step="0.05" min="0.05" max="1"></div>
-        <div class="config-row"><span>Stake Máximo (%)</span><input type="number" id="cfg-maxstake" step="0.01" min="0.01" max="1"></div>
-        <button class="btn-primary" onclick="saveConfig()">💾 Guardar</button>
-        <button class="btn-secondary" onclick="resetData()" style="background:rgba(255,77,90,0.1);color:var(--accent);border-color:rgba(255,77,90,0.3);">🗑️ Resetear Todo</button>
-      </div>
-    </div>
-  </div>
-  <div id="result-screen" class="hidden"><div class="card" id="result-card"></div></div>
-  <div class="powered-by">MODELO DIXON-COLES · DATOS HISTÓRICOS · SOLO USO INFORMATIVO</div>
-</div>
+import streamlit as st
+import requests
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+from datetime import datetime, timedelta
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.calibration import CalibratedClassifierCV
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score, brier_score_loss
+from sklearn.impute import SimpleImputer
 
-<script>
-// ============ CONFIGURACIÓN ============
-const DEFAULT_CONFIG = { initialBankroll: 20000, kellyFraction: 0.25, maxStakePct: 0.05 };
-let config = JSON.parse(localStorage.getItem('betConfig')) || {...DEFAULT_CONFIG};
-let bankroll = parseFloat(localStorage.getItem('bankroll')) || config.initialBankroll;
-let betHistory = JSON.parse(localStorage.getItem('betHistory')) || [];
+# -------------------------- CONFIGURACIÓN --------------------------
+API_KEY = st.secrets["API_FOOTBALL_KEY"]
+HEADERS = {"x-apisports-key": API_KEY}
+BASE_URL = "https://v3.football.api-sports.io"
 
-function saveAll() {
-  localStorage.setItem('bankroll', bankroll.toString());
-  localStorage.setItem('betHistory', JSON.stringify(betHistory));
-  localStorage.setItem('betConfig', JSON.stringify(config));
+LEAGUES = {
+    "Premier League": 39,
+    "La Liga": 140,
+    "Serie A": 135,
+    "Bundesliga": 78,
+    "Ligue 1": 61,
+    "World Cup": 1,
+    "Brasileirão Série B": 72
 }
 
-// ============ DATOS DE EQUIPOS Y RATINGS ============
-const TEAMS_DB = {
-  "EPL": ["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Crystal Palace","Everton","Fulham","Ipswich","Leicester","Liverpool","Manchester City","Manchester Utd","Newcastle","Nottingham Forest","Southampton","Tottenham","West Ham","Wolves"],
-  "La_liga": ["Alaves","Athletic","Atletico Madrid","Barcelona","Celta","Espanyol","Getafe","Girona","Las Palmas","Leganes","Mallorca","Osasuna","Rayo Vallecano","Real Betis","Real Madrid","Real Sociedad","Sevilla","Valencia","Valladolid","Villarreal"],
-  "Serie_A": ["AC Milan","Atalanta","Bologna","Cagliari","Como","Empoli","Fiorentina","Genoa","Hellas Verona","Inter","Juventus","Lazio","Lecce","Monza","Napoli","Parma","Roma","Torino","Udinese","Venezia"],
-  "Bundesliga": ["Augsburg","Bayer Leverkusen","Bayern Munich","Bochum","Borussia Dortmund","Borussia M'gladbach","Eintracht Frankfurt","Freiburg","Heidenheim","Hoffenheim","Holstein Kiel","Mainz 05","RB Leipzig","St. Pauli","Stuttgart","Union Berlin","Werder Bremen","Wolfsburg"],
-  "Ligue_1": ["Angers","Auxerre","Brest","Le Havre","Lens","Lille","Lyon","Marseille","Monaco","Montpellier","Nantes","Nice","PSG","Reims","Rennes","Saint-Etienne","Strasbourg","Toulouse"],
-  "Eredivisie": ["Ajax","AZ Alkmaar","Feyenoord","PSV","Twente","Utrecht","Sparta Rotterdam","Heerenveen","NEC","Go Ahead Eagles","Fortuna Sittard","PEC Zwolle","Almere City","Heracles","RKC Waalwijk","Willem II","NAC Breda","Groningen"],
-  "Libertadores": ["Flamengo","Palmeiras","River Plate","Boca Juniors","Nacional","Penarol","Olimpia","Barcelona SC","Independiente del Valle","LDU Quito","Estudiantes","Racing","Colo Colo","Cerro Porteno","Atletico Mineiro","Sao Paulo","Gremio","Internacional","Universidad Catolica","Bolivar","The Strongest","Libertad","Alianza Lima","Sporting Cristal"],
-  "Sudamericana": ["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells","Rosario Central","Universitario","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza","America de Cali","Macara","Huracan","Velez","Penarol","Nacional","Bolivar","Jorge Wilstermann"],
-  "Mundial_2026": ["Alemania","Argentina","Brasil","Espana","Francia","Inglaterra","Italia","Paises Bajos","Portugal","Uruguay","Croacia","Belgica","Colombia","Mexico","Marruecos","Japon","Senegal","Dinamarca","Austria","Ecuador"],
-  "Championship": ["Leeds","Leicester","Southampton","West Brom","Norwich","Middlesbrough","Coventry","Sunderland","Blackburn","Millwall","Watford","Bristol City","Hull","Preston","Swansea","Cardiff","Stoke","Sheffield Wednesday","QPR","Plymouth","Portsmouth","Luton","Derby","Oxford","Burnley"],
-  "MLS": ["Inter Miami","LAFC","Columbus Crew","FC Cincinnati","Philadelphia Union","New England Revolution","Atlanta United","Orlando City","NYCFC","Nashville SC","Seattle Sounders","Portland Timbers","Minnesota United","FC Dallas","Austin FC","Houston Dynamo","LA Galaxy","Vancouver Whitecaps","Chicago Fire","Charlotte FC","CF Montreal","Sporting KC","New York Red Bulls","Real Salt Lake","DC United","San Jose Earthquakes","Colorado Rapids","Toronto FC","St. Louis City"],
-  "Brasileirao": ["Athletico Paranaense","Atletico Mineiro","Bahia","Botafogo","Chapecoense","Corinthians","Coritiba","Cruzeiro","Flamengo","Fluminense","Gremio","Internacional","Mirassol","Palmeiras","RB Bragantino","Remo","Santos","Sao Paulo","Vasco","Vitoria"]
-};
+# -------------------------- DESCARGA DE DATOS --------------------------
+@st.cache_data(ttl=3600)
+def obtener_fixtures(league_id, season):
+    url = f"{BASE_URL}/fixtures"
+    params = {"league": league_id, "season": season}
+    fixtures = []
+    page = 1
+    while True:
+        params["page"] = page
+        resp = requests.get(url, headers=HEADERS, params=params)
+        data = resp.json()
+        if data.get("errors"):
+            st.error(f"Error API: {data['errors']}")
+            break
+        fixtures.extend(data["response"])
+        if data["paging"]["current"] == data["paging"]["total"]:
+            break
+        page += 1
+    return fixtures
 
-const LEAGUES_CONFIG = {
-  "EPL": { goals_avg:2.85, corners_avg:10.1, hfa:1.06, rho:-0.03, goal_1h_pct:0.44 },
-  "La_liga": { goals_avg:2.55, corners_avg:9.5, hfa:1.05, rho:0.01, goal_1h_pct:0.42 },
-  "Serie_A": { goals_avg:2.65, corners_avg:9.0, hfa:1.05, rho:0.02, goal_1h_pct:0.40 },
-  "Bundesliga": { goals_avg:3.00, corners_avg:9.8, hfa:1.06, rho:-0.01, goal_1h_pct:0.46 },
-  "Ligue_1": { goals_avg:2.70, corners_avg:9.3, hfa:1.05, rho:0.00, goal_1h_pct:0.43 },
-  "Eredivisie": { goals_avg:3.10, corners_avg:9.6, hfa:1.05, rho:-0.02, goal_1h_pct:0.45 },
-  "Libertadores": { goals_avg:2.50, corners_avg:9.2, hfa:1.04, rho:0.03, goal_1h_pct:0.41 },
-  "Sudamericana": { goals_avg:2.30, corners_avg:9.0, hfa:1.04, rho:0.02, goal_1h_pct:0.40 },
-  "Mundial_2026": { goals_avg:2.40, corners_avg:9.5, hfa:1.03, rho:0.01, goal_1h_pct:0.42 },
-  "Championship": { goals_avg:2.65, corners_avg:9.7, hfa:1.05, rho:-0.01, goal_1h_pct:0.43 },
-  "MLS": { goals_avg:2.85, corners_avg:9.1, hfa:1.05, rho:-0.02, goal_1h_pct:0.44 },
-  "Brasileirao": { goals_avg:2.45, corners_avg:9.4, hfa:1.05, rho:0.02, goal_1h_pct:0.41 }
-};
+@st.cache_data(ttl=3600)
+def obtener_odds(league_id, season, bookmaker_id=8):
+    url = f"{BASE_URL}/odds"
+    params = {"league": league_id, "season": season, "bookmaker": bookmaker_id}
+    odds_raw = []
+    page = 1
+    while True:
+        params["page"] = page
+        resp = requests.get(url, headers=HEADERS, params=params)
+        data = resp.json()
+        if data.get("errors"):
+            st.warning(f"Error obteniendo cuotas: {data['errors']}")
+            break
+        odds_raw.extend(data["response"])
+        if data["paging"]["current"] == data["paging"]["total"]:
+            break
+        page += 1
+    cuotas = []
+    for item in odds_raw:
+        fid = item["fixture"]["id"]
+        for book in item.get("bookmakers", []):
+            if book["id"] == bookmaker_id:
+                for bet in book["bets"]:
+                    if bet["name"] == "Match Winner":
+                        odds_dict = {val["value"]: float(val["odd"]) for val in bet["values"]}
+                        cuotas.append({
+                            "fixture_id": fid,
+                            "cuota_local": odds_dict.get("Home", np.nan),
+                            "cuota_empate": odds_dict.get("Draw", np.nan),
+                            "cuota_visitante": odds_dict.get("Away", np.nan)
+                        })
+    return pd.DataFrame(cuotas)
 
-const TEAM_STRENGTH = {
-  "EPL": {
-    "Manchester City":[1.30,0.77],"Liverpool":[1.28,0.79],"Arsenal":[1.24,0.82],"Chelsea":[1.15,0.89],"Tottenham":[1.16,0.90],
-    "Manchester Utd":[1.18,0.88],"Newcastle":[1.13,0.94],"Aston Villa":[1.17,0.92],"Brighton":[1.11,0.96],"West Ham":[1.06,1.00],
-    "Fulham":[1.04,1.01],"Brentford":[1.02,1.03],"Crystal Palace":[0.98,1.05],"Wolves":[1.03,1.02],"Everton":[0.92,1.10],
-    "Bournemouth":[0.95,1.08],"Nottingham Forest":[0.96,1.07],"Leicester":[0.94,1.08],"Ipswich":[0.88,1.14],"Southampton":[0.86,1.16]
-  },
-  "La_liga": {
-    "Real Madrid":[1.32,0.74],"Barcelona":[1.30,0.76],"Atletico Madrid":[1.22,0.82],"Athletic":[1.15,0.90],"Real Sociedad":[1.14,0.91],
-    "Villarreal":[1.12,0.93],"Real Betis":[1.10,0.95],"Girona":[1.16,0.89],"Sevilla":[1.08,0.97],"Valencia":[1.06,0.99],
-    "Osasuna":[1.02,1.03],"Celta":[1.04,1.01],"Mallorca":[0.98,1.06],"Getafe":[0.94,1.08],"Alaves":[0.96,1.07],
-    "Espanyol":[0.94,1.08],"Rayo Vallecano":[0.98,1.05],"Las Palmas":[0.92,1.10],"Leganes":[0.88,1.14],"Valladolid":[0.86,1.16]
-  },
-  "Serie_A": {
-    "Inter":[1.28,0.78],"Juventus":[1.22,0.83],"AC Milan":[1.20,0.85],"Napoli":[1.24,0.81],"Atalanta":[1.22,0.83],
-    "Roma":[1.16,0.89],"Lazio":[1.14,0.91],"Fiorentina":[1.10,0.95],"Bologna":[1.08,0.97],"Torino":[1.02,1.03],
-    "Genoa":[0.98,1.06],"Monza":[0.96,1.08],"Udinese":[0.98,1.05],"Lecce":[0.92,1.10],"Empoli":[0.94,1.08],
-    "Cagliari":[0.92,1.10],"Hellas Verona":[0.90,1.12],"Parma":[0.94,1.08],"Como":[0.88,1.14],"Venezia":[0.86,1.16]
-  },
-  "Bundesliga": {
-    "Bayern Munich":[1.32,0.76],"Bayer Leverkusen":[1.27,0.80],"Borussia Dortmund":[1.24,0.83],"RB Leipzig":[1.22,0.85],
-    "Stuttgart":[1.16,0.91],"Eintracht Frankfurt":[1.14,0.93],"Freiburg":[1.09,0.98],"Hoffenheim":[1.10,0.97],
-    "Werder Bremen":[1.05,1.02],"Wolfsburg":[1.04,1.01],"Borussia M'gladbach":[1.08,0.99],"Mainz 05":[1.02,1.03],
-    "Augsburg":[1.00,1.05],"Union Berlin":[0.98,1.06],"Heidenheim":[0.94,1.08],"St. Pauli":[0.96,1.07],
-    "Bochum":[0.92,1.10],"Holstein Kiel":[0.88,1.14]
-  },
-  "Ligue_1": {
-    "PSG":[1.34,0.72],"Monaco":[1.18,0.86],"Marseille":[1.16,0.88],"Lyon":[1.14,0.90],"Lille":[1.15,0.89],
-    "Nice":[1.12,0.93],"Lens":[1.10,0.95],"Rennes":[1.08,0.97],"Reims":[1.02,1.03],"Toulouse":[1.00,1.05],
-    "Strasbourg":[1.00,1.04],"Brest":[1.04,1.01],"Montpellier":[0.96,1.07],"Nantes":[0.96,1.07],"Auxerre":[0.94,1.08],
-    "Saint-Etienne":[0.94,1.08],"Le Havre":[0.90,1.12],"Angers":[0.88,1.14]
-  },
-  "Eredivisie": {
-    "PSV":[1.26,0.80],"Ajax":[1.24,0.82],"Feyenoord":[1.22,0.84],"AZ Alkmaar":[1.14,0.92],"Twente":[1.12,0.94],
-    "Utrecht":[1.06,1.00],"Sparta Rotterdam":[1.00,1.05],"Heerenveen":[0.98,1.06],"NEC":[0.96,1.08],"Go Ahead Eagles":[0.94,1.08],
-    "Fortuna Sittard":[0.92,1.10],"PEC Zwolle":[0.90,1.12],"Almere City":[0.88,1.14],"Heracles":[0.90,1.12],
-    "RKC Waalwijk":[0.86,1.16],"Willem II":[0.94,1.08],"NAC Breda":[0.92,1.10],"Groningen":[0.90,1.12]
-  },
-  "Libertadores": {
-    "Flamengo":[1.30,0.78],"Palmeiras":[1.28,0.80],"River Plate":[1.26,0.82],"Boca Juniors":[1.22,0.84],
-    "Nacional":[1.12,0.92],"Penarol":[1.10,0.94],"Olimpia":[1.05,1.00],"Barcelona SC":[1.08,0.96],
-    "Independiente del Valle":[1.10,0.94],"LDU Quito":[1.08,0.96],"Estudiantes":[1.06,1.00],"Racing":[1.08,0.98],
-    "Colo Colo":[1.02,1.04],"Cerro Porteno":[1.00,1.05],"Atletico Mineiro":[1.20,0.86],"Sao Paulo":[1.18,0.88],
-    "Gremio":[1.14,0.92],"Internacional":[1.12,0.94],"Universidad Catolica":[1.02,1.04],"Bolivar":[1.00,1.04],
-    "The Strongest":[0.98,1.06],"Libertad":[1.04,1.02],"Alianza Lima":[0.94,1.10],"Sporting Cristal":[1.02,1.04]
-  },
-  "Sudamericana": {
-    "Athletico Paranaense":[1.10,0.94],"Bragantino":[1.08,0.96],"Santos":[1.06,1.00],"Cruzeiro":[1.04,1.02],
-    "Defensa y Justicia":[1.02,1.04],"Lanus":[1.00,1.05],"Newells":[0.98,1.06],"Rosario Central":[1.00,1.04],
-    "Universitario":[1.04,1.02],"Emelec":[1.00,1.05],"Deportivo Cali":[0.98,1.06],"Junior":[1.02,1.04],
-    "Once Caldas":[0.96,1.08],"La Equidad":[0.94,1.10],"Fortaleza":[1.06,1.00],"America de Cali":[1.02,1.06],
-    "Macara":[0.95,1.12],"Huracan":[1.02,1.04],"Velez":[1.06,1.00],"Penarol":[1.10,0.94],"Nacional":[1.12,0.92],
-    "Bolivar":[1.00,1.04],"Jorge Wilstermann":[0.96,1.08]
-  },
-  "Mundial_2026": {
-    "Alemania":[1.23,0.86],"Argentina":[1.30,0.80],"Brasil":[1.28,0.82],"Espana":[1.25,0.85],"Francia":[1.27,0.83],
-    "Inglaterra":[1.26,0.84],"Italia":[1.15,0.93],"Paises Bajos":[1.20,0.88],"Portugal":[1.22,0.87],"Uruguay":[1.15,0.93],
-    "Croacia":[1.16,0.92],"Belgica":[1.17,0.91],"Colombia":[1.14,0.94],"Mexico":[1.12,0.96],"Marruecos":[1.14,0.94],
-    "Japon":[1.12,0.96],"Senegal":[1.11,0.97],"Dinamarca":[1.08,1.00],"Austria":[1.06,1.02],"Ecuador":[1.07,1.01]
-  },
-  "Championship": {
-    "Leeds":[1.15,0.89],"Leicester":[1.14,0.90],"Southampton":[1.12,0.92],"West Brom":[1.06,0.98],"Norwich":[1.08,0.96],
-    "Middlesbrough":[1.07,0.97],"Coventry":[1.05,0.99],"Sunderland":[1.04,1.00],"Blackburn":[1.03,1.01],"Millwall":[1.00,1.04],
-    "Watford":[1.02,1.02],"Bristol City":[1.01,1.03],"Hull":[1.00,1.04],"Preston":[0.99,1.05],"Swansea":[0.98,1.06],
-    "Cardiff":[0.97,1.07],"Stoke":[0.96,1.08],"Sheffield Wednesday":[0.95,1.09],"QPR":[0.94,1.10],"Plymouth":[0.93,1.11],
-    "Portsmouth":[0.92,1.12],"Luton":[0.95,1.09],"Derby":[0.94,1.10],"Oxford":[0.90,1.14],"Burnley":[1.13,0.91]
-  },
-  "MLS": {
-    "Inter Miami":[1.18,0.86],"LAFC":[1.16,0.88],"Columbus Crew":[1.14,0.90],"FC Cincinnati":[1.13,0.91],
-    "Philadelphia Union":[1.10,0.94],"New England Revolution":[1.08,0.96],"Atlanta United":[1.09,0.95],
-    "Orlando City":[1.07,0.97],"NYCFC":[1.06,0.98],"Nashville SC":[1.05,0.99],"Seattle Sounders":[1.04,1.00],
-    "Portland Timbers":[1.03,1.01],"Minnesota United":[1.02,1.02],"FC Dallas":[1.01,1.03],"Austin FC":[1.00,1.04],
-    "Houston Dynamo":[0.99,1.05],"LA Galaxy":[0.98,1.06],"Vancouver Whitecaps":[0.97,1.07],"Chicago Fire":[0.96,1.08],
-    "Charlotte FC":[0.95,1.09],"CF Montreal":[0.94,1.10],"Sporting KC":[0.93,1.11],"New York Red Bulls":[0.92,1.12],
-    "Real Salt Lake":[0.91,1.13],"DC United":[0.90,1.14],"San Jose Earthquakes":[0.89,1.15],"Colorado Rapids":[0.88,1.16],
-    "Toronto FC":[0.87,1.17],"St. Louis City":[0.86,1.18]
-  },
-  "Brasileirao": {
-    "Athletico Paranaense":[1.10,0.94],"Atletico Mineiro":[1.20,0.86],"Bahia":[1.02,1.04],"Botafogo":[1.08,0.98],
-    "Chapecoense":[0.88,1.16],"Corinthians":[1.05,1.01],"Coritiba":[0.95,1.10],"Cruzeiro":[1.04,1.02],
-    "Flamengo":[1.30,0.78],"Fluminense":[1.10,0.96],"Gremio":[1.14,0.92],"Internacional":[1.12,0.94],
-    "Mirassol":[0.93,1.15],"Palmeiras":[1.28,0.80],"RB Bragantino":[1.08,0.96],"Remo":[0.90,1.14],
-    "Santos":[1.10,0.94],"Sao Paulo":[1.18,0.88],"Vasco":[1.00,1.06],"Vitoria":[0.94,1.12]
-  }
-};
+def parsear_fixtures(fixtures):
+    registros = []
+    for p in fixtures:
+        fid = p["fixture"]["id"]
+        fecha = p["fixture"]["date"]
+        local = p["teams"]["home"]["name"]
+        visitante = p["teams"]["away"]["name"]
+        goles_l = p["goals"]["home"]
+        goles_v = p["goals"]["away"]
+        xg_l, xg_v = np.nan, np.nan
+        corners_l, corners_v = np.nan, np.nan
+        for team_stats in p.get("statistics", []):
+            lado = "home" if team_stats["team"]["id"] == p["teams"]["home"]["id"] else "away"
+            for s in team_stats["statistics"]:
+                tipo = s["type"]
+                valor = s["value"]
+                if tipo == "Expected Goals":
+                    if lado == "home":
+                        xg_l = float(valor) if valor else np.nan
+                    else:
+                        xg_v = float(valor) if valor else np.nan
+                elif tipo == "Corner Kicks":
+                    if lado == "home":
+                        corners_l = int(valor) if valor else np.nan
+                    else:
+                        corners_v = int(valor) if valor else np.nan
+        registros.append({
+            "fixture_id": fid,
+            "fecha": fecha,
+            "local": local,
+            "visitante": visitante,
+            "goles_local": goles_l,
+            "goles_visitante": goles_v,
+            "xg_local": xg_l,
+            "xg_visitante": xg_v,
+            "corners_local": corners_l,
+            "corners_visitante": corners_v
+        })
+    df = pd.DataFrame(registros)
+    df["fecha"] = pd.to_datetime(df["fecha"], utc=True).dt.tz_convert(None)
+    df.sort_values("fecha", inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
 
-// ============ MODELO MATEMÁTICO ============
-function poissonPMF(k, lambda) {
-  if (lambda <= 0 || k < 0) return 0;
-  let logP = -lambda + k * Math.log(lambda);
-  for (let i = 1; i <= k; i++) logP -= Math.log(i);
-  return Math.exp(logP);
-}
-function poissonCDF(k, lambda) {
-  let sum = 0;
-  for (let i = 0; i <= Math.floor(k); i++) sum += poissonPMF(i, lambda);
-  return Math.min(1, sum);
-}
-function probOver(lambda, th) { return Math.max(0, (1 - poissonCDF(th, lambda)) * 100); }
+def calcular_forma_equipo(df, equipo, fecha_ref, ventana=5):
+    previos = df[((df["local"] == equipo) | (df["visitante"] == equipo)) & (df["fecha"] < fecha_ref)] \
+                .sort_values("fecha", ascending=False).head(ventana)
+    n = len(previos)
+    if n == 0:
+        return {"puntos": 0, "gf": 0, "gc": 0, "xgf": 0, "xgc": 0, "cf": 0, "cc": 0, "n": 0}
+    puntos, gf, gc, xgf, xgc, cf, cc = 0, 0, 0, 0.0, 0.0, 0, 0
+    for _, row in previos.iterrows():
+        if row["local"] == equipo:
+            g_f = row["goles_local"]
+            g_c = row["goles_visitante"]
+            xg_f = row["xg_local"] if not pd.isna(row["xg_local"]) else 0
+            xg_c = row["xg_visitante"] if not pd.isna(row["xg_visitante"]) else 0
+            c_f = row["corners_local"] if not pd.isna(row["corners_local"]) else 0
+            c_c = row["corners_visitante"] if not pd.isna(row["corners_visitante"]) else 0
+        else:
+            g_f = row["goles_visitante"]
+            g_c = row["goles_local"]
+            xg_f = row["xg_visitante"] if not pd.isna(row["xg_visitante"]) else 0
+            xg_c = row["xg_local"] if not pd.isna(row["xg_local"]) else 0
+            c_f = row["corners_visitante"] if not pd.isna(row["corners_visitante"]) else 0
+            c_c = row["corners_local"] if not pd.isna(row["corners_local"]) else 0
+        if g_f > g_c: puntos += 3
+        elif g_f == g_c: puntos += 1
+        gf += g_f; gc += g_c; xgf += xg_f; xgc += xg_c; cf += c_f; cc += c_c
+    return {"puntos": puntos/n, "gf": gf/n, "gc": gc/n,
+            "xgf": xgf/n, "xgc": xgc/n, "cf": cf/n, "cc": cc/n, "n": n}
 
-function dixonColesProb(h, a, lh, la, rho) {
-  let p = poissonPMF(h, lh) * poissonPMF(a, la);
-  if (h===0 && a===0) p *= 1 + lh * la * rho;
-  else if (h===1 && a===0) p *= 1 - la * rho;
-  else if (h===0 && a===1) p *= 1 - lh * rho;
-  else if (h===1 && a===1) p *= 1 + rho;
-  return Math.max(0, p);
-}
+def construir_features(df):
+    X = []
+    for _, row in df.iterrows():
+        fl = calcular_forma_equipo(df, row["local"], row["fecha"])
+        fv = calcular_forma_equipo(df, row["visitante"], row["fecha"])
+        X.append({
+            "l_puntos": fl["puntos"], "l_gf": fl["gf"], "l_gc": fl["gc"],
+            "l_xgf": fl["xgf"], "l_xgc": fl["xgc"], "l_cf": fl["cf"], "l_cc": fl["cc"],
+            "l_partidos": fl["n"],
+            "v_puntos": fv["puntos"], "v_gf": fv["gf"], "v_gc": fv["gc"],
+            "v_xgf": fv["xgf"], "v_xgc": fv["xgc"], "v_cf": fv["cf"], "v_cc": fv["cc"],
+            "v_partidos": fv["n"],
+            "diff_xg": fl["xgf"] - fv["xgf"]
+        })
+    return pd.DataFrame(X)
 
-function getTeamStrength(league, team) {
-  const leagueData = TEAM_STRENGTH[league] || {};
-  const arr = leagueData[team] || [1.0, 1.0];
-  return { atk: arr[0], def: arr[1] };
-}
+def crear_objetivos(df):
+    df["resultado"] = np.where(df["goles_local"] > df["goles_visitante"], 1,
+                       np.where(df["goles_local"] == df["goles_visitante"], 0, 2))
+    df["btts"] = ((df["goles_local"] > 0) & (df["goles_visitante"] > 0)).astype(int)
+    df["over1.5"] = ((df["goles_local"] + df["goles_visitante"]) > 1.5).astype(int)
+    df["over2.5"] = ((df["goles_local"] + df["goles_visitante"]) > 2.5).astype(int)
+    total_corners = df["corners_local"] + df["corners_visitante"]
+    df["over7.5_corners"] = (total_corners > 7.5).astype(int)
+    df["over8.5_corners"] = (total_corners > 8.5).astype(int)
+    return df
 
-function predictMatch(leagueCode, home, away) {
-  const cfg = LEAGUES_CONFIG[leagueCode] || { goals_avg:2.5, corners_avg:10, hfa:1.05, rho:0, goal_1h_pct:0.42 };
-  const homeStr = getTeamStrength(leagueCode, home);
-  const awayStr = getTeamStrength(leagueCode, away);
-  const hfa = cfg.hfa;
-  const lh = (cfg.goals_avg/2) * homeStr.atk * awayStr.def * hfa;
-  const la = (cfg.goals_avg/2) * awayStr.atk * homeStr.def * (1/hfa);
-  const totalLambda = lh + la;
-  const rho = cfg.rho;
+def entrenar_modelos_calibrados(X, y_dict):
+    modelos = {}
+    for nombre, y in y_dict.items():
+        if y.nunique() < 2:
+            st.warning(f"No hay suficientes clases para {nombre}, se omite.")
+            continue
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.2, random_state=42, stratify=y
+        )
+        base = RandomForestClassifier(n_estimators=100, max_depth=8, random_state=42)
+        calib = CalibratedClassifierCV(base, method='isotonic', cv=5)
+        calib.fit(X_train, y_train)
+        probas = calib.predict_proba(X_test)
+        brier = brier_score_loss(y_test, probas[:, 1]) if probas.shape[1] == 2 else None
+        modelos[nombre] = {"modelo": calib, "brier": brier, "X_test": X_test, "y_test": y_test}
+    return modelos
 
-  let homeWin=0, awayWin=0, draw=0;
-  for (let i=0; i<=15; i++) {
-    for (let j=0; j<=15; j++) {
-      const prob = dixonColesProb(i, j, lh, la, rho);
-      if (i>j) homeWin += prob;
-      else if (j>i) awayWin += prob;
-      else draw += prob;
+def backtest_1X2(modelo, X_test, y_test, cuotas_df, bankroll_inicial=1000, fraccion_kelly=0.25, max_stake_pct=0.05):
+    probas = modelo.predict_proba(X_test)
+    bankroll = bankroll_inicial
+    historial = [bankroll]
+    apuestas_realizadas = 0
+    for i in range(len(X_test)):
+        prob_empate = probas[i][0]
+        prob_local = probas[i][1]
+        prob_visit = probas[i][2]
+        cuota_local = cuotas_df.iloc[i]["cuota_local"]
+        cuota_empate = cuotas_df.iloc[i]["cuota_empate"]
+        cuota_visitante = cuotas_df.iloc[i]["cuota_visitante"]
+        ev_local = prob_local * cuota_local - 1
+        ev_empate = prob_empate * cuota_empate - 1
+        ev_visit = prob_visit * cuota_visitante - 1
+        opciones = {"Local": (ev_local, cuota_local, 1),
+                    "Empate": (ev_empate, cuota_empate, 0),
+                    "Visitante": (ev_visit, cuota_visitante, 2)}
+        mejor = max(opciones, key=lambda k: opciones[k][0])
+        ev, cuota, resultado_apostado = opciones[mejor]
+        if ev > 0.03:
+            stake = bankroll * min(fraccion_kelly * (ev / (cuota - 1)), max_stake_pct)
+            if y_test.iloc[i] == resultado_apostado:
+                bankroll += stake * (cuota - 1)
+            else:
+                bankroll -= stake
+            apuestas_realizadas += 1
+        historial.append(bankroll)
+    yield_pct = (bankroll - bankroll_inicial) / bankroll_inicial * 100
+    return historial, yield_pct, apuestas_realizadas
+
+# -------------------------- INTERFAZ STREAMLIT --------------------------
+st.set_page_config(page_title="Predicción de fútbol avanzada", layout="wide")
+st.title("⚽ Predicción de fútbol con Machine Learning y Value Betting")
+st.markdown("""
+Esta aplicación entrena modelos calibrados con cuotas reales y ejecuta un backtest profesional.
+**Ideal para aprovechar apuestas gratis (freebets) buscando valor con cuotas altas.**
+""")
+
+col1, col2 = st.columns(2)
+with col1:
+    league_name = st.selectbox("Liga / Competición", list(LEAGUES.keys()), index=0)
+with col2:
+    season = st.selectbox("Temporada", ["2022", "2023", "2024", "2025", "2026"], index=2)
+
+bookmaker_id = st.number_input("ID del bookmaker para cuotas (Bet365=8)", value=8)
+
+if st.button("Descargar datos y entrenar modelos"):
+    league_id = LEAGUES[league_name]
+    with st.spinner("Descargando fixtures..."):
+        fixtures = obtener_fixtures(league_id, season)
+    if not fixtures:
+        st.error("No se encontraron fixtures. ¿La liga/temporada tiene datos?")
+        st.stop()
+
+    df = parsear_fixtures(fixtures)
+    st.success(f"Partidos descargados: {len(df)}")
+
+    with st.spinner("Descargando cuotas..."):
+        odds_df = obtener_odds(league_id, season, bookmaker_id)
+    if odds_df.empty:
+        st.warning("No se obtuvieron cuotas. El backtest no se podrá realizar.")
+        cuotas_presentes = False
+    else:
+        df = df.merge(odds_df, on="fixture_id", how="left")
+        cuotas_presentes = True
+
+    df = crear_objetivos(df)
+    X = construir_features(df)
+
+    if cuotas_presentes:
+        df["impl_local"] = np.where(df["cuota_local"] > 1, 1/df["cuota_local"], 0)
+        df["impl_empate"] = np.where(df["cuota_empate"] > 1, 1/df["cuota_empate"], 0)
+        df["impl_visitante"] = np.where(df["cuota_visitante"] > 1, 1/df["cuota_visitante"], 0)
+        suma = df["impl_local"] + df["impl_empate"] + df["impl_visitante"]
+        df["impl_local"] /= suma
+        df["impl_empate"] /= suma
+        df["impl_visitante"] /= suma
+        X["impl_local"] = df["impl_local"]
+        X["impl_empate"] = df["impl_empate"]
+        X["impl_visitante"] = df["impl_visitante"]
+    else:
+        X["impl_local"] = X["impl_empate"] = X["impl_visitante"] = 0
+
+    imputer = SimpleImputer(strategy="median")
+    X_imp = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
+
+    y_dict = {
+        "resultado": df["resultado"],
+        "btts": df["btts"],
+        "over1.5": df["over1.5"],
+        "over2.5": df["over2.5"],
+        "over7.5_corners": df["over7.5_corners"],
+        "over8.5_corners": df["over8.5_corners"]
     }
-  }
 
-  const p0h = poissonPMF(0, lh), p0a = poissonPMF(0, la);
-  const btts = Math.max(0, (1 - p0h - p0a + p0h*p0a) * 100);
-  const over15 = probOver(totalLambda, 1.5);
-  const over25 = probOver(totalLambda, 2.5);
-  const htLambda = totalLambda * cfg.goal_1h_pct;
-  const htOver05 = probOver(htLambda, 0.5);
-  const cornerLambda = cfg.corners_avg;
-  const cornersOver75 = probOver(cornerLambda, 7.5);
-  const cornersOver85 = probOver(cornerLambda, 8.5);
+    modelos = entrenar_modelos_calibrados(X_imp, y_dict)
 
-  return {
-    home, away, league: leagueCode,
-    l_home: lh.toFixed(3), l_away: la.toFixed(3),
-    over15, over25, btts,
-    home_win: (homeWin*100).toFixed(1),
-    draw: (draw*100).toFixed(1),
-    away_win: (awayWin*100).toFixed(1),
-    htOver05, cornersOver75, cornersOver85
-  };
-}
+    for nombre, info in modelos.items():
+        acc = accuracy_score(info['y_test'], info['modelo'].predict(info['X_test']))
+        if info['brier'] is not None:
+            st.write(f"**{nombre}** → Acc: {acc:.2f}, Brier: {info['brier']:.4f}")
+        else:
+            st.write(f"**{nombre}** → Acc: {acc:.2f}")
 
-function calcValue(probPercent, odds) {
-  if (!odds || odds<=1) return null;
-  return (probPercent/100 * odds - 1) * 100;
-}
+    if cuotas_presentes and "resultado" in modelos:
+        st.subheader("📈 Backtest 1X2 con Kelly")
+        modelo_res = modelos["resultado"]["modelo"]
+        X_test_res = modelos["resultado"]["X_test"]
+        y_test_res = modelos["resultado"]["y_test"]
+        indices_test = X_test_res.index
+        cuotas_test = df.loc[indices_test, ["cuota_local", "cuota_empate", "cuota_visitante"]].reset_index(drop=True)
+        historial, yield_pct, num_apuestas = backtest_1X2(modelo_res, X_test_res, y_test_res, cuotas_test)
+        if historial:
+            st.write(f"Apuestas realizadas: {num_apuestas}")
+            st.write(f"Yield: {yield_pct:.2f}%")
+            fig, ax = plt.subplots()
+            ax.plot(historial)
+            ax.set_title("Evolución del bankroll (€)")
+            st.pyplot(fig)
+        else:
+            st.info("No se detectaron apuestas con valor suficiente en el test.")
+    else:
+        st.info("Para ejecutar el backtest necesitas cuotas del bookmaker seleccionado.")
 
-function calcFairProb(odds1, oddsX, odds2) {
-  if (!odds1||!oddsX||!odds2||odds1<=1||oddsX<=1||odds2<=1) return null;
-  const inv1=1/odds1, invX=1/oddsX, inv2=1/odds2;
-  const sum=inv1+invX+inv2;
-  return { home: inv1/sum, draw: invX/sum, away: inv2/sum, vig: sum-1 };
-}
+    st.session_state["modelos"] = modelos
+    st.session_state["imputer"] = imputer
+    st.session_state["df"] = df
+    st.session_state["equipos"] = sorted(set(df["local"].unique()) | set(df["visitante"].unique()))
 
-function kellyStake(prob, odds) {
-  const q = 1 - prob;
-  const b = odds - 1;
-  const kelly = (prob*b - q) / b;
-  let fraction = Math.max(0, kelly * config.kellyFraction);
-  const value = (prob*odds - 1)*100;
-  if (value < 3) fraction *= 0.5;
-  else if (value > 8) fraction = Math.min(fraction*1.2, config.maxStakePct);
-  const rawStake = bankroll * fraction;
-  return Math.min(rawStake, bankroll * config.maxStakePct);
-}
+if "modelos" in st.session_state:
+    st.markdown("---")
+    st.subheader("🔮 Predecir un partido futuro")
+    equipos = st.session_state["equipos"]
+    col_h, col_a = st.columns(2)
+    with col_h:
+        home = st.selectbox("Equipo local", equipos, index=0)
+    with col_a:
+        away = st.selectbox("Equipo visitante", equipos, index=1 if len(equipos) > 1 else 0)
 
-// ============ INTERFAZ ============
-const leagueSelect = document.getElementById('league');
-const homeSelect = document.getElementById('home');
-const awaySelect = document.getElementById('away');
-const analyzeBtn = document.getElementById('analyze-btn');
+    # Si tuvieras cuotas en tiempo real, podrías obtenerlas con otra función
+    # Aquí usamos placeholders; lo ideal sería consultar API-Football para ese partido.
+    cuota_local = 2.5  # ejemplo
+    cuota_empate = 3.2
+    cuota_visitante = 2.9
 
-function populateLeagues() {
-  leagueSelect.innerHTML = '<option value="">-- Selecciona liga --</option>';
-  for (const code of Object.keys(TEAMS_DB)) {
-    leagueSelect.innerHTML += `<option value="${code}">${LEAGUES_CONFIG[code] ? code : code}</option>`;
-  }
-}
-populateLeagues();
+    if st.button("Predecir"):
+        df_hist = st.session_state["df"]
+        fecha_ref = df_hist["fecha"].max() + timedelta(days=1)
+        fl = calcular_forma_equipo(df_hist, home, fecha_ref)
+        fv = calcular_forma_equipo(df_hist, away, fecha_ref)
+        features = pd.DataFrame([{
+            "l_puntos": fl["puntos"], "l_gf": fl["gf"], "l_gc": fl["gc"],
+            "l_xgf": fl["xgf"], "l_xgc": fl["xgc"], "l_cf": fl["cf"], "l_cc": fl["cc"],
+            "l_partidos": fl["n"],
+            "v_puntos": fv["puntos"], "v_gf": fv["gf"], "v_gc": fv["gc"],
+            "v_xgf": fv["xgf"], "v_xgc": fv["xgc"], "v_cf": fv["cf"], "v_cc": fv["cc"],
+            "v_partidos": fv["n"],
+            "diff_xg": fl["xgf"] - fv["xgf"],
+            "impl_local": 0, "impl_empate": 0, "impl_visitante": 0
+        }])
+        X_input = pd.DataFrame(st.session_state["imputer"].transform(features), columns=features.columns)
 
-leagueSelect.addEventListener('change', function() {
-  const code = this.value;
-  homeSelect.innerHTML = '<option value="">-- Local --</option>';
-  awaySelect.innerHTML = '<option value="">-- Visitante --</option>';
-  homeSelect.disabled = true;
-  awaySelect.disabled = true;
-  if (!code) return;
-  const teams = TEAMS_DB[code] || [];
-  teams.forEach(team => {
-    homeSelect.innerHTML += `<option value="${team}">${team}</option>`;
-    awaySelect.innerHTML += `<option value="${team}">${team}</option>`;
-  });
-  homeSelect.disabled = false;
-  awaySelect.disabled = false;
-  checkAnalyzeButton();
-});
+        st.write(f"**{home} vs {away}**")
+        # Resultado
+        proba_res = st.session_state["modelos"]["resultado"]["modelo"].predict_proba(X_input)[0]
+        etiquetas = ["Empate", "Local", "Visitante"]
+        st.write("Resultado:")
+        for i, etiq in enumerate(etiquetas):
+            st.write(f"  {etiq}: {proba_res[i]*100:.1f}%")
 
-function checkAnalyzeButton() {
-  const anyOdd = document.getElementById('odds-over25').value ||
-                 document.getElementById('odds-btts').value ||
-                 document.getElementById('odds-home').value ||
-                 document.getElementById('odds-corners75').value ||
-                 document.getElementById('odds-corners85').value ||
-                 document.getElementById('odds-ht05').value ||
-                 document.getElementById('odds-over15').value ||
-                 document.getElementById('odds-draw').value ||
-                 document.getElementById('odds-away').value;
-  analyzeBtn.disabled = !(homeSelect.value && awaySelect.value && homeSelect.value !== awaySelect.value && anyOdd);
-}
+        # Evaluar freebet
+        cuotas_partido = {"Empate": cuota_empate, "Local": cuota_local, "Visitante": cuota_visitante}
+        mejor_ev = -999
+        mejor_resultado = None
+        mejor_cuota = None
+        for i, etiq in enumerate(etiquetas):
+            ev = proba_res[i] * cuotas_partido[etiq] - 1
+            if ev > mejor_ev:
+                mejor_ev = ev
+                mejor_resultado = etiq
+                mejor_cuota = cuotas_partido[etiq]
+        st.markdown("### 🎁 Oportunidad para freebet")
+        if mejor_ev > 0.05 and mejor_cuota > 3.5:
+            st.success(f"¡Freebet ideal! Apuesta al **{mejor_resultado}** (cuota {mejor_cuota:.2f}, valor esperado +{mejor_ev*100:.1f}%)")
+        elif mejor_ev > 0.03:
+            st.info(f"Oportunidad moderada: **{mejor_resultado}** (cuota {mejor_cuota:.2f}, EV +{mejor_ev*100:.1f}%)")
+        else:
+            st.warning("No se detecta valor claro para una freebet en el mercado 1X2.")
 
-homeSelect.addEventListener('change', checkAnalyzeButton);
-awaySelect.addEventListener('change', checkAnalyzeButton);
-document.querySelectorAll('input[type="number"]').forEach(inp => inp.addEventListener('input', checkAnalyzeButton));
-
-analyzeBtn.addEventListener('click', () => {
-  const league = leagueSelect.value;
-  const home = homeSelect.value;
-  const away = awaySelect.value;
-  const pred = predictMatch(league, home, away);
-  const oddsH = parseFloat(document.getElementById('odds-home').value) || 0;
-  const oddsD = parseFloat(document.getElementById('odds-draw').value) || 0;
-  const oddsA = parseFloat(document.getElementById('odds-away').value) || 0;
-  const fair = calcFairProb(oddsH, oddsD, oddsA);
-
-  let fusedHome = parseFloat(pred.home_win);
-  let fusedDraw = parseFloat(pred.draw);
-  let fusedAway = parseFloat(pred.away_win);
-  if (fair) {
-    fusedHome = fusedHome * 0.7 + (fair.home*100) * 0.3;
-    fusedDraw = fusedDraw * 0.7 + (fair.draw*100) * 0.3;
-    fusedAway = fusedAway * 0.7 + (fair.away*100) * 0.3;
-  }
-
-  const marketDefs = [
-    { name: 'Victoria Local', prob: fusedHome, oddsId: 'odds-home' },
-    { name: 'Empate', prob: fusedDraw, oddsId: 'odds-draw' },
-    { name: 'Victoria Visitante', prob: fusedAway, oddsId: 'odds-away' },
-    { name: 'Over 0.5 Goles 1T', prob: pred.htOver05, oddsId: 'odds-ht05' },
-    { name: 'Over 1.5 Goles', prob: pred.over15, oddsId: 'odds-over15' },
-    { name: 'Over 2.5 Goles', prob: pred.over25, oddsId: 'odds-over25' },
-    { name: 'BTTS (Sí)', prob: pred.btts, oddsId: 'odds-btts' },
-    { name: 'Over 7.5 Córners', prob: pred.cornersOver75, oddsId: 'odds-corners75' },
-    { name: 'Over 8.5 Córners', prob: pred.cornersOver85, oddsId: 'odds-corners85' }
-  ];
-
-  const markets = marketDefs.map(def => {
-    const oddsEl = document.getElementById(def.oddsId);
-    const odds = oddsEl ? parseFloat(oddsEl.value) || 0 : 0;
-    const hasOdds = odds > 1;
-    const value = hasOdds ? calcValue(def.prob, odds) : null;
-    return { ...def, odds, value, hasValue: value > 0 };
-  });
-
-  renderResults(pred, markets);
-});
-
-function renderResults(pred, markets) {
-  document.getElementById('main-screen').classList.add('hidden');
-  document.getElementById('result-screen').classList.remove('hidden');
-  const hasAnyValue = markets.some(m => m.hasValue);
-  let html = '';
-  markets.forEach(m => {
-    const probPercent = Math.round(m.prob);
-    const probClass = probPercent >= 70 ? 'prob-high' : (probPercent >= 41 ? 'prob-mid' : 'prob-low');
-    const isValued = m.odds > 1;
-    let badge = m.hasValue ? '<span class="value-badge">+EV</span>' : (isValued ? '<span class="no-value-badge">SIN VALOR</span>' : '<span class="info-badge">PROBABILIDAD</span>');
-    let stakeHtml = '';
-    if (m.hasValue && m.odds > 1) {
-      const stake = kellyStake(m.prob/100, m.odds);
-      if (stake > 0) {
-        stakeHtml = `
-          <div class="stake-suggestion">
-            <div style="font-size:0.65rem;">💰 Apuesta sugerida (Kelly ${(config.kellyFraction*100).toFixed(0)}%, max ${(config.maxStakePct*100).toFixed(0)}%)</div>
-            <div style="font-size:1.2rem;font-weight:800;color:var(--blue);">$${stake.toFixed(2)}</div>
-            <div style="font-size:0.6rem;">${(stake/bankroll*100).toFixed(1)}% del bankroll</div>
-            <button class="btn-secondary" onclick="placeBet('${m.name}', ${m.prob}, ${m.odds}, ${stake.toFixed(2)}, '${pred.home} vs ${pred.away}')" style="margin-top:8px;">✅ REGISTRAR APUESTA</button>
-          </div>`;
-      }
-    }
-    html += `
-      <div class="market">
-        <div class="market-header">${m.name} ${badge}</div>
-        <div class="prob-row"><span class="prob-label">Probabilidad</span><span class="prob-value ${probClass}">${probPercent}%</span></div>
-        ${isValued ? `
-        <div class="prob-row"><span class="prob-label">Cuota</span><span class="prob-value">${m.odds.toFixed(2)}</span></div>
-        <div class="ev-row"><span class="ev-label">EV</span><span class="ev-value ${m.value>0?'green':'red'}">${m.value>0?'+':''}${m.value.toFixed(1)}%</span></div>` : ''}
-        ${stakeHtml}
-      </div>`;
-  });
-  document.getElementById('result-card').innerHTML = `
-    <div style="display:flex;justify-content:space-between;margin-bottom:12px;"><h3>${pred.home} vs ${pred.away}</h3><button class="btn-secondary" onclick="goBack()">← Volver</button></div>
-    <p style="text-align:center;font-size:0.7rem;color:var(--muted);">${pred.league} · λ: ${pred.l_home}/${pred.l_away}</p>
-    ${hasAnyValue ? '<div class="bankroll-display">🎯 ¡VALOR ENCONTRADO!</div>' : '<div class="warning-box">⚠️ Sin valor positivo</div>'}
-    ${html}`;
-  document.getElementById('result-screen').scrollIntoView({ behavior:'smooth' });
-}
-
-function placeBet(market, prob, odds, stake, match) {
-  bankroll -= parseFloat(stake);
-  betHistory.push({ date: new Date().toISOString(), match, market, prob, odds, stake: parseFloat(stake), status:'pending', result:null });
-  saveAll();
-  updateBankrollDisplay();
-  updateHistoryDisplay();
-}
-
-function updateBetResult(index, won) {
-  const bet = betHistory[index];
-  if (bet.status !== 'pending') return;
-  bet.status = 'settled';
-  bet.result = won ? 'win' : 'loss';
-  if (won) bankroll += bet.stake * bet.odds;
-  saveAll();
-  updateBankrollDisplay();
-  updateHistoryDisplay();
-}
-
-function deleteBet(index) {
-  const bet = betHistory[index];
-  if (bet.status === 'pending') bankroll += bet.stake;
-  else if (bet.status === 'settled' && bet.result === 'win') bankroll -= bet.stake * bet.odds;
-  betHistory.splice(index, 1);
-  saveAll();
-  updateBankrollDisplay();
-  updateHistoryDisplay();
-}
-
-function updateHistoryDisplay() {
-  const log = document.getElementById('bet-log');
-  if (!betHistory.length) { log.innerHTML = '<p style="color:var(--muted);text-align:center;">Sin apuestas</p>'; return; }
-  let html = '';
-  for (let i=betHistory.length-1; i>=0; i--) {
-    const b = betHistory[i];
-    const date = new Date(b.date).toLocaleDateString();
-    const cls = b.status==='pending'?'log-pending':(b.result==='win'?'log-win':'log-loss');
-    const emoji = b.status==='pending'?'⏳':(b.result==='win'?'✅':'❌');
-    const profit = b.status==='settled' ? (b.result==='win' ? `+$${(b.stake*b.odds-b.stake).toFixed(2)}` : `-$${b.stake.toFixed(2)}`) : 'Pendiente';
-    html += `
-      <div class="log-item ${cls}">
-        <div><strong>${b.match}</strong><br><small>${b.market} · Cuota ${b.odds} · Stake $${b.stake.toFixed(2)}</small><br><small>${date}</small></div>
-        <div style="text-align:right;">
-          <div>${emoji} ${profit}</div>
-          ${b.status==='pending'?`<div><button onclick="updateBetResult(${i},true)" style="background:#2ecc71;color:white;border:none;padding:2px 6px;">Ganó</button> <button onclick="updateBetResult(${i},false)" style="background:#ff4d5a;color:white;border:none;padding:2px 6px;">Perdió</button></div>`:''}
-        </div>
-        <button class="delete-btn" onclick="deleteBet(${i})">🗑️</button>
-      </div>`;
-  }
-  log.innerHTML = html;
-}
-
-function exportHistory() {
-  if (!betHistory.length) return alert('No hay apuestas');
-  const csv = 'Fecha,Partido,Mercado,Prob,Cuota,Stake,Estado,Resultado,Profit\n' + betHistory.map(b => {
-    const profit = b.status==='settled' ? (b.result==='win' ? (b.stake*b.odds-b.stake).toFixed(2) : (-b.stake).toFixed(2)) : '0';
-    return `${new Date(b.date).toLocaleDateString()},${b.match},${b.market},${b.prob}%,${b.odds},$${b.stake.toFixed(2)},${b.status},${b.result||'N/A'},${profit}`;
-  }).join('\n');
-  const blob = new Blob([csv],{type:'text/csv'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'apuestas.csv'; a.click();
-}
-function exportJSON() {
-  const data = { bankroll, config, betHistory };
-  const blob = new Blob([JSON.stringify(data)],{type:'application/json'});
-  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'backup.json'; a.click();
-}
-function importJSON(input) {
-  const file = input.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = e => {
-    try {
-      const data = JSON.parse(e.target.result);
-      if (data.bankroll) bankroll = data.bankroll;
-      if (data.config) config = { ...DEFAULT_CONFIG, ...data.config };
-      if (data.betHistory) betHistory = data.betHistory;
-      saveAll();
-      updateBankrollDisplay();
-      updateHistoryDisplay();
-      alert('Importado correctamente');
-    } catch (err) { alert('Archivo inválido'); }
-  };
-  reader.readAsText(file);
-}
-
-function switchTab(tab) {
-  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  document.querySelectorAll('.tab').forEach(t => { if (t.textContent.includes(tab.toUpperCase())) t.classList.add('active'); });
-  document.getElementById('tab-analyzer').classList.toggle('hidden', tab!=='analyzer');
-  document.getElementById('tab-history').classList.toggle('hidden', tab!=='history');
-  document.getElementById('tab-stats').classList.toggle('hidden', tab!=='stats');
-  document.getElementById('tab-config').classList.toggle('hidden', tab!=='config');
-  if (tab==='history') updateHistoryDisplay();
-  if (tab==='stats') updateStats();
-  if (tab==='config') loadConfig();
-}
-
-function goBack() {
-  document.getElementById('main-screen').classList.remove('hidden');
-  document.getElementById('result-screen').classList.add('hidden');
-}
-
-function updateBankrollDisplay() {
-  document.getElementById('bankroll-display').textContent = '$' + bankroll.toFixed(2);
-  const pnl = bankroll - config.initialBankroll;
-  const pct = (pnl/config.initialBankroll*100).toFixed(1);
-  const el = document.getElementById('pnl-display');
-  el.textContent = `P&L: $${pnl.toFixed(2)} (${pct}%)`;
-  el.className = pnl>=0 ? 'profit' : 'loss';
-}
-
-function updateStats() {
-  const settled = betHistory.filter(b => b.status==='settled');
-  const wins = settled.filter(b => b.result==='win').length;
-  document.getElementById('stat-total').textContent = betHistory.length;
-  document.getElementById('stat-winrate').textContent = settled.length ? (wins/settled.length*100).toFixed(1)+'%' : '0%';
-  let totalStaked=0, totalProfit=0;
-  settled.forEach(b => { totalStaked+=b.stake; totalProfit += (b.result==='win' ? b.stake*b.odds - b.stake : -b.stake); });
-  document.getElementById('stat-yield').textContent = totalStaked ? (totalProfit/totalStaked*100).toFixed(1)+'%' : '0%';
-  document.getElementById('stat-roi').textContent = (totalProfit/config.initialBankroll*100).toFixed(1)+'%';
-  document.getElementById('stat-profit').textContent = (totalProfit>=0?'+':'') + '$'+totalProfit.toFixed(0);
-  document.getElementById('stat-streak').textContent = '-';
-}
-
-function loadConfig() {
-  document.getElementById('cfg-initial').value = config.initialBankroll;
-  document.getElementById('cfg-kelly').value = config.kellyFraction;
-  document.getElementById('cfg-maxstake').value = config.maxStakePct;
-}
-function saveConfig() {
-  const ini = parseFloat(document.getElementById('cfg-initial').value);
-  const kelly = parseFloat(document.getElementById('cfg-kelly').value);
-  const max = parseFloat(document.getElementById('cfg-maxstake').value);
-  if (ini>0) config.initialBankroll = ini;
-  if (kelly>0 && kelly<=1) config.kellyFraction = kelly;
-  if (max>0 && max<=1) config.maxStakePct = max;
-  saveAll();
-  updateBankrollDisplay();
-  alert('Configuración guardada');
-}
-function resetData() {
-  if (!confirm('¿Borrar todo?')) return;
-  bankroll = config.initialBankroll;
-  betHistory = [];
-  saveAll();
-  updateBankrollDisplay();
-  updateHistoryDisplay();
-}
-
-updateBankrollDisplay();
-updateHistoryDisplay();
-</script>
-</body>
-</html>
+        # Otros mercados (sin freebet específico)
+        for nombre in ["btts", "over1.5", "over2.5", "over7.5_corners", "over8.5_corners"]:
+            if nombre in st.session_state["modelos"]:
+                proba = st.session_state["modelos"][nombre]["modelo"].predict_proba(X_input)[0]
+                st.write(f"{nombre}: **{proba[1]*100:.1f}%** de probabilidad")
