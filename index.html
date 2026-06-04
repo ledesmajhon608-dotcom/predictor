@@ -2,390 +2,173 @@ import streamlit as st
 import requests
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from datetime import datetime, timedelta
+from datetime import timedelta
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score, brier_score_loss
 from sklearn.impute import SimpleImputer
 
-# -------------------------- CONFIGURACIÓN --------------------------
+st.set_page_config(layout="wide")
+st.title("⚽ Predicción de Fútbol – Freebet")
+
 API_KEY = st.secrets["API_FOOTBALL_KEY"]
 HEADERS = {"x-apisports-key": API_KEY}
-BASE_URL = "https://v3.football.api-sports.io"
+BASE = "https://v3.football.api-sports.io"
 
-LEAGUES = {
-    "Premier League": 39,
-    "La Liga": 140,
-    "Serie A": 135,
-    "Bundesliga": 78,
-    "Ligue 1": 61,
-    "World Cup": 1,
-    "Brasileirão Série B": 72
-}
-
-# -------------------------- DESCARGA DE DATOS --------------------------
-@st.cache_data(ttl=3600)
-def obtener_fixtures(league_id, season):
-    url = f"{BASE_URL}/fixtures"
-    params = {"league": league_id, "season": season}
-    fixtures = []
-    page = 1
-    while True:
-        params["page"] = page
-        resp = requests.get(url, headers=HEADERS, params=params)
-        data = resp.json()
-        if data.get("errors"):
-            st.error(f"Error API: {data['errors']}")
-            break
-        fixtures.extend(data["response"])
-        if data["paging"]["current"] == data["paging"]["total"]:
-            break
-        page += 1
-    return fixtures
+LEAGUES = {"Premier":39,"LaLiga":140,"SerieA":135,"Bundesliga":78,"Ligue1":61,"Mundial":1,"SerieB":72}
 
 @st.cache_data(ttl=3600)
-def obtener_odds(league_id, season, bookmaker_id=8):
-    url = f"{BASE_URL}/odds"
-    params = {"league": league_id, "season": season, "bookmaker": bookmaker_id}
-    odds_raw = []
-    page = 1
-    while True:
-        params["page"] = page
-        resp = requests.get(url, headers=HEADERS, params=params)
-        data = resp.json()
-        if data.get("errors"):
-            st.warning(f"Error obteniendo cuotas: {data['errors']}")
-            break
-        odds_raw.extend(data["response"])
-        if data["paging"]["current"] == data["paging"]["total"]:
-            break
-        page += 1
-    cuotas = []
-    for item in odds_raw:
-        fid = item["fixture"]["id"]
-        for book in item.get("bookmakers", []):
-            if book["id"] == bookmaker_id:
-                for bet in book["bets"]:
-                    if bet["name"] == "Match Winner":
-                        odds_dict = {val["value"]: float(val["odd"]) for val in bet["values"]}
-                        cuotas.append({
-                            "fixture_id": fid,
-                            "cuota_local": odds_dict.get("Home", np.nan),
-                            "cuota_empate": odds_dict.get("Draw", np.nan),
-                            "cuota_visitante": odds_dict.get("Away", np.nan)
-                        })
-    return pd.DataFrame(cuotas)
+def get_fixtures(league, season):
+    data = []
+    for p in range(1, 20):
+        resp = requests.get(f"{BASE}/fixtures", headers=HEADERS, params={"league":league, "season":season, "page":p})
+        if resp.status_code != 200: break
+        j = resp.json()
+        data.extend(j["response"])
+        if p >= j["paging"]["total"]: break
+    return data
 
-def parsear_fixtures(fixtures):
-    registros = []
-    for p in fixtures:
+@st.cache_data(ttl=3600)
+def get_odds(league, season):
+    odds = []
+    for p in range(1, 20):
+        resp = requests.get(f"{BASE}/odds", headers=HEADERS, params={"league":league, "season":season, "bookmaker":8, "page":p})
+        if resp.status_code != 200: break
+        j = resp.json()
+        for item in j["response"]:
+            fid = item["fixture"]["id"]
+            for b in item.get("bookmakers",[]):
+                for bet in b["bets"]:
+                    if bet["name"]=="Match Winner":
+                        vals = {v["value"]:float(v["odd"]) for v in bet["values"]}
+                        odds.append({"fixture_id":fid, "cuota_local":vals.get("Home",np.nan), "cuota_empate":vals.get("Draw",np.nan), "cuota_visitante":vals.get("Away",np.nan)})
+        if p >= j["paging"]["total"]: break
+    return pd.DataFrame(odds)
+
+def parse_fixtures(data):
+    rows = []
+    for p in data:
         fid = p["fixture"]["id"]
-        fecha = p["fixture"]["date"]
-        local = p["teams"]["home"]["name"]
-        visitante = p["teams"]["away"]["name"]
-        goles_l = p["goals"]["home"]
-        goles_v = p["goals"]["away"]
-        xg_l, xg_v = np.nan, np.nan
-        corners_l, corners_v = np.nan, np.nan
-        for team_stats in p.get("statistics", []):
-            lado = "home" if team_stats["team"]["id"] == p["teams"]["home"]["id"] else "away"
-            for s in team_stats["statistics"]:
-                tipo = s["type"]
-                valor = s["value"]
-                if tipo == "Expected Goals":
-                    if lado == "home":
-                        xg_l = float(valor) if valor else np.nan
-                    else:
-                        xg_v = float(valor) if valor else np.nan
-                elif tipo == "Corner Kicks":
-                    if lado == "home":
-                        corners_l = int(valor) if valor else np.nan
-                    else:
-                        corners_v = int(valor) if valor else np.nan
-        registros.append({
-            "fixture_id": fid,
-            "fecha": fecha,
-            "local": local,
-            "visitante": visitante,
-            "goles_local": goles_l,
-            "goles_visitante": goles_v,
-            "xg_local": xg_l,
-            "xg_visitante": xg_v,
-            "corners_local": corners_l,
-            "corners_visitante": corners_v
-        })
-    df = pd.DataFrame(registros)
-    df["fecha"] = pd.to_datetime(df["fecha"], utc=True).dt.tz_convert(None)
-    df.sort_values("fecha", inplace=True)
-    df.reset_index(drop=True, inplace=True)
-    return df
+        fecha = pd.to_datetime(p["fixture"]["date"], utc=True).tz_convert(None)
+        home = p["teams"]["home"]["name"]
+        away = p["teams"]["away"]["name"]
+        gh, ga = p["goals"]["home"], p["goals"]["away"]
+        xg_h, xg_a, co_h, co_a = np.nan, np.nan, np.nan, np.nan
+        for t in p.get("statistics",[]):
+            lado = "home" if t["team"]["id"]==p["teams"]["home"]["id"] else "away"
+            for s in t["statistics"]:
+                if s["type"]=="Expected Goals":
+                    if lado=="home": xg_h = float(s["value"]) if s["value"] else np.nan
+                    else: xg_a = float(s["value"]) if s["value"] else np.nan
+                elif s["type"]=="Corner Kicks":
+                    if lado=="home": co_h = int(s["value"]) if s["value"] else np.nan
+                    else: co_a = int(s["value"]) if s["value"] else np.nan
+        rows.append([fid,fecha,home,away,gh,ga,xg_h,xg_a,co_h,co_a])
+    df = pd.DataFrame(rows, columns=["fid","fecha","local","visitante","gl","gv","xg_l","xg_v","co_l","co_v"])
+    return df.sort_values("fecha").reset_index(drop=True)
 
-def calcular_forma_equipo(df, equipo, fecha_ref, ventana=5):
-    previos = df[((df["local"] == equipo) | (df["visitante"] == equipo)) & (df["fecha"] < fecha_ref)] \
-                .sort_values("fecha", ascending=False).head(ventana)
-    n = len(previos)
-    if n == 0:
-        return {"puntos": 0, "gf": 0, "gc": 0, "xgf": 0, "xgc": 0, "cf": 0, "cc": 0, "n": 0}
-    puntos, gf, gc, xgf, xgc, cf, cc = 0, 0, 0, 0.0, 0.0, 0, 0
-    for _, row in previos.iterrows():
-        if row["local"] == equipo:
-            g_f = row["goles_local"]
-            g_c = row["goles_visitante"]
-            xg_f = row["xg_local"] if not pd.isna(row["xg_local"]) else 0
-            xg_c = row["xg_visitante"] if not pd.isna(row["xg_visitante"]) else 0
-            c_f = row["corners_local"] if not pd.isna(row["corners_local"]) else 0
-            c_c = row["corners_visitante"] if not pd.isna(row["corners_visitante"]) else 0
+def forma(df, team, ref, w=5):
+    prev = df[((df["local"]==team) | (df["visitante"]==team)) & (df["fecha"]<ref)].tail(w)
+    n = len(prev)
+    if n==0: return [0]*9
+    pts, gf, gc, xgf, xgc, cf, cc = 0,0,0,0.0,0.0,0,0
+    for _,r in prev.iterrows():
+        if r["local"]==team:
+            f=r["gl"]; c=r["gv"]; xf=r["xg_l"] or 0; xc=r["xg_v"] or 0; cf_=r["co_l"] or 0; cc_=r["co_v"] or 0
         else:
-            g_f = row["goles_visitante"]
-            g_c = row["goles_local"]
-            xg_f = row["xg_visitante"] if not pd.isna(row["xg_visitante"]) else 0
-            xg_c = row["xg_local"] if not pd.isna(row["xg_local"]) else 0
-            c_f = row["corners_visitante"] if not pd.isna(row["corners_visitante"]) else 0
-            c_c = row["corners_local"] if not pd.isna(row["corners_local"]) else 0
-        if g_f > g_c: puntos += 3
-        elif g_f == g_c: puntos += 1
-        gf += g_f; gc += g_c; xgf += xg_f; xgc += xg_c; cf += c_f; cc += c_c
-    return {"puntos": puntos/n, "gf": gf/n, "gc": gc/n,
-            "xgf": xgf/n, "xgc": xgc/n, "cf": cf/n, "cc": cc/n, "n": n}
+            f=r["gv"]; c=r["gl"]; xf=r["xg_v"] or 0; xc=r["xg_l"] or 0; cf_=r["co_v"] or 0; cc_=r["co_l"] or 0
+        if f>c: pts+=3
+        elif f==c: pts+=1
+        gf+=f; gc+=c; xgf+=xf; xgc+=xc; cf+=cf_; cc+=cc_
+    return [pts/n, gf/n, gc/n, xgf/n, xgc/n, cf/n, cc/n, n]
 
-def construir_features(df):
+def build_features(df):
     X = []
-    for _, row in df.iterrows():
-        fl = calcular_forma_equipo(df, row["local"], row["fecha"])
-        fv = calcular_forma_equipo(df, row["visitante"], row["fecha"])
-        X.append({
-            "l_puntos": fl["puntos"], "l_gf": fl["gf"], "l_gc": fl["gc"],
-            "l_xgf": fl["xgf"], "l_xgc": fl["xgc"], "l_cf": fl["cf"], "l_cc": fl["cc"],
-            "l_partidos": fl["n"],
-            "v_puntos": fv["puntos"], "v_gf": fv["gf"], "v_gc": fv["gc"],
-            "v_xgf": fv["xgf"], "v_xgc": fv["xgc"], "v_cf": fv["cf"], "v_cc": fv["cc"],
-            "v_partidos": fv["n"],
-            "diff_xg": fl["xgf"] - fv["xgf"]
-        })
-    return pd.DataFrame(X)
+    for _,r in df.iterrows():
+        fl = forma(df, r["local"], r["fecha"])
+        fv = forma(df, r["visitante"], r["fecha"])
+        X.append(fl[:7] + fv[:7] + [fl[3]-fv[3]])  # xg_diff
+    cols = [f"{p}_{v}" for p in ["l","v"] for v in ["pts","gf","gc","xgf","xgc","cf","cc","n"]][:14]
+    return pd.DataFrame(X, columns=cols+["diff_xg"])
 
-def crear_objetivos(df):
-    df["resultado"] = np.where(df["goles_local"] > df["goles_visitante"], 1,
-                       np.where(df["goles_local"] == df["goles_visitante"], 0, 2))
-    df["btts"] = ((df["goles_local"] > 0) & (df["goles_visitante"] > 0)).astype(int)
-    df["over1.5"] = ((df["goles_local"] + df["goles_visitante"]) > 1.5).astype(int)
-    df["over2.5"] = ((df["goles_local"] + df["goles_visitante"]) > 2.5).astype(int)
-    total_corners = df["corners_local"] + df["corners_visitante"]
-    df["over7.5_corners"] = (total_corners > 7.5).astype(int)
-    df["over8.5_corners"] = (total_corners > 8.5).astype(int)
+def targets(df):
+    df["res"] = np.where(df["gl"]>df["gv"],1, np.where(df["gl"]==df["gv"],0,2))
+    df["btts"] = ((df["gl"]>0)&(df["gv"]>0)).astype(int)
+    df["o1.5"] = ((df["gl"]+df["gv"])>1.5).astype(int)
+    df["o2.5"] = ((df["gl"]+df["gv"])>2.5).astype(int)
+    df["o7.5c"] = ((df["co_l"]+df["co_v"])>7.5).astype(int)
+    df["o8.5c"] = ((df["co_l"]+df["co_v"])>8.5).astype(int)
     return df
 
-def entrenar_modelos_calibrados(X, y_dict):
-    modelos = {}
-    for nombre, y in y_dict.items():
-        if y.nunique() < 2:
-            st.warning(f"No hay suficientes clases para {nombre}, se omite.")
-            continue
-        X_train, X_test, y_train, y_test = train_test_split(
-            X, y, test_size=0.2, random_state=42, stratify=y
-        )
-        base = RandomForestClassifier(n_estimators=100, max_depth=8, random_state=42)
-        calib = CalibratedClassifierCV(base, method='isotonic', cv=5)
-        calib.fit(X_train, y_train)
-        probas = calib.predict_proba(X_test)
-        brier = brier_score_loss(y_test, probas[:, 1]) if probas.shape[1] == 2 else None
-        modelos[nombre] = {"modelo": calib, "brier": brier, "X_test": X_test, "y_test": y_test}
-    return modelos
+st.sidebar.header("Configuración")
+league_name = st.sidebar.selectbox("Competición", list(LEAGUES.keys()))
+season = st.sidebar.selectbox("Temporada", ["2022","2023","2024","2025","2026"])
 
-def backtest_1X2(modelo, X_test, y_test, cuotas_df, bankroll_inicial=1000, fraccion_kelly=0.25, max_stake_pct=0.05):
-    probas = modelo.predict_proba(X_test)
-    bankroll = bankroll_inicial
-    historial = [bankroll]
-    apuestas_realizadas = 0
-    for i in range(len(X_test)):
-        prob_empate = probas[i][0]
-        prob_local = probas[i][1]
-        prob_visit = probas[i][2]
-        cuota_local = cuotas_df.iloc[i]["cuota_local"]
-        cuota_empate = cuotas_df.iloc[i]["cuota_empate"]
-        cuota_visitante = cuotas_df.iloc[i]["cuota_visitante"]
-        ev_local = prob_local * cuota_local - 1
-        ev_empate = prob_empate * cuota_empate - 1
-        ev_visit = prob_visit * cuota_visitante - 1
-        opciones = {"Local": (ev_local, cuota_local, 1),
-                    "Empate": (ev_empate, cuota_empate, 0),
-                    "Visitante": (ev_visit, cuota_visitante, 2)}
-        mejor = max(opciones, key=lambda k: opciones[k][0])
-        ev, cuota, resultado_apostado = opciones[mejor]
-        if ev > 0.03:
-            stake = bankroll * min(fraccion_kelly * (ev / (cuota - 1)), max_stake_pct)
-            if y_test.iloc[i] == resultado_apostado:
-                bankroll += stake * (cuota - 1)
-            else:
-                bankroll -= stake
-            apuestas_realizadas += 1
-        historial.append(bankroll)
-    yield_pct = (bankroll - bankroll_inicial) / bankroll_inicial * 100
-    return historial, yield_pct, apuestas_realizadas
-
-# -------------------------- INTERFAZ STREAMLIT --------------------------
-st.set_page_config(page_title="Predicción de fútbol avanzada", layout="wide")
-st.title("⚽ Predicción de fútbol con Machine Learning y Value Betting")
-st.markdown("""
-Esta aplicación entrena modelos calibrados con cuotas reales y ejecuta un backtest profesional.
-**Ideal para aprovechar apuestas gratis (freebets) buscando valor con cuotas altas.**
-""")
-
-col1, col2 = st.columns(2)
-with col1:
-    league_name = st.selectbox("Liga / Competición", list(LEAGUES.keys()), index=0)
-with col2:
-    season = st.selectbox("Temporada", ["2022", "2023", "2024", "2025", "2026"], index=2)
-
-bookmaker_id = st.number_input("ID del bookmaker para cuotas (Bet365=8)", value=8)
-
-if st.button("Descargar datos y entrenar modelos"):
-    league_id = LEAGUES[league_name]
-    with st.spinner("Descargando fixtures..."):
-        fixtures = obtener_fixtures(league_id, season)
-    if not fixtures:
-        st.error("No se encontraron fixtures. ¿La liga/temporada tiene datos?")
-        st.stop()
-
-    df = parsear_fixtures(fixtures)
-    st.success(f"Partidos descargados: {len(df)}")
-
-    with st.spinner("Descargando cuotas..."):
-        odds_df = obtener_odds(league_id, season, bookmaker_id)
-    if odds_df.empty:
-        st.warning("No se obtuvieron cuotas. El backtest no se podrá realizar.")
-        cuotas_presentes = False
-    else:
-        df = df.merge(odds_df, on="fixture_id", how="left")
-        cuotas_presentes = True
-
-    df = crear_objetivos(df)
-    X = construir_features(df)
-
-    if cuotas_presentes:
-        df["impl_local"] = np.where(df["cuota_local"] > 1, 1/df["cuota_local"], 0)
-        df["impl_empate"] = np.where(df["cuota_empate"] > 1, 1/df["cuota_empate"], 0)
-        df["impl_visitante"] = np.where(df["cuota_visitante"] > 1, 1/df["cuota_visitante"], 0)
-        suma = df["impl_local"] + df["impl_empate"] + df["impl_visitante"]
-        df["impl_local"] /= suma
-        df["impl_empate"] /= suma
-        df["impl_visitante"] /= suma
-        X["impl_local"] = df["impl_local"]
-        X["impl_empate"] = df["impl_empate"]
-        X["impl_visitante"] = df["impl_visitante"]
-    else:
-        X["impl_local"] = X["impl_empate"] = X["impl_visitante"] = 0
-
-    imputer = SimpleImputer(strategy="median")
-    X_imp = pd.DataFrame(imputer.fit_transform(X), columns=X.columns)
-
-    y_dict = {
-        "resultado": df["resultado"],
-        "btts": df["btts"],
-        "over1.5": df["over1.5"],
-        "over2.5": df["over2.5"],
-        "over7.5_corners": df["over7.5_corners"],
-        "over8.5_corners": df["over8.5_corners"]
-    }
-
-    modelos = entrenar_modelos_calibrados(X_imp, y_dict)
-
-    for nombre, info in modelos.items():
-        acc = accuracy_score(info['y_test'], info['modelo'].predict(info['X_test']))
-        if info['brier'] is not None:
-            st.write(f"**{nombre}** → Acc: {acc:.2f}, Brier: {info['brier']:.4f}")
+if st.sidebar.button("Entrenar"):
+    with st.spinner("Descargando..."):
+        fixtures = get_fixtures(LEAGUES[league_name], season)
+        df = parse_fixtures(fixtures)
+        odds = get_odds(LEAGUES[league_name], season)
+        if not odds.empty:
+            df = df.merge(odds, on="fixture_id", how="left")
+            df["impl_h"] = 1/df["cuota_local"]; df["impl_d"] = 1/df["cuota_empate"]; df["impl_a"] = 1/df["cuota_visitante"]
+            s = df["impl_h"]+df["impl_d"]+df["impl_a"]
+            df["impl_h"]/=s; df["impl_d"]/=s; df["impl_a"]/=s
         else:
-            st.write(f"**{nombre}** → Acc: {acc:.2f}")
-
-    if cuotas_presentes and "resultado" in modelos:
-        st.subheader("📈 Backtest 1X2 con Kelly")
-        modelo_res = modelos["resultado"]["modelo"]
-        X_test_res = modelos["resultado"]["X_test"]
-        y_test_res = modelos["resultado"]["y_test"]
-        indices_test = X_test_res.index
-        cuotas_test = df.loc[indices_test, ["cuota_local", "cuota_empate", "cuota_visitante"]].reset_index(drop=True)
-        historial, yield_pct, num_apuestas = backtest_1X2(modelo_res, X_test_res, y_test_res, cuotas_test)
-        if historial:
-            st.write(f"Apuestas realizadas: {num_apuestas}")
-            st.write(f"Yield: {yield_pct:.2f}%")
-            fig, ax = plt.subplots()
-            ax.plot(historial)
-            ax.set_title("Evolución del bankroll (€)")
-            st.pyplot(fig)
-        else:
-            st.info("No se detectaron apuestas con valor suficiente en el test.")
-    else:
-        st.info("Para ejecutar el backtest necesitas cuotas del bookmaker seleccionado.")
-
-    st.session_state["modelos"] = modelos
-    st.session_state["imputer"] = imputer
-    st.session_state["df"] = df
-    st.session_state["equipos"] = sorted(set(df["local"].unique()) | set(df["visitante"].unique()))
+            df["impl_h"]=df["impl_d"]=df["impl_a"]=0.33
+        df = targets(df)
+        X = build_features(df)
+        X["impl_h"]=df["impl_h"]; X["impl_d"]=df["impl_d"]; X["impl_a"]=df["impl_a"]
+        imp = SimpleImputer(strategy="median")
+        X_imp = pd.DataFrame(imp.fit_transform(X), columns=X.columns)
+        y = {k:df[k] for k in ["res","btts","o1.5","o2.5","o7.5c","o8.5c"]}
+        modelos = {}
+        for name, yv in y.items():
+            if yv.nunique()<2: continue
+            Xtr, Xte, ytr, yte = train_test_split(X_imp, yv, test_size=0.2, random_state=42)
+            rf = RandomForestClassifier(n_estimators=80, max_depth=6, random_state=42)
+            cal = CalibratedClassifierCV(rf, method='isotonic', cv=3)
+            cal.fit(Xtr, ytr)
+            modelos[name] = {"model":cal, "imp":imp, "X_test":Xte, "y_test":yte}
+        st.session_state["modelos"] = modelos
+        st.session_state["df"] = df
+        st.session_state["teams"] = sorted(set(df["local"])|set(df["visitante"]))
+        st.success("Modelos listos")
+        # Mostrar accuracy rápido
+        for n,m in modelos.items():
+            acc = m["model"].score(m["X_test"], m["y_test"])
+            st.write(f"{n}: Acc={acc:.2f}")
 
 if "modelos" in st.session_state:
-    st.markdown("---")
-    st.subheader("🔮 Predecir un partido futuro")
-    equipos = st.session_state["equipos"]
-    col_h, col_a = st.columns(2)
-    with col_h:
-        home = st.selectbox("Equipo local", equipos, index=0)
-    with col_a:
-        away = st.selectbox("Equipo visitante", equipos, index=1 if len(equipos) > 1 else 0)
-
-    # Si tuvieras cuotas en tiempo real, podrías obtenerlas con otra función
-    # Aquí usamos placeholders; lo ideal sería consultar API-Football para ese partido.
-    cuota_local = 2.5  # ejemplo
-    cuota_empate = 3.2
-    cuota_visitante = 2.9
-
+    st.subheader("Predecir partido")
+    teams = st.session_state["teams"]
+    c1,c2 = st.columns(2)
+    with c1: home = st.selectbox("Local", teams)
+    with c2: away = st.selectbox("Visitante", teams, index=1)
+    cuota_l = st.number_input("Cuota Local", 1.01, 50.0, 2.5)
+    cuota_e = st.number_input("Cuota Empate", 1.01, 50.0, 3.2)
+    cuota_v = st.number_input("Cuota Visitante", 1.01, 50.0, 2.9)
     if st.button("Predecir"):
-        df_hist = st.session_state["df"]
-        fecha_ref = df_hist["fecha"].max() + timedelta(days=1)
-        fl = calcular_forma_equipo(df_hist, home, fecha_ref)
-        fv = calcular_forma_equipo(df_hist, away, fecha_ref)
-        features = pd.DataFrame([{
-            "l_puntos": fl["puntos"], "l_gf": fl["gf"], "l_gc": fl["gc"],
-            "l_xgf": fl["xgf"], "l_xgc": fl["xgc"], "l_cf": fl["cf"], "l_cc": fl["cc"],
-            "l_partidos": fl["n"],
-            "v_puntos": fv["puntos"], "v_gf": fv["gf"], "v_gc": fv["gc"],
-            "v_xgf": fv["xgf"], "v_xgc": fv["xgc"], "v_cf": fv["cf"], "v_cc": fv["cc"],
-            "v_partidos": fv["n"],
-            "diff_xg": fl["xgf"] - fv["xgf"],
-            "impl_local": 0, "impl_empate": 0, "impl_visitante": 0
-        }])
-        X_input = pd.DataFrame(st.session_state["imputer"].transform(features), columns=features.columns)
-
-        st.write(f"**{home} vs {away}**")
+        df = st.session_state["df"]
+        ref = df["fecha"].max()+timedelta(days=1)
+        fl = forma(df, home, ref)
+        fv = forma(df, away, ref)
+        feat = fl[:7] + fv[:7] + [fl[3]-fv[3]] + [0.33,0.33,0.33]
+        Xnew = pd.DataFrame([feat], columns=st.session_state["modelos"]["res"]["imp"].feature_names_in_)
         # Resultado
-        proba_res = st.session_state["modelos"]["resultado"]["modelo"].predict_proba(X_input)[0]
-        etiquetas = ["Empate", "Local", "Visitante"]
-        st.write("Resultado:")
-        for i, etiq in enumerate(etiquetas):
-            st.write(f"  {etiq}: {proba_res[i]*100:.1f}%")
-
-        # Evaluar freebet
-        cuotas_partido = {"Empate": cuota_empate, "Local": cuota_local, "Visitante": cuota_visitante}
-        mejor_ev = -999
-        mejor_resultado = None
-        mejor_cuota = None
-        for i, etiq in enumerate(etiquetas):
-            ev = proba_res[i] * cuotas_partido[etiq] - 1
-            if ev > mejor_ev:
-                mejor_ev = ev
-                mejor_resultado = etiq
-                mejor_cuota = cuotas_partido[etiq]
-        st.markdown("### 🎁 Oportunidad para freebet")
-        if mejor_ev > 0.05 and mejor_cuota > 3.5:
-            st.success(f"¡Freebet ideal! Apuesta al **{mejor_resultado}** (cuota {mejor_cuota:.2f}, valor esperado +{mejor_ev*100:.1f}%)")
-        elif mejor_ev > 0.03:
-            st.info(f"Oportunidad moderada: **{mejor_resultado}** (cuota {mejor_cuota:.2f}, EV +{mejor_ev*100:.1f}%)")
+        prob_res = st.session_state["modelos"]["res"]["model"].predict_proba(Xnew)[0]
+        st.write("**1X2**")
+        st.write(f"Local: {prob_res[1]*100:.1f}% | Empate: {prob_res[0]*100:.1f}% | Visitante: {prob_res[2]*100:.1f}%")
+        # Freebet advice
+        cuotas = [cuota_e, cuota_l, cuota_v]
+        etiq = ["Empate","Local","Visitante"]
+        evs = [prob_res[i]*cuotas[i]-1 for i in range(3)]
+        best = np.argmax(evs)
+        if evs[best] > 0.05:
+            st.success(f"🎁 Freebet: Apuesta **{etiq[best]}** (cuota {cuotas[best]:.2f}, EV +{evs[best]*100:.1f}%)")
         else:
-            st.warning("No se detecta valor claro para una freebet en el mercado 1X2.")
-
-        # Otros mercados (sin freebet específico)
-        for nombre in ["btts", "over1.5", "over2.5", "over7.5_corners", "over8.5_corners"]:
-            if nombre in st.session_state["modelos"]:
-                proba = st.session_state["modelos"][nombre]["modelo"].predict_proba(X_input)[0]
-                st.write(f"{nombre}: **{proba[1]*100:.1f}%** de probabilidad")
+            st.warning("No se detecta valor suficiente para freebet en 1X2")
+        # Otros mercados
+        for m in ["btts","o1.5","o2.5","o7.5c","o8.5c"]:
+            prob = st.session_state["modelos"][m]["model"].predict_proba(Xnew)[0][1]
+            st.write(f"{m}: Sí {prob*100:.1f}%")
