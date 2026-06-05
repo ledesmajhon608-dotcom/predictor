@@ -228,14 +228,15 @@
         @keyframes spin { to { transform: rotate(360deg); } }
         .model-info { font-size: 0.65rem; color: var(--muted); background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 10px; margin-top: 10px; line-height: 1.6; }
         .model-info strong { color: var(--text); }
+        .version-badge { display: inline-block; font-size: 0.55rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); margin-left: 6px; letter-spacing: 0.5px; }
     </style>
 </head>
 <body>
 <div class="container">
     <div id="main-screen">
         <div class="card">
-            <h2>⚽ BET ANALYTICS PRO</h2>
-            <div class="subtitle">SISTEMA DE VALUE BETTING v3.0 · POISSON + DIXON-COLES</div>
+            <h2>⚽ BET ANALYTICS PRO <span class="version-badge">v3.1</span></h2>
+            <div class="subtitle">SISTEMA DE VALUE BETTING · POISSON + DIXON-COLES · API v2</div>
 
             <div class="bankroll-display">
                 <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">💰 Bankroll Actual</div>
@@ -303,7 +304,7 @@
                     <input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01" max="50">
                 </div>
 
-                <button class="btn-api" id="api-btn" disabled onclick="loadAPIData()">🌐 CARGAR DATOS REALES (BZZOIRO)</button>
+                <button class="btn-api" id="api-btn" disabled onclick="loadAPIData()">🌐 CARGAR DATOS REALES (BZZOIRO v2)</button>
                 <div id="api-status-box" class="hidden"></div>
                 <button class="btn-primary" id="analyze-btn" disabled>🎯 ANALIZAR Y BUSCAR VALOR</button>
                 <div class="warning-box hidden" id="no-value-warning">⚠️ Ningún mercado muestra valor positivo. NO apuestes en este partido.</div>
@@ -341,20 +342,33 @@
                 <div class="config-row"><span>Fracción Kelly</span><input type="number" id="cfg-kelly" step="0.05" min="0.05" max="1"></div>
                 <div class="config-row"><span>Stake Máximo (%)</span><input type="number" id="cfg-maxstake" step="0.01" min="0.01" max="1"></div>
                 <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
-                    <h3 style="color:var(--blue);margin-bottom:8px;">🌐 API Bzzoiro (sports.bzzoiro.com)</h3>
-                    <label>URL Base de la API</label><input type="text" id="cfg-apibase" placeholder="https://sports.bzzoiro.com">
-                    <label>API KEY</label><input type="text" id="cfg-apikey" placeholder="Tu API Key" autocomplete="off" spellcheck="false">
-                    <div class="small-note">Obtén tu API Key en <strong>sports.bzzoiro.com</strong>.</div>
+                    <h3 style="color:var(--blue);margin-bottom:8px;">🌐 API Bzzoiro v2 (sports.bzzoiro.com)</h3>
+                    <label>URL Base de la API</label>
+                    <input type="text" id="cfg-apibase" placeholder="https://sports.bzzoiro.com">
+                    <label>API KEY (Token)</label>
+                    <input type="text" id="cfg-apikey" placeholder="Tu token de Bzzoiro" autocomplete="off" spellcheck="false">
+                    <div class="small-note">Obtén tu token gratis en <strong>sports.bzzoiro.com/register/</strong>. Autenticación: <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">Authorization: Token TU_TOKEN</code></div>
                     <div id="api-test-result" style="margin-top:8px;"></div>
                     <div style="display:flex;gap:8px;margin-top:6px;">
-                        <button class="btn-secondary" onclick="testAPIKey()" style="font-size:0.72rem;padding:8px;flex:1;">🔑 Verificar API Key</button>
+                        <button class="btn-secondary" onclick="testAPIKey()" style="font-size:0.72rem;padding:8px;flex:1;">🔑 Verificar Token</button>
                         <button class="btn-secondary" onclick="debugAPI()" style="font-size:0.72rem;padding:8px;flex:1;">🔍 Depurar API</button>
                     </div>
-                    <div id="api-debug-output" style="margin-top:8px;display:none;"><label>Respuesta cruda (debug)</label><textarea id="debug-textarea" rows="6" readonly style="font-size:0.65rem;background:rgba(0,0,0,0.4);resize:vertical;"></textarea></div>
+                    <div id="api-debug-output" style="margin-top:8px;display:none;">
+                        <label>Respuesta cruda (debug)</label>
+                        <textarea id="debug-textarea" rows="8" readonly style="font-size:0.62rem;background:rgba(0,0,0,0.4);resize:vertical;font-family:monospace;"></textarea>
+                    </div>
                 </div>
                 <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
                     <h3 style="margin-bottom:6px;">🧠 Info del Modelo</h3>
-                    <div class="model-info"><strong>Modelo:</strong> Poisson Bivariado + Corrección Dixon-Coles (ρ = -0.13)<br><strong>Mercados confiables:</strong> Over 1.5, Over 2.5, BTTS, Victoria Local<br><strong>Mercados secundarios:</strong> Over 0.5 1T, Córners (mayor varianza)<br><strong>EV mínimo recomendado:</strong> +5%<br><strong>Muestra mínima:</strong> 100 apuestas<br><strong>ROI realista:</strong> 3–7%</div>
+                    <div class="model-info">
+                        <strong>Modelo:</strong> Poisson Bivariado + Corrección Dixon-Coles (ρ = -0.13)<br>
+                        <strong>API:</strong> Bzzoiro Sports Data v2 — Header: <code style="background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">Authorization: Token KEY</code><br>
+                        <strong>Mercados confiables:</strong> Over 1.5, Over 2.5, BTTS, Victoria Local<br>
+                        <strong>Mercados secundarios:</strong> Over 0.5 1T, Córners (mayor varianza)<br>
+                        <strong>EV mínimo recomendado:</strong> +5%<br>
+                        <strong>Muestra mínima:</strong> 100 apuestas<br>
+                        <strong>ROI realista:</strong> 3–7%
+                    </div>
                 </div>
                 <button class="btn-primary" onclick="saveConfig()" style="margin-top:14px;">💾 Guardar Config</button>
                 <button class="btn-secondary" onclick="resetData()" style="margin-top:8px;background:rgba(255,77,90,0.1);color:var(--accent);border-color:rgba(255,77,90,0.3);">🗑️ Resetear Todo</button>
@@ -366,7 +380,7 @@
     <div id="result-screen" class="hidden">
         <div class="card" id="result-card"></div>
     </div>
-    <div class="powered-by">POISSON + DIXON-COLES · BZZOIRO API · KELLY CRITERION · SOLO USO INFORMATIVO</div>
+    <div class="powered-by">POISSON + DIXON-COLES · BZZOIRO API v2 · KELLY CRITERION · SOLO USO INFORMATIVO</div>
 </div>
 
 <script>
@@ -378,17 +392,56 @@ let config = JSON.parse(localStorage.getItem('betConfig')) || {...DEFAULT_CONFIG
 let bankroll = parseFloat(localStorage.getItem('bankroll')) || config.initialBankroll;
 let betHistory = JSON.parse(localStorage.getItem('betHistory')) || [];
 let teamIdCache = JSON.parse(localStorage.getItem('teamIdCache')) || {};
+let seasonIdCache = JSON.parse(localStorage.getItem('seasonIdCache')) || {};
 let currentAPIData = null;
-function saveAll(){ localStorage.setItem('bankroll',bankroll.toString()); localStorage.setItem('betHistory',JSON.stringify(betHistory)); localStorage.setItem('betConfig',JSON.stringify(config)); localStorage.setItem('teamIdCache',JSON.stringify(teamIdCache)); }
+
+function saveAll(){
+    localStorage.setItem('bankroll', bankroll.toString());
+    localStorage.setItem('betHistory', JSON.stringify(betHistory));
+    localStorage.setItem('betConfig', JSON.stringify(config));
+    localStorage.setItem('teamIdCache', JSON.stringify(teamIdCache));
+    localStorage.setItem('seasonIdCache', JSON.stringify(seasonIdCache));
+}
 
 // ============================================================
 // DATOS DE EQUIPOS
 // ============================================================
-const TEAMS_DB = { "EPL":["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Crystal Palace","Everton","Fulham","Ipswich Town","Leicester City","Liverpool","Manchester City","Manchester United","Newcastle United","Nottingham Forest","Southampton","Tottenham","West Ham United","Wolves"], "La_liga":["Alaves","Athletic Club","Atletico Madrid","Barcelona","Celta Vigo","Espanyol","Getafe","Girona","Las Palmas","Leganes","Mallorca","Osasuna","Rayo Vallecano","Real Betis","Real Madrid","Real Sociedad","Sevilla","Valencia","Valladolid","Villarreal"], "Serie_A":["AC Milan","Atalanta","Bologna","Cagliari","Como","Empoli","Fiorentina","Genoa","Hellas Verona","Inter Milan","Juventus","Lazio","Lecce","Monza","Napoli","Parma","Roma","Torino","Udinese","Venezia"], "Bundesliga":["Augsburg","Bayer Leverkusen","Bayern Munich","Bochum","Borussia Dortmund","Borussia Monchengladbach","Eintracht Frankfurt","Freiburg","Heidenheim","Hoffenheim","Holstein Kiel","Mainz 05","RB Leipzig","St. Pauli","Stuttgart","Union Berlin","Werder Bremen","Wolfsburg"], "Ligue_1":["Angers","Auxerre","Brest","Le Havre","Lens","Lille","Lyon","Marseille","Monaco","Montpellier","Nantes","Nice","PSG","Reims","Rennes","Saint-Etienne","Strasbourg","Toulouse"], "Eredivisie":["Ajax","AZ Alkmaar","Feyenoord","PSV Eindhoven","Twente","Utrecht","Sparta Rotterdam","Heerenveen","NEC Nijmegen","Go Ahead Eagles","Fortuna Sittard","PEC Zwolle","Almere City","Heracles Almelo","RKC Waalwijk","Willem II","NAC Breda","Groningen"], "Libertadores":["Flamengo","Palmeiras","River Plate","Boca Juniors","Nacional","Penarol","Olimpia","Barcelona SC","Independiente del Valle","LDU Quito","Estudiantes","Racing","Colo Colo","Cerro Porteno","Atletico Mineiro","Sao Paulo","Gremio","Internacional","Universidad Catolica","Bolivar","The Strongest","Libertad","Alianza Lima","Sporting Cristal","Deportivo Tachira","Caracas FC","Nacional Asuncion"], "Sudamericana":["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells Old Boys","Rosario Central","Universitario","Sporting Cristal","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza","America de Cali","Macara","Huracan","Velez Sarsfield","Penarol","Nacional","Bolivar","Jorge Wilstermann"], "Mundial_2026":["Alemania","Arabia Saudita","Argentina","Australia","Austria","Belgica","Bolivia","Brasil","Camerun","Canada","Catar","Chile","Colombia","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Dinamarca","Ecuador","Egipto","Espana","Estados Unidos","Francia","Ghana","Honduras","Inglaterra","Iran","Italia","Jamaica","Japon","Marruecos","Mexico","Nigeria","Nueva Zelanda","Paises Bajos","Panama","Paraguay","Peru","Polonia","Portugal","Senegal","Serbia","Sudafrica","Suecia","Suiza","Tunez","Ucrania","Uruguay","Venezuela"], "Championship":["Blackburn Rovers","Bristol City","Burnley","Cardiff City","Coventry City","Derby County","Hull City","Leeds United","Luton Town","Middlesbrough","Millwall","Norwich City","Oxford United","Plymouth Argyle","Portsmouth","Preston North End","QPR","Sheffield United","Sheffield Wednesday","Stoke City","Sunderland","Swansea City","Watford","West Bromwich Albion"], "MLS":["Atlanta United","Austin FC","CF Montreal","Charlotte FC","Chicago Fire FC","FC Cincinnati","Colorado Rapids","Columbus Crew","D.C. United","FC Dallas","Houston Dynamo FC","Inter Miami CF","LA Galaxy","Los Angeles FC","Minnesota United FC","Nashville SC","New England Revolution","New York City FC","New York Red Bulls","Orlando City SC","Philadelphia Union","Portland Timbers","Real Salt Lake","San Jose Earthquakes","Seattle Sounders FC","Sporting Kansas City","St. Louis City SC","Toronto FC","Vancouver Whitecaps FC"], "Brasileirao":["Athletico Paranaense","Atletico Goianiense","Atletico Mineiro","Bahia","Botafogo","Corinthians","Criciuma","Cruzeiro","Cuiaba","Flamengo","Fluminense","Fortaleza","Gremio","Internacional","Juventude","Mirassol","Palmeiras","RB Bragantino","Sao Paulo","Vasco da Gama","Vitoria"] };
+const TEAMS_DB = {
+    "EPL":["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Crystal Palace","Everton","Fulham","Ipswich Town","Leicester City","Liverpool","Manchester City","Manchester United","Newcastle United","Nottingham Forest","Southampton","Tottenham","West Ham United","Wolves"],
+    "La_liga":["Alaves","Athletic Club","Atletico Madrid","Barcelona","Celta Vigo","Espanyol","Getafe","Girona","Las Palmas","Leganes","Mallorca","Osasuna","Rayo Vallecano","Real Betis","Real Madrid","Real Sociedad","Sevilla","Valencia","Valladolid","Villarreal"],
+    "Serie_A":["AC Milan","Atalanta","Bologna","Cagliari","Como","Empoli","Fiorentina","Genoa","Hellas Verona","Inter Milan","Juventus","Lazio","Lecce","Monza","Napoli","Parma","Roma","Torino","Udinese","Venezia"],
+    "Bundesliga":["Augsburg","Bayer Leverkusen","Bayern Munich","Bochum","Borussia Dortmund","Borussia Monchengladbach","Eintracht Frankfurt","Freiburg","Heidenheim","Hoffenheim","Holstein Kiel","Mainz 05","RB Leipzig","St. Pauli","Stuttgart","Union Berlin","Werder Bremen","Wolfsburg"],
+    "Ligue_1":["Angers","Auxerre","Brest","Le Havre","Lens","Lille","Lyon","Marseille","Monaco","Montpellier","Nantes","Nice","PSG","Reims","Rennes","Saint-Etienne","Strasbourg","Toulouse"],
+    "Eredivisie":["Ajax","AZ Alkmaar","Feyenoord","PSV Eindhoven","Twente","Utrecht","Sparta Rotterdam","Heerenveen","NEC Nijmegen","Go Ahead Eagles","Fortuna Sittard","PEC Zwolle","Almere City","Heracles Almelo","RKC Waalwijk","Willem II","NAC Breda","Groningen"],
+    "Libertadores":["Flamengo","Palmeiras","River Plate","Boca Juniors","Nacional","Penarol","Olimpia","Barcelona SC","Independiente del Valle","LDU Quito","Estudiantes","Racing","Colo Colo","Cerro Porteno","Atletico Mineiro","Sao Paulo","Gremio","Internacional","Universidad Catolica","Bolivar","The Strongest","Libertad","Alianza Lima","Sporting Cristal","Deportivo Tachira","Caracas FC","Nacional Asuncion"],
+    "Sudamericana":["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells Old Boys","Rosario Central","Universitario","Sporting Cristal","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza","America de Cali","Macara","Huracan","Velez Sarsfield","Penarol","Nacional","Bolivar","Jorge Wilstermann"],
+    "Mundial_2026":["Alemania","Arabia Saudita","Argentina","Australia","Austria","Belgica","Bolivia","Brasil","Camerun","Canada","Catar","Chile","Colombia","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Dinamarca","Ecuador","Egipto","Espana","Estados Unidos","Francia","Ghana","Honduras","Inglaterra","Iran","Italia","Jamaica","Japon","Marruecos","Mexico","Nigeria","Nueva Zelanda","Paises Bajos","Panama","Paraguay","Peru","Polonia","Portugal","Senegal","Serbia","Sudafrica","Suecia","Suiza","Tunez","Ucrania","Uruguay","Venezuela"],
+    "Championship":["Blackburn Rovers","Bristol City","Burnley","Cardiff City","Coventry City","Derby County","Hull City","Leeds United","Luton Town","Middlesbrough","Millwall","Norwich City","Oxford United","Plymouth Argyle","Portsmouth","Preston North End","QPR","Sheffield United","Sheffield Wednesday","Stoke City","Sunderland","Swansea City","Watford","West Bromwich Albion"],
+    "MLS":["Atlanta United","Austin FC","CF Montreal","Charlotte FC","Chicago Fire FC","FC Cincinnati","Colorado Rapids","Columbus Crew","D.C. United","FC Dallas","Houston Dynamo FC","Inter Miami CF","LA Galaxy","Los Angeles FC","Minnesota United FC","Nashville SC","New England Revolution","New York City FC","New York Red Bulls","Orlando City SC","Philadelphia Union","Portland Timbers","Real Salt Lake","San Jose Earthquakes","Seattle Sounders FC","Sporting Kansas City","St. Louis City SC","Toronto FC","Vancouver Whitecaps FC"],
+    "Brasileirao":["Athletico Paranaense","Atletico Goianiense","Atletico Mineiro","Bahia","Botafogo","Corinthians","Criciuma","Cruzeiro","Cuiaba","Flamengo","Fluminense","Fortaleza","Gremio","Internacional","Juventude","Mirassol","Palmeiras","RB Bragantino","Sao Paulo","Vasco da Gama","Vitoria"]
+};
 
-const LEAGUES_CONFIG = { "EPL":{ name:"Premier League",goals_avg:2.85,corners_avg:10.1,hfa:1.06 }, "La_liga":{ name:"La Liga",goals_avg:2.55,corners_avg:9.5,hfa:1.05 }, "Serie_A":{ name:"Serie A",goals_avg:2.65,corners_avg:9.0,hfa:1.05 }, "Bundesliga":{ name:"Bundesliga",goals_avg:3.00,corners_avg:9.8,hfa:1.06 }, "Ligue_1":{ name:"Ligue 1",goals_avg:2.70,corners_avg:9.3,hfa:1.05 }, "Eredivisie":{ name:"Eredivisie",goals_avg:3.10,corners_avg:9.6,hfa:1.05 }, "Libertadores":{ name:"Copa Libertadores",goals_avg:2.50,corners_avg:9.2,hfa:1.04 }, "Sudamericana":{ name:"Copa Sudamericana",goals_avg:2.30,corners_avg:9.0,hfa:1.04 }, "Mundial_2026":{ name:"Mundial 2026",goals_avg:2.40,corners_avg:9.5,hfa:1.03 }, "Championship":{ name:"Championship",goals_avg:2.65,corners_avg:9.7,hfa:1.05 }, "MLS":{ name:"MLS",goals_avg:2.85,corners_avg:9.1,hfa:1.05 }, "Brasileirao":{ name:"Brasileirao Serie A",goals_avg:2.45,corners_avg:9.4,hfa:1.05 } };
+const LEAGUES_CONFIG = {
+    "EPL":{ name:"Premier League", goals_avg:2.85, corners_avg:10.1, hfa:1.06 },
+    "La_liga":{ name:"La Liga", goals_avg:2.55, corners_avg:9.5, hfa:1.05 },
+    "Serie_A":{ name:"Serie A", goals_avg:2.65, corners_avg:9.0, hfa:1.05 },
+    "Bundesliga":{ name:"Bundesliga", goals_avg:3.00, corners_avg:9.8, hfa:1.06 },
+    "Ligue_1":{ name:"Ligue 1", goals_avg:2.70, corners_avg:9.3, hfa:1.05 },
+    "Eredivisie":{ name:"Eredivisie", goals_avg:3.10, corners_avg:9.6, hfa:1.05 },
+    "Libertadores":{ name:"Copa Libertadores", goals_avg:2.50, corners_avg:9.2, hfa:1.04 },
+    "Sudamericana":{ name:"Copa Sudamericana", goals_avg:2.30, corners_avg:9.0, hfa:1.04 },
+    "Mundial_2026":{ name:"Mundial 2026", goals_avg:2.40, corners_avg:9.5, hfa:1.03 },
+    "Championship":{ name:"Championship", goals_avg:2.65, corners_avg:9.7, hfa:1.05 },
+    "MLS":{ name:"MLS", goals_avg:2.85, corners_avg:9.1, hfa:1.05 },
+    "Brasileirao":{ name:"Brasileirao Serie A", goals_avg:2.45, corners_avg:9.4, hfa:1.05 }
+};
 
-const API_LEAGUE_MAP = { "EPL":{id:1,season:2025},"La_liga":{id:2,season:2025},"Serie_A":{id:3,season:2025},"Bundesliga":{id:4,season:2025},"Ligue_1":{id:5,season:2025},"Eredivisie":{id:6,season:2025},"Championship":{id:7,season:2025},"MLS":{id:8,season:2026},"Brasileirao":{id:9,season:2026},"Libertadores":{id:10,season:2026},"Sudamericana":{id:11,season:2026} };
+// Bzzoiro league IDs (v2)
+const API_LEAGUE_IDS = {
+    "EPL":1, "La_liga":3, "Serie_A":4, "Bundesliga":5, "Ligue_1":6,
+    "Eredivisie":10, "Championship":12, "MLS":18, "Brasileirao":9,
+    "Libertadores":32, "Sudamericana":33, "Mundial_2026":27
+};
 
 const TEAM_STRENGTH = {
  "EPL":{"Manchester City":[1.30,0.77,1.13],"Liverpool":[1.28,0.79,1.12],"Arsenal":[1.24,0.82,1.10],"Chelsea":[1.15,0.89,1.09],"Tottenham":[1.16,0.90,1.09],"Manchester United":[1.18,0.88,1.09],"Newcastle United":[1.13,0.94,1.08],"Aston Villa":[1.17,0.92,1.08],"Brighton":[1.11,0.96,1.07],"West Ham United":[1.06,1.00,1.06],"Fulham":[1.04,1.01,1.06],"Brentford":[1.02,1.03,1.06],"Crystal Palace":[0.98,1.05,1.04],"Wolves":[1.03,1.02,1.06],"Everton":[0.92,1.10,1.05],"Bournemouth":[0.95,1.08,1.05],"Nottingham Forest":[0.96,1.07,1.05],"Leicester City":[0.94,1.08,1.04],"Ipswich Town":[0.88,1.14,1.03],"Southampton":[0.86,1.16,1.03]},
@@ -416,31 +469,31 @@ function probOver(lambda,th){ return Math.max(0,Math.min(100,(1-poissonCDF(th,la
 function getTeamStrength(league,team){ const d=TEAM_STRENGTH[league]||{}; const a=d[team]||[1.0,1.0,1.06]; return {atk:a[0],def:a[1],hfa:a[2]||1.06}; }
 
 function predictMatch(leagueCode,home,away,apiStats=null){
- const cfg=LEAGUES_CONFIG[leagueCode], gAvg=cfg.goals_avg, cAvg=cfg.corners_avg, hfa=cfg.hfa||1.06;
- let lh,la;
- if(apiStats&&apiStats.home&&apiStats.away){
-  const h=apiStats.home, a=apiStats.away;
-  const ha=h.goalsForHome>0?h.goalsForHome/(gAvg/2):1, hd=h.goalsAgainstHome>0?h.goalsAgainstHome/(gAvg/2):1;
-  const aa=a.goalsForAway>0?a.goalsForAway/(gAvg/2):1, ad=a.goalsAgainstAway>0?a.goalsAgainstAway/(gAvg/2):1;
-  lh=Math.max(0.3,(gAvg/2)*ha*ad*hfa); la=Math.max(0.3,(gAvg/2)*aa*hd*(1/hfa));
- }else{
-  const hs=getTeamStrength(leagueCode,home), as=getTeamStrength(leagueCode,away);
-  const adv=hs.hfa*(hfa/1.06);
-  lh=Math.max(0.3,(gAvg/2)*hs.atk*as.def*adv); la=Math.max(0.3,(gAvg/2)*as.atk*hs.def*(1/adv));
- }
- const tLam=lh+la; let hw=0,aw=0,dr=0;
- for(let i=0;i<=15;i++)for(let j=0;j<=15;j++){
-  const tau=(i<=1&&j<=1)?dixonColesTau(i,j,lh,la):1;
-  const p=tau*poissonPMF(i,lh)*poissonPMF(j,la);
-  if(i>j)hw+=p; else if(j>i)aw+=p; else dr+=p;
- }
- const t1x2=hw+dr+aw; hw/=t1x2; dr/=t1x2; aw/=t1x2;
- const p0h=poissonPMF(0,lh),p0a=poissonPMF(0,la),btts=Math.max(0,Math.min(100,(1-p0h-p0a+p0h*p0a)*100));
- const o15=probOver(tLam,1.5),o25=probOver(tLam,2.5),htO=probOver(tLam*0.42,0.5);
- const hs2=getTeamStrength(leagueCode,home),as2=getTeamStrength(leagueCode,away);
- const cLam=cAvg*((hs2.atk*as2.def*hfa)+(as2.atk*hs2.def))/2;
- const co75=probOver(cLam,7.5),co85=probOver(cLam,8.5);
- return {home,away,league:cfg.name,l_home:lh.toFixed(3),l_away:la.toFixed(3),over15:o15,over25:o25,btts,home_win:(hw*100).toFixed(1),draw:(dr*100).toFixed(1),away_win:(aw*100).toFixed(1),htOver05:htO,cornersOver75:co75,cornersOver85:co85,cornerLambda:cLam.toFixed(2),usingAPI:!!apiStats};
+    const cfg=LEAGUES_CONFIG[leagueCode], gAvg=cfg.goals_avg, cAvg=cfg.corners_avg, hfa=cfg.hfa||1.06;
+    let lh,la;
+    if(apiStats&&apiStats.home&&apiStats.away){
+        const h=apiStats.home, a=apiStats.away;
+        const ha=h.goalsForHome>0?h.goalsForHome/(gAvg/2):1, hd=h.goalsAgainstHome>0?h.goalsAgainstHome/(gAvg/2):1;
+        const aa=a.goalsForAway>0?a.goalsForAway/(gAvg/2):1, ad=a.goalsAgainstAway>0?a.goalsAgainstAway/(gAvg/2):1;
+        lh=Math.max(0.3,(gAvg/2)*ha*ad*hfa); la=Math.max(0.3,(gAvg/2)*aa*hd*(1/hfa));
+    } else {
+        const hs=getTeamStrength(leagueCode,home), as=getTeamStrength(leagueCode,away);
+        const adv=hs.hfa*(hfa/1.06);
+        lh=Math.max(0.3,(gAvg/2)*hs.atk*as.def*adv); la=Math.max(0.3,(gAvg/2)*as.atk*hs.def*(1/adv));
+    }
+    const tLam=lh+la; let hw=0,aw=0,dr=0;
+    for(let i=0;i<=15;i++) for(let j=0;j<=15;j++){
+        const tau=(i<=1&&j<=1)?dixonColesTau(i,j,lh,la):1;
+        const p=tau*poissonPMF(i,lh)*poissonPMF(j,la);
+        if(i>j)hw+=p; else if(j>i)aw+=p; else dr+=p;
+    }
+    const t1x2=hw+dr+aw; hw/=t1x2; dr/=t1x2; aw/=t1x2;
+    const p0h=poissonPMF(0,lh),p0a=poissonPMF(0,la),btts=Math.max(0,Math.min(100,(1-p0h-p0a+p0h*p0a)*100));
+    const o15=probOver(tLam,1.5),o25=probOver(tLam,2.5),htO=probOver(tLam*0.42,0.5);
+    const hs2=getTeamStrength(leagueCode,home),as2=getTeamStrength(leagueCode,away);
+    const cLam=cAvg*((hs2.atk*as2.def*hfa)+(as2.atk*hs2.def))/2;
+    const co75=probOver(cLam,7.5),co85=probOver(cLam,8.5);
+    return {home,away,league:cfg.name,l_home:lh.toFixed(3),l_away:la.toFixed(3),over15:o15,over25:o25,btts,home_win:(hw*100).toFixed(1),draw:(dr*100).toFixed(1),away_win:(aw*100).toFixed(1),htOver05:htO,cornersOver75:co75,cornersOver85:co85,cornerLambda:cLam.toFixed(2),usingAPI:!!apiStats};
 }
 
 function calcValue(prob,odds){ if(!odds||odds<=1)return null; return (prob/100*odds-1)*100; }
@@ -448,85 +501,236 @@ function calcFairProbs(oH,oD,oA){ if(!oH||!oD||!oA||oH<=1||oD<=1||oA<=1)return n
 function kellyStake(prob,odds){ const b=odds-1; const k=(prob*b-(1-prob))/b; return Math.min(bankroll*Math.max(0,k*config.kellyFraction),bankroll*config.maxStakePct); }
 
 // ============================================================
-// API BZZOIRO (MEJORADA)
+// API BZZOIRO v2 — CORREGIDA
+// Header correcto: "Authorization: Token YOUR_TOKEN"
+// Base URL: https://sports.bzzoiro.com/api/v2/
 // ============================================================
-let API_BASE = config.apiBaseUrl||'https://sports.bzzoiro.com';
-async function apiFetchDebug(endpoint,apiKey,method='GET'){
- const urls=[`${API_BASE}${endpoint}`,`${API_BASE}/api${endpoint}`,`${API_BASE}/v1${endpoint}`];
- const hdrs=[{Authorization:`Bearer ${apiKey}`},{'x-api-key':apiKey},{'api-key':apiKey}];
- let lastErr=null;
- for(const url of urls)for(const h of hdrs)try{
-  const r=await fetch(url,{method,headers:{...h,Accept:'application/json'}}); const t=await r.text();
-  if(r.ok){ let d; try{d=JSON.parse(t);}catch{d=t;} return {success:true,url,headers:h,status:r.status,data:d}; }
-  lastErr={url,headers:h,status:r.status,body:t.substring(0,200)};
- }catch(e){ lastErr={url,headers:h,error:e.message}; }
- return {success:false,attempts:lastErr};
+
+function getAPIBase() {
+    return (config.apiBaseUrl||'https://sports.bzzoiro.com').replace(/\/+$,'');
 }
-async function apiFetch(endpoint){
- if(!config.apiKey)throw new Error('Sin API Key');
- const r=await apiFetchDebug(endpoint,config.apiKey);
- if(r.success)return r.data;
- throw new Error(`HTTP ${r.attempts?.status||'error'}: ${r.attempts?.body||r.attempts?.error}`);
+
+function apiHeaders() {
+    return {
+        'Authorization': `Token ${config.apiKey}`,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+    };
 }
-async function debugAPI(){
- const base=document.getElementById('cfg-apibase'); if(base&&base.value.trim())API_BASE=base.value.trim().replace(/\/$/,'');
- const key=document.getElementById('cfg-apikey').value.trim();
- if(!key){ document.getElementById('api-debug-output').style.display='block'; document.getElementById('debug-textarea').value='Primero ingresa una API Key.'; return; }
- const out=document.getElementById('api-debug-output'),ta=document.getElementById('debug-textarea'); out.style.display='block'; ta.value='Probando...\n';
- for(const ep of['/status','/me','/leagues','/teams']){
-  const r=await apiFetchDebug(ep,key); ta.value+=`\n--- ${ep} ---\n`;
-  if(r.success)ta.value+=`✅ URL: ${r.url}\nHeaders: ${JSON.stringify(r.headers)}\nStatus: ${r.status}\nRespuesta: ${JSON.stringify(r.data,null,2)}\n`;
-  else ta.value+=`❌ Falló.\nÚltimo error: ${JSON.stringify(r.attempts,null,2)}\n`;
- }
+
+async function apiFetch(path) {
+    if (!config.apiKey) throw new Error('Sin API Key configurada');
+    const base = getAPIBase();
+    // Asegurar que usamos /api/v2/
+    const url = `${base}/api/v2${path}`;
+    const resp = await fetch(url, { method: 'GET', headers: apiHeaders() });
+    if (!resp.ok) {
+        const body = await resp.text().catch(()=>'');
+        throw new Error(`HTTP ${resp.status}: ${body.substring(0,120)}`);
+    }
+    return await resp.json();
 }
-async function testAPIKey(){
- const base=document.getElementById('cfg-apibase'); if(base&&base.value.trim())API_BASE=base.value.trim().replace(/\/$/,'');
- const key=document.getElementById('cfg-apikey').value.trim();
- if(!key){ document.getElementById('api-test-result').innerHTML='<span style="color:var(--accent);font-size:0.7rem;">⚠️ Ingresa una API Key primero</span>'; return; }
- const res=document.getElementById('api-test-result'); res.innerHTML='<span style="color:var(--yellow);font-size:0.7rem;"><span class="spinner"></span> Verificando...</span>';
- try{
-  const r=await apiFetchDebug('/status',key);
-  if(r.success){ const d=r.data; const email=d.email||d.account?.email||''; const plan=d.plan||d.tier||'Activo'; res.innerHTML=`<span style="color:var(--green);font-size:0.7rem;">✅ API Key válida ${email?'· '+email:''} · Plan: ${plan}</span>`; return; }
-  const r2=await apiFetchDebug('/me',key);
-  if(r2.success){ res.innerHTML='<span style="color:var(--green);font-size:0.7rem;">✅ API Key válida (verificado con /me)</span>'; return; }
-  res.innerHTML='<span style="color:var(--accent);font-size:0.7rem;">❌ API Key inválida o sin acceso. Usa "Depurar API".</span>';
- }catch(e){ res.innerHTML=`<span style="color:var(--accent);font-size:0.7rem;">❌ Error: ${e.message}</span>`; }
+
+async function testAPIKey() {
+    const keyEl = document.getElementById('cfg-apikey');
+    const baseEl = document.getElementById('cfg-apibase');
+    const key = keyEl ? keyEl.value.trim() : config.apiKey;
+    const base = baseEl ? baseEl.value.trim() : config.apiBaseUrl;
+    if (!key) {
+        document.getElementById('api-test-result').innerHTML = '<span style="color:var(--accent);font-size:0.72rem;">⚠️ Ingresa un token primero</span>';
+        return;
+    }
+    const res = document.getElementById('api-test-result');
+    res.innerHTML = '<span style="color:var(--yellow);font-size:0.72rem;"><span class="spinner"></span> Verificando...</span>';
+    const testBase = (base||'https://sports.bzzoiro.com').replace(/\/+$/,'');
+    try {
+        // Usamos /api/v2/events/live/ — endpoint público que confirma autenticación
+        const r = await fetch(`${testBase}/api/v2/events/live/`, {
+            headers: { 'Authorization': `Token ${key}`, 'Accept': 'application/json' }
+        });
+        if (r.ok) {
+            const d = await r.json();
+            const cnt = d.count !== undefined ? d.count : '?';
+            res.innerHTML = `<span style="color:var(--green);font-size:0.72rem;">✅ Token válido · ${cnt} partidos en vivo ahora</span>`;
+        } else if (r.status === 401 || r.status === 403) {
+            res.innerHTML = `<span style="color:var(--accent);font-size:0.72rem;">❌ Token inválido (${r.status}). Regístrate en sports.bzzoiro.com/register/</span>`;
+        } else {
+            res.innerHTML = `<span style="color:var(--accent);font-size:0.72rem;">❌ Error ${r.status}. Verifica la URL base.</span>`;
+        }
+    } catch(e) {
+        res.innerHTML = `<span style="color:var(--accent);font-size:0.72rem;">❌ Error de conexión: ${e.message}</span>`;
+    }
 }
-async function searchTeamId(name,leagueId,season){
- const ck=`${name}_${leagueId}_${season}`; if(teamIdCache[ck])return teamIdCache[ck];
- const d=await apiFetch(`/teams?search=${encodeURIComponent(name)}&league_id=${leagueId}&season=${season}`);
- let ts=[]; if(Array.isArray(d))ts=d; else if(d.data&&Array.isArray(d.data))ts=d.data; else if(d.response&&Array.isArray(d.response))ts=d.response; else if(d.teams&&Array.isArray(d.teams))ts=d.teams;
- if(ts.length>0){ const t=ts[0]; const id=t.id||t.team_id||t.ID; if(id){teamIdCache[ck]=id;saveAll();return id;} }
- const d2=await apiFetch(`/teams?search=${encodeURIComponent(name)}`);
- let ts2=[]; if(Array.isArray(d2))ts2=d2; else if(d2.data&&Array.isArray(d2.data))ts2=d2.data; else if(d2.response&&Array.isArray(d2.response))ts2=d2.response; else if(d2.teams&&Array.isArray(d2.teams))ts2=d2.teams;
- if(ts2.length>0){ const t=ts2[0]; const id=t.id||t.team_id||t.ID; if(id){teamIdCache[ck]=id;saveAll();return id;} }
- return null;
+
+async function debugAPI() {
+    const keyEl = document.getElementById('cfg-apikey');
+    const baseEl = document.getElementById('cfg-apibase');
+    const key = keyEl ? keyEl.value.trim() : config.apiKey;
+    const base = (baseEl ? baseEl.value.trim() : config.apiBaseUrl).replace(/\/+$/,'') || 'https://sports.bzzoiro.com';
+    const out = document.getElementById('api-debug-output');
+    const ta = document.getElementById('debug-textarea');
+    out.style.display = 'block';
+    if (!key) { ta.value = 'Ingresa tu token primero en el campo API KEY.'; return; }
+    ta.value = `🔍 Depurando API Bzzoiro v2\nToken: ${key.substring(0,8)}...\nBase URL: ${base}\nHeader: Authorization: Token ${key.substring(0,8)}...\n\n`;
+    const endpoints = [
+        '/api/v2/events/live/',
+        '/api/v2/leagues/?limit=3',
+        '/api/v2/teams/?limit=3&league_id=1'
+    ];
+    for (const ep of endpoints) {
+        const url = `${base}${ep}`;
+        ta.value += `--- GET ${ep} ---\n`;
+        try {
+            const r = await fetch(url, { headers: { 'Authorization': `Token ${key}`, 'Accept': 'application/json' } });
+            const body = await r.text();
+            if (r.ok) {
+                ta.value += `✅ HTTP ${r.status}\n${body.substring(0, 300)}${body.length>300?'\n...(truncado)':''}\n\n`;
+            } else {
+                ta.value += `❌ HTTP ${r.status}\n${body.substring(0, 200)}\n\n`;
+            }
+        } catch(e) {
+            ta.value += `❌ Error: ${e.message}\n\n`;
+        }
+    }
 }
-async function getTeamStats(teamId,leagueId,season){
- const d=await apiFetch(`/teams/${teamId}/statistics?league_id=${leagueId}&season=${season}`);
- let s=d; if(d.data)s=d.data; if(d.response)s=d.response;
- const played={home:s.played_home||s.home_played||s.games_home||0,away:s.played_away||s.away_played||s.games_away||0,total:s.played_total||s.total_played||s.games_total||0};
- const gfH=s.goals_for_home||s.home_goals_for||s.avg_goals_home_scored||1, gfA=s.goals_for_away||s.away_goals_for||s.avg_goals_away_scored||1;
- const gaH=s.goals_against_home||s.home_goals_against||s.avg_goals_home_conceded||1, gaA=s.goals_against_away||s.away_goals_against||s.avg_goals_away_conceded||1;
- return {teamId,played,goalsForHome:parseFloat(gfH)||1,goalsForAway:parseFloat(gfA)||1,goalsAgainstHome:parseFloat(gaH)||1,goalsAgainstAway:parseFloat(gaA)||1};
+
+// Obtener season_id actual de una liga
+async function getSeasonId(leagueId) {
+    const ck = `season_${leagueId}`;
+    if (seasonIdCache[ck]) return seasonIdCache[ck];
+    const data = await apiFetch(`/leagues/${leagueId}/season/`);
+    const sid = data.season ? data.season.id : null;
+    if (sid) { seasonIdCache[ck] = sid; saveAll(); }
+    return sid;
 }
-async function loadAPIData(){
- const league=document.getElementById('league').value, home=document.getElementById('home').value, away=document.getElementById('away').value;
- if(!config.apiKey){showAPIStatus('❌ Configura tu API Key en ⚙️ CONFIG','error');return;}
- if(!league||!home||!away){showAPIStatus('⚠️ Selecciona liga y equipos','error');return;}
- const li=API_LEAGUE_MAP[league]; if(!li){showAPIStatus('⚠️ Liga no disponible en API','error');return;}
- showAPIStatus('<span class="spinner"></span> Buscando equipos...','loading'); document.getElementById('api-btn').disabled=true;
- try{
-  const[hid,aid]=await Promise.all([searchTeamId(home,li.id,li.season),searchTeamId(away,li.id,li.season)]);
-  if(!hid||!aid){showAPIStatus(`❌ No encontrado: ${!hid?home:away}.`,'error');currentAPIData=null;return;}
-  showAPIStatus('<span class="spinner"></span> Descargando stats...','loading');
-  const[hs,as]=await Promise.all([getTeamStats(hid,li.id,li.season),getTeamStats(aid,li.id,li.season)]);
-  if(!hs||!as){showAPIStatus('❌ Sin stats.','error');currentAPIData=null;return;}
-  currentAPIData={home:hs,away:as}; showAPIStatus(`✅ Datos cargados — ${home} (${hs.played.total}PJ) vs ${away} (${as.played.total}PJ)`,'loaded'); showToast('✅ Datos API listos','success');
- }catch(e){showAPIStatus(`❌ Error: ${e.message}`,'error');currentAPIData=null;showToast('Error API','error');}
- finally{document.getElementById('api-btn').disabled=false;}
+
+// Buscar team_id en la API v2
+async function searchTeamId(teamName, leagueId) {
+    const ck = `${teamName}_${leagueId}`;
+    if (teamIdCache[ck]) return teamIdCache[ck];
+    // Búsqueda por nombre parcial dentro de la liga
+    const data = await apiFetch(`/teams/?name=${encodeURIComponent(teamName)}&league_id=${leagueId}&limit=10`);
+    const results = data.results || data;
+    if (!Array.isArray(results) || results.length === 0) {
+        // Segundo intento: solo por nombre sin filtro de liga
+        const data2 = await apiFetch(`/teams/?name=${encodeURIComponent(teamName)}&limit=10`);
+        const res2 = data2.results || data2;
+        if (Array.isArray(res2) && res2.length > 0) {
+            const id = res2[0].id;
+            teamIdCache[ck] = id; saveAll();
+            return id;
+        }
+        return null;
+    }
+    const id = results[0].id;
+    teamIdCache[ck] = id; saveAll();
+    return id;
 }
-function showAPIStatus(msg,type){const e=document.getElementById('api-status-box');e.className=`api-status ${type}`;e.innerHTML=msg;e.classList.remove('hidden');}
+
+// Calcular estadísticas de un equipo desde sus partidos
+// Usa /api/v2/events/?team_id=X&season_id=Y&status=finished&limit=50
+async function getTeamStats(teamId, seasonId) {
+    const data = await apiFetch(`/events/?team_id=${teamId}&season_id=${seasonId}&status=finished&limit=50`);
+    const matches = data.results || [];
+    if (!matches.length) return null;
+
+    let homeGoalsFor=0, homeGoalsAgainst=0, homeGames=0;
+    let awayGoalsFor=0, awayGoalsAgainst=0, awayGames=0;
+
+    for (const m of matches) {
+        if (m.home_team_id === teamId) {
+            homeGoalsFor += (m.home_score || 0);
+            homeGoalsAgainst += (m.away_score || 0);
+            homeGames++;
+        } else if (m.away_team_id === teamId) {
+            awayGoalsFor += (m.away_score || 0);
+            awayGoalsAgainst += (m.home_score || 0);
+            awayGames++;
+        }
+    }
+
+    return {
+        teamId,
+        played: { home: homeGames, away: awayGames, total: homeGames + awayGames },
+        goalsForHome: homeGames > 0 ? homeGoalsFor / homeGames : 1,
+        goalsForAway: awayGames > 0 ? awayGoalsFor / awayGames : 1,
+        goalsAgainstHome: homeGames > 0 ? homeGoalsAgainst / homeGames : 1,
+        goalsAgainstAway: awayGames > 0 ? awayGoalsAgainst / awayGames : 1
+    };
+}
+
+async function loadAPIData() {
+    const league = document.getElementById('league').value;
+    const home = document.getElementById('home').value;
+    const away = document.getElementById('away').value;
+
+    if (!config.apiKey) { showAPIStatus('❌ Configura tu Token en ⚙️ CONFIG', 'error'); return; }
+    if (!league || !home || !away) { showAPIStatus('⚠️ Selecciona liga y equipos', 'error'); return; }
+
+    const leagueId = API_LEAGUE_IDS[league];
+    if (!leagueId) { showAPIStatus('⚠️ Liga no disponible en API', 'error'); return; }
+
+    showAPIStatus('<span class="spinner"></span> Obteniendo temporada actual...', 'loading');
+    document.getElementById('api-btn').disabled = true;
+
+    try {
+        // 1. Obtener season_id actual
+        const seasonId = await getSeasonId(leagueId);
+        if (!seasonId) { showAPIStatus('❌ No se pudo obtener la temporada actual', 'error'); return; }
+
+        // 2. Buscar IDs de equipos
+        showAPIStatus('<span class="spinner"></span> Buscando equipos...', 'loading');
+        const [homeId, awayId] = await Promise.all([
+            searchTeamId(home, leagueId),
+            searchTeamId(away, leagueId)
+        ]);
+
+        if (!homeId) { showAPIStatus(`❌ Equipo no encontrado: ${home}`, 'error'); currentAPIData=null; return; }
+        if (!awayId) { showAPIStatus(`❌ Equipo no encontrado: ${away}`, 'error'); currentAPIData=null; return; }
+
+        // 3. Obtener estadísticas de partidos
+        showAPIStatus('<span class="spinner"></span> Descargando estadísticas de temporada...', 'loading');
+        const [homeStats, awayStats] = await Promise.all([
+            getTeamStats(homeId, seasonId),
+            getTeamStats(awayId, seasonId)
+        ]);
+
+        if (!homeStats || homeStats.played.total < 3) {
+            showAPIStatus(`⚠️ Pocos partidos para ${home} (${homeStats?.played?.total||0}). Usando datos estáticos.`, 'error');
+            currentAPIData = null;
+            return;
+        }
+        if (!awayStats || awayStats.played.total < 3) {
+            showAPIStatus(`⚠️ Pocos partidos para ${away} (${awayStats?.played?.total||0}). Usando datos estáticos.`, 'error');
+            currentAPIData = null;
+            return;
+        }
+
+        currentAPIData = { home: homeStats, away: awayStats };
+        showAPIStatus(
+            `✅ Datos cargados — ${home} (${homeStats.played.total}PJ · ` +
+            `${homeStats.goalsForHome.toFixed(2)}gf/g) vs ${away} (${awayStats.played.total}PJ · ` +
+            `${awayStats.goalsForAway.toFixed(2)}gf/g)`,
+            'loaded'
+        );
+        showToast('✅ Datos API v2 listos', 'success');
+
+    } catch(e) {
+        showAPIStatus(`❌ Error: ${e.message}`, 'error');
+        currentAPIData = null;
+        showToast('Error API', 'error');
+        console.error('API Error:', e);
+    } finally {
+        document.getElementById('api-btn').disabled = false;
+    }
+}
+
+function showAPIStatus(msg, type) {
+    const e = document.getElementById('api-status-box');
+    e.className = `api-status ${type}`;
+    e.innerHTML = msg;
+    e.classList.remove('hidden');
+}
 
 // ============================================================
 // INTERFAZ Y LÓGICA
@@ -534,64 +738,78 @@ function showAPIStatus(msg,type){const e=document.getElementById('api-status-box
 const leagueSelect=document.getElementById('league'),homeSelect=document.getElementById('home'),awaySelect=document.getElementById('away'),analyzeBtn=document.getElementById('analyze-btn'),apiBtn=document.getElementById('api-btn');
 
 leagueSelect.addEventListener('change',function(){
- const c=this.value; homeSelect.innerHTML='<option value="">-- Local --</option>'; awaySelect.innerHTML='<option value="">-- Visitante --</option>';
- homeSelect.disabled=true; awaySelect.disabled=true; currentAPIData=null; document.getElementById('api-status-box').classList.add('hidden');
- if(!c){checkButtons();return;}
- (TEAMS_DB[c]||[]).forEach(t=>{homeSelect.innerHTML+=`<option value="${t}">${t}</option>`;awaySelect.innerHTML+=`<option value="${t}">${t}</option>`;});
- homeSelect.disabled=false; awaySelect.disabled=false; checkButtons();
+    const c=this.value;
+    homeSelect.innerHTML='<option value="">-- Local --</option>';
+    awaySelect.innerHTML='<option value="">-- Visitante --</option>';
+    homeSelect.disabled=true; awaySelect.disabled=true;
+    currentAPIData=null;
+    document.getElementById('api-status-box').classList.add('hidden');
+    if(!c){checkButtons();return;}
+    (TEAMS_DB[c]||[]).forEach(t=>{
+        homeSelect.innerHTML+=`<option value="${t}">${t}</option>`;
+        awaySelect.innerHTML+=`<option value="${t}">${t}</option>`;
+    });
+    homeSelect.disabled=false; awaySelect.disabled=false; checkButtons();
 });
+
 function checkButtons(){
- const h=homeSelect.value,a=awaySelect.value,l=leagueSelect.value;
- const anyOdd=['odds-home','odds-draw','odds-away','odds-ht05','odds-over15','odds-over25','odds-btts','odds-corners75','odds-corners85'].some(id=>parseFloat(document.getElementById(id).value)>1);
- analyzeBtn.disabled=!(h&&a&&h!==a&&anyOdd);
- apiBtn.disabled=!(h&&a&&h!==a&&l&&API_LEAGUE_MAP[l]);
+    const h=homeSelect.value,a=awaySelect.value,l=leagueSelect.value;
+    const anyOdd=['odds-home','odds-draw','odds-away','odds-ht05','odds-over15','odds-over25','odds-btts','odds-corners75','odds-corners85'].some(id=>parseFloat(document.getElementById(id).value)>1);
+    analyzeBtn.disabled=!(h&&a&&h!==a&&anyOdd);
+    apiBtn.disabled=!(h&&a&&h!==a&&l&&API_LEAGUE_IDS[l]);
 }
 homeSelect.addEventListener('change',()=>{currentAPIData=null;document.getElementById('api-status-box').classList.add('hidden');checkButtons();});
 awaySelect.addEventListener('change',()=>{currentAPIData=null;document.getElementById('api-status-box').classList.add('hidden');checkButtons();});
 document.querySelectorAll('input[type="number"]').forEach(i=>i.addEventListener('input',checkButtons));
 
 analyzeBtn.addEventListener('click',()=>{
- const l=leagueSelect.value, h=homeSelect.value, a=awaySelect.value;
- const pred=predictMatch(l,h,a,currentAPIData);
- const oH=parseFloat(document.getElementById('odds-home').value)||0, oD=parseFloat(document.getElementById('odds-draw').value)||0, oA=parseFloat(document.getElementById('odds-away').value)||0;
- const fair=calcFairProbs(oH,oD,oA);
- const mkts=[
-  {name:'Victoria Local',prob:parseFloat(pred.home_win),oddsId:'odds-home',fair:fair?.home,vig:fair?.vig},
-  {name:'Empate',prob:parseFloat(pred.draw),oddsId:'odds-draw',fair:fair?.draw,vig:fair?.vig},
-  {name:'Victoria Visitante',prob:parseFloat(pred.away_win),oddsId:'odds-away',fair:fair?.away,vig:fair?.vig},
-  {name:'Over 0.5 Goles 1T',prob:pred.htOver05,oddsId:'odds-ht05',note:'λ 1T ≈ 42%'},
-  {name:'Over 1.5 Goles',prob:pred.over15,oddsId:'odds-over15'},
-  {name:'Over 2.5 Goles',prob:pred.over25,oddsId:'odds-over25'},
-  {name:'BTTS – Ambos Marcan',prob:pred.btts,oddsId:'odds-btts'},
-  {name:'Over 7.5 Córners',prob:pred.cornersOver75,oddsId:'odds-corners75',note:`λ corners ≈ ${pred.cornerLambda}`},
-  {name:'Over 8.5 Córners',prob:pred.cornersOver85,oddsId:'odds-corners85',note:`λ corners ≈ ${pred.cornerLambda}`}
- ].map(def=>{const odds=parseFloat(document.getElementById(def.oddsId).value)||0;const hasOdds=odds>1&&odds<=50;const val=hasOdds?calcValue(def.prob,odds):null;return{...def,odds:hasOdds?odds:0,value:val,hasValue:val!==null&&val>0};});
- renderResults(pred,mkts);
+    const l=leagueSelect.value, h=homeSelect.value, a=awaySelect.value;
+    const pred=predictMatch(l,h,a,currentAPIData);
+    const oH=parseFloat(document.getElementById('odds-home').value)||0, oD=parseFloat(document.getElementById('odds-draw').value)||0, oA=parseFloat(document.getElementById('odds-away').value)||0;
+    const fair=calcFairProbs(oH,oD,oA);
+    const mkts=[
+        {name:'Victoria Local',prob:parseFloat(pred.home_win),oddsId:'odds-home',fair:fair?.home,vig:fair?.vig},
+        {name:'Empate',prob:parseFloat(pred.draw),oddsId:'odds-draw',fair:fair?.draw,vig:fair?.vig},
+        {name:'Victoria Visitante',prob:parseFloat(pred.away_win),oddsId:'odds-away',fair:fair?.away,vig:fair?.vig},
+        {name:'Over 0.5 Goles 1T',prob:pred.htOver05,oddsId:'odds-ht05',note:'λ 1T ≈ 42%'},
+        {name:'Over 1.5 Goles',prob:pred.over15,oddsId:'odds-over15'},
+        {name:'Over 2.5 Goles',prob:pred.over25,oddsId:'odds-over25'},
+        {name:'BTTS – Ambos Marcan',prob:pred.btts,oddsId:'odds-btts'},
+        {name:'Over 7.5 Córners',prob:pred.cornersOver75,oddsId:'odds-corners75',note:`λ corners ≈ ${pred.cornerLambda}`},
+        {name:'Over 8.5 Córners',prob:pred.cornersOver85,oddsId:'odds-corners85',note:`λ corners ≈ ${pred.cornerLambda}`}
+    ].map(def=>{
+        const odds=parseFloat(document.getElementById(def.oddsId).value)||0;
+        const hasOdds=odds>1&&odds<=50;
+        const val=hasOdds?calcValue(def.prob,odds):null;
+        return{...def,odds:hasOdds?odds:0,value:val,hasValue:val!==null&&val>0};
+    });
+    renderResults(pred,mkts);
 });
 
 function renderResults(pred,markets){
- document.getElementById('main-screen').classList.add('hidden'); document.getElementById('result-screen').classList.remove('hidden');
- const hasVal=markets.some(m=>m.hasValue);
- const badge=pred.usingAPI?'<span class="model-badge model-api">⚡ DATOS API REALES</span>':'<span class="model-badge model-static">📊 DATOS ESTÁTICOS</span>';
- let html='';
- markets.forEach(m=>{
-  const isVal=m.odds>1, cls=m.hasValue?'green':(isVal?'red':''), badge2=m.hasValue?'<span class="value-badge">+EV</span>':(isVal?'<span class="no-value-badge">SIN VALOR</span>':'<span class="info-badge">PROBABILIDAD</span>');
-  const barC=m.hasValue?'var(--green)':(isVal?'var(--accent)':'var(--blue)');
-  let vigH=''; if(m.vig!=null&&m.fair!=null)vigH=`<div class="small-note">Vig: ${(m.vig*100).toFixed(1)}% · Prob justa: ${(m.fair*100).toFixed(1)}%</div>`;
-  let noteH=m.note?`<div class="small-note">${m.note}</div>`:'';
-  let stakeH='';
-  if(m.hasValue&&m.odds>1){
-   const prob=m.prob/100, stake=kellyStake(prob,m.odds);
-   if(stake>0.01){
-    const ev=m.value?m.value.toFixed(1):'?';
-    stakeH=`<div class="stake-suggestion"><div style="font-size:0.62rem;color:var(--muted);">💰 Kelly ${(config.kellyFraction*100).toFixed(0)}% · Máx ${(config.maxStakePct*100).toFixed(0)}% bankroll</div><div style="font-size:1.2rem;font-weight:800;color:var(--blue);">$${stake.toFixed(2)}</div><div style="font-size:0.6rem;color:var(--muted);">${(stake/bankroll*100).toFixed(1)}% del bankroll · EV <span class="green">+${ev}%</span></div><button class="btn-secondary" onclick="placeBet('${m.name}',${m.prob},${m.odds},${stake.toFixed(2)},'${pred.home} vs ${pred.away}')" style="margin-top:8px;width:100%;font-size:0.72rem;">✅ REGISTRAR APUESTA</button></div>`;
-   }
-  }
-  html+=`<div class="market" style="border-color:${m.hasValue?'rgba(46,204,113,0.3)':(isVal?'rgba(255,77,90,0.15)':'rgba(77,171,247,0.15)')};"><div class="market-header">${m.name} ${badge2}</div><div class="prob-row"><span class="prob-label">Probabilidad</span><div class="bar-wrap"><div class="bar-fill" data-width="${Math.round(m.prob)}%" style="background:${barC};box-shadow:0 0 8px ${barC};"></div></div><span class="prob-value ${cls}">${Math.round(m.prob)}%</span></div>${isVal?`<div class="prob-row"><span class="prob-label">Cuota</span><span></span><span class="prob-value">${m.odds.toFixed(2)}</span></div><div class="ev-row"><span class="ev-label">EV</span><span class="ev-value ${m.value>0?'green':'red'}">${m.value>0?'+':''}${m.value.toFixed(1)}%</span></div>`:''}${vigH}${noteH}${stakeH}</div>`;
- });
- document.getElementById('result-card').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><h3 style="margin:0;font-size:0.9rem;">${pred.home} vs ${pred.away}</h3><button class="btn-secondary" onclick="goBack()" style="width:auto;padding:8px 14px;font-size:0.7rem;">← Volver</button></div><div style="text-align:center;margin-bottom:10px;"><span style="font-size:0.7rem;color:var(--muted);">${pred.league} · λ: ${pred.l_home}/${pred.l_away}</span><br>${badge}</div>${hasVal?'<div class="bankroll-display" style="margin-bottom:12px;">🎯 ¡MERCADOS CON VALOR!</div>':''}${!hasVal?'<div class="warning-box">⚠️ No se encontraron apuestas +EV.</div>':''}${html}<div class="model-info" style="margin-top:14px;"><strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles · <strong>EV mínimo:</strong> +5%</div>`;
- setTimeout(()=>document.querySelectorAll('.bar-fill[data-width]').forEach(b=>b.style.width=b.dataset.width),100);
- document.getElementById('result-screen').scrollIntoView({behavior:'smooth',block:'start'});
+    document.getElementById('main-screen').classList.add('hidden');
+    document.getElementById('result-screen').classList.remove('hidden');
+    const hasVal=markets.some(m=>m.hasValue);
+    const badge=pred.usingAPI?'<span class="model-badge model-api">⚡ DATOS API v2 REALES</span>':'<span class="model-badge model-static">📊 DATOS ESTÁTICOS</span>';
+    let html='';
+    markets.forEach(m=>{
+        const isVal=m.odds>1, cls=m.hasValue?'green':(isVal?'red':''), badge2=m.hasValue?'<span class="value-badge">+EV</span>':(isVal?'<span class="no-value-badge">SIN VALOR</span>':'<span class="info-badge">PROBABILIDAD</span>');
+        const barC=m.hasValue?'var(--green)':(isVal?'var(--accent)':'var(--blue)');
+        let vigH=''; if(m.vig!=null&&m.fair!=null)vigH=`<div class="small-note">Vig: ${(m.vig*100).toFixed(1)}% · Prob justa: ${(m.fair*100).toFixed(1)}%</div>`;
+        let noteH=m.note?`<div class="small-note">${m.note}</div>`:'';
+        let stakeH='';
+        if(m.hasValue&&m.odds>1){
+            const prob=m.prob/100, stake=kellyStake(prob,m.odds);
+            if(stake>0.01){
+                const ev=m.value?m.value.toFixed(1):'?';
+                stakeH=`<div class="stake-suggestion"><div style="font-size:0.62rem;color:var(--muted);">💰 Kelly ${(config.kellyFraction*100).toFixed(0)}% · Máx ${(config.maxStakePct*100).toFixed(0)}% bankroll</div><div style="font-size:1.2rem;font-weight:800;color:var(--blue);">$${stake.toFixed(2)}</div><div style="font-size:0.6rem;color:var(--muted);">${(stake/bankroll*100).toFixed(1)}% del bankroll · EV <span class="green">+${ev}%</span></div><button class="btn-secondary" onclick="placeBet('${m.name}',${m.prob},${m.odds},${stake.toFixed(2)},'${pred.home} vs ${pred.away}')" style="margin-top:8px;width:100%;font-size:0.72rem;">✅ REGISTRAR APUESTA</button></div>`;
+            }
+        }
+        html+=`<div class="market" style="border-color:${m.hasValue?'rgba(46,204,113,0.3)':(isVal?'rgba(255,77,90,0.15)':'rgba(77,171,247,0.15)')};"><div class="market-header">${m.name} ${badge2}</div><div class="prob-row"><span class="prob-label">Probabilidad</span><div class="bar-wrap"><div class="bar-fill" data-width="${Math.round(m.prob)}%" style="background:${barC};box-shadow:0 0 8px ${barC};"></div></div><span class="prob-value ${cls}">${Math.round(m.prob)}%</span></div>${isVal?`<div class="prob-row"><span class="prob-label">Cuota</span><span></span><span class="prob-value">${m.odds.toFixed(2)}</span></div><div class="ev-row"><span class="ev-label">EV</span><span class="ev-value ${m.value>0?'green':'red'}">${m.value>0?'+':''}${m.value.toFixed(1)}%</span></div>`:''}${vigH}${noteH}${stakeH}</div>`;
+    });
+    document.getElementById('result-card').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><h3 style="margin:0;font-size:0.9rem;">${pred.home} vs ${pred.away}</h3><button class="btn-secondary" onclick="goBack()" style="width:auto;padding:8px 14px;font-size:0.7rem;">← Volver</button></div><div style="text-align:center;margin-bottom:10px;"><span style="font-size:0.7rem;color:var(--muted);">${pred.league} · λ: ${pred.l_home}/${pred.l_away}</span><br>${badge}</div>${hasVal?'<div class="bankroll-display" style="margin-bottom:12px;">🎯 ¡MERCADOS CON VALOR!</div>':''}${!hasVal?'<div class="warning-box">⚠️ No se encontraron apuestas +EV.</div>':''}${html}<div class="model-info" style="margin-top:14px;"><strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles · <strong>EV mínimo:</strong> +5%</div>`;
+    setTimeout(()=>document.querySelectorAll('.bar-fill[data-width]').forEach(b=>b.style.width=b.dataset.width),100);
+    document.getElementById('result-screen').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 // ============================================================
@@ -601,89 +819,87 @@ function placeBet(market,prob,odds,stake,match){ bankroll-=parseFloat(stake); be
 function updateBetResult(idx,won){ const b=betHistory[idx]; if(b.status!=='pending')return; b.status='settled'; b.result=won?'win':'loss'; if(won)bankroll+=b.stake*b.odds; saveAll(); updateBankrollDisplay(); updateHistoryDisplay(); }
 function deleteBet(idx){ const b=betHistory[idx]; if(!b)return; if(b.status==='pending')bankroll+=b.stake; else if(b.status==='settled'&&b.result==='win')bankroll-=b.stake*b.odds; betHistory.splice(idx,1); saveAll(); updateBankrollDisplay(); updateHistoryDisplay(); }
 function updateHistoryDisplay(){
- const log=document.getElementById('bet-log');
- if(!betHistory.length){ log.innerHTML='<p style="color:var(--muted);text-align:center;padding:20px;">No hay apuestas registradas aún.</p>'; return; }
- let h='';
- for(let i=betHistory.length-1;i>=0;i--){
-  const b=betHistory[i], d=new Date(b.date).toLocaleDateString(), sc=b.status==='pending'?'log-pending':(b.result==='win'?'log-win':'log-loss');
-  const se=b.status==='pending'?'⏳':(b.result==='win'?'✅':'❌');
-  const profit=b.status==='settled'?(b.result==='win'?`+$${(b.stake*b.odds-b.stake).toFixed(2)}`:`-$${b.stake.toFixed(2)}`):'Pendiente';
-  const pc=b.status==='settled'?(b.result==='win'?'profit':'loss'):'';
-  h+=`<div class="log-item ${sc}"><div style="flex:1;"><div style="font-weight:600;">${b.match}</div><div style="font-size:0.65rem;color:var(--muted);">${b.market} · @${b.odds} · $${b.stake.toFixed(2)}</div><div style="font-size:0.6rem;color:var(--muted);">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:4px;"><div><div style="font-size:1rem;">${se}</div><div class="${pc}" style="font-weight:700;font-size:0.75rem;">${profit}</div>${b.status==='pending'?`<div style="margin-top:4px;display:flex;gap:3px;"><button onclick="updateBetResult(${i},true)" style="background:var(--green);color:white;border:none;padding:2px 6px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Ganó</button><button onclick="updateBetResult(${i},false)" style="background:var(--accent);color:white;border:none;padding:2px 6px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Perdió</button></div>`:''}</div><button class="delete-btn" onclick="deleteBet(${i})">🗑️</button></div></div>`;
- }
- log.innerHTML=h;
+    const log=document.getElementById('bet-log');
+    if(!betHistory.length){ log.innerHTML='<p style="color:var(--muted);text-align:center;padding:20px;">No hay apuestas registradas aún.</p>'; return; }
+    let h='';
+    for(let i=betHistory.length-1;i>=0;i--){
+        const b=betHistory[i], d=new Date(b.date).toLocaleDateString(), sc=b.status==='pending'?'log-pending':(b.result==='win'?'log-win':'log-loss');
+        const se=b.status==='pending'?'⏳':(b.result==='win'?'✅':'❌');
+        const profit=b.status==='settled'?(b.result==='win'?`+$${(b.stake*b.odds-b.stake).toFixed(2)}`:`-$${b.stake.toFixed(2)}`):'Pendiente';
+        const pc=b.status==='settled'?(b.result==='win'?'profit':'loss'):'';
+        h+=`<div class="log-item ${sc}"><div style="flex:1;"><div style="font-weight:600;">${b.match}</div><div style="font-size:0.65rem;color:var(--muted);">${b.market} · @${b.odds} · $${b.stake.toFixed(2)}</div><div style="font-size:0.6rem;color:var(--muted);">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:4px;"><div><div style="font-size:1rem;">${se}</div><div class="${pc}" style="font-weight:700;font-size:0.75rem;">${profit}</div>${b.status==='pending'?`<div style="margin-top:4px;display:flex;gap:3px;"><button onclick="updateBetResult(${i},true)" style="background:var(--green);color:white;border:none;padding:2px 6px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Ganó</button><button onclick="updateBetResult(${i},false)" style="background:var(--accent);color:white;border:none;padding:2px 6px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Perdió</button></div>`:''}</div><button class="delete-btn" onclick="deleteBet(${i})">🗑️</button></div></div>`;
+    }
+    log.innerHTML=h;
 }
 function exportHistory(){
- if(!betHistory.length){alert('No hay apuestas.');return;}
- const esc=s=>`"${String(s).replace(/"/g,'""')}"`;
- const csv='Fecha,Partido,Mercado,Probabilidad,Cuota,Stake,Estado,Resultado,Ganancia\n'+betHistory.map(b=>{const p=b.status==='settled'?(b.result==='win'?(b.stake*b.odds-b.stake).toFixed(2):(-b.stake).toFixed(2)):'0';return `${esc(new Date(b.date).toLocaleDateString())},${esc(b.match)},${esc(b.market)},${b.prob}%,${b.odds},$${b.stake.toFixed(2)},${b.status},${b.result||'N/A'},${p}`;}).join('\n');
- const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:`apuestas_${new Date().toISOString().split('T')[0]}.csv`}); a.click();
+    if(!betHistory.length){alert('No hay apuestas.');return;}
+    const esc=s=>`"${String(s).replace(/"/g,'""')}"`;
+    const csv='Fecha,Partido,Mercado,Probabilidad,Cuota,Stake,Estado,Resultado,Ganancia\n'+betHistory.map(b=>{const p=b.status==='settled'?(b.result==='win'?(b.stake*b.odds-b.stake).toFixed(2):(-b.stake).toFixed(2)):'0';return `${esc(new Date(b.date).toLocaleDateString())},${esc(b.match)},${esc(b.market)},${b.prob}%,${b.odds},$${b.stake.toFixed(2)},${b.status},${b.result||'N/A'},${p}`;}).join('\n');
+    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:`apuestas_${new Date().toISOString().split('T')[0]}.csv`}); a.click();
 }
 function exportJSON(){
- const data={bankroll,config,betHistory,exportedAt:new Date().toISOString()};
- const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),download:`betanalytics_backup_${new Date().toISOString().split('T')[0]}.json`}); a.click();
+    const data={bankroll,config,betHistory,exportedAt:new Date().toISOString()};
+    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),download:`betanalytics_backup_${new Date().toISOString().split('T')[0]}.json`}); a.click();
 }
 function importJSON(input){
- const f=input.files[0]; if(!f)return; const r=new FileReader();
- r.onload=e=>{try{const d=JSON.parse(e.target.result); if(d.bankroll!==undefined)bankroll=d.bankroll; if(d.config)config={...DEFAULT_CONFIG,...d.config}; if(d.betHistory)betHistory=d.betHistory; saveAll();updateBankrollDisplay();updateHistoryDisplay();alert('✅ Importado');}catch{alert('❌ Archivo inválido');}};
- r.readAsText(f); input.value='';
+    const f=input.files[0]; if(!f)return; const r=new FileReader();
+    r.onload=e=>{try{const d=JSON.parse(e.target.result); if(d.bankroll!==undefined)bankroll=d.bankroll; if(d.config)config={...DEFAULT_CONFIG,...d.config}; if(d.betHistory)betHistory=d.betHistory; saveAll();updateBankrollDisplay();updateHistoryDisplay();alert('✅ Importado');}catch{alert('❌ Archivo inválido');}};
+    r.readAsText(f); input.value='';
 }
 function switchTab(tab){
- ['analyzer','history','stats','config'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('hidden',t!==tab));
- document.querySelectorAll('.tab').forEach((el,i)=>{const tabs=['analyzer','history','stats','config'];el.classList.toggle('active',tabs[i]===tab);});
- if(tab==='history')updateHistoryDisplay(); if(tab==='stats')updateStats(); if(tab==='config')loadConfig();
+    ['analyzer','history','stats','config'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('hidden',t!==tab));
+    document.querySelectorAll('.tab').forEach((el,i)=>{const tabs=['analyzer','history','stats','config'];el.classList.toggle('active','history','stats','config'];el.classList.toggle('active',tabs[i]===tab);});
+    if(tab==='history')updateHistoryDisplay(); if(tab==='stats')updateStats(); if(tab==='config')loadConfig();
 }
 function goBack(){ document.getElementById('main-screen').classList.remove('hidden'); document.getElementById('result-screen').classList.add('hidden'); document.getElementById('main-screen').scrollIntoView({behavior:'smooth'}); }
 function updateBankrollDisplay(){
- document.getElementById('bankroll-display').textContent='$'+bankroll.toFixed(2);
- const pnl=bankroll-config.initialBankroll, pnlPct=((pnl/config.initialBankroll)*100).toFixed(1);
- const el=document.getElementById('pnl-display'); el.textContent=`P&L: $${pnl.toFixed(2)} (${pnlPct}%)`; el.className=pnl>=0?'profit':'loss';
+    document.getElementById('bankroll-display').textContent='$'+bankroll.toFixed(2);
+    const pnl=bankroll-config.initialBankroll, pnlPct=((pnl/config.initialBankroll)*100).toFixed(1);
+    const el=document.getElementById('pnl-display'); el.textContent=`P&L: $${pnl.toFixed(2)} (${pnlPct}%)`; el.className=pnl>=0?'profit':'loss';
 }
 function updateStats(){
- const settled=betHistory.filter(b=>b.status==='settled'), wins=settled.filter(b=>b.result==='win').length;
- const wr=settled.length?((wins/settled.length)*100).toFixed(1):'0.0';
- let staked=0,profit=0; settled.forEach(b=>{staked+=b.stake;profit+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;});
- const yld=staked?((profit/staked)*100).toFixed(1):'0.0', roi=((profit/config.initialBankroll)*100).toFixed(1);
- let streak=0; for(let i=betHistory.length-1;i>=0;i--){if(betHistory[i].status!=='settled')continue;if(betHistory[i].result==='win')streak++;else{if(streak===0)streak=-1;break;}}
- document.getElementById('stat-total').textContent=betHistory.length;
- document.getElementById('stat-winrate').textContent=wr+'%';
- document.getElementById('stat-yield').textContent=yld+'%';
- document.getElementById('stat-roi').textContent=roi+'%';
- document.getElementById('stat-profit').textContent=(profit>=0?'+':'')+'$'+profit.toFixed(0);
- document.getElementById('stat-streak').textContent=streak>0?`W${streak}`:(streak<0?`L${Math.abs(streak)}`:'-');
- document.getElementById('stat-profit').className=profit>=0?'stat-value green':'stat-value red';
- drawBankrollChart();
+    const settled=betHistory.filter(b=>b.status==='settled'), wins=settled.filter(b=>b.result==='win').length;
+    const wr=settled.length?((wins/settled.length)*100).toFixed(1):'0.0';
+    let staked=0,profit=0; settled.forEach(b=>{staked+=b.stake;profit+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;});
+    const yld=staked?((profit/staked)*100).toFixed(1):'0.0', roi=((profit/config.initialBankroll)*100).toFixed(1);
+    let streak=0; for(let i=betHistory.length-1;i>=0;i--){if(betHistory[i].status!=='settled')continue;if(betHistory[i].result==='win')streak++;else{if(streak===0)streak=-1;break;}}
+    document.getElementById('stat-total').textContent=betHistory.length;
+    document.getElementById('stat-winrate').textContent=wr+'%';
+    document.getElementById('stat-yield').textContent=yld+'%';
+    document.getElementById('stat-roi').textContent=roi+'%';
+    document.getElementById('stat-profit').textContent=(profit>=0?'+':'')+'$'+profit.toFixed(0);
+    document.getElementById('stat-streak').textContent=streak>0?`W${streak}`:(streak<0?`L${Math.abs(streak)}`:'-');
+    document.getElementById('stat-profit').className=profit>=0?'stat-value green':'stat-value red';
+    drawBankrollChart();
 }
 function drawBankrollChart(){
- const svg=document.getElementById('bankroll-chart'), w=svg.clientWidth||500,h=120,pad=20;
- let pts=[{x:0,y:config.initialBankroll}],cur=config.initialBankroll;
- betHistory.forEach(b=>{if(b.status!=='settled')return;cur+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;pts.push({x:pts.length,y:cur});});
- if(pts.length<2){svg.innerHTML=`<text x="${w/2}" y="${h/2}" text-anchor="middle" fill="#8899aa" font-size="12">Sin datos</text>`;return;}
- const minY=Math.min(...pts.map(p=>p.y),config.initialBankroll*.9),maxY=Math.max(...pts.map(p=>p.y),config.initialBankroll*1.1),range=maxY-minY||1;
- const tx=i=>pad+(i/(pts.length-1))*(w-pad*2), ty=v=>h-pad-((v-minY)/range)*(h-pad*2);
- let d=`M ${tx(0)} ${ty(pts[0].y)}`; pts.forEach((p,i)=>{if(i>0)d+=` L ${tx(i)} ${ty(p.y)}`;});
- const color=pts[pts.length-1].y>=config.initialBankroll?'#2ecc71':'#ff4d5a';
- svg.innerHTML=`<line x1="${pad}" y1="${ty(config.initialBankroll)}" x2="${w-pad}" y2="${ty(config.initialBankroll)}" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/>${pts.map((p,i)=>`<circle cx="${tx(i)}" cy="${ty(p.y)}" r="3" fill="${color}"/>`).join('')}`;
+    const svg=document.getElementById('bankroll-chart'), w=svg.clientWidth||500,h=120,pad=20;
+    let pts=[{x:0,y:config.initialBankroll}],cur=config.initialBankroll;
+    betHistory.forEach(b=>{if(b.status!=='settled')return;cur+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;pts.push({x:pts.length,y:cur});});
+    if(pts.length<2){svg.innerHTML=`<text x="${w/2}" y="${h/2}" text-anchor="middle" fill="#8899aa" font-size="12">Sin datos</text>`;return;}
+    const minY=Math.min(...pts.map(p=>p.y),config.initialBankroll*.9),maxY=Math.max(...pts.map(p=>p.y),config.initialBankroll*1.1),range=maxY-minY||1;
+    const tx=i=>pad+(i/(pts.length-1))*(w-pad*2), ty=v=>h-pad-((v-minY)/range)*(h-pad*2);
+    let d=`M ${tx(0)} ${ty(pts[0].y)}`; pts.forEach((p,i)=>{if(i>0)d+=` L ${tx(i)} ${ty(p.y)}`;});
+    const color=pts[pts.length-1].y>=config.initialBankroll?'#2ecc71':'#ff4d5a';
+    svg.innerHTML=`<line x1="${pad}" y1="${ty(config.initialBankroll)}" x2="${w-pad}" y2="${ty(config.initialBankroll)}" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/>${pts.map((p,i)=>`<circle cx="${tx(i)}" cy="${ty(p.y)}" r="3" fill="${color}"/>`).join('')}`;
 }
 function loadConfig(){
- document.getElementById('cfg-initial').value=config.initialBankroll;
- document.getElementById('cfg-kelly').value=config.kellyFraction;
- document.getElementById('cfg-maxstake').value=config.maxStakePct;
- document.getElementById('cfg-apikey').value=config.apiKey||'';
- document.getElementById('cfg-apibase').value=config.apiBaseUrl||'https://sports.bzzoiro.com';
+    document.getElementById('cfg-initial').value=config.initialBankroll;
+    document.getElementById('cfg-kelly').value=config.kellyFraction;
+    document.getElementById('cfg-maxstake').value=config.maxStakePct;
+    document.getElementById('cfg-apikey').value=config.apiKey||'';
+    document.getElementById('cfg-apibase').value=config.apiBaseUrl||'https://sports.bzzoiro.com';
 }
 function saveConfig(){
- const initial=parseFloat(document.getElementById('cfg-initial').value),kelly=parseFloat(document.getElementById('cfg-kelly').value),maxStake=parseFloat(document.getElementById('cfg-maxstake').value),apiKey=document.getElementById('cfg-apikey').value.trim(),apiBaseUrl=document.getElementById('cfg-apibase').value.trim();
- if(initial>0)config.initialBankroll=initial; if(kelly>0&&kelly<=1)config.kellyFraction=kelly; if(maxStake>0&&maxStake<=1)config.maxStakePct=maxStake;
- config.apiKey=apiKey; config.apiBaseUrl=apiBaseUrl; API_BASE=apiBaseUrl.replace(/\/$/,'');
- saveAll();updateBankrollDisplay();alert('✅ Configuración guardada');
+    const initial=parseFloat(document.getElementById('cfg-initial').value),kelly=parseFloat(document.getElementById('cfg-kelly').value),maxStake=parseFloat(document.getElementById('cfg-maxstake').value),apiKey=document.getElementById('cfg-apikey').value.trim(),apiBaseUrl=document.getElementById('cfg-apibase').value.trim();
+    if(initial>0)config.initialBankroll=initial; if(kelly>0&&kelly<=1)config.kellyFraction=kelly; if(maxStake>0&&maxStake<=1)config.maxStakePct=maxStake;
+    config.apiKey=apiKey; config.apiBaseUrl=apiBaseUrl||'https://sports.bzzoiro.com';
+    saveAll(); updateBankrollDisplay(); alert('✅ Configuración guardada');
 }
 function resetData(){ if(!confirm('⚠️ ¿Seguro? Se borrará todo.'))return; bankroll=config.initialBankroll; betHistory=[]; saveAll();updateBankrollDisplay();updateHistoryDisplay();alert('🗑️ Datos reseteados'); }
 function showToast(msg,type='success'){ const t=document.createElement('div'); t.className=`toast-notification toast-${type}`; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2600); }
 
-// ============================================================
 // INIT
-// ============================================================
 updateBankrollDisplay();
 updateHistoryDisplay();
 </script>
