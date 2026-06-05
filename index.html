@@ -310,7 +310,7 @@
 
                 <!-- API BUTTON -->
                 <button class="btn-api" id="api-btn" disabled onclick="loadAPIData()">
-                    🌐 CARGAR DATOS REALES (API-FOOTBALL)
+                    🌐 CARGAR DATOS REALES (BZZOIRO)
                 </button>
                 <div id="api-status-box" class="hidden"></div>
 
@@ -378,11 +378,11 @@
                 </div>
 
                 <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
-                    <h3 style="color:var(--blue);margin-bottom:8px;">🌐 API-Football (api-sports.io)</h3>
+                    <h3 style="color:var(--blue);margin-bottom:8px;">🌐 API Bzzoiro (sports.bzzoiro.com)</h3>
                     <label>API KEY</label>
-                    <input type="text" id="cfg-apikey" placeholder="Tu API Key de api-sports.io" autocomplete="off" spellcheck="false">
+                    <input type="text" id="cfg-apikey" placeholder="Tu API Key de sports.bzzoiro.com" autocomplete="off" spellcheck="false">
                     <div class="small-note" style="margin-top:6px;">
-                        Regístrate gratis en <strong>api-sports.io</strong> → Football API → 100 llamadas/día gratis.<br>
+                        Obtén tu API Key en <strong>sports.bzzoiro.com</strong>.<br>
                         Con API Key activa, el botón 🌐 carga estadísticas reales de la temporada para mayor precisión.
                     </div>
                     <div id="api-test-result" style="margin-top:8px;"></div>
@@ -413,7 +413,7 @@
         <div class="card" id="result-card"></div>
     </div>
 
-    <div class="powered-by">POISSON + DIXON-COLES · API-FOOTBALL · KELLY CRITERION · SOLO USO INFORMATIVO</div>
+    <div class="powered-by">POISSON + DIXON-COLES · BZZOIRO API · KELLY CRITERION · SOLO USO INFORMATIVO</div>
 </div>
 
 <script>
@@ -473,19 +473,20 @@ const LEAGUES_CONFIG = {
     "Brasileirao":  { name:"Brasileirao Serie A",     goals_avg:2.45, corners_avg:9.4,  hfa:1.05 }
 };
 
-// IDs de liga en api-sports.io y temporada vigente (Junio 2026)
+// IDs de liga en Bzzoiro API y temporada vigente (Junio 2026)
+// AJUSTA estos IDs según la documentación de sports.bzzoiro.com
 const API_LEAGUE_MAP = {
-    "EPL":          { id: 39,  season: 2025 },
-    "La_liga":      { id: 140, season: 2025 },
-    "Serie_A":      { id: 135, season: 2025 },
-    "Bundesliga":   { id: 78,  season: 2025 },
-    "Ligue_1":      { id: 61,  season: 2025 },
-    "Eredivisie":   { id: 88,  season: 2025 },
-    "Championship": { id: 40,  season: 2025 },
-    "MLS":          { id: 253, season: 2026 },
-    "Brasileirao":  { id: 71,  season: 2026 },
-    "Libertadores": { id: 13,  season: 2026 },
-    "Sudamericana": { id: 11,  season: 2026 }
+    "EPL":          { id: 1,  season: 2025 },
+    "La_liga":      { id: 2,  season: 2025 },
+    "Serie_A":      { id: 3,  season: 2025 },
+    "Bundesliga":   { id: 4,  season: 2025 },
+    "Ligue_1":      { id: 5,  season: 2025 },
+    "Eredivisie":   { id: 6,  season: 2025 },
+    "Championship": { id: 7,  season: 2025 },
+    "MLS":          { id: 8,  season: 2026 },
+    "Brasileirao":  { id: 9,  season: 2026 },
+    "Libertadores": { id: 10, season: 2026 },
+    "Sudamericana": { id: 11, season: 2026 }
 };
 
 const TEAM_STRENGTH = {
@@ -766,20 +767,28 @@ function kellyStake(prob, odds) {
 }
 
 // ============================================================
-// API-FOOTBALL INTEGRATION
+// API BZZOIRO INTEGRATION (sports.bzzoiro.com)
 // ============================================================
-const API_BASE = 'https://v3.football.api-sports.io';
+const API_BASE = 'https://sports.bzzoiro.com/api';
 
 async function apiFetch(endpoint) {
     if (!config.apiKey) throw new Error('Sin API Key');
-    const res = await fetch(`${API_BASE}${endpoint}`, {
-        headers: { 'x-apisports-key': config.apiKey }
+    const url = `${API_BASE}${endpoint}`;
+    const res = await fetch(url, {
+        headers: {
+            'Authorization': `Bearer ${config.apiKey}`,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+        }
     });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    if (!res.ok) {
+        const text = await res.text();
+        throw new Error(`HTTP ${res.status}: ${text.substring(0, 100)}`);
+    }
     const data = await res.json();
-    if (data.errors && Object.keys(data.errors).length > 0) {
-        const errMsg = typeof data.errors === 'object' ? Object.values(data.errors)[0] : 'Error API';
-        throw new Error(errMsg);
+    // Si la API devuelve errores en un campo específico
+    if (data.error) {
+        throw new Error(data.error.message || 'Error desconocido de API');
     }
     return data;
 }
@@ -787,39 +796,87 @@ async function apiFetch(endpoint) {
 async function searchTeamId(name, leagueId, season) {
     const cacheKey = `${name}_${leagueId}_${season}`;
     if (teamIdCache[cacheKey]) return teamIdCache[cacheKey];
-    // Intento 1: buscar con nombre exacto + liga
-    const data = await apiFetch(`/teams?name=${encodeURIComponent(name)}&league=${leagueId}&season=${season}`);
-    if (data.response && data.response.length > 0) {
-        const id = data.response[0].team.id;
-        teamIdCache[cacheKey] = id;
-        saveAll();
-        return id;
+    
+    // Intento 1: buscar por nombre y liga
+    const data = await apiFetch(`/teams?search=${encodeURIComponent(name)}&league_id=${leagueId}&season=${season}`);
+    
+    // Adaptar según estructura de respuesta de Bzzoiro
+    let teams = [];
+    if (Array.isArray(data)) {
+        teams = data;
+    } else if (data.data && Array.isArray(data.data)) {
+        teams = data.data;
+    } else if (data.response && Array.isArray(data.response)) {
+        teams = data.response;
+    } else if (data.teams && Array.isArray(data.teams)) {
+        teams = data.teams;
     }
-    // Intento 2: buscar solo por nombre (sin liga/temporada)
+    
+    if (teams.length > 0) {
+        const team = teams[0];
+        // Extraer ID del equipo según estructura
+        const id = team.id || team.team_id || team.ID;
+        if (id) {
+            teamIdCache[cacheKey] = id;
+            saveAll();
+            return id;
+        }
+    }
+    
+    // Intento 2: buscar solo por nombre
     const data2 = await apiFetch(`/teams?search=${encodeURIComponent(name)}`);
-    if (data2.response && data2.response.length > 0) {
-        const id = data2.response[0].team.id;
-        teamIdCache[cacheKey] = id;
-        saveAll();
-        return id;
+    let teams2 = [];
+    if (Array.isArray(data2)) {
+        teams2 = data2;
+    } else if (data2.data && Array.isArray(data2.data)) {
+        teams2 = data2.data;
+    } else if (data2.response && Array.isArray(data2.response)) {
+        teams2 = data2.response;
+    } else if (data2.teams && Array.isArray(data2.teams)) {
+        teams2 = data2.teams;
     }
+    
+    if (teams2.length > 0) {
+        const team = teams2[0];
+        const id = team.id || team.team_id || team.ID;
+        if (id) {
+            teamIdCache[cacheKey] = id;
+            saveAll();
+            return id;
+        }
+    }
+    
     return null;
 }
 
 async function getTeamStats(teamId, leagueId, season) {
-    const data = await apiFetch(`/teams/statistics?team=${teamId}&league=${leagueId}&season=${season}`);
-    if (!data.response) return null;
-    const s = data.response;
-    const played = s.fixtures.played;
-    // Promedio goles en casa (local) y fuera (visitante)
-    const goalsForHome    = played.home > 0 ? s.goals.for.average.home   : 0;
-    const goalsForAway    = played.away > 0 ? s.goals.for.average.away   : 0;
-    const goalsAgainstHome= played.home > 0 ? s.goals.against.average.home : 0;
-    const goalsAgainstAway= played.away > 0 ? s.goals.against.average.away : 0;
+    const data = await apiFetch(`/teams/${teamId}/statistics?league_id=${leagueId}&season=${season}`);
+    
+    // Adaptar según estructura de respuesta de Bzzoiro
+    let stats = data;
+    if (data.data) stats = data.data;
+    if (data.response) stats = data.response;
+    
+    // Intentar extraer los datos de partidos jugados y promedios de goles
+    const played = {
+        home: stats.played_home || stats.home_played || stats.games_home || 0,
+        away: stats.played_away || stats.away_played || stats.games_away || 0,
+        total: stats.played_total || stats.total_played || stats.games_total || 0
+    };
+    
+    // Goles a favor como local y visitante
+    const goalsForHome = stats.goals_for_home || stats.home_goals_for || stats.avg_goals_home_scored || 1.0;
+    const goalsForAway = stats.goals_for_away || stats.away_goals_for || stats.avg_goals_away_scored || 1.0;
+    
+    // Goles en contra como local y visitante
+    const goalsAgainstHome = stats.goals_against_home || stats.home_goals_against || stats.avg_goals_home_conceded || 1.0;
+    const goalsAgainstAway = stats.goals_against_away || stats.away_goals_against || stats.avg_goals_away_conceded || 1.0;
+    
     return {
-        teamId, played,
-        goalsForHome:     parseFloat(goalsForHome)     || 1.0,
-        goalsForAway:     parseFloat(goalsForAway)     || 1.0,
+        teamId,
+        played,
+        goalsForHome: parseFloat(goalsForHome) || 1.0,
+        goalsForAway: parseFloat(goalsForAway) || 1.0,
         goalsAgainstHome: parseFloat(goalsAgainstHome) || 1.0,
         goalsAgainstAway: parseFloat(goalsAgainstAway) || 1.0
     };
@@ -844,7 +901,7 @@ async function loadAPIData() {
         return;
     }
 
-    showAPIStatus('<span class="spinner"></span> Buscando equipos en API...', 'loading');
+    showAPIStatus('<span class="spinner"></span> Buscando equipos en Bzzoiro...', 'loading');
     document.getElementById('api-btn').disabled = true;
 
     try {
@@ -896,17 +953,27 @@ function showAPIStatus(msg, type) {
 
 async function testAPIKey() {
     const key = document.getElementById('cfg-apikey').value.trim();
-    if (!key) { document.getElementById('api-test-result').innerHTML = '<span style="color:var(--accent);font-size:0.7rem;">⚠️ Ingresa una API Key primero</span>'; return; }
+    if (!key) { 
+        document.getElementById('api-test-result').innerHTML = '<span style="color:var(--accent);font-size:0.7rem;">⚠️ Ingresa una API Key primero</span>'; 
+        return; 
+    }
     const res = document.getElementById('api-test-result');
     res.innerHTML = '<span style="color:var(--yellow);font-size:0.7rem;"><span class="spinner"></span> Verificando...</span>';
     try {
-        const r = await fetch(`${API_BASE}/status`, { headers: { 'x-apisports-key': key } });
+        const r = await fetch(`${API_BASE}/status`, { 
+            headers: { 
+                'Authorization': `Bearer ${key}`,
+                'Accept': 'application/json'
+            } 
+        });
         const data = await r.json();
-        if (data.response && data.response.account) {
-            const acc = data.response.account;
-            const sub = data.response.subscription;
-            const req = data.response.requests;
-            res.innerHTML = `<span style="color:var(--green);font-size:0.7rem;">✅ API Key válida · ${acc.email} · Plan: ${sub.plan} · Llamadas hoy: ${req.current}/${req.limit_day}</span>`;
+        // Adaptar verificación según estructura de Bzzoiro
+        if (data.status === 'ok' || data.valid || data.message === 'OK' || r.ok) {
+            const info = data.account || data.user || data;
+            const email = info.email || '';
+            const plan = info.plan || info.tier || 'Activo';
+            const remaining = data.remaining || data.requests_remaining || 'N/A';
+            res.innerHTML = `<span style="color:var(--green);font-size:0.7rem;">✅ API Key válida ${email ? '· ' + email : ''} · Plan: ${plan} · Restantes: ${remaining}</span>`;
         } else {
             res.innerHTML = '<span style="color:var(--accent);font-size:0.7rem;">❌ API Key inválida o sin acceso</span>';
         }
