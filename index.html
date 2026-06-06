@@ -88,7 +88,7 @@ select:focus,input:focus,button:focus{outline:none;border-color:var(--accent)}
 <div class="container">
 <div id="main-screen">
 <div class="card">
-<h2>&#9917; BET ANALYTICS PRO <span class="version-tag">v3.2</span></h2>
+<h2>&#9917; BET ANALYTICS PRO <span class="version-tag">v3.4</span></h2>
 <div class="subtitle">POISSON + DIXON-COLES &middot; BZZOIRO API v2 &middot; KELLY CRITERION</div>
 
 <div class="bankroll-display">
@@ -280,7 +280,8 @@ const LEAGUES_CFG = {
   MLS:{name:'MLS',goals:2.85,corners:9.1,hfa:1.05}
 };
 
-const API_LEAGUE_IDS = {EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,Brasileirao_B:14,Libertadores:32,Sudamericana:33,Mundial_2026:27};
+// ⚠️ ID de la Brasileirão Série B corregido a 34 según la API
+const API_LEAGUE_IDS = {EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,Brasileirao_B:34,Libertadores:32,Sudamericana:33,Mundial_2026:27};
 
 const STRENGTH = {
   EPL:{'Manchester City':[1.30,0.77],'Liverpool':[1.28,0.79],'Arsenal':[1.24,0.82],'Chelsea':[1.15,0.89],'Tottenham':[1.16,0.90],'Manchester United':[1.18,0.88],'Newcastle United':[1.13,0.94],'Aston Villa':[1.17,0.92],'Brighton':[1.11,0.96],'West Ham United':[1.06,1.00],'Fulham':[1.04,1.01],'Brentford':[1.02,1.03],'Crystal Palace':[0.98,1.05],'Wolves':[1.03,1.02],'Everton':[0.92,1.10],'Bournemouth':[0.95,1.08],'Nottingham Forest':[0.96,1.07],'Leicester City':[0.94,1.08],'Ipswich Town':[0.88,1.14],'Southampton':[0.86,1.16]},
@@ -498,7 +499,8 @@ async function fetchTeamsFromAPI(leagueCode){
   const leagueId = API_LEAGUE_IDS[leagueCode];
   if(!leagueId || !config.apiKey) return TEAMS_DB[leagueCode] || [];
   try{
-    const data = await apiFetch('/teams/?league_id='+leagueId+'&limit=100');
+    // Endpoint corregido: obtener equipos de una liga específica
+    const data = await apiFetch('/leagues/'+leagueId+'/teams/');
     const results = data.results || data;
     if(Array.isArray(results) && results.length>0){
       return results.map(t=>t.name).filter(n=>n);
