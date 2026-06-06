@@ -1,905 +1,805 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <meta name="apple-mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-    <title>Bet Analytics PRO · Value Betting</title>
-    <style>
-        :root {
-            --bg: #0a0e17;
-            --card: #131925;
-            --accent: #ff4d5a;
-            --accent2: #ff6b7a;
-            --green: #2ecc71;
-            --green2: #27ae60;
-            --yellow: #f1c40f;
-            --blue: #4dabf7;
-            --text: #f0f2f8;
-            --muted: #8899aa;
-            --border: rgba(255,255,255,0.08);
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            padding: 12px;
-            min-height: 100vh;
-            background-image:
-                radial-gradient(ellipse at top, rgba(255,77,90,0.06) 0%, transparent 50%),
-                radial-gradient(ellipse at bottom, rgba(46,204,113,0.04) 0%, transparent 50%);
-        }
-        .container { max-width: 550px; margin: 0 auto; }
-        .card {
-            background: var(--card);
-            border-radius: 18px;
-            padding: 20px;
-            margin-bottom: 16px;
-            border: 1px solid var(--border);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-        }
-        h2 {
-            text-align: center;
-            margin-bottom: 4px;
-            font-size: 1.5rem;
-            font-weight: 800;
-            letter-spacing: -0.5px;
-            background: linear-gradient(135deg, #fff, #ff8a95);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-        .subtitle {
-            text-align: center;
-            font-size: 0.6rem;
-            color: var(--muted);
-            margin-bottom: 16px;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-        h3 { font-size: 1rem; font-weight: 700; margin-bottom: 12px; }
-        label {
-            display: block;
-            font-size: 0.65rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            color: var(--muted);
-            margin: 10px 0 4px;
-        }
-        select, input, button {
-            width: 100%;
-            padding: 12px 14px;
-            margin: 4px 0;
-            border-radius: 12px;
-            background: rgba(255,255,255,0.04);
-            color: white;
-            border: 1px solid var(--border);
-            font-size: 14px;
-            font-family: inherit;
-            -webkit-appearance: none;
-            appearance: none;
-            transition: all 0.2s;
-        }
-        select {
-            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238899aa' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");
-            background-repeat: no-repeat;
-            background-position: right 14px center;
-            padding-right: 36px;
-        }
-        input[type="number"] { -webkit-appearance: textfield; appearance: textfield; }
-        select:focus, input:focus, button:focus { outline: none; border-color: var(--accent); }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--accent), var(--accent2));
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            letter-spacing: 0.5px;
-            box-shadow: 0 4px 20px rgba(255,77,90,0.25);
-            margin-top: 8px;
-            font-size: 15px;
-            padding: 14px;
-        }
-        .btn-primary:active { transform: scale(0.98); }
-        .btn-primary:disabled { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.3); box-shadow: none; cursor: not-allowed; }
-        .btn-secondary {
-            background: rgba(255,255,255,0.06);
-            border: 1px solid var(--border);
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 13px;
-            padding: 10px;
-        }
-        .btn-api {
-            background: linear-gradient(135deg, #1a3a5c, #2196f3);
-            font-weight: 700;
-            border: none;
-            cursor: pointer;
-            font-size: 13px;
-            padding: 11px;
-            border-radius: 12px;
-            color: white;
-            width: 100%;
-            margin-top: 8px;
-            letter-spacing: 0.3px;
-            box-shadow: 0 4px 16px rgba(33,150,243,0.25);
-        }
-        .btn-api:disabled { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.3); cursor: not-allowed; box-shadow: none; }
-        .btn-api:active { transform: scale(0.98); }
-        .api-status {
-            border-radius: 10px;
-            padding: 8px 12px;
-            margin-top: 8px;
-            font-size: 0.68rem;
-            font-weight: 700;
-            text-align: center;
-            letter-spacing: 0.5px;
-        }
-        .api-status.loaded { background: rgba(33,150,243,0.15); border: 1px solid rgba(33,150,243,0.4); color: var(--blue); }
-        .api-status.error { background: rgba(255,77,90,0.1); border: 1px solid rgba(255,77,90,0.3); color: var(--accent); }
-        .api-status.loading { background: rgba(255,193,7,0.1); border: 1px solid rgba(255,193,7,0.3); color: var(--yellow); }
-        .market {
-            background: rgba(255,255,255,0.02);
-            border-radius: 12px;
-            padding: 14px;
-            margin: 8px 0;
-            border: 1px solid var(--border);
-        }
-        .market-header {
-            font-weight: 700;
-            font-size: 0.68rem;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            color: var(--accent);
-            margin-bottom: 10px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-        .prob-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin: 7px 0;
-            gap: 8px;
-        }
-        .prob-label { min-width: 100px; font-size: 0.78rem; font-weight: 500; }
-        .bar-wrap { flex: 1; height: 7px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
-        .bar-fill { height: 100%; border-radius: 4px; width: 0%; transition: width 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); }
-        .prob-value { min-width: 45px; text-align: right; font-weight: 700; font-size: 0.85rem; }
-        .green { color: var(--green); }
-        .yellow { color: var(--yellow); }
-        .red { color: var(--accent); }
-        .blue { color: var(--blue); }
-        .hidden { display: none; }
-        .value-badge { display: inline-block; font-size: 0.6rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(46,204,113,0.2); color: var(--green); letter-spacing: 1px; text-transform: uppercase; }
-        .no-value-badge { display: inline-block; font-size: 0.6rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(255,77,90,0.15); color: var(--accent); letter-spacing: 1px; }
-        .info-badge { display: inline-block; font-size: 0.6rem; font-weight: 700; padding: 3px 10px; border-radius: 20px; background: rgba(255,255,255,0.05); color: var(--muted); letter-spacing: 1px; }
-        .bankroll-display { background: rgba(46,204,113,0.1); border: 1px solid rgba(46,204,113,0.3); border-radius: 12px; padding: 12px; text-align: center; margin-bottom: 16px; }
-        .bankroll-amount { font-size: 1.8rem; font-weight: 800; color: var(--green); }
-        .stake-suggestion { background: rgba(77,171,247,0.1); border: 1px solid rgba(77,171,247,0.3); border-radius: 12px; padding: 12px; margin-top: 12px; text-align: center; }
-        .bet-log { max-height: 300px; overflow-y: auto; margin-top: 10px; }
-        .log-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; border-bottom: 1px solid var(--border); font-size: 0.72rem; position: relative; }
-        .log-win { border-left: 3px solid var(--green); }
-        .log-loss { border-left: 3px solid var(--accent); }
-        .log-pending { border-left: 3px solid var(--yellow); }
-        .delete-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 1rem; padding: 0 0 0 8px; margin-left: auto; transition: color 0.2s; }
-        .delete-btn:hover { color: var(--accent); }
-        .powered-by { text-align: center; font-size: 0.55rem; color: var(--muted); margin-top: 10px; opacity: 0.5; }
-        .tabs { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
-        .tab { flex: 1; padding: 10px; text-align: center; background: rgba(255,255,255,0.03); border: 1px solid var(--border); border-radius: 10px; cursor: pointer; font-size: 0.7rem; font-weight: 700; letter-spacing: 1px; color: var(--muted); transition: all 0.2s; min-width: 60px; }
-        .tab.active { background: rgba(255,77,90,0.15); border-color: var(--accent); color: white; }
-        .warning-box { background: rgba(255,77,90,0.1); border: 1px solid rgba(255,77,90,0.3); border-radius: 10px; padding: 12px; margin: 10px 0; font-size: 0.7rem; color: var(--accent); text-align: center; }
-        .info-box { background: rgba(77,171,247,0.08); border: 1px solid rgba(77,171,247,0.25); border-radius: 10px; padding: 10px 12px; margin: 8px 0; font-size: 0.68rem; color: var(--blue); }
-        .profit { color: var(--green); }
-        .loss { color: var(--accent); }
-        .ev-row { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
-        .ev-label { font-size: 0.65rem; color: var(--muted); text-transform: uppercase; font-weight: 700; letter-spacing: 0.5px; }
-        .ev-value { font-weight: 700; font-size: 0.9rem; }
-        .toast-notification { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); padding: 12px 24px; border-radius: 12px; font-weight: 700; z-index: 999; box-shadow: 0 4px 20px rgba(0,0,0,0.5); animation: fadeInOut 2.5s ease; }
-        .toast-success { background: var(--green); color: white; }
-        .toast-error { background: var(--accent); color: white; }
-        .toast-info { background: var(--blue); color: #0a0e17; }
-        @keyframes fadeInOut {
-            0% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-            15% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            85% { opacity: 1; transform: translateX(-50%) translateY(0); }
-            100% { opacity: 0; transform: translateX(-50%) translateY(-10px); }
-        }
-        .stats-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 12px; }
-        .stat-box { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 10px; text-align: center; }
-        .stat-value { font-size: 1.2rem; font-weight: 800; color: var(--text); }
-        .stat-label { font-size: 0.55rem; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-top: 4px; }
-        .chart-container { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 10px; padding: 10px; margin-top: 10px; }
-        .config-row { display: flex; justify-content: space-between; align-items: center; margin: 8px 0; font-size: 0.8rem; }
-        .config-row input { width: 130px; margin: 0; }
-        .small-note { font-size: 0.6rem; color: var(--muted); margin-top: 4px; font-style: italic; }
-        .disclaimer { font-size: 0.6rem; color: var(--muted); text-align: center; margin-top: 8px; opacity: 0.7; }
-        .file-input { padding: 8px; font-size: 0.75rem; }
-        .model-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 0.58rem; font-weight: 700; padding: 3px 8px; border-radius: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
-        .model-api { background: rgba(33,150,243,0.2); color: var(--blue); border: 1px solid rgba(33,150,243,0.3); }
-        .model-static { background: rgba(255,193,7,0.15); color: var(--yellow); border: 1px solid rgba(255,193,7,0.3); }
-        .odds-group { background: rgba(255,255,255,0.02); border: 1px solid var(--border); border-radius: 12px; padding: 12px; margin: 8px 0; }
-        .odds-group-title { font-size: 0.6rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1.5px; color: var(--muted); margin-bottom: 8px; }
-        .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 6px; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .model-info { font-size: 0.65rem; color: var(--muted); background: rgba(255,255,255,0.03); border-radius: 8px; padding: 8px 10px; margin-top: 10px; line-height: 1.6; }
-        .model-info strong { color: var(--text); }
-        .version-badge { display: inline-block; font-size: 0.55rem; font-weight: 700; padding: 2px 8px; border-radius: 20px; background: rgba(46,204,113,0.15); color: var(--green); border: 1px solid rgba(46,204,113,0.3); margin-left: 6px; letter-spacing: 0.5px; }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Bet Analytics PRO</title>
+<style>
+:root{--bg:#0a0e17;--card:#131925;--accent:#ff4d5a;--accent2:#ff6b7a;--green:#2ecc71;--yellow:#f1c40f;--blue:#4dabf7;--text:#f0f2f8;--muted:#8899aa;--border:rgba(255,255,255,0.08)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:12px;min-height:100vh;background-image:radial-gradient(ellipse at top,rgba(255,77,90,.06) 0%,transparent 50%),radial-gradient(ellipse at bottom,rgba(46,204,113,.04) 0%,transparent 50%)}
+.container{max-width:550px;margin:0 auto}
+.card{background:var(--card);border-radius:18px;padding:20px;margin-bottom:16px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.3)}
+h2{text-align:center;margin-bottom:4px;font-size:1.5rem;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#fff,#ff8a95);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.subtitle{text-align:center;font-size:.6rem;color:var(--muted);margin-bottom:16px;letter-spacing:1px;text-transform:uppercase}
+h3{font-size:1rem;font-weight:700;margin-bottom:12px}
+label{display:block;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:10px 0 4px}
+select,input,button{width:100%;padding:12px 14px;margin:4px 0;border-radius:12px;background:rgba(255,255,255,.04);color:white;border:1px solid var(--border);font-size:14px;font-family:inherit;-webkit-appearance:none;appearance:none;transition:all .2s}
+select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238899aa' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
+input[type="number"]{-webkit-appearance:textfield;appearance:textfield}
+select:focus,input:focus,button:focus{outline:none;border-color:var(--accent)}
+.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));font-weight:700;border:none;cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 20px rgba(255,77,90,.25);margin-top:8px;font-size:15px;padding:14px}
+.btn-primary:active{transform:scale(.98)}
+.btn-primary:disabled{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3);box-shadow:none;cursor:not-allowed}
+.btn-secondary{background:rgba(255,255,255,.06);border:1px solid var(--border);cursor:pointer;font-weight:600;font-size:13px;padding:10px}
+.btn-api{background:linear-gradient(135deg,#1a3a5c,#2196f3);font-weight:700;border:none;cursor:pointer;font-size:13px;padding:11px;border-radius:12px;color:white;width:100%;margin-top:8px;letter-spacing:.3px;box-shadow:0 4px 16px rgba(33,150,243,.25)}
+.btn-api:disabled{background:rgba(255,255,255,.05);color:rgba(255,255,255,.3);cursor:not-allowed;box-shadow:none}
+.btn-api:active{transform:scale(.98)}
+.api-status{border-radius:10px;padding:8px 12px;margin-top:8px;font-size:.68rem;font-weight:700;text-align:center;letter-spacing:.5px}
+.api-status.loaded{background:rgba(33,150,243,.15);border:1px solid rgba(33,150,243,.4);color:var(--blue)}
+.api-status.error{background:rgba(255,77,90,.1);border:1px solid rgba(255,77,90,.3);color:var(--accent)}
+.api-status.loading{background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3);color:var(--yellow)}
+.market{background:rgba(255,255,255,.02);border-radius:12px;padding:14px;margin:8px 0;border:1px solid var(--border)}
+.market-header{font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.prob-row{display:flex;justify-content:space-between;align-items:center;margin:7px 0;gap:8px}
+.prob-label{min-width:100px;font-size:.78rem;font-weight:500}
+.bar-wrap{flex:1;height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden}
+.bar-fill{height:100%;border-radius:4px;width:0%;transition:width 1.2s cubic-bezier(.25,.46,.45,.94)}
+.prob-value{min-width:45px;text-align:right;font-weight:700;font-size:.85rem}
+.green{color:var(--green)}.yellow{color:var(--yellow)}.red{color:var(--accent)}.blue{color:var(--blue)}
+.hidden{display:none}
+.value-badge{display:inline-block;font-size:.6rem;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(46,204,113,.2);color:var(--green);letter-spacing:1px;text-transform:uppercase}
+.no-value-badge{display:inline-block;font-size:.6rem;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,77,90,.15);color:var(--accent);letter-spacing:1px}
+.info-badge{display:inline-block;font-size:.6rem;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.05);color:var(--muted);letter-spacing:1px}
+.bankroll-display{background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.3);border-radius:12px;padding:12px;text-align:center;margin-bottom:16px}
+.bankroll-amount{font-size:1.8rem;font-weight:800;color:var(--green)}
+.stake-suggestion{background:rgba(77,171,247,.1);border:1px solid rgba(77,171,247,.3);border-radius:12px;padding:12px;margin-top:12px;text-align:center}
+.bet-log{max-height:300px;overflow-y:auto;margin-top:10px}
+.log-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);font-size:.72rem}
+.log-win{border-left:3px solid var(--green)}.log-loss{border-left:3px solid var(--accent)}.log-pending{border-left:3px solid var(--yellow)}
+.delete-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0 0 0 8px;margin-left:auto}
+.delete-btn:hover{color:var(--accent)}
+.powered-by{text-align:center;font-size:.55rem;color:var(--muted);margin-top:10px;opacity:.5}
+.tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
+.tab{flex:1;padding:10px;text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:.7rem;font-weight:700;letter-spacing:1px;color:var(--muted);transition:all .2s;min-width:60px}
+.tab.active{background:rgba(255,77,90,.15);border-color:var(--accent);color:white}
+.warning-box{background:rgba(255,77,90,.1);border:1px solid rgba(255,77,90,.3);border-radius:10px;padding:12px;margin:10px 0;font-size:.7rem;color:var(--accent);text-align:center}
+.info-box{background:rgba(77,171,247,.08);border:1px solid rgba(77,171,247,.25);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:.68rem;color:var(--blue)}
+.profit{color:var(--green)}.loss{color:var(--accent)}
+.ev-row{display:flex;align-items:center;gap:6px;margin-top:4px}
+.ev-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px}
+.ev-value{font-weight:700;font-size:.9rem}
+.toast-notification{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;font-weight:700;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:fadeInOut 2.5s ease}
+.toast-success{background:var(--green);color:white}.toast-error{background:var(--accent);color:white}.toast-info{background:var(--blue);color:#0a0e17}
+@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}85%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
+.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
+.stat-box{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
+.stat-value{font-size:1.2rem;font-weight:800;color:var(--text)}
+.stat-label{font-size:.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
+.chart-container{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px}
+.config-row{display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:.8rem}
+.config-row input{width:130px;margin:0}
+.small-note{font-size:.6rem;color:var(--muted);margin-top:4px;font-style:italic}
+.file-input{padding:8px;font-size:.75rem}
+.model-badge{display:inline-flex;align-items:center;gap:4px;font-size:.58rem;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
+.model-api{background:rgba(33,150,243,.2);color:var(--blue);border:1px solid rgba(33,150,243,.3)}
+.model-static{background:rgba(255,193,7,.15);color:var(--yellow);border:1px solid rgba(255,193,7,.3)}
+.odds-group{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:12px;padding:12px;margin:8px 0}
+.odds-group-title{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.model-info{font-size:.65rem;color:var(--muted);background:rgba(255,255,255,.03);border-radius:8px;padding:8px 10px;margin-top:10px;line-height:1.6}
+.model-info strong{color:var(--text)}
+.version-tag{font-size:.55rem;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(46,204,113,.15);color:var(--green);border:1px solid rgba(46,204,113,.3);margin-left:6px;vertical-align:middle}
+</style>
 </head>
 <body>
 <div class="container">
-    <div id="main-screen">
-        <div class="card">
-            <h2>⚽ BET ANALYTICS PRO <span class="version-badge">v3.1</span></h2>
-            <div class="subtitle">SISTEMA DE VALUE BETTING · POISSON + DIXON-COLES · API v2</div>
+<div id="main-screen">
+<div class="card">
+<h2>&#9917; BET ANALYTICS PRO <span class="version-tag">v3.1</span></h2>
+<div class="subtitle">POISSON + DIXON-COLES &middot; BZZOIRO API v2 &middot; KELLY CRITERION</div>
 
-            <div class="bankroll-display">
-                <div style="font-size:0.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">💰 Bankroll Actual</div>
-                <div class="bankroll-amount" id="bankroll-display">$20,000.00</div>
-                <div style="font-size:0.6rem;color:var(--muted);" id="pnl-display">P&amp;L: $0.00 (0.0%)</div>
-            </div>
-
-            <div class="tabs">
-                <div class="tab active" onclick="switchTab('analyzer')">🔍 ANALIZAR</div>
-                <div class="tab" onclick="switchTab('history')">📊 HISTORIAL</div>
-                <div class="tab" onclick="switchTab('stats')">📈 STATS</div>
-                <div class="tab" onclick="switchTab('config')">⚙️ CONFIG</div>
-            </div>
-
-            <!-- ===== TAB ANALYZER ===== -->
-            <div id="tab-analyzer">
-                <label>🏆 Liga</label>
-                <select id="league">
-                    <option value="">-- Selecciona liga --</option>
-                    <option value="EPL">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League</option>
-                    <option value="La_liga">🇪🇸 La Liga</option>
-                    <option value="Serie_A">🇮🇹 Serie A</option>
-                    <option value="Bundesliga">🇩🇪 Bundesliga</option>
-                    <option value="Ligue_1">🇫🇷 Ligue 1</option>
-                    <option value="Eredivisie">🇳🇱 Eredivisie</option>
-                    <option value="Libertadores">🏆 Copa Libertadores</option>
-                    <option value="Sudamericana">🏆 Copa Sudamericana</option>
-                    <option value="Mundial_2026">🌍 Mundial 2026</option>
-                    <option value="Championship">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship</option>
-                    <option value="MLS">🇺🇸 MLS</option>
-                    <option value="Brasileirao">🇧🇷 Brasileirão Série A</option>
-                </select>
-
-                <label>🏠 Local</label>
-                <select id="home" disabled><option value="">-- Selecciona liga primero --</option></select>
-
-                <label>✈️ Visitante</label>
-                <select id="away" disabled><option value="">-- Selecciona liga primero --</option></select>
-
-                <div class="odds-group">
-                    <div class="odds-group-title">📊 Cuotas 1X2</div>
-                    <label>💵 Gana Local</label>
-                    <input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01" max="50">
-                    <label>💵 Empate</label>
-                    <input type="number" id="odds-draw" placeholder="Ej: 3.20" step="0.01" min="1.01" max="50">
-                    <label>💵 Gana Visitante</label>
-                    <input type="number" id="odds-away" placeholder="Ej: 3.60" step="0.01" min="1.01" max="50">
-                </div>
-                <div class="odds-group">
-                    <div class="odds-group-title">⚽ Cuotas Goles</div>
-                    <label>💵 Over 0.5 Goles 1T (Half Time)</label>
-                    <input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01" max="50">
-                    <label>💵 Over 1.5 Goles Totales</label>
-                    <input type="number" id="odds-over15" placeholder="Ej: 1.25" step="0.01" min="1.01" max="50">
-                    <label>💵 Over 2.5 Goles Totales</label>
-                    <input type="number" id="odds-over25" placeholder="Ej: 1.85" step="0.01" min="1.01" max="50">
-                    <label>💵 BTTS – Ambos Marcan (Sí)</label>
-                    <input type="number" id="odds-btts" placeholder="Ej: 1.75" step="0.01" min="1.01" max="50">
-                </div>
-                <div class="odds-group">
-                    <div class="odds-group-title">🚩 Cuotas Córners</div>
-                    <label>💵 Over 7.5 Córners</label>
-                    <input type="number" id="odds-corners75" placeholder="Ej: 1.90" step="0.01" min="1.01" max="50">
-                    <label>💵 Over 8.5 Córners</label>
-                    <input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01" max="50">
-                </div>
-
-                <button class="btn-api" id="api-btn" disabled onclick="loadAPIData()">🌐 CARGAR DATOS REALES (BZZOIRO v2)</button>
-                <div id="api-status-box" class="hidden"></div>
-                <button class="btn-primary" id="analyze-btn" disabled>🎯 ANALIZAR Y BUSCAR VALOR</button>
-                <div class="warning-box hidden" id="no-value-warning">⚠️ Ningún mercado muestra valor positivo. NO apuestes en este partido.</div>
-                <div class="info-box" style="margin-top:10px;">💡 <strong>Para máxima precisión:</strong> configura tu API Key (pestaña CONFIG) y usa "Cargar Datos Reales" para obtener estadísticas actualizadas de la temporada antes de analizar.</div>
-            </div>
-
-            <div id="tab-history" class="hidden">
-                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-                    <h3 style="margin:0;">📊 Historial de Apuestas</h3>
-                    <div style="display:flex;gap:6px;">
-                        <button class="btn-secondary" onclick="exportHistory()" style="width:auto;padding:8px 14px;">📥 CSV</button>
-                        <button class="btn-secondary" onclick="exportJSON()" style="width:auto;padding:8px 14px;">💾 JSON</button>
-                    </div>
-                </div>
-                <div class="bet-log" id="bet-log"><p style="color:var(--muted);text-align:center;padding:20px;">No hay apuestas registradas aún.</p></div>
-                <div style="margin-top:10px;"><label>📂 Importar respaldo JSON</label><input type="file" id="import-file" class="file-input" accept=".json" onchange="importJSON(this)"></div>
-            </div>
-
-            <div id="tab-stats" class="hidden">
-                <h3>📈 Estadísticas</h3>
-                <div class="stats-grid">
-                    <div class="stat-box"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Apuestas</div></div>
-                    <div class="stat-box"><div class="stat-value" id="stat-winrate">0%</div><div class="stat-label">Win Rate</div></div>
-                    <div class="stat-box"><div class="stat-value" id="stat-yield">0%</div><div class="stat-label">Yield</div></div>
-                    <div class="stat-box"><div class="stat-value" id="stat-roi">0%</div><div class="stat-label">ROI</div></div>
-                    <div class="stat-box"><div class="stat-value" id="stat-profit">$0</div><div class="stat-label">Profit Neto</div></div>
-                    <div class="stat-box"><div class="stat-value" id="stat-streak">-</div><div class="stat-label">Racha Actual</div></div>
-                </div>
-                <div class="chart-container"><div style="font-size:0.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px;">Evolución Bankroll</div><svg id="bankroll-chart" width="100%" height="120" style="overflow:visible;"></svg></div>
-            </div>
-
-            <div id="tab-config" class="hidden">
-                <h3>⚙️ Configuración</h3>
-                <div class="config-row"><span>Bankroll Inicial ($)</span><input type="number" id="cfg-initial" step="100" min="0"></div>
-                <div class="config-row"><span>Fracción Kelly</span><input type="number" id="cfg-kelly" step="0.05" min="0.05" max="1"></div>
-                <div class="config-row"><span>Stake Máximo (%)</span><input type="number" id="cfg-maxstake" step="0.01" min="0.01" max="1"></div>
-                <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
-                    <h3 style="color:var(--blue);margin-bottom:8px;">🌐 API Bzzoiro v2 (sports.bzzoiro.com)</h3>
-                    <label>URL Base de la API</label>
-                    <input type="text" id="cfg-apibase" placeholder="https://sports.bzzoiro.com">
-                    <label>API KEY (Token)</label>
-                    <input type="text" id="cfg-apikey" placeholder="Tu token de Bzzoiro" autocomplete="off" spellcheck="false">
-                    <div class="small-note">Obtén tu token gratis en <strong>sports.bzzoiro.com/register/</strong>. Autenticación: <code style="background:rgba(255,255,255,0.08);padding:1px 5px;border-radius:4px;">Authorization: Token TU_TOKEN</code></div>
-                    <div id="api-test-result" style="margin-top:8px;"></div>
-                    <div style="display:flex;gap:8px;margin-top:6px;">
-                        <button class="btn-secondary" onclick="testAPIKey()" style="font-size:0.72rem;padding:8px;flex:1;">🔑 Verificar Token</button>
-                        <button class="btn-secondary" onclick="debugAPI()" style="font-size:0.72rem;padding:8px;flex:1;">🔍 Depurar API</button>
-                    </div>
-                    <div id="api-debug-output" style="margin-top:8px;display:none;">
-                        <label>Respuesta cruda (debug)</label>
-                        <textarea id="debug-textarea" rows="8" readonly style="font-size:0.62rem;background:rgba(0,0,0,0.4);resize:vertical;font-family:monospace;"></textarea>
-                    </div>
-                </div>
-                <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px;">
-                    <h3 style="margin-bottom:6px;">🧠 Info del Modelo</h3>
-                    <div class="model-info">
-                        <strong>Modelo:</strong> Poisson Bivariado + Corrección Dixon-Coles (ρ = -0.13)<br>
-                        <strong>API:</strong> Bzzoiro Sports Data v2 — Header: <code style="background:rgba(255,255,255,0.08);padding:1px 4px;border-radius:3px;">Authorization: Token KEY</code><br>
-                        <strong>Mercados confiables:</strong> Over 1.5, Over 2.5, BTTS, Victoria Local<br>
-                        <strong>Mercados secundarios:</strong> Over 0.5 1T, Córners (mayor varianza)<br>
-                        <strong>EV mínimo recomendado:</strong> +5%<br>
-                        <strong>Muestra mínima:</strong> 100 apuestas<br>
-                        <strong>ROI realista:</strong> 3–7%
-                    </div>
-                </div>
-                <button class="btn-primary" onclick="saveConfig()" style="margin-top:14px;">💾 Guardar Config</button>
-                <button class="btn-secondary" onclick="resetData()" style="margin-top:8px;background:rgba(255,77,90,0.1);color:var(--accent);border-color:rgba(255,77,90,0.3);">🗑️ Resetear Todo</button>
-                <p class="small-note">El stake nunca superará el % máximo del bankroll actual.</p>
-            </div>
-        </div>
-    </div>
-
-    <div id="result-screen" class="hidden">
-        <div class="card" id="result-card"></div>
-    </div>
-    <div class="powered-by">POISSON + DIXON-COLES · BZZOIRO API v2 · KELLY CRITERION · SOLO USO INFORMATIVO</div>
+<div class="bankroll-display">
+  <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">&#128176; Bankroll Actual</div>
+  <div class="bankroll-amount" id="bankroll-display">$20,000.00</div>
+  <div style="font-size:.6rem;color:var(--muted)" id="pnl-display">P&amp;L: $0.00 (0.0%)</div>
 </div>
 
+<div class="tabs">
+  <div class="tab active" id="tab-btn-analyzer" onclick="switchTab('analyzer')">&#128269; ANALIZAR</div>
+  <div class="tab" id="tab-btn-history" onclick="switchTab('history')">&#128202; HISTORIAL</div>
+  <div class="tab" id="tab-btn-stats" onclick="switchTab('stats')">&#128200; STATS</div>
+  <div class="tab" id="tab-btn-config" onclick="switchTab('config')">&#9881; CONFIG</div>
+</div>
+
+<!-- TAB ANALIZAR -->
+<div id="tab-analyzer">
+  <label>&#127942; Liga</label>
+  <select id="league">
+    <option value="">-- Selecciona liga --</option>
+    <option value="EPL">Premier League</option>
+    <option value="La_liga">La Liga</option>
+    <option value="Serie_A">Serie A</option>
+    <option value="Bundesliga">Bundesliga</option>
+    <option value="Ligue_1">Ligue 1</option>
+    <option value="Eredivisie">Eredivisie</option>
+    <option value="Libertadores">Copa Libertadores</option>
+    <option value="Sudamericana">Copa Sudamericana</option>
+    <option value="Mundial_2026">Mundial 2026</option>
+    <option value="Championship">Championship</option>
+    <option value="MLS">MLS</option>
+    <option value="Brasileirao">Brasileirao Serie A</option>
+  </select>
+  <label>&#127968; Local</label>
+  <select id="home" disabled><option value="">-- Selecciona liga primero --</option></select>
+  <label>&#9992; Visitante</label>
+  <select id="away" disabled><option value="">-- Selecciona liga primero --</option></select>
+
+  <div class="odds-group">
+    <div class="odds-group-title">&#128202; Cuotas 1X2</div>
+    <label>Gana Local</label><input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01" max="50">
+    <label>Empate</label><input type="number" id="odds-draw" placeholder="Ej: 3.20" step="0.01" min="1.01" max="50">
+    <label>Gana Visitante</label><input type="number" id="odds-away" placeholder="Ej: 3.60" step="0.01" min="1.01" max="50">
+  </div>
+  <div class="odds-group">
+    <div class="odds-group-title">&#9917; Cuotas Goles</div>
+    <label>Over 0.5 Goles 1T</label><input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01" max="50">
+    <label>Over 1.5 Goles</label><input type="number" id="odds-over15" placeholder="Ej: 1.25" step="0.01" min="1.01" max="50">
+    <label>Over 2.5 Goles</label><input type="number" id="odds-over25" placeholder="Ej: 1.85" step="0.01" min="1.01" max="50">
+    <label>BTTS - Ambos Marcan (Si)</label><input type="number" id="odds-btts" placeholder="Ej: 1.75" step="0.01" min="1.01" max="50">
+  </div>
+  <div class="odds-group">
+    <div class="odds-group-title">&#128681; Cuotas Corners</div>
+    <label>Over 7.5 Corners</label><input type="number" id="odds-corners75" placeholder="Ej: 1.90" step="0.01" min="1.01" max="50">
+    <label>Over 8.5 Corners</label><input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01" max="50">
+  </div>
+
+  <button class="btn-api" id="api-btn" disabled onclick="loadAPIData()">&#127760; CARGAR DATOS REALES (BZZOIRO v2)</button>
+  <div id="api-status-box" class="hidden"></div>
+  <button class="btn-primary" id="analyze-btn" disabled onclick="runAnalysis()">&#127919; ANALIZAR Y BUSCAR VALOR</button>
+  <div class="info-box" style="margin-top:10px;">&#128161; <strong>Para maxima precision:</strong> configura tu Token en CONFIG y usa "Cargar Datos Reales" antes de analizar.</div>
+</div>
+
+<!-- TAB HISTORIAL -->
+<div id="tab-history" class="hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+    <h3 style="margin:0">&#128202; Historial de Apuestas</h3>
+    <div style="display:flex;gap:6px">
+      <button class="btn-secondary" onclick="exportHistory()" style="width:auto;padding:8px 14px">CSV</button>
+      <button class="btn-secondary" onclick="exportJSON()" style="width:auto;padding:8px 14px">JSON</button>
+    </div>
+  </div>
+  <div class="bet-log" id="bet-log"><p style="color:var(--muted);text-align:center;padding:20px">No hay apuestas registradas.</p></div>
+  <div style="margin-top:10px"><label>Importar respaldo JSON</label><input type="file" id="import-file" class="file-input" accept=".json" onchange="importJSON(this)"></div>
+</div>
+
+<!-- TAB STATS -->
+<div id="tab-stats" class="hidden">
+  <h3>&#128200; Estadisticas</h3>
+  <div class="stats-grid">
+    <div class="stat-box"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Apuestas</div></div>
+    <div class="stat-box"><div class="stat-value" id="stat-winrate">0%</div><div class="stat-label">Win Rate</div></div>
+    <div class="stat-box"><div class="stat-value" id="stat-yield">0%</div><div class="stat-label">Yield</div></div>
+    <div class="stat-box"><div class="stat-value" id="stat-roi">0%</div><div class="stat-label">ROI</div></div>
+    <div class="stat-box"><div class="stat-value" id="stat-profit">$0</div><div class="stat-label">Profit Neto</div></div>
+    <div class="stat-box"><div class="stat-value" id="stat-streak">-</div><div class="stat-label">Racha</div></div>
+  </div>
+  <div class="chart-container">
+    <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Evolucion Bankroll</div>
+    <svg id="bankroll-chart" width="100%" height="120" style="overflow:visible"></svg>
+  </div>
+</div>
+
+<!-- TAB CONFIG -->
+<div id="tab-config" class="hidden">
+  <h3>&#9881; Configuracion</h3>
+  <div class="config-row"><span>Bankroll Inicial ($)</span><input type="number" id="cfg-initial" step="100" min="0"></div>
+  <div class="config-row"><span>Fraccion Kelly</span><input type="number" id="cfg-kelly" step="0.05" min="0.05" max="1"></div>
+  <div class="config-row"><span>Stake Maximo (%)</span><input type="number" id="cfg-maxstake" step="0.01" min="0.01" max="1"></div>
+  <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+    <h3 style="color:var(--blue);margin-bottom:8px">&#127760; API Bzzoiro v2</h3>
+    <label>URL Base</label>
+    <input type="text" id="cfg-apibase" placeholder="https://sports.bzzoiro.com">
+    <label>Token / API Key</label>
+    <input type="text" id="cfg-apikey" placeholder="Tu token de Bzzoiro" autocomplete="off">
+    <div class="small-note">Token gratis en sports.bzzoiro.com/register/ &mdash; Header: Authorization: Token TU_TOKEN</div>
+    <div id="api-test-result" style="margin-top:8px"></div>
+    <div style="display:flex;gap:8px;margin-top:6px">
+      <button class="btn-secondary" onclick="testAPIKey()" style="font-size:.72rem;padding:8px;flex:1">&#128273; Verificar Token</button>
+      <button class="btn-secondary" onclick="debugAPI()" style="font-size:.72rem;padding:8px;flex:1">&#128269; Depurar API</button>
+    </div>
+    <div id="api-debug-output" style="display:none;margin-top:8px">
+      <label>Respuesta debug</label>
+      <textarea id="debug-textarea" rows="8" readonly style="font-size:.62rem;background:rgba(0,0,0,.4);resize:vertical;font-family:monospace"></textarea>
+    </div>
+  </div>
+  <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
+    <h3 style="margin-bottom:6px">&#129504; Modelo</h3>
+    <div class="model-info">
+      <strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles (rho=-0.13)<br>
+      <strong>API:</strong> Bzzoiro v2 &mdash; Authorization: Token KEY<br>
+      <strong>Mercados fiables:</strong> Over 1.5, Over 2.5, BTTS, Victoria Local<br>
+      <strong>EV minimo recomendado:</strong> +5% &mdash; <strong>ROI realista:</strong> 3-7%
+    </div>
+  </div>
+  <button class="btn-primary" onclick="saveConfig()" style="margin-top:14px">&#128190; Guardar Config</button>
+  <button class="btn-secondary" onclick="resetData()" style="margin-top:8px;background:rgba(255,77,90,.1);color:var(--accent);border-color:rgba(255,77,90,.3)">&#128465; Resetear Todo</button>
+  <p class="small-note">El stake nunca supera el % maximo del bankroll.</p>
+</div>
+
+</div><!-- /card -->
+</div><!-- /main-screen -->
+
+<div id="result-screen" class="hidden">
+  <div class="card" id="result-card"></div>
+</div>
+<div class="powered-by">POISSON + DIXON-COLES &middot; BZZOIRO API v2 &middot; KELLY &middot; SOLO USO INFORMATIVO</div>
+</div><!-- /container -->
+
 <script>
-// ============================================================
-// CONFIGURACIÓN GLOBAL
-// ============================================================
-const DEFAULT_CONFIG = { initialBankroll:20000, kellyFraction:0.25, maxStakePct:0.05, apiKey:'', apiBaseUrl:'https://sports.bzzoiro.com' };
-let config = JSON.parse(localStorage.getItem('betConfig')) || {...DEFAULT_CONFIG};
+// ==================== CONFIG ====================
+const DEFAULT_CONFIG = {initialBankroll:20000,kellyFraction:0.25,maxStakePct:0.05,apiKey:'',apiBaseUrl:'https://sports.bzzoiro.com'};
+let config = JSON.parse(localStorage.getItem('betConfig') || 'null') || Object.assign({},DEFAULT_CONFIG);
 let bankroll = parseFloat(localStorage.getItem('bankroll')) || config.initialBankroll;
-let betHistory = JSON.parse(localStorage.getItem('betHistory')) || [];
-let teamIdCache = JSON.parse(localStorage.getItem('teamIdCache')) || {};
-let seasonIdCache = JSON.parse(localStorage.getItem('seasonIdCache')) || {};
+let betHistory = JSON.parse(localStorage.getItem('betHistory') || '[]');
+let teamIdCache = JSON.parse(localStorage.getItem('teamIdCache') || '{}');
+let seasonIdCache = JSON.parse(localStorage.getItem('seasonIdCache') || '{}');
 let currentAPIData = null;
 
 function saveAll(){
-    localStorage.setItem('bankroll', bankroll.toString());
-    localStorage.setItem('betHistory', JSON.stringify(betHistory));
-    localStorage.setItem('betConfig', JSON.stringify(config));
-    localStorage.setItem('teamIdCache', JSON.stringify(teamIdCache));
-    localStorage.setItem('seasonIdCache', JSON.stringify(seasonIdCache));
+  localStorage.setItem('bankroll', String(bankroll));
+  localStorage.setItem('betHistory', JSON.stringify(betHistory));
+  localStorage.setItem('betConfig', JSON.stringify(config));
+  localStorage.setItem('teamIdCache', JSON.stringify(teamIdCache));
+  localStorage.setItem('seasonIdCache', JSON.stringify(seasonIdCache));
 }
 
-// ============================================================
-// DATOS DE EQUIPOS
-// ============================================================
+// ==================== EQUIPOS ====================
 const TEAMS_DB = {
-    "EPL":["Arsenal","Aston Villa","Bournemouth","Brentford","Brighton","Chelsea","Crystal Palace","Everton","Fulham","Ipswich Town","Leicester City","Liverpool","Manchester City","Manchester United","Newcastle United","Nottingham Forest","Southampton","Tottenham","West Ham United","Wolves"],
-    "La_liga":["Alaves","Athletic Club","Atletico Madrid","Barcelona","Celta Vigo","Espanyol","Getafe","Girona","Las Palmas","Leganes","Mallorca","Osasuna","Rayo Vallecano","Real Betis","Real Madrid","Real Sociedad","Sevilla","Valencia","Valladolid","Villarreal"],
-    "Serie_A":["AC Milan","Atalanta","Bologna","Cagliari","Como","Empoli","Fiorentina","Genoa","Hellas Verona","Inter Milan","Juventus","Lazio","Lecce","Monza","Napoli","Parma","Roma","Torino","Udinese","Venezia"],
-    "Bundesliga":["Augsburg","Bayer Leverkusen","Bayern Munich","Bochum","Borussia Dortmund","Borussia Monchengladbach","Eintracht Frankfurt","Freiburg","Heidenheim","Hoffenheim","Holstein Kiel","Mainz 05","RB Leipzig","St. Pauli","Stuttgart","Union Berlin","Werder Bremen","Wolfsburg"],
-    "Ligue_1":["Angers","Auxerre","Brest","Le Havre","Lens","Lille","Lyon","Marseille","Monaco","Montpellier","Nantes","Nice","PSG","Reims","Rennes","Saint-Etienne","Strasbourg","Toulouse"],
-    "Eredivisie":["Ajax","AZ Alkmaar","Feyenoord","PSV Eindhoven","Twente","Utrecht","Sparta Rotterdam","Heerenveen","NEC Nijmegen","Go Ahead Eagles","Fortuna Sittard","PEC Zwolle","Almere City","Heracles Almelo","RKC Waalwijk","Willem II","NAC Breda","Groningen"],
-    "Libertadores":["Flamengo","Palmeiras","River Plate","Boca Juniors","Nacional","Penarol","Olimpia","Barcelona SC","Independiente del Valle","LDU Quito","Estudiantes","Racing","Colo Colo","Cerro Porteno","Atletico Mineiro","Sao Paulo","Gremio","Internacional","Universidad Catolica","Bolivar","The Strongest","Libertad","Alianza Lima","Sporting Cristal","Deportivo Tachira","Caracas FC","Nacional Asuncion"],
-    "Sudamericana":["Athletico Paranaense","Bragantino","Santos","Cruzeiro","Defensa y Justicia","Lanus","Newells Old Boys","Rosario Central","Universitario","Sporting Cristal","Emelec","Deportivo Cali","Junior","Once Caldas","La Equidad","Fortaleza","America de Cali","Macara","Huracan","Velez Sarsfield","Penarol","Nacional","Bolivar","Jorge Wilstermann"],
-    "Mundial_2026":["Alemania","Arabia Saudita","Argentina","Australia","Austria","Belgica","Bolivia","Brasil","Camerun","Canada","Catar","Chile","Colombia","Corea del Sur","Costa de Marfil","Costa Rica","Croacia","Dinamarca","Ecuador","Egipto","Espana","Estados Unidos","Francia","Ghana","Honduras","Inglaterra","Iran","Italia","Jamaica","Japon","Marruecos","Mexico","Nigeria","Nueva Zelanda","Paises Bajos","Panama","Paraguay","Peru","Polonia","Portugal","Senegal","Serbia","Sudafrica","Suecia","Suiza","Tunez","Ucrania","Uruguay","Venezuela"],
-    "Championship":["Blackburn Rovers","Bristol City","Burnley","Cardiff City","Coventry City","Derby County","Hull City","Leeds United","Luton Town","Middlesbrough","Millwall","Norwich City","Oxford United","Plymouth Argyle","Portsmouth","Preston North End","QPR","Sheffield United","Sheffield Wednesday","Stoke City","Sunderland","Swansea City","Watford","West Bromwich Albion"],
-    "MLS":["Atlanta United","Austin FC","CF Montreal","Charlotte FC","Chicago Fire FC","FC Cincinnati","Colorado Rapids","Columbus Crew","D.C. United","FC Dallas","Houston Dynamo FC","Inter Miami CF","LA Galaxy","Los Angeles FC","Minnesota United FC","Nashville SC","New England Revolution","New York City FC","New York Red Bulls","Orlando City SC","Philadelphia Union","Portland Timbers","Real Salt Lake","San Jose Earthquakes","Seattle Sounders FC","Sporting Kansas City","St. Louis City SC","Toronto FC","Vancouver Whitecaps FC"],
-    "Brasileirao":["Athletico Paranaense","Atletico Goianiense","Atletico Mineiro","Bahia","Botafogo","Corinthians","Criciuma","Cruzeiro","Cuiaba","Flamengo","Fluminense","Fortaleza","Gremio","Internacional","Juventude","Mirassol","Palmeiras","RB Bragantino","Sao Paulo","Vasco da Gama","Vitoria"]
+  EPL:['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton','Chelsea','Crystal Palace','Everton','Fulham','Ipswich Town','Leicester City','Liverpool','Manchester City','Manchester United','Newcastle United','Nottingham Forest','Southampton','Tottenham','West Ham United','Wolves'],
+  La_liga:['Alaves','Athletic Club','Atletico Madrid','Barcelona','Celta Vigo','Espanyol','Getafe','Girona','Las Palmas','Leganes','Mallorca','Osasuna','Rayo Vallecano','Real Betis','Real Madrid','Real Sociedad','Sevilla','Valencia','Valladolid','Villarreal'],
+  Serie_A:['AC Milan','Atalanta','Bologna','Cagliari','Como','Empoli','Fiorentina','Genoa','Hellas Verona','Inter Milan','Juventus','Lazio','Lecce','Monza','Napoli','Parma','Roma','Torino','Udinese','Venezia'],
+  Bundesliga:['Augsburg','Bayer Leverkusen','Bayern Munich','Bochum','Borussia Dortmund','Borussia Monchengladbach','Eintracht Frankfurt','Freiburg','Heidenheim','Hoffenheim','Holstein Kiel','Mainz 05','RB Leipzig','St. Pauli','Stuttgart','Union Berlin','Werder Bremen','Wolfsburg'],
+  Ligue_1:['Angers','Auxerre','Brest','Le Havre','Lens','Lille','Lyon','Marseille','Monaco','Montpellier','Nantes','Nice','PSG','Reims','Rennes','Saint-Etienne','Strasbourg','Toulouse'],
+  Eredivisie:['Ajax','AZ Alkmaar','Feyenoord','PSV Eindhoven','Twente','Utrecht','Sparta Rotterdam','Heerenveen','NEC Nijmegen','Go Ahead Eagles','Fortuna Sittard','PEC Zwolle','Almere City','Heracles Almelo','RKC Waalwijk','Willem II','NAC Breda','Groningen'],
+  Libertadores:['Flamengo','Palmeiras','River Plate','Boca Juniors','Nacional','Penarol','Olimpia','Barcelona SC','Independiente del Valle','LDU Quito','Estudiantes','Racing','Colo Colo','Cerro Porteno','Atletico Mineiro','Sao Paulo','Gremio','Internacional','Universidad Catolica','Bolivar','The Strongest','Libertad','Alianza Lima','Sporting Cristal','Deportivo Tachira','Caracas FC','Nacional Asuncion'],
+  Sudamericana:['Athletico Paranaense','Bragantino','Santos','Cruzeiro','Defensa y Justicia','Lanus','Newells Old Boys','Rosario Central','Universitario','Sporting Cristal','Emelec','Deportivo Cali','Junior','Once Caldas','La Equidad','Fortaleza','America de Cali','Macara','Huracan','Velez Sarsfield','Penarol','Nacional','Bolivar','Jorge Wilstermann'],
+  Mundial_2026:['Alemania','Arabia Saudita','Argentina','Australia','Austria','Belgica','Bolivia','Brasil','Camerun','Canada','Catar','Chile','Colombia','Corea del Sur','Costa de Marfil','Costa Rica','Croacia','Dinamarca','Ecuador','Egipto','Espana','Estados Unidos','Francia','Ghana','Honduras','Inglaterra','Iran','Italia','Jamaica','Japon','Marruecos','Mexico','Nigeria','Nueva Zelanda','Paises Bajos','Panama','Paraguay','Peru','Polonia','Portugal','Senegal','Serbia','Sudafrica','Suecia','Suiza','Tunez','Ucrania','Uruguay','Venezuela'],
+  Championship:['Blackburn Rovers','Bristol City','Burnley','Cardiff City','Coventry City','Derby County','Hull City','Leeds United','Luton Town','Middlesbrough','Millwall','Norwich City','Oxford United','Plymouth Argyle','Portsmouth','Preston North End','QPR','Sheffield United','Sheffield Wednesday','Stoke City','Sunderland','Swansea City','Watford','West Bromwich Albion'],
+  MLS:['Atlanta United','Austin FC','CF Montreal','Charlotte FC','Chicago Fire FC','FC Cincinnati','Colorado Rapids','Columbus Crew','DC United','FC Dallas','Houston Dynamo FC','Inter Miami CF','LA Galaxy','Los Angeles FC','Minnesota United FC','Nashville SC','New England Revolution','New York City FC','New York Red Bulls','Orlando City SC','Philadelphia Union','Portland Timbers','Real Salt Lake','San Jose Earthquakes','Seattle Sounders FC','Sporting Kansas City','St. Louis City SC','Toronto FC','Vancouver Whitecaps FC'],
+  Brasileirao:['Athletico Paranaense','Atletico Goianiense','Atletico Mineiro','Bahia','Botafogo','Corinthians','Criciuma','Cruzeiro','Cuiaba','Flamengo','Fluminense','Fortaleza','Gremio','Internacional','Juventude','Mirassol','Palmeiras','RB Bragantino','Sao Paulo','Vasco da Gama','Vitoria']
 };
 
-const LEAGUES_CONFIG = {
-    "EPL":{ name:"Premier League", goals_avg:2.85, corners_avg:10.1, hfa:1.06 },
-    "La_liga":{ name:"La Liga", goals_avg:2.55, corners_avg:9.5, hfa:1.05 },
-    "Serie_A":{ name:"Serie A", goals_avg:2.65, corners_avg:9.0, hfa:1.05 },
-    "Bundesliga":{ name:"Bundesliga", goals_avg:3.00, corners_avg:9.8, hfa:1.06 },
-    "Ligue_1":{ name:"Ligue 1", goals_avg:2.70, corners_avg:9.3, hfa:1.05 },
-    "Eredivisie":{ name:"Eredivisie", goals_avg:3.10, corners_avg:9.6, hfa:1.05 },
-    "Libertadores":{ name:"Copa Libertadores", goals_avg:2.50, corners_avg:9.2, hfa:1.04 },
-    "Sudamericana":{ name:"Copa Sudamericana", goals_avg:2.30, corners_avg:9.0, hfa:1.04 },
-    "Mundial_2026":{ name:"Mundial 2026", goals_avg:2.40, corners_avg:9.5, hfa:1.03 },
-    "Championship":{ name:"Championship", goals_avg:2.65, corners_avg:9.7, hfa:1.05 },
-    "MLS":{ name:"MLS", goals_avg:2.85, corners_avg:9.1, hfa:1.05 },
-    "Brasileirao":{ name:"Brasileirao Serie A", goals_avg:2.45, corners_avg:9.4, hfa:1.05 }
+const LEAGUES_CFG = {
+  EPL:{name:'Premier League',goals:2.85,corners:10.1,hfa:1.06},
+  La_liga:{name:'La Liga',goals:2.55,corners:9.5,hfa:1.05},
+  Serie_A:{name:'Serie A',goals:2.65,corners:9.0,hfa:1.05},
+  Bundesliga:{name:'Bundesliga',goals:3.00,corners:9.8,hfa:1.06},
+  Ligue_1:{name:'Ligue 1',goals:2.70,corners:9.3,hfa:1.05},
+  Eredivisie:{name:'Eredivisie',goals:3.10,corners:9.6,hfa:1.05},
+  Libertadores:{name:'Copa Libertadores',goals:2.50,corners:9.2,hfa:1.04},
+  Sudamericana:{name:'Copa Sudamericana',goals:2.30,corners:9.0,hfa:1.04},
+  Mundial_2026:{name:'Mundial 2026',goals:2.40,corners:9.5,hfa:1.03},
+  Championship:{name:'Championship',goals:2.65,corners:9.7,hfa:1.05},
+  MLS:{name:'MLS',goals:2.85,corners:9.1,hfa:1.05},
+  Brasileirao:{name:'Brasileirao',goals:2.45,corners:9.4,hfa:1.05}
 };
 
-// Bzzoiro league IDs (v2)
-const API_LEAGUE_IDS = {
-    "EPL":1, "La_liga":3, "Serie_A":4, "Bundesliga":5, "Ligue_1":6,
-    "Eredivisie":10, "Championship":12, "MLS":18, "Brasileirao":9,
-    "Libertadores":32, "Sudamericana":33, "Mundial_2026":27
+const API_LEAGUE_IDS = {EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,Libertadores:32,Sudamericana:33,Mundial_2026:27};
+
+const STRENGTH = {
+  EPL:{'Manchester City':[1.30,0.77],'Liverpool':[1.28,0.79],'Arsenal':[1.24,0.82],'Chelsea':[1.15,0.89],'Tottenham':[1.16,0.90],'Manchester United':[1.18,0.88],'Newcastle United':[1.13,0.94],'Aston Villa':[1.17,0.92],'Brighton':[1.11,0.96],'West Ham United':[1.06,1.00],'Fulham':[1.04,1.01],'Brentford':[1.02,1.03],'Crystal Palace':[0.98,1.05],'Wolves':[1.03,1.02],'Everton':[0.92,1.10],'Bournemouth':[0.95,1.08],'Nottingham Forest':[0.96,1.07],'Leicester City':[0.94,1.08],'Ipswich Town':[0.88,1.14],'Southampton':[0.86,1.16]},
+  La_liga:{'Real Madrid':[1.32,0.74],'Barcelona':[1.30,0.76],'Atletico Madrid':[1.22,0.82],'Athletic Club':[1.15,0.90],'Real Sociedad':[1.14,0.91],'Villarreal':[1.12,0.93],'Real Betis':[1.10,0.95],'Girona':[1.16,0.89],'Sevilla':[1.08,0.97],'Valencia':[1.06,0.99],'Osasuna':[1.02,1.03],'Celta Vigo':[1.04,1.01],'Mallorca':[0.98,1.06],'Getafe':[0.94,1.08],'Alaves':[0.96,1.07],'Espanyol':[0.94,1.08],'Rayo Vallecano':[0.98,1.05],'Las Palmas':[0.92,1.10],'Leganes':[0.88,1.14],'Valladolid':[0.86,1.16]},
+  Serie_A:{'Inter Milan':[1.28,0.78],'Juventus':[1.22,0.83],'AC Milan':[1.20,0.85],'Napoli':[1.24,0.81],'Atalanta':[1.22,0.83],'Roma':[1.16,0.89],'Lazio':[1.14,0.91],'Fiorentina':[1.10,0.95],'Bologna':[1.08,0.97],'Torino':[1.02,1.03],'Genoa':[0.98,1.06],'Monza':[0.96,1.08],'Udinese':[0.98,1.05],'Lecce':[0.92,1.10],'Empoli':[0.94,1.08],'Cagliari':[0.92,1.10],'Hellas Verona':[0.90,1.12],'Parma':[0.94,1.08],'Como':[0.88,1.14],'Venezia':[0.86,1.16]},
+  Bundesliga:{'Bayern Munich':[1.32,0.76],'Bayer Leverkusen':[1.27,0.80],'Borussia Dortmund':[1.24,0.83],'RB Leipzig':[1.22,0.85],'Stuttgart':[1.16,0.91],'Eintracht Frankfurt':[1.14,0.93],'Freiburg':[1.09,0.98],'Hoffenheim':[1.10,0.97],'Werder Bremen':[1.05,1.02],'Wolfsburg':[1.04,1.01],'Borussia Monchengladbach':[1.08,0.99],'Mainz 05':[1.02,1.03],'Augsburg':[1.00,1.05],'Union Berlin':[0.98,1.06],'Heidenheim':[0.94,1.08],'St. Pauli':[0.96,1.07],'Bochum':[0.92,1.10],'Holstein Kiel':[0.88,1.14]},
+  Ligue_1:{'PSG':[1.34,0.72],'Monaco':[1.18,0.86],'Marseille':[1.16,0.88],'Lyon':[1.14,0.90],'Lille':[1.15,0.89],'Nice':[1.12,0.93],'Lens':[1.10,0.95],'Rennes':[1.08,0.97],'Reims':[1.02,1.03],'Toulouse':[1.00,1.05],'Strasbourg':[1.00,1.04],'Brest':[1.04,1.01],'Montpellier':[0.96,1.07],'Nantes':[0.96,1.07],'Auxerre':[0.94,1.08],'Saint-Etienne':[0.94,1.08],'Le Havre':[0.90,1.12],'Angers':[0.88,1.14]},
+  Eredivisie:{'PSV Eindhoven':[1.26,0.80],'Ajax':[1.24,0.82],'Feyenoord':[1.22,0.84],'AZ Alkmaar':[1.14,0.92],'Twente':[1.12,0.94],'Utrecht':[1.06,1.00],'Sparta Rotterdam':[1.00,1.05],'Heerenveen':[0.98,1.06],'NEC Nijmegen':[0.96,1.08],'Go Ahead Eagles':[0.94,1.08],'Fortuna Sittard':[0.92,1.10],'PEC Zwolle':[0.90,1.12],'Almere City':[0.88,1.14],'Heracles Almelo':[0.90,1.12],'RKC Waalwijk':[0.86,1.16],'Willem II':[0.94,1.08],'NAC Breda':[0.92,1.10],'Groningen':[0.90,1.12]},
+  Brasileirao:{'Athletico Paranaense':[1.10,0.94],'Atletico Goianiense':[0.97,1.09],'Atletico Mineiro':[1.20,0.86],'Bahia':[1.02,1.04],'Botafogo':[1.08,0.98],'Corinthians':[1.05,1.01],'Criciuma':[0.92,1.14],'Cruzeiro':[1.04,1.02],'Cuiaba':[0.98,1.08],'Flamengo':[1.30,0.78],'Fluminense':[1.10,0.96],'Fortaleza':[1.06,1.00],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Juventude':[0.96,1.10],'Mirassol':[0.93,1.15],'Palmeiras':[1.28,0.80],'RB Bragantino':[1.08,0.96],'Sao Paulo':[1.18,0.88],'Vasco da Gama':[1.00,1.06],'Vitoria':[0.94,1.12]},
+  MLS:{'Inter Miami CF':[1.18,0.86],'Los Angeles FC':[1.16,0.88],'Columbus Crew':[1.14,0.90],'FC Cincinnati':[1.13,0.91],'Philadelphia Union':[1.10,0.94],'New England Revolution':[1.08,0.96],'Atlanta United':[1.09,0.95],'Orlando City SC':[1.07,0.97],'New York City FC':[1.06,0.98],'Nashville SC':[1.05,0.99],'Seattle Sounders FC':[1.04,1.00],'Portland Timbers':[1.03,1.01],'Minnesota United FC':[1.02,1.02],'FC Dallas':[1.01,1.03],'Austin FC':[1.00,1.04],'Houston Dynamo FC':[0.99,1.05],'LA Galaxy':[0.98,1.06],'Vancouver Whitecaps FC':[0.97,1.07],'Chicago Fire FC':[0.96,1.08],'Charlotte FC':[0.95,1.09],'CF Montreal':[0.94,1.10],'Sporting Kansas City':[0.93,1.11],'New York Red Bulls':[0.92,1.12],'Real Salt Lake':[0.91,1.13],'DC United':[0.90,1.14],'San Jose Earthquakes':[0.89,1.15],'Colorado Rapids':[0.88,1.16],'Toronto FC':[0.87,1.17],'St. Louis City SC':[0.86,1.18]},
+  Libertadores:{'Flamengo':[1.30,0.78],'Palmeiras':[1.28,0.80],'River Plate':[1.26,0.82],'Boca Juniors':[1.22,0.84],'Nacional':[1.12,0.92],'Penarol':[1.10,0.94],'Olimpia':[1.05,1.00],'Barcelona SC':[1.08,0.96],'Independiente del Valle':[1.10,0.94],'LDU Quito':[1.08,0.96],'Estudiantes':[1.06,1.00],'Racing':[1.08,0.98],'Colo Colo':[1.02,1.04],'Cerro Porteno':[1.00,1.05],'Atletico Mineiro':[1.20,0.86],'Sao Paulo':[1.18,0.88],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Universidad Catolica':[1.02,1.04],'Bolivar':[1.00,1.04],'The Strongest':[0.98,1.06],'Libertad':[1.04,1.02],'Alianza Lima':[0.94,1.10],'Sporting Cristal':[1.02,1.04],'Deportivo Tachira':[0.92,1.12],'Caracas FC':[0.90,1.14],'Nacional Asuncion':[0.96,1.08]},
+  Sudamericana:{'Athletico Paranaense':[1.10,0.94],'Bragantino':[1.08,0.96],'Santos':[1.06,1.00],'Cruzeiro':[1.04,1.02],'Defensa y Justicia':[1.02,1.04],'Lanus':[1.00,1.05],'Newells Old Boys':[0.98,1.06],'Rosario Central':[1.00,1.04],'Universitario':[1.04,1.02],'Sporting Cristal':[1.02,1.04],'Emelec':[1.00,1.05],'Deportivo Cali':[0.98,1.06],'Junior':[1.02,1.04],'Once Caldas':[0.96,1.08],'La Equidad':[0.94,1.10],'Fortaleza':[1.06,1.00],'America de Cali':[1.02,1.06],'Macara':[0.95,1.12],'Huracan':[1.02,1.04],'Velez Sarsfield':[1.06,1.00],'Penarol':[1.10,0.94],'Nacional':[1.12,0.92],'Bolivar':[1.00,1.04],'Jorge Wilstermann':[0.96,1.08]},
+  Mundial_2026:{'Alemania':[1.23,0.86],'Arabia Saudita':[0.93,1.15],'Argentina':[1.30,0.80],'Australia':[1.04,1.04],'Austria':[1.06,1.02],'Belgica':[1.17,0.91],'Bolivia':[0.90,1.18],'Brasil':[1.28,0.82],'Camerun':[1.08,1.00],'Canada':[1.06,1.02],'Catar':[0.92,1.16],'Chile':[1.05,1.03],'Colombia':[1.14,0.94],'Corea del Sur':[1.08,1.00],'Costa de Marfil':[1.09,0.99],'Costa Rica':[0.97,1.11],'Croacia':[1.16,0.92],'Dinamarca':[1.08,1.00],'Ecuador':[1.07,1.01],'Egipto':[1.06,1.02],'Espana':[1.25,0.85],'Estados Unidos':[1.13,0.95],'Francia':[1.27,0.83],'Ghana':[1.02,1.06],'Honduras':[0.95,1.13],'Inglaterra':[1.26,0.84],'Iran':[1.05,1.03],'Italia':[1.15,0.93],'Jamaica':[0.96,1.12],'Japon':[1.12,0.96],'Marruecos':[1.14,0.94],'Mexico':[1.12,0.96],'Nigeria':[1.04,1.04],'Nueva Zelanda':[0.85,1.23],'Paises Bajos':[1.20,0.88],'Panama':[0.94,1.14],'Paraguay':[1.03,1.05],'Peru':[1.02,1.06],'Polonia':[1.05,1.03],'Portugal':[1.22,0.87],'Senegal':[1.11,0.97],'Serbia':[1.05,1.03],'Sudafrica':[0.96,1.12],'Suecia':[1.04,1.04],'Suiza':[1.09,0.99],'Tunez':[0.97,1.11],'Ucrania':[1.03,1.05],'Uruguay':[1.15,0.93],'Venezuela':[0.98,1.10]},
+  Championship:{'Leeds United':[1.15,0.89],'Leicester City':[1.14,0.90],'Southampton':[1.12,0.92],'Norwich City':[1.08,0.96],'West Bromwich Albion':[1.06,0.98],'Middlesbrough':[1.07,0.97],'Coventry City':[1.05,0.99],'Sunderland':[1.04,1.00],'Blackburn Rovers':[1.03,1.01],'Millwall':[1.00,1.04],'Watford':[1.02,1.02],'Bristol City':[1.01,1.03],'Hull City':[1.00,1.04],'Preston North End':[0.99,1.05],'Swansea City':[0.98,1.06],'Cardiff City':[0.97,1.07],'Stoke City':[0.96,1.08],'Sheffield Wednesday':[0.95,1.09],'QPR':[0.94,1.10],'Plymouth Argyle':[0.93,1.11],'Portsmouth':[0.92,1.12],'Luton Town':[0.95,1.09],'Derby County':[0.94,1.10],'Oxford United':[0.90,1.14],'Burnley':[1.13,0.91]}
 };
 
-const TEAM_STRENGTH = {
- "EPL":{"Manchester City":[1.30,0.77,1.13],"Liverpool":[1.28,0.79,1.12],"Arsenal":[1.24,0.82,1.10],"Chelsea":[1.15,0.89,1.09],"Tottenham":[1.16,0.90,1.09],"Manchester United":[1.18,0.88,1.09],"Newcastle United":[1.13,0.94,1.08],"Aston Villa":[1.17,0.92,1.08],"Brighton":[1.11,0.96,1.07],"West Ham United":[1.06,1.00,1.06],"Fulham":[1.04,1.01,1.06],"Brentford":[1.02,1.03,1.06],"Crystal Palace":[0.98,1.05,1.04],"Wolves":[1.03,1.02,1.06],"Everton":[0.92,1.10,1.05],"Bournemouth":[0.95,1.08,1.05],"Nottingham Forest":[0.96,1.07,1.05],"Leicester City":[0.94,1.08,1.04],"Ipswich Town":[0.88,1.14,1.03],"Southampton":[0.86,1.16,1.03]},
- "La_liga":{"Real Madrid":[1.32,0.74,1.10],"Barcelona":[1.30,0.76,1.09],"Atletico Madrid":[1.22,0.82,1.07],"Athletic Club":[1.15,0.90,1.06],"Real Sociedad":[1.14,0.91,1.06],"Villarreal":[1.12,0.93,1.05],"Real Betis":[1.10,0.95,1.05],"Girona":[1.16,0.89,1.06],"Sevilla":[1.08,0.97,1.05],"Valencia":[1.06,0.99,1.05],"Osasuna":[1.02,1.03,1.04],"Celta Vigo":[1.04,1.01,1.04],"Mallorca":[0.98,1.06,1.04],"Getafe":[0.94,1.08,1.03],"Alaves":[0.96,1.07,1.04],"Espanyol":[0.94,1.08,1.03],"Rayo Vallecano":[0.98,1.05,1.04],"Las Palmas":[0.92,1.10,1.03],"Leganes":[0.88,1.14,1.03],"Valladolid":[0.86,1.16,1.03]},
- "Serie_A":{"Inter Milan":[1.28,0.78,1.10],"Juventus":[1.22,0.83,1.08],"AC Milan":[1.20,0.85,1.08],"Napoli":[1.24,0.81,1.09],"Atalanta":[1.22,0.83,1.07],"Roma":[1.16,0.89,1.07],"Lazio":[1.14,0.91,1.06],"Fiorentina":[1.10,0.95,1.05],"Bologna":[1.08,0.97,1.05],"Torino":[1.02,1.03,1.04],"Genoa":[0.98,1.06,1.04],"Monza":[0.96,1.08,1.03],"Udinese":[0.98,1.05,1.04],"Lecce":[0.92,1.10,1.03],"Empoli":[0.94,1.08,1.03],"Cagliari":[0.92,1.10,1.03],"Hellas Verona":[0.90,1.12,1.03],"Parma":[0.94,1.08,1.03],"Como":[0.88,1.14,1.02],"Venezia":[0.86,1.16,1.02]},
- "Bundesliga":{"Bayern Munich":[1.32,0.76,1.13],"Bayer Leverkusen":[1.27,0.80,1.12],"Borussia Dortmund":[1.24,0.83,1.10],"RB Leipzig":[1.22,0.85,1.10],"Stuttgart":[1.16,0.91,1.08],"Eintracht Frankfurt":[1.14,0.93,1.08],"Freiburg":[1.09,0.98,1.07],"Hoffenheim":[1.10,0.97,1.07],"Werder Bremen":[1.05,1.02,1.06],"Wolfsburg":[1.04,1.01,1.06],"Borussia Monchengladbach":[1.08,0.99,1.07],"Mainz 05":[1.02,1.03,1.06],"Augsburg":[1.00,1.05,1.05],"Union Berlin":[0.98,1.06,1.05],"Heidenheim":[0.94,1.08,1.04],"St. Pauli":[0.96,1.07,1.05],"Bochum":[0.92,1.10,1.03],"Holstein Kiel":[0.88,1.14,1.03]},
- "Ligue_1":{"PSG":[1.34,0.72,1.12],"Monaco":[1.18,0.86,1.07],"Marseille":[1.16,0.88,1.07],"Lyon":[1.14,0.90,1.06],"Lille":[1.15,0.89,1.07],"Nice":[1.12,0.93,1.06],"Lens":[1.10,0.95,1.06],"Rennes":[1.08,0.97,1.05],"Reims":[1.02,1.03,1.04],"Toulouse":[1.00,1.05,1.04],"Strasbourg":[1.00,1.04,1.04],"Brest":[1.04,1.01,1.05],"Montpellier":[0.96,1.07,1.04],"Nantes":[0.96,1.07,1.03],"Auxerre":[0.94,1.08,1.03],"Saint-Etienne":[0.94,1.08,1.04],"Le Havre":[0.90,1.12,1.03],"Angers":[0.88,1.14,1.02]},
- "Eredivisie":{"PSV Eindhoven":[1.26,0.80,1.10],"Ajax":[1.24,0.82,1.10],"Feyenoord":[1.22,0.84,1.09],"AZ Alkmaar":[1.14,0.92,1.07],"Twente":[1.12,0.94,1.06],"Utrecht":[1.06,1.00,1.05],"Sparta Rotterdam":[1.00,1.05,1.04],"Heerenveen":[0.98,1.06,1.04],"NEC Nijmegen":[0.96,1.08,1.03],"Go Ahead Eagles":[0.94,1.08,1.03],"Fortuna Sittard":[0.92,1.10,1.03],"PEC Zwolle":[0.90,1.12,1.03],"Almere City":[0.88,1.14,1.02],"Heracles Almelo":[0.90,1.12,1.03],"RKC Waalwijk":[0.86,1.16,1.02],"Willem II":[0.94,1.08,1.03],"NAC Breda":[0.92,1.10,1.03],"Groningen":[0.90,1.12,1.03]},
- "Libertadores":{"Flamengo":[1.30,0.78,1.10],"Palmeiras":[1.28,0.80,1.09],"River Plate":[1.26,0.82,1.10],"Boca Juniors":[1.22,0.84,1.08],"Nacional":[1.12,0.92,1.06],"Penarol":[1.10,0.94,1.06],"Olimpia":[1.05,1.00,1.05],"Barcelona SC":[1.08,0.96,1.05],"Independiente del Valle":[1.10,0.94,1.06],"LDU Quito":[1.08,0.96,1.05],"Estudiantes":[1.06,1.00,1.04],"Racing":[1.08,0.98,1.05],"Colo Colo":[1.02,1.04,1.04],"Cerro Porteno":[1.00,1.05,1.04],"Atletico Mineiro":[1.20,0.86,1.08],"Sao Paulo":[1.18,0.88,1.07],"Gremio":[1.14,0.92,1.06],"Internacional":[1.12,0.94,1.06],"Universidad Catolica":[1.02,1.04,1.04],"Bolivar":[1.00,1.04,1.02],"The Strongest":[0.98,1.06,1.02],"Libertad":[1.04,1.02,1.03],"Alianza Lima":[0.94,1.10,1.02],"Sporting Cristal":[1.02,1.04,1.03],"Deportivo Tachira":[0.92,1.12,1.01],"Caracas FC":[0.90,1.14,1.01],"Nacional Asuncion":[0.96,1.08,1.02]},
- "Sudamericana":{"Athletico Paranaense":[1.10,0.94,1.05],"Bragantino":[1.08,0.96,1.05],"Santos":[1.06,1.00,1.04],"Cruzeiro":[1.04,1.02,1.04],"Defensa y Justicia":[1.02,1.04,1.04],"Lanus":[1.00,1.05,1.03],"Newells Old Boys":[0.98,1.06,1.03],"Rosario Central":[1.00,1.04,1.03],"Universitario":[1.04,1.02,1.04],"Sporting Cristal":[1.02,1.04,1.03],"Emelec":[1.00,1.05,1.03],"Deportivo Cali":[0.98,1.06,1.03],"Junior":[1.02,1.04,1.04],"Once Caldas":[0.96,1.08,1.03],"La Equidad":[0.94,1.10,1.02],"Fortaleza":[1.06,1.00,1.04],"America de Cali":[1.02,1.06,1.03],"Macara":[0.95,1.12,1.02],"Huracan":[1.02,1.04,1.03],"Velez Sarsfield":[1.06,1.00,1.04],"Penarol":[1.10,0.94,1.06],"Nacional":[1.12,0.92,1.06],"Bolivar":[1.00,1.04,1.02],"Jorge Wilstermann":[0.96,1.08,1.02]},
- "Mundial_2026":{"Alemania":[1.23,0.86,1.06],"Arabia Saudita":[0.93,1.15,1.00],"Argentina":[1.30,0.80,1.08],"Australia":[1.04,1.04,1.02],"Austria":[1.06,1.02,1.03],"Belgica":[1.17,0.91,1.05],"Bolivia":[0.90,1.18,1.00],"Brasil":[1.28,0.82,1.08],"Camerun":[1.08,1.00,1.03],"Canada":[1.06,1.02,1.03],"Catar":[0.92,1.16,1.00],"Chile":[1.05,1.03,1.03],"Colombia":[1.14,0.94,1.04],"Corea del Sur":[1.08,1.00,1.03],"Costa de Marfil":[1.09,0.99,1.03],"Costa Rica":[0.97,1.11,1.01],"Croacia":[1.16,0.92,1.05],"Dinamarca":[1.08,1.00,1.03],"Ecuador":[1.07,1.01,1.03],"Egipto":[1.06,1.02,1.03],"Espana":[1.25,0.85,1.07],"Estados Unidos":[1.13,0.95,1.04],"Francia":[1.27,0.83,1.07],"Ghana":[1.02,1.06,1.02],"Honduras":[0.95,1.13,1.01],"Inglaterra":[1.26,0.84,1.07],"Iran":[1.05,1.03,1.03],"Italia":[1.15,0.93,1.05],"Jamaica":[0.96,1.12,1.01],"Japon":[1.12,0.96,1.04],"Marruecos":[1.14,0.94,1.04],"Mexico":[1.12,0.96,1.04],"Nigeria":[1.04,1.04,1.02],"Nueva Zelanda":[0.85,1.23,1.00],"Paises Bajos":[1.20,0.88,1.06],"Panama":[0.94,1.14,1.01],"Paraguay":[1.03,1.05,1.02],"Peru":[1.02,1.06,1.02],"Polonia":[1.05,1.03,1.03],"Portugal":[1.22,0.87,1.06],"Senegal":[1.11,0.97,1.03],"Serbia":[1.05,1.03,1.03],"Sudafrica":[0.96,1.12,1.01],"Suecia":[1.04,1.04,1.02],"Suiza":[1.09,0.99,1.03],"Tunez":[0.97,1.11,1.01],"Ucrania":[1.03,1.05,1.02],"Uruguay":[1.15,0.93,1.05],"Venezuela":[0.98,1.10,1.02]},
- "Championship":{"Leeds United":[1.15,0.89,1.08],"Leicester City":[1.14,0.90,1.08],"Southampton":[1.12,0.92,1.07],"Norwich City":[1.08,0.96,1.05],"West Bromwich Albion":[1.06,0.98,1.05],"Middlesbrough":[1.07,0.97,1.05],"Coventry City":[1.05,0.99,1.04],"Sunderland":[1.04,1.00,1.04],"Blackburn Rovers":[1.03,1.01,1.04],"Millwall":[1.00,1.04,1.03],"Watford":[1.02,1.02,1.04],"Bristol City":[1.01,1.03,1.03],"Hull City":[1.00,1.04,1.03],"Preston North End":[0.99,1.05,1.03],"Swansea City":[0.98,1.06,1.03],"Cardiff City":[0.97,1.07,1.02],"Stoke City":[0.96,1.08,1.02],"Sheffield Wednesday":[0.95,1.09,1.02],"QPR":[0.94,1.10,1.02],"Plymouth Argyle":[0.93,1.11,1.01],"Portsmouth":[0.92,1.12,1.01],"Luton Town":[0.95,1.09,1.02],"Derby County":[0.94,1.10,1.02],"Oxford United":[0.90,1.14,1.01],"Burnley":[1.13,0.91,1.07]},
- "MLS":{"Inter Miami CF":[1.18,0.86,1.10],"Los Angeles FC":[1.16,0.88,1.09],"Columbus Crew":[1.14,0.90,1.08],"FC Cincinnati":[1.13,0.91,1.07],"Philadelphia Union":[1.10,0.94,1.06],"New England Revolution":[1.08,0.96,1.05],"Atlanta United":[1.09,0.95,1.06],"Orlando City SC":[1.07,0.97,1.05],"New York City FC":[1.06,0.98,1.05],"Nashville SC":[1.05,0.99,1.04],"Seattle Sounders FC":[1.04,1.00,1.04],"Portland Timbers":[1.03,1.01,1.04],"Minnesota United FC":[1.02,1.02,1.03],"FC Dallas":[1.01,1.03,1.03],"Austin FC":[1.00,1.04,1.03],"Houston Dynamo FC":[0.99,1.05,1.03],"LA Galaxy":[0.98,1.06,1.02],"Vancouver Whitecaps FC":[0.97,1.07,1.02],"Chicago Fire FC":[0.96,1.08,1.02],"Charlotte FC":[0.95,1.09,1.02],"CF Montreal":[0.94,1.10,1.02],"Sporting Kansas City":[0.93,1.11,1.01],"New York Red Bulls":[0.92,1.12,1.01],"Real Salt Lake":[0.91,1.13,1.01],"D.C. United":[0.90,1.14,1.01],"San Jose Earthquakes":[0.89,1.15,1.00],"Colorado Rapids":[0.88,1.16,1.00],"Toronto FC":[0.87,1.17,1.00],"St. Louis City SC":[0.86,1.18,1.00]},
- "Brasileirao":{"Athletico Paranaense":[1.10,0.94,1.05],"Atletico Goianiense":[0.97,1.09,1.02],"Atletico Mineiro":[1.20,0.86,1.08],"Bahia":[1.02,1.04,1.03],"Botafogo":[1.08,0.98,1.05],"Corinthians":[1.05,1.01,1.04],"Criciuma":[0.92,1.14,1.01],"Cruzeiro":[1.04,1.02,1.04],"Cuiaba":[0.98,1.08,1.02],"Flamengo":[1.30,0.78,1.10],"Fluminense":[1.10,0.96,1.05],"Fortaleza":[1.06,1.00,1.04],"Gremio":[1.14,0.92,1.06],"Internacional":[1.12,0.94,1.06],"Juventude":[0.96,1.10,1.02],"Mirassol":[0.93,1.15,1.02],"Palmeiras":[1.28,0.80,1.09],"RB Bragantino":[1.08,0.96,1.05],"Sao Paulo":[1.18,0.88,1.07],"Vasco da Gama":[1.00,1.06,1.03],"Vitoria":[0.94,1.12,1.02]}
-};
-
-// ============================================================
-// MODELO MATEMÁTICO
-// ============================================================
+// ==================== MODELO MATEMATICO ====================
 const DC_RHO = -0.13;
-function dixonColesTau(i,j,lh,la){ if(i===0&&j===0)return Math.max(0.001,1-lh*la*DC_RHO); if(i===1&&j===0)return Math.max(0.001,1+la*DC_RHO); if(i===0&&j===1)return Math.max(0.001,1+lh*DC_RHO); if(i===1&&j===1)return Math.max(0.001,1-DC_RHO); return 1; }
-function poissonPMF(k,lambda){ if(lambda<=0||k<0)return 0; let logP=-lambda+k*Math.log(lambda); for(let i=1;i<=k;i++)logP-=Math.log(i); return Math.exp(logP); }
-function poissonCDF(k,lambda){ let s=0; for(let i=0;i<=Math.floor(k);i++)s+=poissonPMF(i,lambda); return Math.min(1,s); }
-function probOver(lambda,th){ return Math.max(0,Math.min(100,(1-poissonCDF(th,lambda))*100)); }
-function getTeamStrength(league,team){ const d=TEAM_STRENGTH[league]||{}; const a=d[team]||[1.0,1.0,1.06]; return {atk:a[0],def:a[1],hfa:a[2]||1.06}; }
+function dcTau(i,j,lh,la){
+  if(i===0&&j===0) return Math.max(0.001,1-lh*la*DC_RHO);
+  if(i===1&&j===0) return Math.max(0.001,1+la*DC_RHO);
+  if(i===0&&j===1) return Math.max(0.001,1+lh*DC_RHO);
+  if(i===1&&j===1) return Math.max(0.001,1-DC_RHO);
+  return 1;
+}
+function pPMF(k,lam){
+  if(lam<=0||k<0) return 0;
+  let lp=-lam+k*Math.log(lam);
+  for(let i=1;i<=k;i++) lp-=Math.log(i);
+  return Math.exp(lp);
+}
+function pCDF(k,lam){ let s=0; for(let i=0;i<=Math.floor(k);i++) s+=pPMF(i,lam); return Math.min(1,s); }
+function pOver(lam,th){ return Math.max(0,Math.min(100,(1-pCDF(th,lam))*100)); }
+function getStr(league,team){ const d=(STRENGTH[league]||{})[team]||[1.0,1.0]; return {atk:d[0],def:d[1]}; }
 
-function predictMatch(leagueCode,home,away,apiStats=null){
-    const cfg=LEAGUES_CONFIG[leagueCode], gAvg=cfg.goals_avg, cAvg=cfg.corners_avg, hfa=cfg.hfa||1.06;
-    let lh,la;
-    if(apiStats&&apiStats.home&&apiStats.away){
-        const h=apiStats.home, a=apiStats.away;
-        const ha=h.goalsForHome>0?h.goalsForHome/(gAvg/2):1, hd=h.goalsAgainstHome>0?h.goalsAgainstHome/(gAvg/2):1;
-        const aa=a.goalsForAway>0?a.goalsForAway/(gAvg/2):1, ad=a.goalsAgainstAway>0?a.goalsAgainstAway/(gAvg/2):1;
-        lh=Math.max(0.3,(gAvg/2)*ha*ad*hfa); la=Math.max(0.3,(gAvg/2)*aa*hd*(1/hfa));
+function predictMatch(leagueCode, home, away, apiStats){
+  const cfg = LEAGUES_CFG[leagueCode];
+  const gAvg = cfg.goals, cAvg = cfg.corners, hfa = cfg.hfa;
+  let lh, la;
+  if(apiStats && apiStats.home && apiStats.away){
+    const h=apiStats.home, a=apiStats.away;
+    const ha=h.gfHome>0?h.gfHome/(gAvg/2):1, hd=h.gaHome>0?h.gaHome/(gAvg/2):1;
+    const aa=a.gfAway>0?a.gfAway/(gAvg/2):1, ad=a.gaAway>0?a.gaAway/(gAvg/2):1;
+    lh=Math.max(0.3,(gAvg/2)*ha*ad*hfa);
+    la=Math.max(0.3,(gAvg/2)*aa*hd*(1/hfa));
+  } else {
+    const hs=getStr(leagueCode,home), as=getStr(leagueCode,away);
+    lh=Math.max(0.3,(gAvg/2)*hs.atk*as.def*hfa);
+    la=Math.max(0.3,(gAvg/2)*as.atk*hs.def*(1/hfa));
+  }
+  const tL=lh+la; let hw=0,aw=0,dr=0;
+  for(let i=0;i<=15;i++) for(let j=0;j<=15;j++){
+    const tau=(i<=1&&j<=1)?dcTau(i,j,lh,la):1;
+    const p=tau*pPMF(i,lh)*pPMF(j,la);
+    if(i>j) hw+=p; else if(j>i) aw+=p; else dr+=p;
+  }
+  const tot=hw+dr+aw; hw/=tot; dr/=tot; aw/=tot;
+  const p0h=pPMF(0,lh), p0a=pPMF(0,la);
+  const btts=(1-p0h-p0a+p0h*p0a)*100;
+  const hs2=getStr(leagueCode,home), as2=getStr(leagueCode,away);
+  const cLam=cAvg*((hs2.atk*as2.def*hfa)+(as2.atk*hs2.def))/2;
+  return {
+    home,away,leagueName:cfg.name,
+    lh:lh.toFixed(3),la:la.toFixed(3),
+    hw:(hw*100).toFixed(1),dr:(dr*100).toFixed(1),aw:(aw*100).toFixed(1),
+    btts:Math.max(0,Math.min(100,btts)),
+    o15:pOver(tL,1.5), o25:pOver(tL,2.5),
+    ht05:pOver(tL*0.42,0.5),
+    c75:pOver(cLam,7.5), c85:pOver(cLam,8.5),
+    cLam:cLam.toFixed(2),
+    usingAPI:!!apiStats
+  };
+}
+
+function calcEV(prob,odds){ if(!odds||odds<=1) return null; return (prob/100*odds-1)*100; }
+function calcFair(oH,oD,oA){
+  if(!oH||!oD||!oA||oH<=1||oD<=1||oA<=1) return null;
+  const s=1/oH+1/oD+1/oA;
+  return {home:(1/oH)/s, draw:(1/oD)/s, away:(1/oA)/s, vig:s-1};
+}
+function kellyStake(prob,odds){
+  const b=odds-1, k=(prob*b-(1-prob))/b;
+  return Math.min(bankroll*Math.max(0,k*config.kellyFraction), bankroll*config.maxStakePct);
+}
+
+// ==================== API BZZOIRO v2 ====================
+function apiBase(){ return (config.apiBaseUrl||'https://sports.bzzoiro.com').replace(/\/+$/,''); }
+function apiHdrs(key){ return {'Authorization':'Token '+(key||config.apiKey),'Accept':'application/json'}; }
+
+async function apiFetch(path){
+  if(!config.apiKey) throw new Error('Sin Token configurado');
+  const r=await fetch(apiBase()+'/api/v2'+path,{headers:apiHdrs()});
+  if(!r.ok){ const t=await r.text().catch(()=>''); throw new Error('HTTP '+r.status+': '+t.substring(0,100)); }
+  return r.json();
+}
+
+async function testAPIKey(){
+  const keyEl=document.getElementById('cfg-apikey');
+  const baseEl=document.getElementById('cfg-apibase');
+  const key=(keyEl?keyEl.value:'').trim();
+  const base=((baseEl?baseEl.value:'') || 'https://sports.bzzoiro.com').replace(/\/+$/,'');
+  const res=document.getElementById('api-test-result');
+  if(!key){ res.innerHTML='<span style="color:var(--accent);font-size:.72rem">Ingresa tu token primero</span>'; return; }
+  res.innerHTML='<span style="color:var(--yellow);font-size:.72rem"><span class="spinner"></span> Verificando...</span>';
+  try{
+    const r=await fetch(base+'/api/v2/events/live/',{headers:apiHdrs(key)});
+    if(r.ok){
+      const d=await r.json();
+      res.innerHTML='<span style="color:var(--green);font-size:.72rem">Token valido · '+(d.count||0)+' partidos en vivo</span>';
+    } else if(r.status===401||r.status===403){
+      res.innerHTML='<span style="color:var(--accent);font-size:.72rem">Token invalido ('+r.status+'). Registrate en sports.bzzoiro.com/register/</span>';
     } else {
-        const hs=getTeamStrength(leagueCode,home), as=getTeamStrength(leagueCode,away);
-        const adv=hs.hfa*(hfa/1.06);
-        lh=Math.max(0.3,(gAvg/2)*hs.atk*as.def*adv); la=Math.max(0.3,(gAvg/2)*as.atk*hs.def*(1/adv));
+      res.innerHTML='<span style="color:var(--accent);font-size:.72rem">Error '+r.status+'. Verifica la URL base.</span>';
     }
-    const tLam=lh+la; let hw=0,aw=0,dr=0;
-    for(let i=0;i<=15;i++) for(let j=0;j<=15;j++){
-        const tau=(i<=1&&j<=1)?dixonColesTau(i,j,lh,la):1;
-        const p=tau*poissonPMF(i,lh)*poissonPMF(j,la);
-        if(i>j)hw+=p; else if(j>i)aw+=p; else dr+=p;
-    }
-    const t1x2=hw+dr+aw; hw/=t1x2; dr/=t1x2; aw/=t1x2;
-    const p0h=poissonPMF(0,lh),p0a=poissonPMF(0,la),btts=Math.max(0,Math.min(100,(1-p0h-p0a+p0h*p0a)*100));
-    const o15=probOver(tLam,1.5),o25=probOver(tLam,2.5),htO=probOver(tLam*0.42,0.5);
-    const hs2=getTeamStrength(leagueCode,home),as2=getTeamStrength(leagueCode,away);
-    const cLam=cAvg*((hs2.atk*as2.def*hfa)+(as2.atk*hs2.def))/2;
-    const co75=probOver(cLam,7.5),co85=probOver(cLam,8.5);
-    return {home,away,league:cfg.name,l_home:lh.toFixed(3),l_away:la.toFixed(3),over15:o15,over25:o25,btts,home_win:(hw*100).toFixed(1),draw:(dr*100).toFixed(1),away_win:(aw*100).toFixed(1),htOver05:htO,cornersOver75:co75,cornersOver85:co85,cornerLambda:cLam.toFixed(2),usingAPI:!!apiStats};
+  } catch(e){
+    res.innerHTML='<span style="color:var(--accent);font-size:.72rem">Error de conexion: '+e.message+'</span>';
+  }
 }
 
-function calcValue(prob,odds){ if(!odds||odds<=1)return null; return (prob/100*odds-1)*100; }
-function calcFairProbs(oH,oD,oA){ if(!oH||!oD||!oA||oH<=1||oD<=1||oA<=1)return null; const s=1/oH+1/oD+1/oA; return {home:(1/oH)/s,draw:(1/oD)/s,away:(1/oA)/s,vig:s-1}; }
-function kellyStake(prob,odds){ const b=odds-1; const k=(prob*b-(1-prob))/b; return Math.min(bankroll*Math.max(0,k*config.kellyFraction),bankroll*config.maxStakePct); }
-
-// ============================================================
-// API BZZOIRO v2 — CORREGIDA
-// Header correcto: "Authorization: Token YOUR_TOKEN"
-// Base URL: https://sports.bzzoiro.com/api/v2/
-// ============================================================
-
-function getAPIBase() {
-    return (config.apiBaseUrl||'https://sports.bzzoiro.com').replace(/\/+$,'');
+async function debugAPI(){
+  const keyEl=document.getElementById('cfg-apikey');
+  const baseEl=document.getElementById('cfg-apibase');
+  const key=(keyEl?keyEl.value:'').trim();
+  const base=((baseEl?baseEl.value:'')||'https://sports.bzzoiro.com').replace(/\/+$/,'');
+  const out=document.getElementById('api-debug-output');
+  const ta=document.getElementById('debug-textarea');
+  out.style.display='block';
+  if(!key){ ta.value='Ingresa tu token primero.'; return; }
+  ta.value='Bzzoiro v2 Debug\nBase: '+base+'\nHeader: Authorization: Token '+key.substring(0,8)+'...\n\n';
+  for(const ep of['/api/v2/events/live/','/api/v2/leagues/?limit=3','/api/v2/teams/?limit=3&league_id=1']){
+    ta.value+='--- GET '+ep+' ---\n';
+    try{
+      const r=await fetch(base+ep,{headers:apiHdrs(key)});
+      const body=await r.text();
+      ta.value+=(r.ok?'OK ':'FAIL ')+r.status+'\n'+body.substring(0,400)+(body.length>400?'\n...(truncado)':'')+'\n\n';
+    } catch(e){ ta.value+='Error: '+e.message+'\n\n'; }
+  }
 }
 
-function apiHeaders() {
-    return {
-        'Authorization': `Token ${config.apiKey}`,
-        'Accept': 'application/json',
-        'Content-Type': 'application/json'
-    };
+async function getSeasonId(leagueId){
+  const ck='s_'+leagueId;
+  if(seasonIdCache[ck]) return seasonIdCache[ck];
+  const d=await apiFetch('/leagues/'+leagueId+'/season/');
+  const sid=d.season?d.season.id:null;
+  if(sid){ seasonIdCache[ck]=sid; saveAll(); }
+  return sid;
 }
 
-async function apiFetch(path) {
-    if (!config.apiKey) throw new Error('Sin API Key configurada');
-    const base = getAPIBase();
-    // Asegurar que usamos /api/v2/
-    const url = `${base}/api/v2${path}`;
-    const resp = await fetch(url, { method: 'GET', headers: apiHeaders() });
-    if (!resp.ok) {
-        const body = await resp.text().catch(()=>'');
-        throw new Error(`HTTP ${resp.status}: ${body.substring(0,120)}`);
-    }
-    return await resp.json();
+async function findTeamId(name, leagueId){
+  const ck=name+'_'+leagueId;
+  if(teamIdCache[ck]) return teamIdCache[ck];
+  const d=await apiFetch('/teams/?name='+encodeURIComponent(name)+'&league_id='+leagueId+'&limit=10');
+  const rs=(d.results||d);
+  if(Array.isArray(rs)&&rs.length>0){ teamIdCache[ck]=rs[0].id; saveAll(); return rs[0].id; }
+  // intento sin filtro de liga
+  const d2=await apiFetch('/teams/?name='+encodeURIComponent(name)+'&limit=10');
+  const rs2=(d2.results||d2);
+  if(Array.isArray(rs2)&&rs2.length>0){ teamIdCache[ck]=rs2[0].id; saveAll(); return rs2[0].id; }
+  return null;
 }
 
-async function testAPIKey() {
-    const keyEl = document.getElementById('cfg-apikey');
-    const baseEl = document.getElementById('cfg-apibase');
-    const key = keyEl ? keyEl.value.trim() : config.apiKey;
-    const base = baseEl ? baseEl.value.trim() : config.apiBaseUrl;
-    if (!key) {
-        document.getElementById('api-test-result').innerHTML = '<span style="color:var(--accent);font-size:0.72rem;">⚠️ Ingresa un token primero</span>';
-        return;
-    }
-    const res = document.getElementById('api-test-result');
-    res.innerHTML = '<span style="color:var(--yellow);font-size:0.72rem;"><span class="spinner"></span> Verificando...</span>';
-    const testBase = (base||'https://sports.bzzoiro.com').replace(/\/+$/,'');
-    try {
-        // Usamos /api/v2/events/live/ — endpoint público que confirma autenticación
-        const r = await fetch(`${testBase}/api/v2/events/live/`, {
-            headers: { 'Authorization': `Token ${key}`, 'Accept': 'application/json' }
-        });
-        if (r.ok) {
-            const d = await r.json();
-            const cnt = d.count !== undefined ? d.count : '?';
-            res.innerHTML = `<span style="color:var(--green);font-size:0.72rem;">✅ Token válido · ${cnt} partidos en vivo ahora</span>`;
-        } else if (r.status === 401 || r.status === 403) {
-            res.innerHTML = `<span style="color:var(--accent);font-size:0.72rem;">❌ Token inválido (${r.status}). Regístrate en sports.bzzoiro.com/register/</span>`;
-        } else {
-            res.innerHTML = `<span style="color:var(--accent);font-size:0.72rem;">❌ Error ${r.status}. Verifica la URL base.</span>`;
-        }
-    } catch(e) {
-        res.innerHTML = `<span style="color:var(--accent);font-size:0.72rem;">❌ Error de conexión: ${e.message}</span>`;
-    }
+async function fetchTeamStats(teamId, seasonId){
+  const d=await apiFetch('/events/?team_id='+teamId+'&season_id='+seasonId+'&status=finished&limit=50');
+  const ms=d.results||[];
+  let hGF=0,hGA=0,hN=0, aGF=0,aGA=0,aN=0;
+  for(const m of ms){
+    if(m.home_team_id===teamId){ hGF+=m.home_score||0; hGA+=m.away_score||0; hN++; }
+    else if(m.away_team_id===teamId){ aGF+=m.away_score||0; aGA+=m.home_score||0; aN++; }
+  }
+  return { played:hN+aN,
+    gfHome:hN>0?hGF/hN:1, gaHome:hN>0?hGA/hN:1,
+    gfAway:aN>0?aGF/aN:1, gaAway:aN>0?aGA/aN:1 };
 }
 
-async function debugAPI() {
-    const keyEl = document.getElementById('cfg-apikey');
-    const baseEl = document.getElementById('cfg-apibase');
-    const key = keyEl ? keyEl.value.trim() : config.apiKey;
-    const base = (baseEl ? baseEl.value.trim() : config.apiBaseUrl).replace(/\/+$/,'') || 'https://sports.bzzoiro.com';
-    const out = document.getElementById('api-debug-output');
-    const ta = document.getElementById('debug-textarea');
-    out.style.display = 'block';
-    if (!key) { ta.value = 'Ingresa tu token primero en el campo API KEY.'; return; }
-    ta.value = `🔍 Depurando API Bzzoiro v2\nToken: ${key.substring(0,8)}...\nBase URL: ${base}\nHeader: Authorization: Token ${key.substring(0,8)}...\n\n`;
-    const endpoints = [
-        '/api/v2/events/live/',
-        '/api/v2/leagues/?limit=3',
-        '/api/v2/teams/?limit=3&league_id=1'
-    ];
-    for (const ep of endpoints) {
-        const url = `${base}${ep}`;
-        ta.value += `--- GET ${ep} ---\n`;
-        try {
-            const r = await fetch(url, { headers: { 'Authorization': `Token ${key}`, 'Accept': 'application/json' } });
-            const body = await r.text();
-            if (r.ok) {
-                ta.value += `✅ HTTP ${r.status}\n${body.substring(0, 300)}${body.length>300?'\n...(truncado)':''}\n\n`;
-            } else {
-                ta.value += `❌ HTTP ${r.status}\n${body.substring(0, 200)}\n\n`;
-            }
-        } catch(e) {
-            ta.value += `❌ Error: ${e.message}\n\n`;
-        }
-    }
+function showAPIStatus(msg, type){
+  const e=document.getElementById('api-status-box');
+  e.className='api-status '+type;
+  e.innerHTML=msg;
+  e.classList.remove('hidden');
 }
 
-// Obtener season_id actual de una liga
-async function getSeasonId(leagueId) {
-    const ck = `season_${leagueId}`;
-    if (seasonIdCache[ck]) return seasonIdCache[ck];
-    const data = await apiFetch(`/leagues/${leagueId}/season/`);
-    const sid = data.season ? data.season.id : null;
-    if (sid) { seasonIdCache[ck] = sid; saveAll(); }
-    return sid;
-}
-
-// Buscar team_id en la API v2
-async function searchTeamId(teamName, leagueId) {
-    const ck = `${teamName}_${leagueId}`;
-    if (teamIdCache[ck]) return teamIdCache[ck];
-    // Búsqueda por nombre parcial dentro de la liga
-    const data = await apiFetch(`/teams/?name=${encodeURIComponent(teamName)}&league_id=${leagueId}&limit=10`);
-    const results = data.results || data;
-    if (!Array.isArray(results) || results.length === 0) {
-        // Segundo intento: solo por nombre sin filtro de liga
-        const data2 = await apiFetch(`/teams/?name=${encodeURIComponent(teamName)}&limit=10`);
-        const res2 = data2.results || data2;
-        if (Array.isArray(res2) && res2.length > 0) {
-            const id = res2[0].id;
-            teamIdCache[ck] = id; saveAll();
-            return id;
-        }
-        return null;
-    }
-    const id = results[0].id;
-    teamIdCache[ck] = id; saveAll();
-    return id;
-}
-
-// Calcular estadísticas de un equipo desde sus partidos
-// Usa /api/v2/events/?team_id=X&season_id=Y&status=finished&limit=50
-async function getTeamStats(teamId, seasonId) {
-    const data = await apiFetch(`/events/?team_id=${teamId}&season_id=${seasonId}&status=finished&limit=50`);
-    const matches = data.results || [];
-    if (!matches.length) return null;
-
-    let homeGoalsFor=0, homeGoalsAgainst=0, homeGames=0;
-    let awayGoalsFor=0, awayGoalsAgainst=0, awayGames=0;
-
-    for (const m of matches) {
-        if (m.home_team_id === teamId) {
-            homeGoalsFor += (m.home_score || 0);
-            homeGoalsAgainst += (m.away_score || 0);
-            homeGames++;
-        } else if (m.away_team_id === teamId) {
-            awayGoalsFor += (m.away_score || 0);
-            awayGoalsAgainst += (m.home_score || 0);
-            awayGames++;
-        }
-    }
-
-    return {
-        teamId,
-        played: { home: homeGames, away: awayGames, total: homeGames + awayGames },
-        goalsForHome: homeGames > 0 ? homeGoalsFor / homeGames : 1,
-        goalsForAway: awayGames > 0 ? awayGoalsFor / awayGames : 1,
-        goalsAgainstHome: homeGames > 0 ? homeGoalsAgainst / homeGames : 1,
-        goalsAgainstAway: awayGames > 0 ? awayGoalsAgainst / awayGames : 1
-    };
-}
-
-async function loadAPIData() {
-    const league = document.getElementById('league').value;
-    const home = document.getElementById('home').value;
-    const away = document.getElementById('away').value;
-
-    if (!config.apiKey) { showAPIStatus('❌ Configura tu Token en ⚙️ CONFIG', 'error'); return; }
-    if (!league || !home || !away) { showAPIStatus('⚠️ Selecciona liga y equipos', 'error'); return; }
-
-    const leagueId = API_LEAGUE_IDS[league];
-    if (!leagueId) { showAPIStatus('⚠️ Liga no disponible en API', 'error'); return; }
-
-    showAPIStatus('<span class="spinner"></span> Obteniendo temporada actual...', 'loading');
-    document.getElementById('api-btn').disabled = true;
-
-    try {
-        // 1. Obtener season_id actual
-        const seasonId = await getSeasonId(leagueId);
-        if (!seasonId) { showAPIStatus('❌ No se pudo obtener la temporada actual', 'error'); return; }
-
-        // 2. Buscar IDs de equipos
-        showAPIStatus('<span class="spinner"></span> Buscando equipos...', 'loading');
-        const [homeId, awayId] = await Promise.all([
-            searchTeamId(home, leagueId),
-            searchTeamId(away, leagueId)
-        ]);
-
-        if (!homeId) { showAPIStatus(`❌ Equipo no encontrado: ${home}`, 'error'); currentAPIData=null; return; }
-        if (!awayId) { showAPIStatus(`❌ Equipo no encontrado: ${away}`, 'error'); currentAPIData=null; return; }
-
-        // 3. Obtener estadísticas de partidos
-        showAPIStatus('<span class="spinner"></span> Descargando estadísticas de temporada...', 'loading');
-        const [homeStats, awayStats] = await Promise.all([
-            getTeamStats(homeId, seasonId),
-            getTeamStats(awayId, seasonId)
-        ]);
-
-        if (!homeStats || homeStats.played.total < 3) {
-            showAPIStatus(`⚠️ Pocos partidos para ${home} (${homeStats?.played?.total||0}). Usando datos estáticos.`, 'error');
-            currentAPIData = null;
-            return;
-        }
-        if (!awayStats || awayStats.played.total < 3) {
-            showAPIStatus(`⚠️ Pocos partidos para ${away} (${awayStats?.played?.total||0}). Usando datos estáticos.`, 'error');
-            currentAPIData = null;
-            return;
-        }
-
-        currentAPIData = { home: homeStats, away: awayStats };
-        showAPIStatus(
-            `✅ Datos cargados — ${home} (${homeStats.played.total}PJ · ` +
-            `${homeStats.goalsForHome.toFixed(2)}gf/g) vs ${away} (${awayStats.played.total}PJ · ` +
-            `${awayStats.goalsForAway.toFixed(2)}gf/g)`,
-            'loaded'
-        );
-        showToast('✅ Datos API v2 listos', 'success');
-
-    } catch(e) {
-        showAPIStatus(`❌ Error: ${e.message}`, 'error');
-        currentAPIData = null;
-        showToast('Error API', 'error');
-        console.error('API Error:', e);
-    } finally {
-        document.getElementById('api-btn').disabled = false;
-    }
-}
-
-function showAPIStatus(msg, type) {
-    const e = document.getElementById('api-status-box');
-    e.className = `api-status ${type}`;
-    e.innerHTML = msg;
-    e.classList.remove('hidden');
-}
-
-// ============================================================
-// INTERFAZ Y LÓGICA
-// ============================================================
-const leagueSelect=document.getElementById('league'),homeSelect=document.getElementById('home'),awaySelect=document.getElementById('away'),analyzeBtn=document.getElementById('analyze-btn'),apiBtn=document.getElementById('api-btn');
-
-leagueSelect.addEventListener('change',function(){
-    const c=this.value;
-    homeSelect.innerHTML='<option value="">-- Local --</option>';
-    awaySelect.innerHTML='<option value="">-- Visitante --</option>';
-    homeSelect.disabled=true; awaySelect.disabled=true;
+async function loadAPIData(){
+  const league=document.getElementById('league').value;
+  const home=document.getElementById('home').value;
+  const away=document.getElementById('away').value;
+  if(!config.apiKey){ showAPIStatus('Configura tu Token en CONFIG','error'); return; }
+  if(!league||!home||!away){ showAPIStatus('Selecciona liga y equipos','error'); return; }
+  const lid=API_LEAGUE_IDS[league];
+  if(!lid){ showAPIStatus('Liga no disponible en API','error'); return; }
+  document.getElementById('api-btn').disabled=true;
+  showAPIStatus('<span class="spinner"></span> Obteniendo temporada...','loading');
+  try{
+    const sid=await getSeasonId(lid);
+    if(!sid){ showAPIStatus('No se pudo obtener temporada actual','error'); return; }
+    showAPIStatus('<span class="spinner"></span> Buscando equipos...','loading');
+    const [hid,aid]=await Promise.all([findTeamId(home,lid),findTeamId(away,lid)]);
+    if(!hid){ showAPIStatus('No encontrado: '+home,'error'); currentAPIData=null; return; }
+    if(!aid){ showAPIStatus('No encontrado: '+away,'error'); currentAPIData=null; return; }
+    showAPIStatus('<span class="spinner"></span> Descargando estadisticas...','loading');
+    const [hs,as]=await Promise.all([fetchTeamStats(hid,sid),fetchTeamStats(aid,sid)]);
+    if(!hs||hs.played<3){ showAPIStatus('Pocos partidos para '+home+' ('+( hs?hs.played:0)+'PJ)','error'); currentAPIData=null; return; }
+    if(!as||as.played<3){ showAPIStatus('Pocos partidos para '+away+' ('+(as?as.played:0)+'PJ)','error'); currentAPIData=null; return; }
+    currentAPIData={home:hs,away:as};
+    showAPIStatus('Datos cargados: '+home+' ('+hs.played+'PJ) vs '+away+' ('+as.played+'PJ)','loaded');
+    showToast('Datos API v2 listos','success');
+  } catch(e){
+    showAPIStatus('Error: '+e.message,'error');
     currentAPIData=null;
-    document.getElementById('api-status-box').classList.add('hidden');
-    if(!c){checkButtons();return;}
-    (TEAMS_DB[c]||[]).forEach(t=>{
-        homeSelect.innerHTML+=`<option value="${t}">${t}</option>`;
-        awaySelect.innerHTML+=`<option value="${t}">${t}</option>`;
-    });
-    homeSelect.disabled=false; awaySelect.disabled=false; checkButtons();
-});
-
-function checkButtons(){
-    const h=homeSelect.value,a=awaySelect.value,l=leagueSelect.value;
-    const anyOdd=['odds-home','odds-draw','odds-away','odds-ht05','odds-over15','odds-over25','odds-btts','odds-corners75','odds-corners85'].some(id=>parseFloat(document.getElementById(id).value)>1);
-    analyzeBtn.disabled=!(h&&a&&h!==a&&anyOdd);
-    apiBtn.disabled=!(h&&a&&h!==a&&l&&API_LEAGUE_IDS[l]);
-}
-homeSelect.addEventListener('change',()=>{currentAPIData=null;document.getElementById('api-status-box').classList.add('hidden');checkButtons();});
-awaySelect.addEventListener('change',()=>{currentAPIData=null;document.getElementById('api-status-box').classList.add('hidden');checkButtons();});
-document.querySelectorAll('input[type="number"]').forEach(i=>i.addEventListener('input',checkButtons));
-
-analyzeBtn.addEventListener('click',()=>{
-    const l=leagueSelect.value, h=homeSelect.value, a=awaySelect.value;
-    const pred=predictMatch(l,h,a,currentAPIData);
-    const oH=parseFloat(document.getElementById('odds-home').value)||0, oD=parseFloat(document.getElementById('odds-draw').value)||0, oA=parseFloat(document.getElementById('odds-away').value)||0;
-    const fair=calcFairProbs(oH,oD,oA);
-    const mkts=[
-        {name:'Victoria Local',prob:parseFloat(pred.home_win),oddsId:'odds-home',fair:fair?.home,vig:fair?.vig},
-        {name:'Empate',prob:parseFloat(pred.draw),oddsId:'odds-draw',fair:fair?.draw,vig:fair?.vig},
-        {name:'Victoria Visitante',prob:parseFloat(pred.away_win),oddsId:'odds-away',fair:fair?.away,vig:fair?.vig},
-        {name:'Over 0.5 Goles 1T',prob:pred.htOver05,oddsId:'odds-ht05',note:'λ 1T ≈ 42%'},
-        {name:'Over 1.5 Goles',prob:pred.over15,oddsId:'odds-over15'},
-        {name:'Over 2.5 Goles',prob:pred.over25,oddsId:'odds-over25'},
-        {name:'BTTS – Ambos Marcan',prob:pred.btts,oddsId:'odds-btts'},
-        {name:'Over 7.5 Córners',prob:pred.cornersOver75,oddsId:'odds-corners75',note:`λ corners ≈ ${pred.cornerLambda}`},
-        {name:'Over 8.5 Córners',prob:pred.cornersOver85,oddsId:'odds-corners85',note:`λ corners ≈ ${pred.cornerLambda}`}
-    ].map(def=>{
-        const odds=parseFloat(document.getElementById(def.oddsId).value)||0;
-        const hasOdds=odds>1&&odds<=50;
-        const val=hasOdds?calcValue(def.prob,odds):null;
-        return{...def,odds:hasOdds?odds:0,value:val,hasValue:val!==null&&val>0};
-    });
-    renderResults(pred,mkts);
-});
-
-function renderResults(pred,markets){
-    document.getElementById('main-screen').classList.add('hidden');
-    document.getElementById('result-screen').classList.remove('hidden');
-    const hasVal=markets.some(m=>m.hasValue);
-    const badge=pred.usingAPI?'<span class="model-badge model-api">⚡ DATOS API v2 REALES</span>':'<span class="model-badge model-static">📊 DATOS ESTÁTICOS</span>';
-    let html='';
-    markets.forEach(m=>{
-        const isVal=m.odds>1, cls=m.hasValue?'green':(isVal?'red':''), badge2=m.hasValue?'<span class="value-badge">+EV</span>':(isVal?'<span class="no-value-badge">SIN VALOR</span>':'<span class="info-badge">PROBABILIDAD</span>');
-        const barC=m.hasValue?'var(--green)':(isVal?'var(--accent)':'var(--blue)');
-        let vigH=''; if(m.vig!=null&&m.fair!=null)vigH=`<div class="small-note">Vig: ${(m.vig*100).toFixed(1)}% · Prob justa: ${(m.fair*100).toFixed(1)}%</div>`;
-        let noteH=m.note?`<div class="small-note">${m.note}</div>`:'';
-        let stakeH='';
-        if(m.hasValue&&m.odds>1){
-            const prob=m.prob/100, stake=kellyStake(prob,m.odds);
-            if(stake>0.01){
-                const ev=m.value?m.value.toFixed(1):'?';
-                stakeH=`<div class="stake-suggestion"><div style="font-size:0.62rem;color:var(--muted);">💰 Kelly ${(config.kellyFraction*100).toFixed(0)}% · Máx ${(config.maxStakePct*100).toFixed(0)}% bankroll</div><div style="font-size:1.2rem;font-weight:800;color:var(--blue);">$${stake.toFixed(2)}</div><div style="font-size:0.6rem;color:var(--muted);">${(stake/bankroll*100).toFixed(1)}% del bankroll · EV <span class="green">+${ev}%</span></div><button class="btn-secondary" onclick="placeBet('${m.name}',${m.prob},${m.odds},${stake.toFixed(2)},'${pred.home} vs ${pred.away}')" style="margin-top:8px;width:100%;font-size:0.72rem;">✅ REGISTRAR APUESTA</button></div>`;
-            }
-        }
-        html+=`<div class="market" style="border-color:${m.hasValue?'rgba(46,204,113,0.3)':(isVal?'rgba(255,77,90,0.15)':'rgba(77,171,247,0.15)')};"><div class="market-header">${m.name} ${badge2}</div><div class="prob-row"><span class="prob-label">Probabilidad</span><div class="bar-wrap"><div class="bar-fill" data-width="${Math.round(m.prob)}%" style="background:${barC};box-shadow:0 0 8px ${barC};"></div></div><span class="prob-value ${cls}">${Math.round(m.prob)}%</span></div>${isVal?`<div class="prob-row"><span class="prob-label">Cuota</span><span></span><span class="prob-value">${m.odds.toFixed(2)}</span></div><div class="ev-row"><span class="ev-label">EV</span><span class="ev-value ${m.value>0?'green':'red'}">${m.value>0?'+':''}${m.value.toFixed(1)}%</span></div>`:''}${vigH}${noteH}${stakeH}</div>`;
-    });
-    document.getElementById('result-card').innerHTML=`<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;"><h3 style="margin:0;font-size:0.9rem;">${pred.home} vs ${pred.away}</h3><button class="btn-secondary" onclick="goBack()" style="width:auto;padding:8px 14px;font-size:0.7rem;">← Volver</button></div><div style="text-align:center;margin-bottom:10px;"><span style="font-size:0.7rem;color:var(--muted);">${pred.league} · λ: ${pred.l_home}/${pred.l_away}</span><br>${badge}</div>${hasVal?'<div class="bankroll-display" style="margin-bottom:12px;">🎯 ¡MERCADOS CON VALOR!</div>':''}${!hasVal?'<div class="warning-box">⚠️ No se encontraron apuestas +EV.</div>':''}${html}<div class="model-info" style="margin-top:14px;"><strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles · <strong>EV mínimo:</strong> +5%</div>`;
-    setTimeout(()=>document.querySelectorAll('.bar-fill[data-width]').forEach(b=>b.style.width=b.dataset.width),100);
-    document.getElementById('result-screen').scrollIntoView({behavior:'smooth',block:'start'});
+    console.error(e);
+  } finally { document.getElementById('api-btn').disabled=false; }
 }
 
-// ============================================================
-// BANKROLL / HISTORIAL
-// ============================================================
-function placeBet(market,prob,odds,stake,match){ bankroll-=parseFloat(stake); betHistory.push({date:new Date().toISOString(),match,market,prob,odds,stake:parseFloat(stake),status:'pending',result:null}); saveAll(); updateBankrollDisplay(); updateHistoryDisplay(); showToast('✅ Apuesta registrada','success'); }
-function updateBetResult(idx,won){ const b=betHistory[idx]; if(b.status!=='pending')return; b.status='settled'; b.result=won?'win':'loss'; if(won)bankroll+=b.stake*b.odds; saveAll(); updateBankrollDisplay(); updateHistoryDisplay(); }
-function deleteBet(idx){ const b=betHistory[idx]; if(!b)return; if(b.status==='pending')bankroll+=b.stake; else if(b.status==='settled'&&b.result==='win')bankroll-=b.stake*b.odds; betHistory.splice(idx,1); saveAll(); updateBankrollDisplay(); updateHistoryDisplay(); }
-function updateHistoryDisplay(){
-    const log=document.getElementById('bet-log');
-    if(!betHistory.length){ log.innerHTML='<p style="color:var(--muted);text-align:center;padding:20px;">No hay apuestas registradas aún.</p>'; return; }
-    let h='';
-    for(let i=betHistory.length-1;i>=0;i--){
-        const b=betHistory[i], d=new Date(b.date).toLocaleDateString(), sc=b.status==='pending'?'log-pending':(b.result==='win'?'log-win':'log-loss');
-        const se=b.status==='pending'?'⏳':(b.result==='win'?'✅':'❌');
-        const profit=b.status==='settled'?(b.result==='win'?`+$${(b.stake*b.odds-b.stake).toFixed(2)}`:`-$${b.stake.toFixed(2)}`):'Pendiente';
-        const pc=b.status==='settled'?(b.result==='win'?'profit':'loss'):'';
-        h+=`<div class="log-item ${sc}"><div style="flex:1;"><div style="font-weight:600;">${b.match}</div><div style="font-size:0.65rem;color:var(--muted);">${b.market} · @${b.odds} · $${b.stake.toFixed(2)}</div><div style="font-size:0.6rem;color:var(--muted);">${d}</div></div><div style="text-align:right;display:flex;align-items:center;gap:4px;"><div><div style="font-size:1rem;">${se}</div><div class="${pc}" style="font-weight:700;font-size:0.75rem;">${profit}</div>${b.status==='pending'?`<div style="margin-top:4px;display:flex;gap:3px;"><button onclick="updateBetResult(${i},true)" style="background:var(--green);color:white;border:none;padding:2px 6px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Ganó</button><button onclick="updateBetResult(${i},false)" style="background:var(--accent);color:white;border:none;padding:2px 6px;border-radius:4px;font-size:0.6rem;cursor:pointer;">Perdió</button></div>`:''}</div><button class="delete-btn" onclick="deleteBet(${i})">🗑️</button></div></div>`;
+// ==================== UI ====================
+document.getElementById('league').addEventListener('change', function(){
+  const c=this.value;
+  const hSel=document.getElementById('home');
+  const aSel=document.getElementById('away');
+  hSel.innerHTML='<option value="">-- Local --</option>';
+  aSel.innerHTML='<option value="">-- Visitante --</option>';
+  hSel.disabled=true; aSel.disabled=true;
+  currentAPIData=null;
+  document.getElementById('api-status-box').classList.add('hidden');
+  if(!c){ checkBtns(); return; }
+  (TEAMS_DB[c]||[]).forEach(function(t){
+    hSel.innerHTML+='<option value="'+t+'">'+t+'</option>';
+    aSel.innerHTML+='<option value="'+t+'">'+t+'</option>';
+  });
+  hSel.disabled=false; aSel.disabled=false;
+  checkBtns();
+});
+
+document.getElementById('home').addEventListener('change',function(){ currentAPIData=null; document.getElementById('api-status-box').classList.add('hidden'); checkBtns(); });
+document.getElementById('away').addEventListener('change',function(){ currentAPIData=null; document.getElementById('api-status-box').classList.add('hidden'); checkBtns(); });
+document.querySelectorAll('input[type="number"]').forEach(function(i){ i.addEventListener('input', checkBtns); });
+
+function checkBtns(){
+  const h=document.getElementById('home').value;
+  const a=document.getElementById('away').value;
+  const l=document.getElementById('league').value;
+  const ids=['odds-home','odds-draw','odds-away','odds-ht05','odds-over15','odds-over25','odds-btts','odds-corners75','odds-corners85'];
+  const anyOdd=ids.some(function(id){ return parseFloat(document.getElementById(id).value)>1; });
+  document.getElementById('analyze-btn').disabled=!(h&&a&&h!==a&&anyOdd);
+  document.getElementById('api-btn').disabled=!(h&&a&&h!==a&&l&&API_LEAGUE_IDS[l]);
+}
+
+function runAnalysis(){
+  const l=document.getElementById('league').value;
+  const h=document.getElementById('home').value;
+  const a=document.getElementById('away').value;
+  const pred=predictMatch(l,h,a,currentAPIData);
+  const oH=parseFloat(document.getElementById('odds-home').value)||0;
+  const oD=parseFloat(document.getElementById('odds-draw').value)||0;
+  const oA=parseFloat(document.getElementById('odds-away').value)||0;
+  const fair=calcFair(oH,oD,oA);
+  const mkts=[
+    {name:'Victoria Local',prob:parseFloat(pred.hw),oid:'odds-home',fair:fair?fair.home:null,vig:fair?fair.vig:null},
+    {name:'Empate',prob:parseFloat(pred.dr),oid:'odds-draw',fair:fair?fair.draw:null,vig:fair?fair.vig:null},
+    {name:'Victoria Visitante',prob:parseFloat(pred.aw),oid:'odds-away',fair:fair?fair.away:null,vig:fair?fair.vig:null},
+    {name:'Over 0.5 Goles 1T',prob:pred.ht05,oid:'odds-ht05',note:'lam 1T aprox 42%'},
+    {name:'Over 1.5 Goles',prob:pred.o15,oid:'odds-over15'},
+    {name:'Over 2.5 Goles',prob:pred.o25,oid:'odds-over25'},
+    {name:'BTTS - Ambos Marcan',prob:pred.btts,oid:'odds-btts'},
+    {name:'Over 7.5 Corners',prob:pred.c75,oid:'odds-corners75',note:'lam corners='+pred.cLam},
+    {name:'Over 8.5 Corners',prob:pred.c85,oid:'odds-corners85',note:'lam corners='+pred.cLam}
+  ];
+  const markets=mkts.map(function(m){
+    const odds=parseFloat(document.getElementById(m.oid).value)||0;
+    const hasOdds=odds>1&&odds<=50;
+    const ev=hasOdds?calcEV(m.prob,odds):null;
+    return Object.assign({},m,{odds:hasOdds?odds:0,ev:ev,hasValue:ev!==null&&ev>0});
+  });
+  renderResults(pred,markets);
+}
+
+function renderResults(pred, markets){
+  document.getElementById('main-screen').classList.add('hidden');
+  document.getElementById('result-screen').classList.remove('hidden');
+  const hasVal=markets.some(function(m){ return m.hasValue; });
+  const apiBadge=pred.usingAPI?'<span class="model-badge model-api">DATOS API v2</span>':'<span class="model-badge model-static">DATOS ESTATICOS</span>';
+  let html='';
+  markets.forEach(function(m){
+    const iv=m.odds>1;
+    const badge2=m.hasValue?'<span class="value-badge">+EV</span>':(iv?'<span class="no-value-badge">SIN VALOR</span>':'<span class="info-badge">PROB</span>');
+    const barC=m.hasValue?'var(--green)':(iv?'var(--accent)':'var(--blue)');
+    const cls=m.hasValue?'green':(iv?'red':'');
+    let vigH=''; if(m.vig!=null&&m.fair!=null) vigH='<div class="small-note">Vig: '+(m.vig*100).toFixed(1)+'% &middot; Prob justa: '+(m.fair*100).toFixed(1)+'%</div>';
+    let noteH=m.note?'<div class="small-note">'+m.note+'</div>':'';
+    let stakeH='';
+    if(m.hasValue&&m.odds>1){
+      const stake=kellyStake(m.prob/100,m.odds);
+      if(stake>0.01){
+        stakeH='<div class="stake-suggestion">'
+          +'<div style="font-size:.62rem;color:var(--muted)">Kelly '+(config.kellyFraction*100).toFixed(0)+'% &middot; Max '+(config.maxStakePct*100).toFixed(0)+'% bankroll</div>'
+          +'<div style="font-size:1.2rem;font-weight:800;color:var(--blue)">$'+stake.toFixed(2)+'</div>'
+          +'<div style="font-size:.6rem;color:var(--muted)">'+(stake/bankroll*100).toFixed(1)+'% bankroll &middot; EV <span class="green">+'+(m.ev?m.ev.toFixed(1):'?')+'%</span></div>'
+          +'<button class="btn-secondary" onclick="placeBet(\''+m.name+'\','+m.prob+','+m.odds+','+stake.toFixed(2)+',\''+pred.home+' vs '+pred.away+'\')" style="margin-top:8px;width:100%;font-size:.72rem">REGISTRAR APUESTA</button>'
+          +'</div>';
+      }
     }
-    log.innerHTML=h;
+    html+='<div class="market" style="border-color:'+(m.hasValue?'rgba(46,204,113,.3)':(iv?'rgba(255,77,90,.15)':'rgba(77,171,247,.15)'))+'">'
+      +'<div class="market-header">'+m.name+' '+badge2+'</div>'
+      +'<div class="prob-row"><span class="prob-label">Probabilidad</span><div class="bar-wrap"><div class="bar-fill" data-w="'+Math.round(m.prob)+'" style="background:'+barC+';box-shadow:0 0 8px '+barC+'"></div></div><span class="prob-value '+cls+'">'+Math.round(m.prob)+'%</span></div>'
+      +(iv?'<div class="prob-row"><span class="prob-label">Cuota</span><span></span><span class="prob-value">'+m.odds.toFixed(2)+'</span></div><div class="ev-row"><span class="ev-label">EV</span><span class="ev-value '+(m.ev>0?'green':'red')+'">'+(m.ev>0?'+':'')+m.ev.toFixed(1)+'%</span></div>':'')
+      +vigH+noteH+stakeH+'</div>';
+  });
+  document.getElementById('result-card').innerHTML=
+    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">'
+    +'<h3 style="margin:0;font-size:.9rem">'+pred.home+' vs '+pred.away+'</h3>'
+    +'<button class="btn-secondary" onclick="goBack()" style="width:auto;padding:8px 14px;font-size:.7rem">Volver</button></div>'
+    +'<div style="text-align:center;margin-bottom:10px"><span style="font-size:.7rem;color:var(--muted)">'+pred.leagueName+' &middot; lam: '+pred.lh+'/'+pred.la+'</span><br>'+apiBadge+'</div>'
+    +(hasVal?'<div class="bankroll-display" style="margin-bottom:12px">MERCADOS CON VALOR ENCONTRADOS</div>':'')
+    +(!hasVal?'<div class="warning-box">No se encontraron apuestas +EV en este partido.</div>':'')
+    +html
+    +'<div class="model-info" style="margin-top:14px"><strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles &middot; EV min recomendado: +5%</div>';
+  setTimeout(function(){
+    document.querySelectorAll('.bar-fill[data-w]').forEach(function(b){ b.style.width=b.dataset.w+'%'; });
+  },100);
+  document.getElementById('result-screen').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+// ==================== BANKROLL / HISTORIAL ====================
+function placeBet(market,prob,odds,stake,match){
+  bankroll-=parseFloat(stake);
+  betHistory.push({date:new Date().toISOString(),match:match,market:market,prob:prob,odds:odds,stake:parseFloat(stake),status:'pending',result:null});
+  saveAll(); updateBankrollDisplay(); updateHistoryDisplay();
+  showToast('Apuesta registrada','success');
+}
+function updateBetResult(idx,won){
+  const b=betHistory[idx]; if(!b||b.status!=='pending') return;
+  b.status='settled'; b.result=won?'win':'loss';
+  if(won) bankroll+=b.stake*b.odds;
+  saveAll(); updateBankrollDisplay(); updateHistoryDisplay();
+}
+function deleteBet(idx){
+  const b=betHistory[idx]; if(!b) return;
+  if(b.status==='pending') bankroll+=b.stake;
+  else if(b.status==='settled'&&b.result==='win') bankroll-=b.stake*b.odds;
+  betHistory.splice(idx,1);
+  saveAll(); updateBankrollDisplay(); updateHistoryDisplay();
+}
+function updateHistoryDisplay(){
+  const log=document.getElementById('bet-log');
+  if(!betHistory.length){ log.innerHTML='<p style="color:var(--muted);text-align:center;padding:20px">No hay apuestas registradas.</p>'; return; }
+  let h='';
+  for(let i=betHistory.length-1;i>=0;i--){
+    const b=betHistory[i];
+    const d=new Date(b.date).toLocaleDateString();
+    const sc=b.status==='pending'?'log-pending':(b.result==='win'?'log-win':'log-loss');
+    const icon=b.status==='pending'?'...':'(b.result===\'win\'?\'W\':\'L\')';
+    const profit=b.status==='settled'?(b.result==='win'?'+$'+(b.stake*b.odds-b.stake).toFixed(2):'-$'+b.stake.toFixed(2)):'Pendiente';
+    const pc=b.status==='settled'?(b.result==='win'?'profit':'loss'):'';
+    h+='<div class="log-item '+sc+'">'
+      +'<div style="flex:1"><div style="font-weight:600">'+b.match+'</div>'
+      +'<div style="font-size:.65rem;color:var(--muted)">'+b.market+' @'+b.odds+' $'+b.stake.toFixed(2)+'</div>'
+      +'<div style="font-size:.6rem;color:var(--muted)">'+d+'</div></div>'
+      +'<div style="text-align:right;display:flex;align-items:center;gap:4px">'
+      +'<div><div class="'+pc+'" style="font-weight:700;font-size:.75rem">'+profit+'</div>'
+      +(b.status==='pending'?'<div style="margin-top:4px;display:flex;gap:3px">'
+        +'<button onclick="updateBetResult('+i+',true)" style="background:var(--green);color:white;border:none;padding:2px 6px;border-radius:4px;font-size:.6rem;cursor:pointer">Gano</button>'
+        +'<button onclick="updateBetResult('+i+',false)" style="background:var(--accent);color:white;border:none;padding:2px 6px;border-radius:4px;font-size:.6rem;cursor:pointer">Perdio</button>'
+        +'</div>':'')
+      +'</div><button class="delete-btn" onclick="deleteBet('+i+')">X</button></div></div>';
+  }
+  log.innerHTML=h;
+}
+
 function exportHistory(){
-    if(!betHistory.length){alert('No hay apuestas.');return;}
-    const esc=s=>`"${String(s).replace(/"/g,'""')}"`;
-    const csv='Fecha,Partido,Mercado,Probabilidad,Cuota,Stake,Estado,Resultado,Ganancia\n'+betHistory.map(b=>{const p=b.status==='settled'?(b.result==='win'?(b.stake*b.odds-b.stake).toFixed(2):(-b.stake).toFixed(2)):'0';return `${esc(new Date(b.date).toLocaleDateString())},${esc(b.match)},${esc(b.market)},${b.prob}%,${b.odds},$${b.stake.toFixed(2)},${b.status},${b.result||'N/A'},${p}`;}).join('\n');
-    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([csv],{type:'text/csv'})),download:`apuestas_${new Date().toISOString().split('T')[0]}.csv`}); a.click();
+  if(!betHistory.length){ alert('No hay apuestas'); return; }
+  const esc=function(s){ return '"'+String(s).replace(/"/g,'""')+'"'; };
+  const hdr='Fecha,Partido,Mercado,Probabilidad,Cuota,Stake,Estado,Resultado,Ganancia\n';
+  const rows=betHistory.map(function(b){
+    const p=b.status==='settled'?(b.result==='win'?(b.stake*b.odds-b.stake).toFixed(2):(-b.stake).toFixed(2)):'0';
+    return [esc(new Date(b.date).toLocaleDateString()),esc(b.match),esc(b.market),b.prob+'%',b.odds,'$'+b.stake.toFixed(2),b.status,b.result||'N/A',p].join(',');
+  }).join('\n');
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([hdr+rows],{type:'text/csv'}));
+  a.download='apuestas_'+new Date().toISOString().split('T')[0]+'.csv';
+  a.click();
 }
 function exportJSON(){
-    const data={bankroll,config,betHistory,exportedAt:new Date().toISOString()};
-    const a=Object.assign(document.createElement('a'),{href:URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'})),download:`betanalytics_backup_${new Date().toISOString().split('T')[0]}.json`}); a.click();
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({bankroll:bankroll,config:config,betHistory:betHistory,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}));
+  a.download='betanalytics_'+new Date().toISOString().split('T')[0]+'.json';
+  a.click();
 }
 function importJSON(input){
-    const f=input.files[0]; if(!f)return; const r=new FileReader();
-    r.onload=e=>{try{const d=JSON.parse(e.target.result); if(d.bankroll!==undefined)bankroll=d.bankroll; if(d.config)config={...DEFAULT_CONFIG,...d.config}; if(d.betHistory)betHistory=d.betHistory; saveAll();updateBankrollDisplay();updateHistoryDisplay();alert('✅ Importado');}catch{alert('❌ Archivo inválido');}};
-    r.readAsText(f); input.value='';
+  const f=input.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload=function(e){
+    try{
+      const d=JSON.parse(e.target.result);
+      if(d.bankroll!==undefined) bankroll=d.bankroll;
+      if(d.config) config=Object.assign({},DEFAULT_CONFIG,d.config);
+      if(d.betHistory) betHistory=d.betHistory;
+      saveAll(); updateBankrollDisplay(); updateHistoryDisplay();
+      alert('Importado correctamente');
+    } catch(err){ alert('Archivo invalido'); }
+  };
+  r.readAsText(f); input.value='';
 }
+
+// ==================== TABS ====================
 function switchTab(tab){
-    ['analyzer','history','stats','config'].forEach(t=>document.getElementById(`tab-${t}`).classList.toggle('hidden',t!==tab));
-    document.querySelectorAll('.tab').forEach((el,i)=>{const tabs=['analyzer','history','stats','config'];el.classList.toggle('active','history','stats','config'];el.classList.toggle('active',tabs[i]===tab);});
-    if(tab==='history')updateHistoryDisplay(); if(tab==='stats')updateStats(); if(tab==='config')loadConfig();
+  var tabs=['analyzer','history','stats','config'];
+  tabs.forEach(function(t){
+    document.getElementById('tab-'+t).classList.toggle('hidden', t!==tab);
+    document.getElementById('tab-btn-'+t).classList.toggle('active', t===tab);
+  });
+  if(tab==='history') updateHistoryDisplay();
+  if(tab==='stats') updateStats();
+  if(tab==='config') loadConfig();
 }
-function goBack(){ document.getElementById('main-screen').classList.remove('hidden'); document.getElementById('result-screen').classList.add('hidden'); document.getElementById('main-screen').scrollIntoView({behavior:'smooth'}); }
+function goBack(){
+  document.getElementById('main-screen').classList.remove('hidden');
+  document.getElementById('result-screen').classList.add('hidden');
+  document.getElementById('main-screen').scrollIntoView({behavior:'smooth'});
+}
+
+// ==================== BANKROLL DISPLAY ====================
 function updateBankrollDisplay(){
-    document.getElementById('bankroll-display').textContent='$'+bankroll.toFixed(2);
-    const pnl=bankroll-config.initialBankroll, pnlPct=((pnl/config.initialBankroll)*100).toFixed(1);
-    const el=document.getElementById('pnl-display'); el.textContent=`P&L: $${pnl.toFixed(2)} (${pnlPct}%)`; el.className=pnl>=0?'profit':'loss';
+  document.getElementById('bankroll-display').textContent='$'+bankroll.toFixed(2);
+  const pnl=bankroll-config.initialBankroll;
+  const pct=((pnl/config.initialBankroll)*100).toFixed(1);
+  const el=document.getElementById('pnl-display');
+  el.textContent='P&L: $'+pnl.toFixed(2)+' ('+pct+'%)';
+  el.className=pnl>=0?'profit':'loss';
 }
+
+// ==================== STATS ====================
 function updateStats(){
-    const settled=betHistory.filter(b=>b.status==='settled'), wins=settled.filter(b=>b.result==='win').length;
-    const wr=settled.length?((wins/settled.length)*100).toFixed(1):'0.0';
-    let staked=0,profit=0; settled.forEach(b=>{staked+=b.stake;profit+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;});
-    const yld=staked?((profit/staked)*100).toFixed(1):'0.0', roi=((profit/config.initialBankroll)*100).toFixed(1);
-    let streak=0; for(let i=betHistory.length-1;i>=0;i--){if(betHistory[i].status!=='settled')continue;if(betHistory[i].result==='win')streak++;else{if(streak===0)streak=-1;break;}}
-    document.getElementById('stat-total').textContent=betHistory.length;
-    document.getElementById('stat-winrate').textContent=wr+'%';
-    document.getElementById('stat-yield').textContent=yld+'%';
-    document.getElementById('stat-roi').textContent=roi+'%';
-    document.getElementById('stat-profit').textContent=(profit>=0?'+':'')+'$'+profit.toFixed(0);
-    document.getElementById('stat-streak').textContent=streak>0?`W${streak}`:(streak<0?`L${Math.abs(streak)}`:'-');
-    document.getElementById('stat-profit').className=profit>=0?'stat-value green':'stat-value red';
-    drawBankrollChart();
+  const settled=betHistory.filter(function(b){ return b.status==='settled'; });
+  const wins=settled.filter(function(b){ return b.result==='win'; }).length;
+  const wr=settled.length?((wins/settled.length)*100).toFixed(1):'0.0';
+  var staked=0, profit=0;
+  settled.forEach(function(b){
+    staked+=b.stake;
+    profit+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;
+  });
+  const yld=staked?((profit/staked)*100).toFixed(1):'0.0';
+  const roi=((profit/config.initialBankroll)*100).toFixed(1);
+  var streak=0;
+  for(var i=betHistory.length-1;i>=0;i--){
+    if(betHistory[i].status!=='settled') continue;
+    if(betHistory[i].result==='win') streak++;
+    else{ if(streak===0) streak=-1; break; }
+  }
+  document.getElementById('stat-total').textContent=betHistory.length;
+  document.getElementById('stat-winrate').textContent=wr+'%';
+  document.getElementById('stat-yield').textContent=yld+'%';
+  document.getElementById('stat-roi').textContent=roi+'%';
+  document.getElementById('stat-profit').textContent=(profit>=0?'+':'')+'$'+profit.toFixed(0);
+  document.getElementById('stat-profit').className=profit>=0?'stat-value green':'stat-value red';
+  document.getElementById('stat-streak').textContent=streak>0?'W'+streak:(streak<0?'L'+Math.abs(streak):'-');
+  drawChart();
 }
-function drawBankrollChart(){
-    const svg=document.getElementById('bankroll-chart'), w=svg.clientWidth||500,h=120,pad=20;
-    let pts=[{x:0,y:config.initialBankroll}],cur=config.initialBankroll;
-    betHistory.forEach(b=>{if(b.status!=='settled')return;cur+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;pts.push({x:pts.length,y:cur});});
-    if(pts.length<2){svg.innerHTML=`<text x="${w/2}" y="${h/2}" text-anchor="middle" fill="#8899aa" font-size="12">Sin datos</text>`;return;}
-    const minY=Math.min(...pts.map(p=>p.y),config.initialBankroll*.9),maxY=Math.max(...pts.map(p=>p.y),config.initialBankroll*1.1),range=maxY-minY||1;
-    const tx=i=>pad+(i/(pts.length-1))*(w-pad*2), ty=v=>h-pad-((v-minY)/range)*(h-pad*2);
-    let d=`M ${tx(0)} ${ty(pts[0].y)}`; pts.forEach((p,i)=>{if(i>0)d+=` L ${tx(i)} ${ty(p.y)}`;});
-    const color=pts[pts.length-1].y>=config.initialBankroll?'#2ecc71':'#ff4d5a';
-    svg.innerHTML=`<line x1="${pad}" y1="${ty(config.initialBankroll)}" x2="${w-pad}" y2="${ty(config.initialBankroll)}" stroke="rgba(255,255,255,0.1)" stroke-dasharray="4"/><path d="${d}" fill="none" stroke="${color}" stroke-width="2"/>${pts.map((p,i)=>`<circle cx="${tx(i)}" cy="${ty(p.y)}" r="3" fill="${color}"/>`).join('')}`;
+
+function drawChart(){
+  const svg=document.getElementById('bankroll-chart');
+  const w=svg.clientWidth||500, h=120, pad=20;
+  var pts=[{y:config.initialBankroll}], cur=config.initialBankroll;
+  betHistory.forEach(function(b){
+    if(b.status!=='settled') return;
+    cur+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;
+    pts.push({y:cur});
+  });
+  if(pts.length<2){ svg.innerHTML='<text x="'+(w/2)+'" y="'+(h/2)+'" text-anchor="middle" fill="#8899aa" font-size="12">Sin datos</text>'; return; }
+  var minY=Math.min.apply(null,pts.map(function(p){ return p.y; }));
+  var maxY=Math.max.apply(null,pts.map(function(p){ return p.y; }));
+  minY=Math.min(minY,config.initialBankroll*.9);
+  maxY=Math.max(maxY,config.initialBankroll*1.1);
+  const rng=maxY-minY||1;
+  const tx=function(i){ return pad+(i/(pts.length-1))*(w-pad*2); };
+  const ty=function(v){ return h-pad-((v-minY)/rng)*(h-pad*2); };
+  var d='M '+tx(0)+' '+ty(pts[0].y);
+  pts.forEach(function(p,i){ if(i>0) d+=' L '+tx(i)+' '+ty(p.y); });
+  const color=pts[pts.length-1].y>=config.initialBankroll?'#2ecc71':'#ff4d5a';
+  var circles='';
+  pts.forEach(function(p,i){ circles+='<circle cx="'+tx(i)+'" cy="'+ty(p.y)+'" r="3" fill="'+color+'"/>'; });
+  svg.innerHTML='<line x1="'+pad+'" y1="'+ty(config.initialBankroll)+'" x2="'+(w-pad)+'" y2="'+ty(config.initialBankroll)+'" stroke="rgba(255,255,255,.1)" stroke-dasharray="4"/>'
+    +'<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2"/>'+circles;
 }
+
+// ==================== CONFIG ====================
 function loadConfig(){
-    document.getElementById('cfg-initial').value=config.initialBankroll;
-    document.getElementById('cfg-kelly').value=config.kellyFraction;
-    document.getElementById('cfg-maxstake').value=config.maxStakePct;
-    document.getElementById('cfg-apikey').value=config.apiKey||'';
-    document.getElementById('cfg-apibase').value=config.apiBaseUrl||'https://sports.bzzoiro.com';
+  document.getElementById('cfg-initial').value=config.initialBankroll;
+  document.getElementById('cfg-kelly').value=config.kellyFraction;
+  document.getElementById('cfg-maxstake').value=config.maxStakePct;
+  document.getElementById('cfg-apikey').value=config.apiKey||'';
+  document.getElementById('cfg-apibase').value=config.apiBaseUrl||'https://sports.bzzoiro.com';
 }
 function saveConfig(){
-    const initial=parseFloat(document.getElementById('cfg-initial').value),kelly=parseFloat(document.getElementById('cfg-kelly').value),maxStake=parseFloat(document.getElementById('cfg-maxstake').value),apiKey=document.getElementById('cfg-apikey').value.trim(),apiBaseUrl=document.getElementById('cfg-apibase').value.trim();
-    if(initial>0)config.initialBankroll=initial; if(kelly>0&&kelly<=1)config.kellyFraction=kelly; if(maxStake>0&&maxStake<=1)config.maxStakePct=maxStake;
-    config.apiKey=apiKey; config.apiBaseUrl=apiBaseUrl||'https://sports.bzzoiro.com';
-    saveAll(); updateBankrollDisplay(); alert('✅ Configuración guardada');
+  const ini=parseFloat(document.getElementById('cfg-initial').value);
+  const kel=parseFloat(document.getElementById('cfg-kelly').value);
+  const ms=parseFloat(document.getElementById('cfg-maxstake').value);
+  const key=document.getElementById('cfg-apikey').value.trim();
+  const base=document.getElementById('cfg-apibase').value.trim();
+  if(ini>0) config.initialBankroll=ini;
+  if(kel>0&&kel<=1) config.kellyFraction=kel;
+  if(ms>0&&ms<=1) config.maxStakePct=ms;
+  config.apiKey=key;
+  config.apiBaseUrl=base||'https://sports.bzzoiro.com';
+  saveAll(); updateBankrollDisplay();
+  alert('Configuracion guardada');
 }
-function resetData(){ if(!confirm('⚠️ ¿Seguro? Se borrará todo.'))return; bankroll=config.initialBankroll; betHistory=[]; saveAll();updateBankrollDisplay();updateHistoryDisplay();alert('🗑️ Datos reseteados'); }
-function showToast(msg,type='success'){ const t=document.createElement('div'); t.className=`toast-notification toast-${type}`; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2600); }
+function resetData(){
+  if(!confirm('Seguro? Se borraran todos los datos.')) return;
+  bankroll=config.initialBankroll; betHistory=[];
+  saveAll(); updateBankrollDisplay(); updateHistoryDisplay();
+  alert('Datos reseteados');
+}
 
-// INIT
+// ==================== TOAST ====================
+function showToast(msg,type){
+  type=type||'success';
+  const t=document.createElement('div');
+  t.className='toast-notification toast-'+type;
+  t.textContent=msg;
+  document.body.appendChild(t);
+  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },2600);
+}
+
+// ==================== INIT ====================
 updateBankrollDisplay();
 updateHistoryDisplay();
 </script>
