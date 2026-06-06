@@ -4,231 +4,926 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Bet Analytics PRO</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0a0e17;--card:#131925;--accent:#ff4d5a;--accent2:#ff6b7a;--green:#2ecc71;--yellow:#f1c40f;--blue:#4dabf7;--text:#f0f2f8;--muted:#8899aa;--border:rgba(255,255,255,0.08)}
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;padding:12px;min-height:100vh;background-image:radial-gradient(ellipse at top,rgba(255,77,90,.06) 0%,transparent 50%),radial-gradient(ellipse at bottom,rgba(46,204,113,.04) 0%,transparent 50%)}
-.container{max-width:550px;margin:0 auto}
-.card{background:var(--card);border-radius:18px;padding:20px;margin-bottom:16px;border:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.3)}
-h2{text-align:center;margin-bottom:4px;font-size:1.5rem;font-weight:800;letter-spacing:-.5px;background:linear-gradient(135deg,#fff,#ff8a95);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.subtitle{text-align:center;font-size:.6rem;color:var(--muted);margin-bottom:16px;letter-spacing:1px;text-transform:uppercase}
-h3{font-size:1rem;font-weight:700;margin-bottom:12px}
-label{display:block;font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin:10px 0 4px}
-select,input,button{width:100%;padding:12px 14px;margin:4px 0;border-radius:12px;background:rgba(255,255,255,.04);color:white;border:1px solid var(--border);font-size:14px;font-family:inherit;-webkit-appearance:none;appearance:none;transition:all .2s}
-select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%238899aa' stroke-width='1.5' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:36px}
-input[type="number"]{-webkit-appearance:textfield;appearance:textfield}
-select:focus,input:focus,button:focus{outline:none;border-color:var(--accent)}
-.btn-primary{background:linear-gradient(135deg,var(--accent),var(--accent2));font-weight:700;border:none;cursor:pointer;letter-spacing:.5px;box-shadow:0 4px 20px rgba(255,77,90,.25);margin-top:8px;font-size:15px;padding:14px}
-.btn-primary:active{transform:scale(.98)}
-.btn-primary:disabled{background:rgba(255,255,255,.06);color:rgba(255,255,255,.3);box-shadow:none;cursor:not-allowed}
-.btn-secondary{background:rgba(255,255,255,.06);border:1px solid var(--border);cursor:pointer;font-weight:600;font-size:13px;padding:10px}
-.btn-api{background:linear-gradient(135deg,#1a3a5c,#2196f3);font-weight:700;border:none;cursor:pointer;font-size:13px;padding:11px;border-radius:12px;color:white;width:100%;margin-top:8px;letter-spacing:.3px;box-shadow:0 4px 16px rgba(33,150,243,.25)}
-.btn-api:disabled{background:rgba(255,255,255,.05);color:rgba(255,255,255,.3);cursor:not-allowed;box-shadow:none}
-.btn-api:active{transform:scale(.98)}
-.api-status{border-radius:10px;padding:8px 12px;margin-top:8px;font-size:.68rem;font-weight:700;text-align:center;letter-spacing:.5px}
-.api-status.loaded{background:rgba(33,150,243,.15);border:1px solid rgba(33,150,243,.4);color:var(--blue)}
-.api-status.error{background:rgba(255,77,90,.1);border:1px solid rgba(255,77,90,.3);color:var(--accent)}
-.api-status.loading{background:rgba(255,193,7,.1);border:1px solid rgba(255,193,7,.3);color:var(--yellow)}
-.market{background:rgba(255,255,255,.02);border-radius:12px;padding:14px;margin:8px 0;border:1px solid var(--border)}
-.market-header{font-weight:700;font-size:.68rem;text-transform:uppercase;letter-spacing:2px;color:var(--accent);margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
-.prob-row{display:flex;justify-content:space-between;align-items:center;margin:7px 0;gap:8px}
-.prob-label{min-width:100px;font-size:.78rem;font-weight:500}
-.bar-wrap{flex:1;height:7px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden}
-.bar-fill{height:100%;border-radius:4px;width:0%;transition:width 1.2s cubic-bezier(.25,.46,.45,.94)}
-.prob-value{min-width:45px;text-align:right;font-weight:700;font-size:.85rem}
-.green{color:var(--green)}.yellow{color:var(--yellow)}.red{color:var(--accent)}.blue{color:var(--blue)}
-.hidden{display:none}
-.value-badge{display:inline-block;font-size:.6rem;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(46,204,113,.2);color:var(--green);letter-spacing:1px;text-transform:uppercase}
-.no-value-badge{display:inline-block;font-size:.6rem;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,77,90,.15);color:var(--accent);letter-spacing:1px}
-.info-badge{display:inline-block;font-size:.6rem;font-weight:700;padding:3px 10px;border-radius:20px;background:rgba(255,255,255,.05);color:var(--muted);letter-spacing:1px}
-.bankroll-display{background:rgba(46,204,113,.1);border:1px solid rgba(46,204,113,.3);border-radius:12px;padding:12px;text-align:center;margin-bottom:16px}
-.bankroll-amount{font-size:1.8rem;font-weight:800;color:var(--green)}
-.stake-suggestion{background:rgba(77,171,247,.1);border:1px solid rgba(77,171,247,.3);border-radius:12px;padding:12px;margin-top:12px;text-align:center}
-.bet-log{max-height:300px;overflow-y:auto;margin-top:10px}
-.log-item{display:flex;justify-content:space-between;align-items:center;padding:8px 10px;border-bottom:1px solid var(--border);font-size:.72rem}
-.log-win{border-left:3px solid var(--green)}.log-loss{border-left:3px solid var(--accent)}.log-pending{border-left:3px solid var(--yellow)}
-.delete-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0 0 0 8px;margin-left:auto}
-.delete-btn:hover{color:var(--accent)}
-.powered-by{text-align:center;font-size:.55rem;color:var(--muted);margin-top:10px;opacity:.5}
-.tabs{display:flex;gap:4px;margin-bottom:16px;flex-wrap:wrap}
-.tab{flex:1;padding:10px;text-align:center;background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:10px;cursor:pointer;font-size:.7rem;font-weight:700;letter-spacing:1px;color:var(--muted);transition:all .2s;min-width:60px}
-.tab.active{background:rgba(255,77,90,.15);border-color:var(--accent);color:white}
-.warning-box{background:rgba(255,77,90,.1);border:1px solid rgba(255,77,90,.3);border-radius:10px;padding:12px;margin:10px 0;font-size:.7rem;color:var(--accent);text-align:center}
-.info-box{background:rgba(77,171,247,.08);border:1px solid rgba(77,171,247,.25);border-radius:10px;padding:10px 12px;margin:8px 0;font-size:.68rem;color:var(--blue)}
-.profit{color:var(--green)}.loss{color:var(--accent)}
-.ev-row{display:flex;align-items:center;gap:6px;margin-top:4px}
-.ev-label{font-size:.65rem;color:var(--muted);text-transform:uppercase;font-weight:700;letter-spacing:.5px}
-.ev-value{font-weight:700;font-size:.9rem}
-.toast-notification{position:fixed;top:20px;left:50%;transform:translateX(-50%);padding:12px 24px;border-radius:12px;font-weight:700;z-index:999;box-shadow:0 4px 20px rgba(0,0,0,.5);animation:fadeInOut 2.5s ease}
-.toast-success{background:var(--green);color:white}.toast-error{background:var(--accent);color:white}.toast-info{background:var(--blue);color:#0a0e17}
-@keyframes fadeInOut{0%{opacity:0;transform:translateX(-50%) translateY(-10px)}15%{opacity:1;transform:translateX(-50%) translateY(0)}85%{opacity:1;transform:translateX(-50%) translateY(0)}100%{opacity:0;transform:translateX(-50%) translateY(-10px)}}
-.stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
-.stat-box{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:10px;text-align:center}
-.stat-value{font-size:1.2rem;font-weight:800;color:var(--text)}
-.stat-label{font-size:.55rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-top:4px}
-.chart-container{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:10px;padding:10px;margin-top:10px}
-.config-row{display:flex;justify-content:space-between;align-items:center;margin:8px 0;font-size:.8rem}
-.config-row input{width:130px;margin:0}
-.small-note{font-size:.6rem;color:var(--muted);margin-top:4px;font-style:italic}
-.file-input{padding:8px;font-size:.75rem}
-.model-badge{display:inline-flex;align-items:center;gap:4px;font-size:.58rem;font-weight:700;padding:3px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.5px}
-.model-api{background:rgba(33,150,243,.2);color:var(--blue);border:1px solid rgba(33,150,243,.3)}
-.model-static{background:rgba(255,193,7,.15);color:var(--yellow);border:1px solid rgba(255,193,7,.3)}
-.odds-group{background:rgba(255,255,255,.02);border:1px solid var(--border);border-radius:12px;padding:12px;margin:8px 0}
-.odds-group-title{font-size:.6rem;font-weight:700;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:8px}
-.spinner{display:inline-block;width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:6px}
-@keyframes spin{to{transform:rotate(360deg)}}
-.model-info{font-size:.65rem;color:var(--muted);background:rgba(255,255,255,.03);border-radius:8px;padding:8px 10px;margin-top:10px;line-height:1.6}
-.model-info strong{color:var(--text)}
-.version-tag{font-size:.55rem;font-weight:700;padding:2px 7px;border-radius:20px;background:rgba(46,204,113,.15);color:var(--green);border:1px solid rgba(46,204,113,.3);margin-left:6px;vertical-align:middle}
+/* ── TOKENS ─────────────────────────────────────────── */
+:root {
+  --bg:        #070b12;
+  --surface:   #0e1420;
+  --card:      #111827;
+  --card2:     #161f2e;
+  --border:    rgba(255,255,255,0.07);
+  --border2:   rgba(255,255,255,0.12);
+  --accent:    #f43f5e;
+  --accent2:   #fb7185;
+  --green:     #10b981;
+  --green2:    #34d399;
+  --yellow:    #f59e0b;
+  --blue:      #3b82f6;
+  --blue2:     #60a5fa;
+  --purple:    #8b5cf6;
+  --text:      #f1f5f9;
+  --text2:     #94a3b8;
+  --text3:     #475569;
+  --mono:      'JetBrains Mono', monospace;
+  --sans:      'Inter', -apple-system, sans-serif;
+  --r-sm:      10px;
+  --r-md:      14px;
+  --r-lg:      20px;
+  --r-xl:      24px;
+  --shadow:    0 8px 40px rgba(0,0,0,0.5);
+  --shadow-sm: 0 2px 12px rgba(0,0,0,0.3);
+}
+/* ── RESET ───────────────────────────────────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { -webkit-tap-highlight-color: transparent; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--sans);
+  font-size: 15px;
+  line-height: 1.5;
+  min-height: 100vh;
+  padding: 16px 12px 40px;
+  background-image:
+    radial-gradient(ellipse 80% 50% at 50% -10%, rgba(244,63,94,.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 110%, rgba(59,130,246,.08) 0%, transparent 60%);
+}
+.container { max-width: 520px; margin: 0 auto; }
+
+/* ── HEADER ──────────────────────────────────────────── */
+.app-header {
+  text-align: center;
+  padding: 8px 0 20px;
+  position: relative;
+}
+.app-header::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), var(--blue));
+  border-radius: 2px;
+  margin: 12px auto 0;
+}
+.app-title {
+  font-size: 1.6rem;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+  background: linear-gradient(135deg, #fff 30%, var(--accent2));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.app-title .ball { -webkit-text-fill-color: initial; font-size: 1.4rem; }
+.app-subtitle {
+  font-size: 0.6rem;
+  color: var(--text3);
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  margin-top: 4px;
+  font-weight: 600;
+}
+.vtag {
+  font-size: 0.55rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  background: rgba(16,185,129,0.15);
+  color: var(--green2);
+  border: 1px solid rgba(16,185,129,0.3);
+  letter-spacing: 0.5px;
+  vertical-align: middle;
+  margin-left: 6px;
+  font-family: var(--mono);
+}
+
+/* ── BANKROLL CARD ───────────────────────────────────── */
+.bankroll-card {
+  background: linear-gradient(135deg, rgba(16,185,129,0.12) 0%, rgba(59,130,246,0.06) 100%);
+  border: 1px solid rgba(16,185,129,0.2);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  text-align: center;
+  margin-bottom: 16px;
+  position: relative;
+  overflow: hidden;
+}
+.bankroll-card::before {
+  content: '';
+  position: absolute;
+  top: -40px; right: -40px;
+  width: 120px; height: 120px;
+  background: radial-gradient(circle, rgba(16,185,129,0.1), transparent 70%);
+  pointer-events: none;
+}
+.br-label {
+  font-size: 0.6rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+.br-amount {
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--green2);
+  letter-spacing: -1px;
+  font-family: var(--mono);
+  line-height: 1.1;
+}
+.br-pnl {
+  font-size: 0.72rem;
+  color: var(--text3);
+  margin-top: 4px;
+  font-family: var(--mono);
+  font-weight: 500;
+}
+.br-pnl.profit { color: var(--green); }
+.br-pnl.loss   { color: var(--accent); }
+
+/* ── TABS ────────────────────────────────────────────── */
+.tabs {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+  margin-bottom: 18px;
+}
+.tab {
+  padding: 11px 6px;
+  text-align: center;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text3);
+  transition: all 0.18s;
+  text-transform: uppercase;
+  user-select: none;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.tab-icon { font-size: 1.1rem; line-height: 1; }
+.tab:active { transform: scale(0.96); }
+.tab.active {
+  background: rgba(244,63,94,0.12);
+  border-color: rgba(244,63,94,0.4);
+  color: var(--text);
+  box-shadow: 0 0 16px rgba(244,63,94,0.1);
+}
+
+/* ── CARD ────────────────────────────────────────────── */
+.card {
+  background: var(--card);
+  border-radius: var(--r-xl);
+  padding: 20px;
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  margin-bottom: 16px;
+}
+
+/* ── SECTION HEADER ──────────────────────────────────── */
+.section-title {
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text3);
+  margin: 18px 0 8px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section-title::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* ── FORM ELEMENTS ───────────────────────────────────── */
+.field-group { margin-bottom: 14px; }
+.field-label {
+  display: block;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text3);
+  margin-bottom: 6px;
+}
+select, input[type="number"], input[type="text"] {
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: rgba(255,255,255,0.04);
+  color: var(--text);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-family: var(--sans);
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.18s, box-shadow 0.18s, background 0.18s;
+  outline: none;
+}
+select {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' stroke='%2364748b' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
+  padding-right: 38px;
+  cursor: pointer;
+}
+select:focus, input:focus {
+  border-color: rgba(244,63,94,0.5);
+  background: rgba(255,255,255,0.06);
+  box-shadow: 0 0 0 3px rgba(244,63,94,0.08);
+}
+select:disabled { opacity: 0.4; cursor: not-allowed; }
+input[type="number"] { -webkit-appearance: textfield; appearance: textfield; }
+
+/* ── ODDS BOX ────────────────────────────────────────── */
+.odds-box {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  margin-bottom: 12px;
+}
+.odds-box-title {
+  font-size: 0.6rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  color: var(--text3);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.odds-grid { display: grid; gap: 10px; }
+.odds-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.odds-field {}
+.odds-field .field-label { margin-bottom: 4px; }
+
+/* ── BUTTONS ─────────────────────────────────────────── */
+.btn {
+  width: 100%;
+  padding: 13px 16px;
+  border-radius: var(--r-md);
+  border: none;
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.18s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  text-transform: uppercase;
+}
+.btn:active { transform: scale(0.97); }
+.btn:disabled { opacity: 0.35; cursor: not-allowed; transform: none !important; }
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #e11d48);
+  color: white;
+  box-shadow: 0 4px 20px rgba(244,63,94,0.3);
+  font-size: 14px;
+  padding: 15px;
+  letter-spacing: 0.8px;
+}
+.btn-primary:hover:not(:disabled) { box-shadow: 0 6px 28px rgba(244,63,94,0.4); }
+.btn-api {
+  background: linear-gradient(135deg, #1e3a5f, var(--blue));
+  color: white;
+  box-shadow: 0 4px 16px rgba(59,130,246,0.2);
+  margin-bottom: 8px;
+}
+.btn-api:hover:not(:disabled) { box-shadow: 0 6px 24px rgba(59,130,246,0.3); }
+.btn-ghost {
+  background: rgba(255,255,255,0.05);
+  color: var(--text2);
+  border: 1px solid var(--border);
+}
+.btn-ghost:hover:not(:disabled) { background: rgba(255,255,255,0.08); border-color: var(--border2); }
+.btn-danger {
+  background: rgba(244,63,94,0.08);
+  color: var(--accent);
+  border: 1px solid rgba(244,63,94,0.2);
+}
+.btn-sm { padding: 8px 14px; font-size: 0.7rem; width: auto; }
+.btn-row { display: flex; gap: 8px; margin-top: 8px; }
+.btn-row .btn { flex: 1; }
+.mt8 { margin-top: 8px; }
+.mt12 { margin-top: 12px; }
+.mt16 { margin-top: 16px; }
+
+/* ── STATUS PILLS ─────────────────────────────────────── */
+.status-pill {
+  border-radius: var(--r-sm);
+  padding: 9px 14px;
+  margin-top: 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-align: center;
+  letter-spacing: 0.3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+}
+.status-pill.loaded  { background: rgba(59,130,246,0.1);  border: 1px solid rgba(59,130,246,0.25); color: var(--blue2); }
+.status-pill.error   { background: rgba(244,63,94,0.08);  border: 1px solid rgba(244,63,94,0.2);  color: var(--accent2); }
+.status-pill.loading { background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); color: var(--yellow); }
+
+/* ── INFO / WARNING BOXES ─────────────────────────────── */
+.info-box {
+  background: rgba(59,130,246,0.06);
+  border: 1px solid rgba(59,130,246,0.15);
+  border-radius: var(--r-md);
+  padding: 10px 14px;
+  font-size: 0.68rem;
+  color: var(--blue2);
+  line-height: 1.5;
+}
+.warn-box {
+  background: rgba(244,63,94,0.07);
+  border: 1px solid rgba(244,63,94,0.18);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  font-size: 0.72rem;
+  color: var(--accent2);
+  text-align: center;
+  font-weight: 600;
+}
+.success-box {
+  background: rgba(16,185,129,0.08);
+  border: 1px solid rgba(16,185,129,0.2);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  text-align: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--green2);
+}
+
+/* ── MARKET CARD (resultados) ─────────────────────────── */
+.market {
+  background: var(--card2);
+  border-radius: var(--r-lg);
+  padding: 16px;
+  margin: 10px 0;
+  border: 1px solid var(--border);
+  transition: border-color 0.2s;
+}
+.market.has-value  { border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04); }
+.market.no-value   { border-color: rgba(244,63,94,0.12); }
+.market-name {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--text2);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.badge {
+  font-size: 0.58rem;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 20px;
+  letter-spacing: 0.5px;
+}
+.badge-ev    { background: rgba(16,185,129,0.15); color: var(--green2); border: 1px solid rgba(16,185,129,0.3); }
+.badge-no    { background: rgba(244,63,94,0.1);   color: var(--accent2); border: 1px solid rgba(244,63,94,0.2); }
+.badge-info  { background: rgba(255,255,255,0.05); color: var(--text3); border: 1px solid var(--border); }
+.badge-api   { background: rgba(59,130,246,0.12); color: var(--blue2); border: 1px solid rgba(59,130,246,0.25); }
+.badge-stat  { background: rgba(245,158,11,0.1); color: var(--yellow); border: 1px solid rgba(245,158,11,0.25); }
+
+.prob-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 8px 0;
+}
+.prob-label { font-size: 0.72rem; color: var(--text2); min-width: 88px; font-weight: 500; }
+.bar-track {
+  flex: 1;
+  height: 6px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  width: 0%;
+  transition: width 1.3s cubic-bezier(0.22,1,0.36,1);
+}
+.prob-val { min-width: 42px; text-align: right; font-weight: 800; font-size: 0.88rem; font-family: var(--mono); }
+
+.ev-strip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.ev-chip {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--mono);
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.ev-chip .lbl { color: var(--text3); font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; }
+.ev-chip .val { font-size: 0.9rem; }
+.ev-chip .val.pos { color: var(--green2); }
+.ev-chip .val.neg { color: var(--accent2); }
+
+.stake-card {
+  background: rgba(59,130,246,0.07);
+  border: 1px solid rgba(59,130,246,0.18);
+  border-radius: var(--r-md);
+  padding: 14px;
+  margin-top: 12px;
+  text-align: center;
+}
+.stake-amount {
+  font-size: 1.6rem;
+  font-weight: 900;
+  color: var(--blue2);
+  font-family: var(--mono);
+  letter-spacing: -0.5px;
+}
+.stake-meta { font-size: 0.62rem; color: var(--text3); margin-top: 3px; }
+.stake-meta .pos { color: var(--green2); font-weight: 700; }
+
+/* ── BET LOG ──────────────────────────────────────────── */
+.bet-log { max-height: 320px; overflow-y: auto; }
+.bet-log::-webkit-scrollbar { width: 4px; }
+.bet-log::-webkit-scrollbar-track { background: transparent; }
+.bet-log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
+.log-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 12px 10px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+.log-item:last-child { border-bottom: none; }
+.log-stripe {
+  position: absolute;
+  left: 0; top: 8px; bottom: 8px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+}
+.log-win  .log-stripe { background: var(--green); }
+.log-loss .log-stripe { background: var(--accent); }
+.log-pending .log-stripe { background: var(--yellow); }
+.log-body { flex: 1; padding-left: 4px; }
+.log-match { font-weight: 700; font-size: 0.78rem; color: var(--text); }
+.log-sub { font-size: 0.65rem; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
+.log-result { text-align: right; }
+.log-profit { font-weight: 800; font-size: 0.8rem; font-family: var(--mono); }
+.log-profit.pos { color: var(--green2); }
+.log-profit.neg { color: var(--accent2); }
+.log-profit.pend { color: var(--yellow); }
+.log-actions { display: flex; gap: 4px; margin-top: 5px; justify-content: flex-end; }
+.btn-tiny {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  border: none;
+  cursor: pointer;
+  letter-spacing: 0.3px;
+}
+.btn-win  { background: rgba(16,185,129,0.2); color: var(--green2); }
+.btn-lose { background: rgba(244,63,94,0.15); color: var(--accent2); }
+.btn-del  { background: rgba(255,255,255,0.05); color: var(--text3); }
+
+/* ── STATS ────────────────────────────────────────────── */
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.stat-box {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 10px;
+  text-align: center;
+}
+.stat-val {
+  font-size: 1.25rem;
+  font-weight: 900;
+  font-family: var(--mono);
+  color: var(--text);
+  letter-spacing: -0.5px;
+}
+.stat-lbl {
+  font-size: 0.55rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  margin-top: 3px;
+  font-weight: 700;
+}
+.chart-wrap {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 14px;
+  margin-top: 10px;
+}
+.chart-lbl {
+  font-size: 0.6rem;
+  color: var(--text3);
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+/* ── CONFIG ───────────────────────────────────────────── */
+.config-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 12px;
+}
+.config-row:last-of-type { border-bottom: none; }
+.config-row .cfg-label { font-size: 0.8rem; color: var(--text2); font-weight: 500; }
+.config-row input { width: 120px; margin: 0; padding: 8px 12px; font-size: 0.85rem; }
+.model-pill {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 12px 14px;
+  font-size: 0.68rem;
+  color: var(--text3);
+  line-height: 1.7;
+}
+.model-pill strong { color: var(--text2); }
+.small-note { font-size: 0.62rem; color: var(--text3); font-style: italic; line-height: 1.5; margin-top: 6px; }
+textarea {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: var(--r-sm);
+  background: rgba(0,0,0,0.4);
+  color: var(--text2);
+  border: 1px solid var(--border);
+  font-family: var(--mono);
+  font-size: 0.62rem;
+  resize: vertical;
+  outline: none;
+}
+
+/* ── RESULT HEADER ───────────────────────────────────── */
+.result-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  gap: 10px;
+}
+.match-title { font-size: 1rem; font-weight: 800; letter-spacing: -0.3px; }
+.match-meta {
+  font-size: 0.65rem;
+  color: var(--text3);
+  margin-top: 3px;
+  font-family: var(--mono);
+}
+
+/* ── TOAST ────────────────────────────────────────────── */
+.toast {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: 10px 22px;
+  border-radius: var(--r-md);
+  font-weight: 700;
+  font-size: 0.82rem;
+  z-index: 9999;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  animation: toastIn 2.5s ease forwards;
+  white-space: nowrap;
+}
+.toast-success { background: var(--green);  color: #fff; }
+.toast-error   { background: var(--accent); color: #fff; }
+.toast-info    { background: var(--blue);   color: #fff; }
+@keyframes toastIn {
+  0%   { opacity:0; transform:translateX(-50%) translateY(-12px); }
+  12%  { opacity:1; transform:translateX(-50%) translateY(0); }
+  80%  { opacity:1; transform:translateX(-50%) translateY(0); }
+  100% { opacity:0; transform:translateX(-50%) translateY(-8px); }
+}
+
+/* ── SPINNER ──────────────────────────────────────────── */
+.spin {
+  display: inline-block;
+  width: 13px; height: 13px;
+  border: 2px solid rgba(255,255,255,0.25);
+  border-top-color: white;
+  border-radius: 50%;
+  animation: rot 0.65s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes rot { to { transform: rotate(360deg); } }
+
+/* ── UTILS ────────────────────────────────────────────── */
+.hidden { display: none !important; }
+.green  { color: var(--green2); }
+.red    { color: var(--accent2); }
+.yellow { color: var(--yellow); }
+.blue   { color: var(--blue2); }
+.profit { color: var(--green2); }
+.loss   { color: var(--accent2); }
+.mono   { font-family: var(--mono); }
+.file-input { padding: 8px; font-size: 0.75rem; }
+
+/* ── FOOTER ───────────────────────────────────────────── */
+.footer {
+  text-align: center;
+  font-size: 0.55rem;
+  color: var(--text3);
+  margin-top: 16px;
+  letter-spacing: 1px;
+  opacity: 0.6;
+  text-transform: uppercase;
+}
 </style>
 </head>
 <body>
 <div class="container">
+
+<!-- ════════════ MAIN SCREEN ════════════ -->
 <div id="main-screen">
-<div class="card">
-<h2>&#9917; BET ANALYTICS PRO <span class="version-tag">v3.4</span></h2>
-<div class="subtitle">POISSON + DIXON-COLES &middot; BZZOIRO API v2 &middot; KELLY CRITERION</div>
 
-<div class="bankroll-display">
-  <div style="font-size:.6rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;">&#128176; Bankroll Actual</div>
-  <div class="bankroll-amount" id="bankroll-display">$20,000.00</div>
-  <div style="font-size:.6rem;color:var(--muted)" id="pnl-display">P&amp;L: $0.00 (0.0%)</div>
-</div>
-
-<div class="tabs">
-  <div class="tab active" id="tab-btn-analyzer" onclick="switchTab('analyzer')">&#128269; ANALIZAR</div>
-  <div class="tab" id="tab-btn-history" onclick="switchTab('history')">&#128202; HISTORIAL</div>
-  <div class="tab" id="tab-btn-stats" onclick="switchTab('stats')">&#128200; STATS</div>
-  <div class="tab" id="tab-btn-config" onclick="switchTab('config')">&#9881; CONFIG</div>
-</div>
-
-<!-- TAB ANALIZAR -->
-<div id="tab-analyzer">
-  <label>&#127942; Liga</label>
-  <select id="league">
-    <option value="">-- Selecciona liga --</option>
-    <option value="EPL">🏴󠁧󠁢󠁥󠁮󠁧󠁿  Premier League</option>
-    <option value="La_liga">🇪🇸  La Liga</option>
-    <option value="Serie_A">🇮🇹  Serie A</option>
-    <option value="Bundesliga">🇩🇪  Bundesliga</option>
-    <option value="Ligue_1">🇫🇷  Ligue 1</option>
-    <option value="Eredivisie">🇳🇱  Eredivisie</option>
-    <option value="Championship">🏴󠁧󠁢󠁥󠁮󠁧󠁿  Championship</option>
-    <option value="MLS">🇺🇸  MLS</option>
-    <option value="Brasileirao">🇧🇷  Brasileirao Serie A</option>
-    <option value="Brasileirao_B">🇧🇷  Brasileirão Série B</option>
-    <option value="Libertadores">🌎  Copa Libertadores</option>
-    <option value="Sudamericana">🌎  Copa Sudamericana</option>
-    <option value="Mundial_2026">🌍  Mundial 2026</option>
-  </select>
-  <label>&#127968; Local</label>
-  <select id="home" disabled><option value="">-- Selecciona liga primero --</option></select>
-  <label>&#9992; Visitante</label>
-  <select id="away" disabled><option value="">-- Selecciona liga primero --</option></select>
-
-  <div class="odds-group">
-    <div class="odds-group-title">&#128202; Cuotas 1X2</div>
-    <label>Gana Local</label><input type="number" id="odds-home" placeholder="Ej: 2.10" step="0.01" min="1.01" max="50">
-    <label>Empate</label><input type="number" id="odds-draw" placeholder="Ej: 3.20" step="0.01" min="1.01" max="50">
-    <label>Gana Visitante</label><input type="number" id="odds-away" placeholder="Ej: 3.60" step="0.01" min="1.01" max="50">
-  </div>
-  <div class="odds-group">
-    <div class="odds-group-title">&#9917; Cuotas Goles</div>
-    <label>Over 0.5 Goles 1T</label><input type="number" id="odds-ht05" placeholder="Ej: 1.40" step="0.01" min="1.01" max="50">
-    <label>Over 1.5 Goles</label><input type="number" id="odds-over15" placeholder="Ej: 1.25" step="0.01" min="1.01" max="50">
-    <label>Over 2.5 Goles</label><input type="number" id="odds-over25" placeholder="Ej: 1.85" step="0.01" min="1.01" max="50">
-    <label>BTTS - Ambos Marcan (Si)</label><input type="number" id="odds-btts" placeholder="Ej: 1.75" step="0.01" min="1.01" max="50">
-  </div>
-  <div class="odds-group">
-    <div class="odds-group-title">&#128681; Cuotas Corners</div>
-    <label>Over 7.5 Corners</label><input type="number" id="odds-corners75" placeholder="Ej: 1.90" step="0.01" min="1.01" max="50">
-    <label>Over 8.5 Corners</label><input type="number" id="odds-corners85" placeholder="Ej: 2.20" step="0.01" min="1.01" max="50">
+  <!-- Header -->
+  <div class="app-header">
+    <div class="app-title">
+      <span class="ball">⚽</span> BET ANALYTICS PRO <span class="vtag">v3.1</span>
+    </div>
+    <div class="app-subtitle">Poisson · Dixon-Coles · Kelly · Bzzoiro API v2</div>
   </div>
 
-  <button class="btn-api" id="api-btn" disabled onclick="loadAPIData()">&#127760; CARGAR DATOS REALES (BZZOIRO v2)</button>
-  <div id="api-status-box" class="hidden"></div>
-  <button class="btn-primary" id="analyze-btn" disabled onclick="runAnalysis()">&#127919; ANALIZAR Y BUSCAR VALOR</button>
-  <div class="info-box" style="margin-top:10px;">&#128161; <strong>Para maxima precision:</strong> configura tu Token en CONFIG y usa "Cargar Datos Reales" antes de analizar.</div>
-</div>
+  <!-- Bankroll -->
+  <div class="bankroll-card">
+    <div class="br-label">💰 Bankroll Actual</div>
+    <div class="br-amount" id="bankroll-display">$20,000.00</div>
+    <div class="br-pnl" id="pnl-display">P&amp;L: $0.00 (0.0%)</div>
+  </div>
 
-<!-- TAB HISTORIAL -->
-<div id="tab-history" class="hidden">
-  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
-    <h3 style="margin:0">&#128202; Historial de Apuestas</h3>
-    <div style="display:flex;gap:6px">
-      <button class="btn-secondary" onclick="exportHistory()" style="width:auto;padding:8px 14px">CSV</button>
-      <button class="btn-secondary" onclick="exportJSON()" style="width:auto;padding:8px 14px">JSON</button>
+  <!-- Tabs -->
+  <div class="tabs">
+    <div class="tab active" id="tab-btn-analyzer" onclick="switchTab('analyzer')">
+      <span class="tab-icon">🔍</span> Analizar
+    </div>
+    <div class="tab" id="tab-btn-history" onclick="switchTab('history')">
+      <span class="tab-icon">📋</span> Historial
+    </div>
+    <div class="tab" id="tab-btn-stats" onclick="switchTab('stats')">
+      <span class="tab-icon">📈</span> Stats
+    </div>
+    <div class="tab" id="tab-btn-config" onclick="switchTab('config')">
+      <span class="tab-icon">⚙️</span> Config
     </div>
   </div>
-  <div class="bet-log" id="bet-log"><p style="color:var(--muted);text-align:center;padding:20px">No hay apuestas registradas.</p></div>
-  <div style="margin-top:10px"><label>Importar respaldo JSON</label><input type="file" id="import-file" class="file-input" accept=".json" onchange="importJSON(this)"></div>
-</div>
 
-<!-- TAB STATS -->
-<div id="tab-stats" class="hidden">
-  <h3>&#128200; Estadisticas</h3>
-  <div class="stats-grid">
-    <div class="stat-box"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Apuestas</div></div>
-    <div class="stat-box"><div class="stat-value" id="stat-winrate">0%</div><div class="stat-label">Win Rate</div></div>
-    <div class="stat-box"><div class="stat-value" id="stat-yield">0%</div><div class="stat-label">Yield</div></div>
-    <div class="stat-box"><div class="stat-value" id="stat-roi">0%</div><div class="stat-label">ROI</div></div>
-    <div class="stat-box"><div class="stat-value" id="stat-profit">$0</div><div class="stat-label">Profit Neto</div></div>
-    <div class="stat-box"><div class="stat-value" id="stat-streak">-</div><div class="stat-label">Racha</div></div>
-  </div>
-  <div class="chart-container">
-    <div style="font-size:.65rem;color:var(--muted);text-transform:uppercase;letter-spacing:1px;margin-bottom:6px">Evolucion Bankroll</div>
-    <svg id="bankroll-chart" width="100%" height="120" style="overflow:visible"></svg>
-  </div>
-</div>
+  <div class="card">
 
-<!-- TAB CONFIG -->
-<div id="tab-config" class="hidden">
-  <h3>&#9881; Configuracion</h3>
-  <div class="config-row"><span>Bankroll Inicial ($)</span><input type="number" id="cfg-initial" step="100" min="0"></div>
-  <div class="config-row"><span>Fraccion Kelly</span><input type="number" id="cfg-kelly" step="0.05" min="0.05" max="1"></div>
-  <div class="config-row"><span>Stake Maximo (%)</span><input type="number" id="cfg-maxstake" step="0.01" min="0.01" max="1"></div>
-  <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
-    <h3 style="color:var(--blue);margin-bottom:8px">&#127760; API Bzzoiro v2</h3>
-    <label>URL Base</label>
-    <input type="text" id="cfg-apibase" placeholder="https://sports.bzzoiro.com">
-    <label>Token / API Key</label>
-    <input type="text" id="cfg-apikey" placeholder="Tu token de Bzzoiro" autocomplete="off">
-    <div class="small-note">Token gratis en sports.bzzoiro.com/register/ &mdash; Header: Authorization: Token TU_TOKEN</div>
-    <div id="api-test-result" style="margin-top:8px"></div>
-    <div style="display:flex;gap:8px;margin-top:6px">
-      <button class="btn-secondary" onclick="testAPIKey()" style="font-size:.72rem;padding:8px;flex:1">&#128273; Verificar Token</button>
-      <button class="btn-secondary" onclick="debugAPI()" style="font-size:.72rem;padding:8px;flex:1">&#128269; Depurar API</button>
-    </div>
-    <div id="api-debug-output" style="display:none;margin-top:8px">
-      <label>Respuesta debug</label>
-      <textarea id="debug-textarea" rows="8" readonly style="font-size:.62rem;background:rgba(0,0,0,.4);resize:vertical;font-family:monospace"></textarea>
-    </div>
-  </div>
-  <div style="margin-top:16px;border-top:1px solid var(--border);padding-top:14px">
-    <h3 style="margin-bottom:6px">&#129504; Modelo</h3>
-    <div class="model-info">
-      <strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles (rho=-0.13)<br>
-      <strong>API:</strong> Bzzoiro v2 &mdash; Authorization: Token KEY<br>
-      <strong>Mercados fiables:</strong> Over 1.5, Over 2.5, BTTS, Victoria Local<br>
-      <strong>EV minimo recomendado:</strong> +5% &mdash; <strong>ROI realista:</strong> 3-7%
-    </div>
-  </div>
-  <button class="btn-primary" onclick="saveConfig()" style="margin-top:14px">&#128190; Guardar Config</button>
-  <button class="btn-secondary" onclick="resetData()" style="margin-top:8px;background:rgba(255,77,90,.1);color:var(--accent);border-color:rgba(255,77,90,.3)">&#128465; Resetear Todo</button>
-  <p class="small-note">El stake nunca supera el % maximo del bankroll.</p>
-</div>
+    <!-- ═══ TAB ANALIZAR ═══ -->
+    <div id="tab-analyzer">
 
-</div><!-- /card -->
+      <div class="field-group">
+        <label class="field-label">🏆 Liga</label>
+        <select id="league">
+          <option value="">— Selecciona liga —</option>
+          <option value="EPL">🏴󠁧󠁢󠁥󠁮󠁧󠁿  Premier League</option>
+          <option value="La_liga">🇪🇸  La Liga</option>
+          <option value="Serie_A">🇮🇹  Serie A</option>
+          <option value="Bundesliga">🇩🇪  Bundesliga</option>
+          <option value="Ligue_1">🇫🇷  Ligue 1</option>
+          <option value="Eredivisie">🇳🇱  Eredivisie</option>
+          <option value="Championship">🏴󠁧󠁢󠁥󠁮󠁧󠁿  Championship</option>
+          <option value="MLS">🇺🇸  MLS</option>
+          <option value="Brasileirao">🇧🇷  Brasileirão Serie A</option>
+          <option value="Libertadores">🌎  Copa Libertadores</option>
+          <option value="Sudamericana">🌎  Copa Sudamericana</option>
+          <option value="Mundial_2026">🌍  Mundial 2026</option>
+        </select>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <div>
+          <label class="field-label">🏠 Local</label>
+          <select id="home" disabled><option value="">— Liga primero —</option></select>
+        </div>
+        <div>
+          <label class="field-label">✈️ Visitante</label>
+          <select id="away" disabled><option value="">— Liga primero —</option></select>
+        </div>
+      </div>
+
+      <div class="odds-box">
+        <div class="odds-box-title">📊 1X2</div>
+        <div class="odds-row">
+          <div class="odds-field">
+            <label class="field-label">Local gana</label>
+            <input type="number" id="odds-home" placeholder="2.10" step="0.01" min="1.01" max="50">
+          </div>
+          <div class="odds-field">
+            <label class="field-label">Empate</label>
+            <input type="number" id="odds-draw" placeholder="3.20" step="0.01" min="1.01" max="50">
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <label class="field-label">Visitante gana</label>
+          <input type="number" id="odds-away" placeholder="3.60" step="0.01" min="1.01" max="50">
+        </div>
+      </div>
+
+      <div class="odds-box">
+        <div class="odds-box-title">⚽ Goles</div>
+        <div class="odds-row">
+          <div class="odds-field">
+            <label class="field-label">Over 0.5 1T</label>
+            <input type="number" id="odds-ht05" placeholder="1.40" step="0.01" min="1.01" max="50">
+          </div>
+          <div class="odds-field">
+            <label class="field-label">Over 1.5</label>
+            <input type="number" id="odds-over15" placeholder="1.25" step="0.01" min="1.01" max="50">
+          </div>
+        </div>
+        <div class="odds-row" style="margin-top:8px">
+          <div class="odds-field">
+            <label class="field-label">Over 2.5</label>
+            <input type="number" id="odds-over25" placeholder="1.85" step="0.01" min="1.01" max="50">
+          </div>
+          <div class="odds-field">
+            <label class="field-label">BTTS (Sí)</label>
+            <input type="number" id="odds-btts" placeholder="1.75" step="0.01" min="1.01" max="50">
+          </div>
+        </div>
+      </div>
+
+      <div class="odds-box">
+        <div class="odds-box-title">🚩 Córners</div>
+        <div class="odds-row">
+          <div class="odds-field">
+            <label class="field-label">Over 7.5</label>
+            <input type="number" id="odds-corners75" placeholder="1.90" step="0.01" min="1.01" max="50">
+          </div>
+          <div class="odds-field">
+            <label class="field-label">Over 8.5</label>
+            <input type="number" id="odds-corners85" placeholder="2.20" step="0.01" min="1.01" max="50">
+          </div>
+        </div>
+      </div>
+
+      <button class="btn btn-api mt8" id="api-btn" disabled onclick="loadAPIData()">
+        🌐 Cargar Datos Reales (Bzzoiro v2)
+      </button>
+      <div id="api-status-box" class="hidden"></div>
+
+      <button class="btn btn-primary mt8" id="analyze-btn" disabled onclick="runAnalysis()">
+        🎯 Analizar y Buscar Valor
+      </button>
+
+      <div class="info-box mt12">
+        💡 <strong>Tip:</strong> configura tu Token en CONFIG y carga datos reales para mayor precisión.
+      </div>
+    </div>
+
+    <!-- ═══ TAB HISTORIAL ═══ -->
+    <div id="tab-history" class="hidden">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:.95rem;font-weight:800">📋 Historial</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm" onclick="exportHistory()">↓ CSV</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportJSON()">↓ JSON</button>
+        </div>
+      </div>
+      <div class="bet-log" id="bet-log">
+        <p style="color:var(--text3);text-align:center;padding:30px;font-size:.8rem">No hay apuestas registradas.</p>
+      </div>
+      <div style="margin-top:12px">
+        <label class="field-label">📂 Importar respaldo JSON</label>
+        <input type="file" id="import-file" class="file-input" accept=".json" onchange="importJSON(this)">
+      </div>
+    </div>
+
+    <!-- ═══ TAB STATS ═══ -->
+    <div id="tab-stats" class="hidden">
+      <div style="font-size:.95rem;font-weight:800;margin-bottom:14px">📈 Estadísticas</div>
+      <div class="stats-grid">
+        <div class="stat-box"><div class="stat-val" id="stat-total">0</div><div class="stat-lbl">Apuestas</div></div>
+        <div class="stat-box"><div class="stat-val" id="stat-winrate">0%</div><div class="stat-lbl">Win Rate</div></div>
+        <div class="stat-box"><div class="stat-val" id="stat-yield">0%</div><div class="stat-lbl">Yield</div></div>
+        <div class="stat-box"><div class="stat-val" id="stat-roi">0%</div><div class="stat-lbl">ROI</div></div>
+        <div class="stat-box"><div class="stat-val" id="stat-profit">$0</div><div class="stat-lbl">Profit</div></div>
+        <div class="stat-box"><div class="stat-val" id="stat-streak">—</div><div class="stat-lbl">Racha</div></div>
+      </div>
+      <div class="chart-wrap">
+        <div class="chart-lbl">Evolución Bankroll</div>
+        <svg id="bankroll-chart" width="100%" height="110" style="overflow:visible"></svg>
+      </div>
+    </div>
+
+    <!-- ═══ TAB CONFIG ═══ -->
+    <div id="tab-config" class="hidden">
+      <div style="font-size:.95rem;font-weight:800;margin-bottom:14px">⚙️ Configuración</div>
+
+      <div class="config-row">
+        <span class="cfg-label">Bankroll Inicial ($)</span>
+        <input type="number" id="cfg-initial" step="100" min="0">
+      </div>
+      <div class="config-row">
+        <span class="cfg-label">Fracción Kelly</span>
+        <input type="number" id="cfg-kelly" step="0.05" min="0.05" max="1">
+      </div>
+      <div class="config-row">
+        <span class="cfg-label">Stake Máximo (%)</span>
+        <input type="number" id="cfg-maxstake" step="0.01" min="0.01" max="1">
+      </div>
+
+      <div class="section-title" style="margin-top:20px">🌐 API Bzzoiro v2</div>
+      <div class="field-group">
+        <label class="field-label">URL Base</label>
+        <input type="text" id="cfg-apibase" placeholder="https://sports.bzzoiro.com">
+      </div>
+      <div class="field-group">
+        <label class="field-label">Token / API Key</label>
+        <input type="text" id="cfg-apikey" placeholder="Tu token de Bzzoiro" autocomplete="off">
+        <div class="small-note">Token gratis en sports.bzzoiro.com/register/</div>
+      </div>
+      <div id="api-test-result"></div>
+      <div class="btn-row">
+        <button class="btn btn-ghost" onclick="testAPIKey()" style="font-size:.7rem;padding:9px">🔑 Verificar Token</button>
+        <button class="btn btn-ghost" onclick="debugAPI()" style="font-size:.7rem;padding:9px">🔍 Depurar API</button>
+      </div>
+      <div id="api-debug-output" style="display:none;margin-top:10px">
+        <label class="field-label">Respuesta debug</label>
+        <textarea id="debug-textarea" rows="8" readonly></textarea>
+      </div>
+
+      <div class="section-title" style="margin-top:20px">🧠 Modelo</div>
+      <div class="model-pill">
+        <strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles (ρ = −0.13)<br>
+        <strong>Auth:</strong> Authorization: Token KEY<br>
+        <strong>Fiables:</strong> Over 1.5 · Over 2.5 · BTTS · Local<br>
+        <strong>EV mínimo:</strong> +5% &nbsp;·&nbsp; <strong>ROI realista:</strong> 3–7%
+      </div>
+
+      <button class="btn btn-primary mt16" onclick="saveConfig()">💾 Guardar Configuración</button>
+      <button class="btn btn-danger mt8" onclick="resetData()">🗑️ Resetear Todo</button>
+      <p class="small-note" style="margin-top:8px">El stake nunca supera el % máximo del bankroll.</p>
+    </div>
+
+  </div><!-- /card -->
 </div><!-- /main-screen -->
 
+<!-- ════════════ RESULT SCREEN ════════════ -->
 <div id="result-screen" class="hidden">
   <div class="card" id="result-card"></div>
 </div>
-<div class="powered-by">POISSON + DIXON-COLES &middot; BZZOIRO API v2 &middot; KELLY &middot; SOLO USO INFORMATIVO</div>
-</div><!-- /container -->
 
+<div class="footer">Poisson · Dixon-Coles · Bzzoiro API v2 · Kelly · Solo uso informativo</div>
+</div><!-- /container -->
 <script>
 // ==================== CONFIG ====================
 const DEFAULT_CONFIG = {initialBankroll:20000,kellyFraction:0.25,maxStakePct:0.05,apiKey:'',apiBaseUrl:'https://sports.bzzoiro.com'};
@@ -247,7 +942,7 @@ function saveAll(){
   localStorage.setItem('seasonIdCache', JSON.stringify(seasonIdCache));
 }
 
-// ==================== EQUIPOS (respaldo estático) ====================
+// ==================== EQUIPOS ====================
 const TEAMS_DB = {
   EPL:['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton','Chelsea','Crystal Palace','Everton','Fulham','Ipswich Town','Leicester City','Liverpool','Manchester City','Manchester United','Newcastle United','Nottingham Forest','Southampton','Tottenham','West Ham United','Wolves'],
   La_liga:['Alaves','Athletic Club','Atletico Madrid','Barcelona','Celta Vigo','Espanyol','Getafe','Girona','Las Palmas','Leganes','Mallorca','Osasuna','Rayo Vallecano','Real Betis','Real Madrid','Real Sociedad','Sevilla','Valencia','Valladolid','Villarreal'],
@@ -255,13 +950,12 @@ const TEAMS_DB = {
   Bundesliga:['Augsburg','Bayer Leverkusen','Bayern Munich','Bochum','Borussia Dortmund','Borussia Monchengladbach','Eintracht Frankfurt','Freiburg','Heidenheim','Hoffenheim','Holstein Kiel','Mainz 05','RB Leipzig','St. Pauli','Stuttgart','Union Berlin','Werder Bremen','Wolfsburg'],
   Ligue_1:['Angers','Auxerre','Brest','Le Havre','Lens','Lille','Lyon','Marseille','Monaco','Montpellier','Nantes','Nice','PSG','Reims','Rennes','Saint-Etienne','Strasbourg','Toulouse'],
   Eredivisie:['Ajax','AZ Alkmaar','Feyenoord','PSV Eindhoven','Twente','Utrecht','Sparta Rotterdam','Heerenveen','NEC Nijmegen','Go Ahead Eagles','Fortuna Sittard','PEC Zwolle','Almere City','Heracles Almelo','RKC Waalwijk','Willem II','NAC Breda','Groningen'],
-  Brasileirao:['Athletico Paranaense','Atletico Goianiense','Atletico Mineiro','Bahia','Botafogo','Corinthians','Criciuma','Cruzeiro','Cuiaba','Flamengo','Fluminense','Fortaleza','Gremio','Internacional','Juventude','Palmeiras','RB Bragantino','Sao Paulo','Vasco da Gama','Vitoria'],
-  Brasileirao_B:['América Mineiro','Athletic Club MG','Atlético Goianiense','Avaí','Botafogo SP','Ceará','CRB','Criciuma','Cuiabá','Fortaleza','Goiás','Juventude','Londrina','Náutico','Novorizontino','Operário PR','Ponte Preta','São Bernardo FC','Sport Recife','Vila Nova'],
   Libertadores:['Flamengo','Palmeiras','River Plate','Boca Juniors','Nacional','Penarol','Olimpia','Barcelona SC','Independiente del Valle','LDU Quito','Estudiantes','Racing','Colo Colo','Cerro Porteno','Atletico Mineiro','Sao Paulo','Gremio','Internacional','Universidad Catolica','Bolivar','The Strongest','Libertad','Alianza Lima','Sporting Cristal','Deportivo Tachira','Caracas FC','Nacional Asuncion'],
   Sudamericana:['Athletico Paranaense','Bragantino','Santos','Cruzeiro','Defensa y Justicia','Lanus','Newells Old Boys','Rosario Central','Universitario','Sporting Cristal','Emelec','Deportivo Cali','Junior','Once Caldas','La Equidad','Fortaleza','America de Cali','Macara','Huracan','Velez Sarsfield','Penarol','Nacional','Bolivar','Jorge Wilstermann'],
   Mundial_2026:['Alemania','Arabia Saudita','Argentina','Australia','Austria','Belgica','Bolivia','Brasil','Camerun','Canada','Catar','Chile','Colombia','Corea del Sur','Costa de Marfil','Costa Rica','Croacia','Dinamarca','Ecuador','Egipto','Espana','Estados Unidos','Francia','Ghana','Honduras','Inglaterra','Iran','Italia','Jamaica','Japon','Marruecos','Mexico','Nigeria','Nueva Zelanda','Paises Bajos','Panama','Paraguay','Peru','Polonia','Portugal','Senegal','Serbia','Sudafrica','Suecia','Suiza','Tunez','Ucrania','Uruguay','Venezuela'],
   Championship:['Blackburn Rovers','Bristol City','Burnley','Cardiff City','Coventry City','Derby County','Hull City','Leeds United','Luton Town','Middlesbrough','Millwall','Norwich City','Oxford United','Plymouth Argyle','Portsmouth','Preston North End','QPR','Sheffield United','Sheffield Wednesday','Stoke City','Sunderland','Swansea City','Watford','West Bromwich Albion'],
-  MLS:['Atlanta United','Austin FC','CF Montreal','Charlotte FC','Chicago Fire FC','FC Cincinnati','Colorado Rapids','Columbus Crew','DC United','FC Dallas','Houston Dynamo FC','Inter Miami CF','LA Galaxy','Los Angeles FC','Minnesota United FC','Nashville SC','New England Revolution','New York City FC','New York Red Bulls','Orlando City SC','Philadelphia Union','Portland Timbers','Real Salt Lake','San Jose Earthquakes','Seattle Sounders FC','Sporting Kansas City','St. Louis City SC','Toronto FC','Vancouver Whitecaps FC']
+  MLS:['Atlanta United','Austin FC','CF Montreal','Charlotte FC','Chicago Fire FC','FC Cincinnati','Colorado Rapids','Columbus Crew','DC United','FC Dallas','Houston Dynamo FC','Inter Miami CF','LA Galaxy','Los Angeles FC','Minnesota United FC','Nashville SC','New England Revolution','New York City FC','New York Red Bulls','Orlando City SC','Philadelphia Union','Portland Timbers','Real Salt Lake','San Jose Earthquakes','Seattle Sounders FC','Sporting Kansas City','St. Louis City SC','Toronto FC','Vancouver Whitecaps FC'],
+  Brasileirao:['Athletico Paranaense','Atletico Goianiense','Atletico Mineiro','Bahia','Botafogo','Corinthians','Criciuma','Cruzeiro','Cuiaba','Flamengo','Fluminense','Fortaleza','Gremio','Internacional','Juventude','Mirassol','Palmeiras','RB Bragantino','Sao Paulo','Vasco da Gama','Vitoria']
 };
 
 const LEAGUES_CFG = {
@@ -271,17 +965,15 @@ const LEAGUES_CFG = {
   Bundesliga:{name:'Bundesliga',goals:3.00,corners:9.8,hfa:1.06},
   Ligue_1:{name:'Ligue 1',goals:2.70,corners:9.3,hfa:1.05},
   Eredivisie:{name:'Eredivisie',goals:3.10,corners:9.6,hfa:1.05},
-  Brasileirao:{name:'Brasileirao',goals:2.45,corners:9.4,hfa:1.05},
-  Brasileirao_B:{name:'Brasileirão Série B',goals:2.30,corners:9.2,hfa:1.04},
   Libertadores:{name:'Copa Libertadores',goals:2.50,corners:9.2,hfa:1.04},
   Sudamericana:{name:'Copa Sudamericana',goals:2.30,corners:9.0,hfa:1.04},
   Mundial_2026:{name:'Mundial 2026',goals:2.40,corners:9.5,hfa:1.03},
   Championship:{name:'Championship',goals:2.65,corners:9.7,hfa:1.05},
-  MLS:{name:'MLS',goals:2.85,corners:9.1,hfa:1.05}
+  MLS:{name:'MLS',goals:2.85,corners:9.1,hfa:1.05},
+  Brasileirao:{name:'Brasileirao',goals:2.45,corners:9.4,hfa:1.05}
 };
 
-// ⚠️ ID de la Brasileirão Série B corregido a 34 según la API
-const API_LEAGUE_IDS = {EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,Brasileirao_B:34,Libertadores:32,Sudamericana:33,Mundial_2026:27};
+const API_LEAGUE_IDS = {EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,Libertadores:32,Sudamericana:33,Mundial_2026:27};
 
 const STRENGTH = {
   EPL:{'Manchester City':[1.30,0.77],'Liverpool':[1.28,0.79],'Arsenal':[1.24,0.82],'Chelsea':[1.15,0.89],'Tottenham':[1.16,0.90],'Manchester United':[1.18,0.88],'Newcastle United':[1.13,0.94],'Aston Villa':[1.17,0.92],'Brighton':[1.11,0.96],'West Ham United':[1.06,1.00],'Fulham':[1.04,1.01],'Brentford':[1.02,1.03],'Crystal Palace':[0.98,1.05],'Wolves':[1.03,1.02],'Everton':[0.92,1.10],'Bournemouth':[0.95,1.08],'Nottingham Forest':[0.96,1.07],'Leicester City':[0.94,1.08],'Ipswich Town':[0.88,1.14],'Southampton':[0.86,1.16]},
@@ -290,13 +982,12 @@ const STRENGTH = {
   Bundesliga:{'Bayern Munich':[1.32,0.76],'Bayer Leverkusen':[1.27,0.80],'Borussia Dortmund':[1.24,0.83],'RB Leipzig':[1.22,0.85],'Stuttgart':[1.16,0.91],'Eintracht Frankfurt':[1.14,0.93],'Freiburg':[1.09,0.98],'Hoffenheim':[1.10,0.97],'Werder Bremen':[1.05,1.02],'Wolfsburg':[1.04,1.01],'Borussia Monchengladbach':[1.08,0.99],'Mainz 05':[1.02,1.03],'Augsburg':[1.00,1.05],'Union Berlin':[0.98,1.06],'Heidenheim':[0.94,1.08],'St. Pauli':[0.96,1.07],'Bochum':[0.92,1.10],'Holstein Kiel':[0.88,1.14]},
   Ligue_1:{'PSG':[1.34,0.72],'Monaco':[1.18,0.86],'Marseille':[1.16,0.88],'Lyon':[1.14,0.90],'Lille':[1.15,0.89],'Nice':[1.12,0.93],'Lens':[1.10,0.95],'Rennes':[1.08,0.97],'Reims':[1.02,1.03],'Toulouse':[1.00,1.05],'Strasbourg':[1.00,1.04],'Brest':[1.04,1.01],'Montpellier':[0.96,1.07],'Nantes':[0.96,1.07],'Auxerre':[0.94,1.08],'Saint-Etienne':[0.94,1.08],'Le Havre':[0.90,1.12],'Angers':[0.88,1.14]},
   Eredivisie:{'PSV Eindhoven':[1.26,0.80],'Ajax':[1.24,0.82],'Feyenoord':[1.22,0.84],'AZ Alkmaar':[1.14,0.92],'Twente':[1.12,0.94],'Utrecht':[1.06,1.00],'Sparta Rotterdam':[1.00,1.05],'Heerenveen':[0.98,1.06],'NEC Nijmegen':[0.96,1.08],'Go Ahead Eagles':[0.94,1.08],'Fortuna Sittard':[0.92,1.10],'PEC Zwolle':[0.90,1.12],'Almere City':[0.88,1.14],'Heracles Almelo':[0.90,1.12],'RKC Waalwijk':[0.86,1.16],'Willem II':[0.94,1.08],'NAC Breda':[0.92,1.10],'Groningen':[0.90,1.12]},
-  Brasileirao:{'Athletico Paranaense':[1.10,0.94],'Atletico Goianiense':[0.97,1.09],'Atletico Mineiro':[1.20,0.86],'Bahia':[1.02,1.04],'Botafogo':[1.08,0.98],'Corinthians':[1.05,1.01],'Criciuma':[0.92,1.14],'Cruzeiro':[1.04,1.02],'Cuiaba':[0.98,1.08],'Flamengo':[1.30,0.78],'Fluminense':[1.10,0.96],'Fortaleza':[1.06,1.00],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Juventude':[0.96,1.10],'Palmeiras':[1.28,0.80],'RB Bragantino':[1.08,0.96],'Sao Paulo':[1.18,0.88],'Vasco da Gama':[1.00,1.06],'Vitoria':[0.94,1.12]},
-  Brasileirao_B:{'América Mineiro':[1.09,0.95],'Athletic Club MG':[0.95,1.09],'Atlético Goianiense':[0.97,1.09],'Avaí':[1.04,1.00],'Botafogo SP':[0.96,1.08],'Ceará':[1.07,0.97],'CRB':[1.02,1.02],'Criciuma':[0.92,1.14],'Cuiabá':[0.98,1.08],'Fortaleza':[1.06,1.00],'Goiás':[1.08,0.96],'Juventude':[0.96,1.10],'Londrina':[0.98,1.06],'Náutico':[0.94,1.10],'Novorizontino':[0.96,1.08],'Operário PR':[0.95,1.09],'Ponte Preta':[0.94,1.10],'São Bernardo FC':[0.93,1.11],'Sport Recife':[1.06,0.98],'Vila Nova':[0.91,1.13]},
+  Brasileirao:{'Athletico Paranaense':[1.10,0.94],'Atletico Goianiense':[0.97,1.09],'Atletico Mineiro':[1.20,0.86],'Bahia':[1.02,1.04],'Botafogo':[1.08,0.98],'Corinthians':[1.05,1.01],'Criciuma':[0.92,1.14],'Cruzeiro':[1.04,1.02],'Cuiaba':[0.98,1.08],'Flamengo':[1.30,0.78],'Fluminense':[1.10,0.96],'Fortaleza':[1.06,1.00],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Juventude':[0.96,1.10],'Mirassol':[0.93,1.15],'Palmeiras':[1.28,0.80],'RB Bragantino':[1.08,0.96],'Sao Paulo':[1.18,0.88],'Vasco da Gama':[1.00,1.06],'Vitoria':[0.94,1.12]},
   MLS:{'Inter Miami CF':[1.18,0.86],'Los Angeles FC':[1.16,0.88],'Columbus Crew':[1.14,0.90],'FC Cincinnati':[1.13,0.91],'Philadelphia Union':[1.10,0.94],'New England Revolution':[1.08,0.96],'Atlanta United':[1.09,0.95],'Orlando City SC':[1.07,0.97],'New York City FC':[1.06,0.98],'Nashville SC':[1.05,0.99],'Seattle Sounders FC':[1.04,1.00],'Portland Timbers':[1.03,1.01],'Minnesota United FC':[1.02,1.02],'FC Dallas':[1.01,1.03],'Austin FC':[1.00,1.04],'Houston Dynamo FC':[0.99,1.05],'LA Galaxy':[0.98,1.06],'Vancouver Whitecaps FC':[0.97,1.07],'Chicago Fire FC':[0.96,1.08],'Charlotte FC':[0.95,1.09],'CF Montreal':[0.94,1.10],'Sporting Kansas City':[0.93,1.11],'New York Red Bulls':[0.92,1.12],'Real Salt Lake':[0.91,1.13],'DC United':[0.90,1.14],'San Jose Earthquakes':[0.89,1.15],'Colorado Rapids':[0.88,1.16],'Toronto FC':[0.87,1.17],'St. Louis City SC':[0.86,1.18]},
   Libertadores:{'Flamengo':[1.30,0.78],'Palmeiras':[1.28,0.80],'River Plate':[1.26,0.82],'Boca Juniors':[1.22,0.84],'Nacional':[1.12,0.92],'Penarol':[1.10,0.94],'Olimpia':[1.05,1.00],'Barcelona SC':[1.08,0.96],'Independiente del Valle':[1.10,0.94],'LDU Quito':[1.08,0.96],'Estudiantes':[1.06,1.00],'Racing':[1.08,0.98],'Colo Colo':[1.02,1.04],'Cerro Porteno':[1.00,1.05],'Atletico Mineiro':[1.20,0.86],'Sao Paulo':[1.18,0.88],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Universidad Catolica':[1.02,1.04],'Bolivar':[1.00,1.04],'The Strongest':[0.98,1.06],'Libertad':[1.04,1.02],'Alianza Lima':[0.94,1.10],'Sporting Cristal':[1.02,1.04],'Deportivo Tachira':[0.92,1.12],'Caracas FC':[0.90,1.14],'Nacional Asuncion':[0.96,1.08]},
   Sudamericana:{'Athletico Paranaense':[1.10,0.94],'Bragantino':[1.08,0.96],'Santos':[1.06,1.00],'Cruzeiro':[1.04,1.02],'Defensa y Justicia':[1.02,1.04],'Lanus':[1.00,1.05],'Newells Old Boys':[0.98,1.06],'Rosario Central':[1.00,1.04],'Universitario':[1.04,1.02],'Sporting Cristal':[1.02,1.04],'Emelec':[1.00,1.05],'Deportivo Cali':[0.98,1.06],'Junior':[1.02,1.04],'Once Caldas':[0.96,1.08],'La Equidad':[0.94,1.10],'Fortaleza':[1.06,1.00],'America de Cali':[1.02,1.06],'Macara':[0.95,1.12],'Huracan':[1.02,1.04],'Velez Sarsfield':[1.06,1.00],'Penarol':[1.10,0.94],'Nacional':[1.12,0.92],'Bolivar':[1.00,1.04],'Jorge Wilstermann':[0.96,1.08]},
   Mundial_2026:{'Alemania':[1.23,0.86],'Arabia Saudita':[0.93,1.15],'Argentina':[1.30,0.80],'Australia':[1.04,1.04],'Austria':[1.06,1.02],'Belgica':[1.17,0.91],'Bolivia':[0.90,1.18],'Brasil':[1.28,0.82],'Camerun':[1.08,1.00],'Canada':[1.06,1.02],'Catar':[0.92,1.16],'Chile':[1.05,1.03],'Colombia':[1.14,0.94],'Corea del Sur':[1.08,1.00],'Costa de Marfil':[1.09,0.99],'Costa Rica':[0.97,1.11],'Croacia':[1.16,0.92],'Dinamarca':[1.08,1.00],'Ecuador':[1.07,1.01],'Egipto':[1.06,1.02],'Espana':[1.25,0.85],'Estados Unidos':[1.13,0.95],'Francia':[1.27,0.83],'Ghana':[1.02,1.06],'Honduras':[0.95,1.13],'Inglaterra':[1.26,0.84],'Iran':[1.05,1.03],'Italia':[1.15,0.93],'Jamaica':[0.96,1.12],'Japon':[1.12,0.96],'Marruecos':[1.14,0.94],'Mexico':[1.12,0.96],'Nigeria':[1.04,1.04],'Nueva Zelanda':[0.85,1.23],'Paises Bajos':[1.20,0.88],'Panama':[0.94,1.14],'Paraguay':[1.03,1.05],'Peru':[1.02,1.06],'Polonia':[1.05,1.03],'Portugal':[1.22,0.87],'Senegal':[1.11,0.97],'Serbia':[1.05,1.03],'Sudafrica':[0.96,1.12],'Suecia':[1.04,1.04],'Suiza':[1.09,0.99],'Tunez':[0.97,1.11],'Ucrania':[1.03,1.05],'Uruguay':[1.15,0.93],'Venezuela':[0.98,1.10]},
-  Championship:{'Leeds United':[1.15,0.89],'Burnley':[1.13,0.91],'Sheffield United':[1.02,1.02],'Norwich City':[1.08,0.96],'West Bromwich Albion':[1.06,0.98],'Middlesbrough':[1.07,0.97],'Coventry City':[1.05,0.99],'Sunderland':[1.04,1.00],'Blackburn Rovers':[1.03,1.01],'Millwall':[1.00,1.04],'Watford':[1.02,1.02],'Bristol City':[1.01,1.03],'Hull City':[1.00,1.04],'Preston North End':[0.99,1.05],'Swansea City':[0.98,1.06],'Cardiff City':[0.97,1.07],'Stoke City':[0.96,1.08],'Sheffield Wednesday':[0.95,1.09],'QPR':[0.94,1.10],'Plymouth Argyle':[0.93,1.11],'Portsmouth':[0.92,1.12],'Luton Town':[0.95,1.09],'Derby County':[0.94,1.10],'Oxford United':[0.90,1.14]}
+  Championship:{'Leeds United':[1.15,0.89],'Leicester City':[1.14,0.90],'Southampton':[1.12,0.92],'Norwich City':[1.08,0.96],'West Bromwich Albion':[1.06,0.98],'Middlesbrough':[1.07,0.97],'Coventry City':[1.05,0.99],'Sunderland':[1.04,1.00],'Blackburn Rovers':[1.03,1.01],'Millwall':[1.00,1.04],'Watford':[1.02,1.02],'Bristol City':[1.01,1.03],'Hull City':[1.00,1.04],'Preston North End':[0.99,1.05],'Swansea City':[0.98,1.06],'Cardiff City':[0.97,1.07],'Stoke City':[0.96,1.08],'Sheffield Wednesday':[0.95,1.09],'QPR':[0.94,1.10],'Plymouth Argyle':[0.93,1.11],'Portsmouth':[0.92,1.12],'Luton Town':[0.95,1.09],'Derby County':[0.94,1.10],'Oxford United':[0.90,1.14],'Burnley':[1.13,0.91]}
 };
 
 // ==================== MODELO MATEMATICO ====================
@@ -386,7 +1077,7 @@ async function testAPIKey(){
   const base=((baseEl?baseEl.value:'') || 'https://sports.bzzoiro.com').replace(/\/+$/,'');
   const res=document.getElementById('api-test-result');
   if(!key){ res.innerHTML='<span style="color:var(--accent);font-size:.72rem">Ingresa tu token primero</span>'; return; }
-  res.innerHTML='<span style="color:var(--yellow);font-size:.72rem"><span class="spinner"></span> Verificando...</span>';
+  res.innerHTML='<span style="color:var(--yellow);font-size:.72rem"><span class="spin"></span> Verificando...</span>';
   try{
     const r=await fetch(base+'/api/v2/events/live/',{headers:apiHdrs(key)});
     if(r.ok){
@@ -437,6 +1128,7 @@ async function findTeamId(name, leagueId){
   const d=await apiFetch('/teams/?name='+encodeURIComponent(name)+'&league_id='+leagueId+'&limit=10');
   const rs=(d.results||d);
   if(Array.isArray(rs)&&rs.length>0){ teamIdCache[ck]=rs[0].id; saveAll(); return rs[0].id; }
+  // intento sin filtro de liga
   const d2=await apiFetch('/teams/?name='+encodeURIComponent(name)+'&limit=10');
   const rs2=(d2.results||d2);
   if(Array.isArray(rs2)&&rs2.length>0){ teamIdCache[ck]=rs2[0].id; saveAll(); return rs2[0].id; }
@@ -458,7 +1150,7 @@ async function fetchTeamStats(teamId, seasonId){
 
 function showAPIStatus(msg, type){
   const e=document.getElementById('api-status-box');
-  e.className='api-status '+type;
+  e.className='status-pill '+type;
   e.innerHTML=msg;
   e.classList.remove('hidden');
 }
@@ -472,15 +1164,15 @@ async function loadAPIData(){
   const lid=API_LEAGUE_IDS[league];
   if(!lid){ showAPIStatus('Liga no disponible en API','error'); return; }
   document.getElementById('api-btn').disabled=true;
-  showAPIStatus('<span class="spinner"></span> Obteniendo temporada...','loading');
+  showAPIStatus('<span class="spin"></span> Obteniendo temporada...','loading');
   try{
     const sid=await getSeasonId(lid);
     if(!sid){ showAPIStatus('No se pudo obtener temporada actual','error'); return; }
-    showAPIStatus('<span class="spinner"></span> Buscando equipos...','loading');
+    showAPIStatus('<span class="spin"></span> Buscando equipos...','loading');
     const [hid,aid]=await Promise.all([findTeamId(home,lid),findTeamId(away,lid)]);
     if(!hid){ showAPIStatus('No encontrado: '+home,'error'); currentAPIData=null; return; }
     if(!aid){ showAPIStatus('No encontrado: '+away,'error'); currentAPIData=null; return; }
-    showAPIStatus('<span class="spinner"></span> Descargando estadisticas...','loading');
+    showAPIStatus('<span class="spin"></span> Descargando estadisticas...','loading');
     const [hs,as]=await Promise.all([fetchTeamStats(hid,sid),fetchTeamStats(aid,sid)]);
     if(!hs||hs.played<3){ showAPIStatus('Pocos partidos para '+home+' ('+( hs?hs.played:0)+'PJ)','error'); currentAPIData=null; return; }
     if(!as||as.played<3){ showAPIStatus('Pocos partidos para '+away+' ('+(as?as.played:0)+'PJ)','error'); currentAPIData=null; return; }
@@ -494,39 +1186,18 @@ async function loadAPIData(){
   } finally { document.getElementById('api-btn').disabled=false; }
 }
 
-// ==================== OBTENER EQUIPOS DESDE API ====================
-async function fetchTeamsFromAPI(leagueCode){
-  const leagueId = API_LEAGUE_IDS[leagueCode];
-  if(!leagueId || !config.apiKey) return TEAMS_DB[leagueCode] || [];
-  try{
-    // Endpoint corregido: obtener equipos de una liga específica
-    const data = await apiFetch('/leagues/'+leagueId+'/teams/');
-    const results = data.results || data;
-    if(Array.isArray(results) && results.length>0){
-      return results.map(t=>t.name).filter(n=>n);
-    }
-  }catch(e){
-    console.warn('Error al obtener equipos de API para '+leagueCode, e);
-  }
-  return TEAMS_DB[leagueCode] || [];
-}
-
 // ==================== UI ====================
-document.getElementById('league').addEventListener('change', async function(){
+document.getElementById('league').addEventListener('change', function(){
   const c=this.value;
   const hSel=document.getElementById('home');
   const aSel=document.getElementById('away');
-  hSel.innerHTML='<option value="">-- Cargando equipos...</option>';
-  aSel.innerHTML='<option value="">-- Cargando equipos...</option>';
+  hSel.innerHTML='<option value="">-- Local --</option>';
+  aSel.innerHTML='<option value="">-- Visitante --</option>';
   hSel.disabled=true; aSel.disabled=true;
   currentAPIData=null;
   document.getElementById('api-status-box').classList.add('hidden');
   if(!c){ checkBtns(); return; }
-
-  const teams = await fetchTeamsFromAPI(c);
-  hSel.innerHTML='<option value="">-- Local --</option>';
-  aSel.innerHTML='<option value="">-- Visitante --</option>';
-  teams.forEach(function(t){
+  (TEAMS_DB[c]||[]).forEach(function(t){
     hSel.innerHTML+='<option value="'+t+'">'+t+'</option>';
     aSel.innerHTML+='<option value="'+t+'">'+t+'</option>';
   });
@@ -581,11 +1252,11 @@ function renderResults(pred, markets){
   document.getElementById('main-screen').classList.add('hidden');
   document.getElementById('result-screen').classList.remove('hidden');
   const hasVal=markets.some(function(m){ return m.hasValue; });
-  const apiBadge=pred.usingAPI?'<span class="model-badge model-api">DATOS API v2</span>':'<span class="model-badge model-static">DATOS ESTATICOS</span>';
+  const apiBadge=pred.usingAPI?'<span class="badge badge-api">DATOS API v2</span>':'<span class="badge badge-stat">DATOS ESTÁTICOS</span>';
   let html='';
   markets.forEach(function(m){
     const iv=m.odds>1;
-    const badge2=m.hasValue?'<span class="value-badge">+EV</span>':(iv?'<span class="no-value-badge">SIN VALOR</span>':'<span class="info-badge">PROB</span>');
+    const badge2=m.hasValue?'<span class="badge badge-ev">+EV</span>':(iv?'<span class="badge badge-no">SIN VALOR</span>':'<span class="badge badge-info">PROB</span>');
     const barC=m.hasValue?'var(--green)':(iv?'var(--accent)':'var(--blue)');
     const cls=m.hasValue?'green':(iv?'red':'');
     let vigH=''; if(m.vig!=null&&m.fair!=null) vigH='<div class="small-note">Vig: '+(m.vig*100).toFixed(1)+'% &middot; Prob justa: '+(m.fair*100).toFixed(1)+'%</div>';
@@ -594,18 +1265,18 @@ function renderResults(pred, markets){
     if(m.hasValue&&m.odds>1){
       const stake=kellyStake(m.prob/100,m.odds);
       if(stake>0.01){
-        stakeH='<div class="stake-suggestion">'
+        stakeH='<div class="stake-card">'
           +'<div style="font-size:.62rem;color:var(--muted)">Kelly '+(config.kellyFraction*100).toFixed(0)+'% &middot; Max '+(config.maxStakePct*100).toFixed(0)+'% bankroll</div>'
-          +'<div style="font-size:1.2rem;font-weight:800;color:var(--blue)">$'+stake.toFixed(2)+'</div>'
-          +'<div style="font-size:.6rem;color:var(--muted)">'+(stake/bankroll*100).toFixed(1)+'% bankroll &middot; EV <span class="green">+'+(m.ev?m.ev.toFixed(1):'?')+'%</span></div>'
+          +'<div class="stake-amount">$'+stake.toFixed(2)+'</div>'
+          +'<div class="stake-meta">'+(stake/bankroll*100).toFixed(1)+'% bankroll &middot; EV <span class="pos">+'+(m.ev?m.ev.toFixed(1):'?')+'%</span></div>'
           +'<button class="btn-secondary" onclick="placeBet(\''+m.name+'\','+m.prob+','+m.odds+','+stake.toFixed(2)+',\''+pred.home+' vs '+pred.away+'\')" style="margin-top:8px;width:100%;font-size:.72rem">REGISTRAR APUESTA</button>'
           +'</div>';
       }
     }
-    html+='<div class="market" style="border-color:'+(m.hasValue?'rgba(46,204,113,.3)':(iv?'rgba(255,77,90,.15)':'rgba(77,171,247,.15)'))+'">'
-      +'<div class="market-header">'+m.name+' '+badge2+'</div>'
-      +'<div class="prob-row"><span class="prob-label">Probabilidad</span><div class="bar-wrap"><div class="bar-fill" data-w="'+Math.round(m.prob)+'" style="background:'+barC+';box-shadow:0 0 8px '+barC+'"></div></div><span class="prob-value '+cls+'">'+Math.round(m.prob)+'%</span></div>'
-      +(iv?'<div class="prob-row"><span class="prob-label">Cuota</span><span></span><span class="prob-value">'+m.odds.toFixed(2)+'</span></div><div class="ev-row"><span class="ev-label">EV</span><span class="ev-value '+(m.ev>0?'green':'red')+'">'+(m.ev>0?'+':'')+m.ev.toFixed(1)+'%</span></div>':'')
+    html+='<div class="market '+(m.hasValue?'has-value':(iv?'no-value':''))+'">'
+      +'<div class="market-name">'+m.name+' '+badge2+'</div>'
+      +'<div class="prob-row"><span class="prob-label">Probabilidad</span><div class="bar-track"><div class="bar-fill" data-w="'+Math.round(m.prob)+'" style="background:'+barC+';box-shadow:0 0 8px '+barC+'"></div></div><span class="prob-value '+cls+'">'+Math.round(m.prob)+'%</span></div>'
+      +(iv?'<div class="prob-row"><span class="prob-label">Cuota</span><span></span><span class="prob-val">'+m.odds.toFixed(2)+'</span></div><div class="ev-strip"><span class="ev-chip"><span class="lbl">EV</span><span class="ev-value '+(m.ev>0?'green':'red')+'">'+(m.ev>0?'+':'')+m.ev.toFixed(1)+'%</span></div>':'')
       +vigH+noteH+stakeH+'</div>';
   });
   document.getElementById('result-card').innerHTML=
@@ -614,9 +1285,9 @@ function renderResults(pred, markets){
     +'<button class="btn-secondary" onclick="goBack()" style="width:auto;padding:8px 14px;font-size:.7rem">Volver</button></div>'
     +'<div style="text-align:center;margin-bottom:10px"><span style="font-size:.7rem;color:var(--muted)">'+pred.leagueName+' &middot; lam: '+pred.lh+'/'+pred.la+'</span><br>'+apiBadge+'</div>'
     +(hasVal?'<div class="bankroll-display" style="margin-bottom:12px">MERCADOS CON VALOR ENCONTRADOS</div>':'')
-    +(!hasVal?'<div class="warning-box">No se encontraron apuestas +EV en este partido.</div>':'')
+    +(!hasVal?'<div class="warn-box">No se encontraron apuestas +EV en este partido.</div>':'')
     +html
-    +'<div class="model-info" style="margin-top:14px"><strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles &middot; EV min recomendado: +5%</div>';
+    +'<div class="model-pill" style="margin-top:14px"><strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles &middot; EV min recomendado: +5%</div>';
   setTimeout(function(){
     document.querySelectorAll('.bar-fill[data-w]').forEach(function(b){ b.style.width=b.dataset.w+'%'; });
   },100);
@@ -651,12 +1322,13 @@ function updateHistoryDisplay(){
     const b=betHistory[i];
     const d=new Date(b.date).toLocaleDateString();
     const sc=b.status==='pending'?'log-pending':(b.result==='win'?'log-win':'log-loss');
+    const icon=b.status==='pending'?'...':'(b.result===\'win\'?\'W\':\'L\')';
     const profit=b.status==='settled'?(b.result==='win'?'+$'+(b.stake*b.odds-b.stake).toFixed(2):'-$'+b.stake.toFixed(2)):'Pendiente';
     const pc=b.status==='settled'?(b.result==='win'?'profit':'loss'):'';
     h+='<div class="log-item '+sc+'">'
       +'<div style="flex:1"><div style="font-weight:600">'+b.match+'</div>'
       +'<div style="font-size:.65rem;color:var(--muted)">'+b.market+' @'+b.odds+' $'+b.stake.toFixed(2)+'</div>'
-      +'<div style="font-size:.6rem;color:var(--muted)">'+d+'</div></div>'
+      +'<div class="stake-meta">'+d+'</div></div>'
       +'<div style="text-align:right;display:flex;align-items:center;gap:4px">'
       +'<div><div class="'+pc+'" style="font-weight:700;font-size:.75rem">'+profit+'</div>'
       +(b.status==='pending'?'<div style="margin-top:4px;display:flex;gap:3px">'
@@ -727,7 +1399,7 @@ function updateBankrollDisplay(){
   const pct=((pnl/config.initialBankroll)*100).toFixed(1);
   const el=document.getElementById('pnl-display');
   el.textContent='P&L: $'+pnl.toFixed(2)+' ('+pct+'%)';
-  el.className=pnl>=0?'profit':'loss';
+  el.className='br-pnl '+(pnl>=0?'profit':'loss');
 }
 
 // ==================== STATS ====================
@@ -753,7 +1425,7 @@ function updateStats(){
   document.getElementById('stat-yield').textContent=yld+'%';
   document.getElementById('stat-roi').textContent=roi+'%';
   document.getElementById('stat-profit').textContent=(profit>=0?'+':'')+'$'+profit.toFixed(0);
-  document.getElementById('stat-profit').className=profit>=0?'stat-value green':'stat-value red';
+  document.getElementById('stat-profit').className=profit>=0?'stat-val green':'stat-val red';
   document.getElementById('stat-streak').textContent=streak>0?'W'+streak:(streak<0?'L'+Math.abs(streak):'-');
   drawChart();
 }
@@ -817,7 +1489,7 @@ function resetData(){
 function showToast(msg,type){
   type=type||'success';
   const t=document.createElement('div');
-  t.className='toast-notification toast-'+type;
+  t.className='toast toast-'+type;
   t.textContent=msg;
   document.body.appendChild(t);
   setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); },2600);
