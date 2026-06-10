@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Bet Analytics PRO</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
@@ -742,6 +745,7 @@ textarea {
           <option value="Championship">🏴󠁧󠁢󠁥󠁮󠁧󠁿  Championship</option>
           <option value="MLS">🇺🇸  MLS</option>
           <option value="Brasileirao">🇧🇷  Brasileirão Serie A</option>
+          <option value="BrasileiroSerieB">🇧🇷  Brasileirão Serie B</option>
           <option value="Libertadores">🌎  Copa Libertadores</option>
           <option value="Sudamericana">🌎  Copa Sudamericana</option>
           <option value="Mundial_2026">🌍  Mundial 2026</option>
@@ -926,6 +930,8 @@ textarea {
 </div><!-- /container -->
 <script>
 // ==================== CONFIG ====================
+console.log("[BetAnalyticsPRO v3.1] Script cargado correctamente");
+
 const DEFAULT_CONFIG = {initialBankroll:20000,kellyFraction:0.25,maxStakePct:0.05,apiKey:'',apiBaseUrl:'https://sports.bzzoiro.com'};
 let config = JSON.parse(localStorage.getItem('betConfig') || 'null') || Object.assign({},DEFAULT_CONFIG);
 let bankroll = parseFloat(localStorage.getItem('bankroll')) || config.initialBankroll;
@@ -955,7 +961,8 @@ const TEAMS_DB = {
   Mundial_2026:['Alemania','Arabia Saudita','Argentina','Australia','Austria','Belgica','Bolivia','Brasil','Camerun','Canada','Catar','Chile','Colombia','Corea del Sur','Costa de Marfil','Costa Rica','Croacia','Dinamarca','Ecuador','Egipto','Espana','Estados Unidos','Francia','Ghana','Honduras','Inglaterra','Iran','Italia','Jamaica','Japon','Marruecos','Mexico','Nigeria','Nueva Zelanda','Paises Bajos','Panama','Paraguay','Peru','Polonia','Portugal','Senegal','Serbia','Sudafrica','Suecia','Suiza','Tunez','Ucrania','Uruguay','Venezuela'],
   Championship:['Blackburn Rovers','Bristol City','Burnley','Cardiff City','Coventry City','Derby County','Hull City','Leeds United','Luton Town','Middlesbrough','Millwall','Norwich City','Oxford United','Plymouth Argyle','Portsmouth','Preston North End','QPR','Sheffield United','Sheffield Wednesday','Stoke City','Sunderland','Swansea City','Watford','West Bromwich Albion'],
   MLS:['Atlanta United','Austin FC','CF Montreal','Charlotte FC','Chicago Fire FC','FC Cincinnati','Colorado Rapids','Columbus Crew','DC United','FC Dallas','Houston Dynamo FC','Inter Miami CF','LA Galaxy','Los Angeles FC','Minnesota United FC','Nashville SC','New England Revolution','New York City FC','New York Red Bulls','Orlando City SC','Philadelphia Union','Portland Timbers','Real Salt Lake','San Jose Earthquakes','Seattle Sounders FC','Sporting Kansas City','St. Louis City SC','Toronto FC','Vancouver Whitecaps FC'],
-  Brasileirao:['Athletico Paranaense','Atletico Goianiense','Atletico Mineiro','Bahia','Botafogo','Corinthians','Criciuma','Cruzeiro','Cuiaba','Flamengo','Fluminense','Fortaleza','Gremio','Internacional','Juventude','Mirassol','Palmeiras','RB Bragantino','Sao Paulo','Vasco da Gama','Vitoria']
+  Brasileirao:['Athletico Paranaense','Atletico Goianiense','Atletico Mineiro','Bahia','Botafogo','Corinthians','Criciuma','Cruzeiro','Cuiaba','Flamengo','Fluminense','Fortaleza','Gremio','Internacional','Juventude','Mirassol','Palmeiras','RB Bragantino','Sao Paulo','Vasco da Gama','Vitoria'],
+  BrasileiroSerieB:['America Mineiro','Avai','Botafogo-SP','Brusque','Ceara','Chapecoense','CRB','CSA','Figueirense','Goias','Guarani','Ituano','Londrina','Mirassol','Novorizontino','Operario','Paysandu','Ponte Preta','Santos','Sport','Tombense','Vila Nova','Vitoria','ABC']
 };
 
 const LEAGUES_CFG = {
@@ -970,10 +977,11 @@ const LEAGUES_CFG = {
   Mundial_2026:{name:'Mundial 2026',goals:2.40,corners:9.5,hfa:1.03},
   Championship:{name:'Championship',goals:2.65,corners:9.7,hfa:1.05},
   MLS:{name:'MLS',goals:2.85,corners:9.1,hfa:1.05},
-  Brasileirao:{name:'Brasileirao',goals:2.45,corners:9.4,hfa:1.05}
+  Brasileirao:{name:'Brasileirao Serie A',goals:2.45,corners:9.4,hfa:1.05},
+  BrasileiroSerieB:{name:'Brasileirao Serie B',goals:2.30,corners:9.1,hfa:1.05}
 };
 
-const API_LEAGUE_IDS = {EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,Libertadores:32,Sudamericana:33,Mundial_2026:27};
+const API_LEAGUE_IDS = {EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,BrasileiroSerieB:10,Libertadores:32,Sudamericana:33,Mundial_2026:27};
 
 const STRENGTH = {
   EPL:{'Manchester City':[1.30,0.77],'Liverpool':[1.28,0.79],'Arsenal':[1.24,0.82],'Chelsea':[1.15,0.89],'Tottenham':[1.16,0.90],'Manchester United':[1.18,0.88],'Newcastle United':[1.13,0.94],'Aston Villa':[1.17,0.92],'Brighton':[1.11,0.96],'West Ham United':[1.06,1.00],'Fulham':[1.04,1.01],'Brentford':[1.02,1.03],'Crystal Palace':[0.98,1.05],'Wolves':[1.03,1.02],'Everton':[0.92,1.10],'Bournemouth':[0.95,1.08],'Nottingham Forest':[0.96,1.07],'Leicester City':[0.94,1.08],'Ipswich Town':[0.88,1.14],'Southampton':[0.86,1.16]},
@@ -983,6 +991,7 @@ const STRENGTH = {
   Ligue_1:{'PSG':[1.34,0.72],'Monaco':[1.18,0.86],'Marseille':[1.16,0.88],'Lyon':[1.14,0.90],'Lille':[1.15,0.89],'Nice':[1.12,0.93],'Lens':[1.10,0.95],'Rennes':[1.08,0.97],'Reims':[1.02,1.03],'Toulouse':[1.00,1.05],'Strasbourg':[1.00,1.04],'Brest':[1.04,1.01],'Montpellier':[0.96,1.07],'Nantes':[0.96,1.07],'Auxerre':[0.94,1.08],'Saint-Etienne':[0.94,1.08],'Le Havre':[0.90,1.12],'Angers':[0.88,1.14]},
   Eredivisie:{'PSV Eindhoven':[1.26,0.80],'Ajax':[1.24,0.82],'Feyenoord':[1.22,0.84],'AZ Alkmaar':[1.14,0.92],'Twente':[1.12,0.94],'Utrecht':[1.06,1.00],'Sparta Rotterdam':[1.00,1.05],'Heerenveen':[0.98,1.06],'NEC Nijmegen':[0.96,1.08],'Go Ahead Eagles':[0.94,1.08],'Fortuna Sittard':[0.92,1.10],'PEC Zwolle':[0.90,1.12],'Almere City':[0.88,1.14],'Heracles Almelo':[0.90,1.12],'RKC Waalwijk':[0.86,1.16],'Willem II':[0.94,1.08],'NAC Breda':[0.92,1.10],'Groningen':[0.90,1.12]},
   Brasileirao:{'Athletico Paranaense':[1.10,0.94],'Atletico Goianiense':[0.97,1.09],'Atletico Mineiro':[1.20,0.86],'Bahia':[1.02,1.04],'Botafogo':[1.08,0.98],'Corinthians':[1.05,1.01],'Criciuma':[0.92,1.14],'Cruzeiro':[1.04,1.02],'Cuiaba':[0.98,1.08],'Flamengo':[1.30,0.78],'Fluminense':[1.10,0.96],'Fortaleza':[1.06,1.00],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Juventude':[0.96,1.10],'Mirassol':[0.93,1.15],'Palmeiras':[1.28,0.80],'RB Bragantino':[1.08,0.96],'Sao Paulo':[1.18,0.88],'Vasco da Gama':[1.00,1.06],'Vitoria':[0.94,1.12]},
+  BrasileiroSerieB:{'Santos':[1.18,0.88],'Sport':[1.10,0.94],'Ceara':[1.08,0.96],'Goias':[1.06,0.98],'America Mineiro':[1.05,0.99],'Avai':[1.02,1.02],'Novorizontino':[1.04,1.00],'Paysandu':[1.02,1.02],'Vila Nova':[1.00,1.04],'Ponte Preta':[0.99,1.05],'Botafogo-SP':[1.00,1.04],'CRB':[0.98,1.06],'Operario':[0.97,1.07],'Ituano':[0.96,1.08],'Mirassol':[0.95,1.09],'Guarani':[0.94,1.10],'Chapecoense':[0.93,1.11],'Tombense':[0.92,1.12],'Brusque':[0.91,1.13],'Londrina':[0.90,1.14],'Figueirense':[0.89,1.15],'CSA':[0.88,1.16],'ABC':[0.87,1.17],'Vitoria':[1.06,1.00]},
   MLS:{'Inter Miami CF':[1.18,0.86],'Los Angeles FC':[1.16,0.88],'Columbus Crew':[1.14,0.90],'FC Cincinnati':[1.13,0.91],'Philadelphia Union':[1.10,0.94],'New England Revolution':[1.08,0.96],'Atlanta United':[1.09,0.95],'Orlando City SC':[1.07,0.97],'New York City FC':[1.06,0.98],'Nashville SC':[1.05,0.99],'Seattle Sounders FC':[1.04,1.00],'Portland Timbers':[1.03,1.01],'Minnesota United FC':[1.02,1.02],'FC Dallas':[1.01,1.03],'Austin FC':[1.00,1.04],'Houston Dynamo FC':[0.99,1.05],'LA Galaxy':[0.98,1.06],'Vancouver Whitecaps FC':[0.97,1.07],'Chicago Fire FC':[0.96,1.08],'Charlotte FC':[0.95,1.09],'CF Montreal':[0.94,1.10],'Sporting Kansas City':[0.93,1.11],'New York Red Bulls':[0.92,1.12],'Real Salt Lake':[0.91,1.13],'DC United':[0.90,1.14],'San Jose Earthquakes':[0.89,1.15],'Colorado Rapids':[0.88,1.16],'Toronto FC':[0.87,1.17],'St. Louis City SC':[0.86,1.18]},
   Libertadores:{'Flamengo':[1.30,0.78],'Palmeiras':[1.28,0.80],'River Plate':[1.26,0.82],'Boca Juniors':[1.22,0.84],'Nacional':[1.12,0.92],'Penarol':[1.10,0.94],'Olimpia':[1.05,1.00],'Barcelona SC':[1.08,0.96],'Independiente del Valle':[1.10,0.94],'LDU Quito':[1.08,0.96],'Estudiantes':[1.06,1.00],'Racing':[1.08,0.98],'Colo Colo':[1.02,1.04],'Cerro Porteno':[1.00,1.05],'Atletico Mineiro':[1.20,0.86],'Sao Paulo':[1.18,0.88],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Universidad Catolica':[1.02,1.04],'Bolivar':[1.00,1.04],'The Strongest':[0.98,1.06],'Libertad':[1.04,1.02],'Alianza Lima':[0.94,1.10],'Sporting Cristal':[1.02,1.04],'Deportivo Tachira':[0.92,1.12],'Caracas FC':[0.90,1.14],'Nacional Asuncion':[0.96,1.08]},
   Sudamericana:{'Athletico Paranaense':[1.10,0.94],'Bragantino':[1.08,0.96],'Santos':[1.06,1.00],'Cruzeiro':[1.04,1.02],'Defensa y Justicia':[1.02,1.04],'Lanus':[1.00,1.05],'Newells Old Boys':[0.98,1.06],'Rosario Central':[1.00,1.04],'Universitario':[1.04,1.02],'Sporting Cristal':[1.02,1.04],'Emelec':[1.00,1.05],'Deportivo Cali':[0.98,1.06],'Junior':[1.02,1.04],'Once Caldas':[0.96,1.08],'La Equidad':[0.94,1.10],'Fortaleza':[1.06,1.00],'America de Cali':[1.02,1.06],'Macara':[0.95,1.12],'Huracan':[1.02,1.04],'Velez Sarsfield':[1.06,1.00],'Penarol':[1.10,0.94],'Nacional':[1.12,0.92],'Bolivar':[1.00,1.04],'Jorge Wilstermann':[0.96,1.08]},
@@ -1082,7 +1091,7 @@ async function testAPIKey(){
     const r=await fetch(base+'/api/v2/events/live/',{headers:apiHdrs(key)});
     if(r.ok){
       const d=await r.json();
-      res.innerHTML='<span style="color:var(--green);font-size:.72rem">Token valido · '+(d.count||0)+' partidos en vivo</span>';
+      res.innerHTML='<span style="color:var(--green);font-size:.72rem">Token valido &middot; '+(d.count||0)+' partidos en vivo</span>';
     } else if(r.status===401||r.status===403){
       res.innerHTML='<span style="color:var(--accent);font-size:.72rem">Token invalido ('+r.status+'). Registrate en sports.bzzoiro.com/register/</span>';
     } else {
@@ -1252,7 +1261,7 @@ function renderResults(pred, markets){
   document.getElementById('main-screen').classList.add('hidden');
   document.getElementById('result-screen').classList.remove('hidden');
   const hasVal=markets.some(function(m){ return m.hasValue; });
-  const apiBadge=pred.usingAPI?'<span class="badge badge-api">DATOS API v2</span>':'<span class="badge badge-stat">DATOS ESTÁTICOS</span>';
+  const apiBadge=pred.usingAPI?'<span class="badge badge-api">DATOS API v2</span>':'<span class="badge badge-stat">DATOS EST&Aacute;TICOS</span>';
   let html='';
   markets.forEach(function(m){
     const iv=m.odds>1;
@@ -1457,6 +1466,8 @@ function drawChart(){
 }
 
 // ==================== CONFIG ====================
+console.log("[BetAnalyticsPRO v3.1] Script cargado correctamente");
+
 function loadConfig(){
   document.getElementById('cfg-initial').value=config.initialBankroll;
   document.getElementById('cfg-kelly').value=config.kellyFraction;
