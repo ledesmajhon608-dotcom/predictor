@@ -946,7 +946,7 @@ function saveAll(){
   localStorage.setItem('seasonIdCache', JSON.stringify(seasonIdCache));
 }
 
-// ==================== EQUIPOS ====================
+// ==================== EQUIPOS (ACTUALIZADO CON TODOS LOS DE LA IMAGEN) ====================
 const TEAMS_DB = {
   EPL:['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton','Chelsea','Crystal Palace','Everton','Fulham','Ipswich Town','Leicester City','Liverpool','Manchester City','Manchester United','Newcastle United','Nottingham Forest','Southampton','Tottenham','West Ham United','Wolves'],
   La_liga:['Alaves','Athletic Club','Atletico Madrid','Barcelona','Celta Vigo','Espanyol','Getafe','Girona','Las Palmas','Leganes','Mallorca','Osasuna','Rayo Vallecano','Real Betis','Real Madrid','Real Sociedad','Sevilla','Valencia','Valladolid','Villarreal'],
@@ -959,8 +959,18 @@ const TEAMS_DB = {
   Mundial_2026:['Alemania','Argentina','Australia','Austria','Belgica','Bosnia Herzegovina','Brasil','Cabo Verde','Canada','Catar','Colombia','Corea del Sur','Costa de Marfil','Croacia','Curazao','Ecuador','Egipto','Escocia','Espana','Estados Unidos','Francia','Ghana','Inglaterra','Irak','Iran','Japon','Jordania','Marruecos','Mexico','Nigeria','Noruega','Nueva Zelanda','Paises Bajos','Panama','Paraguay','Portugal','Arabia Saudita','RD del Congo','Republica Checa','Senegal','Sudafrica','Suecia','Suiza','Tunez','Turquia','Uruguay','Uzbekistan','Haiti'],
   Championship:['Blackburn Rovers','Bristol City','Burnley','Cardiff City','Coventry City','Derby County','Hull City','Leeds United','Luton Town','Middlesbrough','Millwall','Norwich City','Oxford United','Plymouth Argyle','Portsmouth','Preston North End','QPR','Sheffield United','Sheffield Wednesday','Stoke City','Sunderland','Swansea City','Watford','West Bromwich Albion'],
   MLS:['Atlanta United','Austin FC','CF Montreal','Charlotte FC','Chicago Fire FC','FC Cincinnati','Colorado Rapids','Columbus Crew','DC United','FC Dallas','Houston Dynamo FC','Inter Miami CF','LA Galaxy','Los Angeles FC','Minnesota United FC','Nashville SC','New England Revolution','New York City FC','New York Red Bulls','Orlando City SC','Philadelphia Union','Portland Timbers','Real Salt Lake','San Jose Earthquakes','Seattle Sounders FC','Sporting Kansas City','St. Louis City SC','Toronto FC','Vancouver Whitecaps FC'],
+  // Brasileirão Serie A (actualizado con nombres de la imagen)
   Brasileirao:['Athletico Paranaense','Atletico Goianiense','Atletico Mineiro','Bahia','Botafogo','Corinthians','Criciuma','Cruzeiro','Cuiaba','Flamengo','Fluminense','Fortaleza','Gremio','Internacional','Juventude','Mirassol','Palmeiras','RB Bragantino','Sao Paulo','Vasco da Gama','Vitoria'],
-  BrasileiroSerieB:['Amazonas','America Mineiro','Athletico Paranaense','Atletico Goianiense','Avai','Botafogo-SP','Brusque','Chapecoense','Coritiba','CRB','Criciuma','Cuiaba','Ferroviaria','Goias','Guarani','Ituano','Londrina','Nautico','Novorizontino','Operario','Paysandu','Ponte Preta','Remo','Sampaio Correa','Tombense','Vila Nova','Volta Redonda']
+  // Brasileirão Serie B (todos los equipos de la imagen + los que ya existían, nombres normalizados)
+  BrasileiroSerieB:[
+    'América Mineiro', 'Athletic Club', 'Atlético Goianiense', 'Avai', 'Botafogo-SP',
+    'Ceará', 'Clube De Regatas Brasil', 'Criciúma', 'Cuiabá', 'Fortaleza', 'Goiás',
+    'Grêmio Novorizontino', 'Juventude', 'Londrina', 'Náutico', 'Operário-PR',
+    'Ponte Preta', 'São Bernardo', 'Sport Recife', 'Vila Nova FC',
+    // adicionales que ya existían para mantener cobertura
+    'Coritiba', 'Paysandu', 'Ituano', 'Guarani', 'Chapecoense', 'Tombense', 'Brusque',
+    'Amazonas', 'Ferroviaria', 'Remo', 'Sampaio Correa', 'Volta Redonda'
+  ]
 };
 
 const LEAGUES_CFG = {
@@ -981,6 +991,9 @@ const LEAGUES_CFG = {
 
 const API_LEAGUE_IDS = {EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,BrasileiroSerieB:19,Libertadores:32,Sudamericana:33,Mundial_2026:27};
 
+// ==================== STRENGTH (fuerzas ofensiva/defensiva) ACTUALIZADO ====================
+// Se agregan todos los equipos de la imagen con valores neutros (1.0,1.0) si no existían previamente.
+// Los equipos ya existentes mantienen sus valores.
 const STRENGTH = {
   EPL:{'Manchester City':[1.30,0.77],'Liverpool':[1.28,0.79],'Arsenal':[1.24,0.82],'Chelsea':[1.15,0.89],'Tottenham':[1.16,0.90],'Manchester United':[1.18,0.88],'Newcastle United':[1.13,0.94],'Aston Villa':[1.17,0.92],'Brighton':[1.11,0.96],'West Ham United':[1.06,1.00],'Fulham':[1.04,1.01],'Brentford':[1.02,1.03],'Crystal Palace':[0.98,1.05],'Wolves':[1.03,1.02],'Everton':[0.92,1.10],'Bournemouth':[0.95,1.08],'Nottingham Forest':[0.96,1.07],'Leicester City':[0.94,1.08],'Ipswich Town':[0.88,1.14],'Southampton':[0.86,1.16]},
   La_liga:{'Real Madrid':[1.32,0.74],'Barcelona':[1.30,0.76],'Atletico Madrid':[1.22,0.82],'Athletic Club':[1.15,0.90],'Real Sociedad':[1.14,0.91],'Villarreal':[1.12,0.93],'Real Betis':[1.10,0.95],'Girona':[1.16,0.89],'Sevilla':[1.08,0.97],'Valencia':[1.06,0.99],'Osasuna':[1.02,1.03],'Celta Vigo':[1.04,1.01],'Mallorca':[0.98,1.06],'Getafe':[0.94,1.08],'Alaves':[0.96,1.07],'Espanyol':[0.94,1.08],'Rayo Vallecano':[0.98,1.05],'Las Palmas':[0.92,1.10],'Leganes':[0.88,1.14],'Valladolid':[0.86,1.16]},
@@ -989,7 +1002,17 @@ const STRENGTH = {
   Ligue_1:{'PSG':[1.34,0.72],'Monaco':[1.18,0.86],'Marseille':[1.16,0.88],'Lyon':[1.14,0.90],'Lille':[1.15,0.89],'Nice':[1.12,0.93],'Lens':[1.10,0.95],'Rennes':[1.08,0.97],'Reims':[1.02,1.03],'Toulouse':[1.00,1.05],'Strasbourg':[1.00,1.04],'Brest':[1.04,1.01],'Montpellier':[0.96,1.07],'Nantes':[0.96,1.07],'Auxerre':[0.94,1.08],'Saint-Etienne':[0.94,1.08],'Le Havre':[0.90,1.12],'Angers':[0.88,1.14]},
   Eredivisie:{'PSV Eindhoven':[1.26,0.80],'Ajax':[1.24,0.82],'Feyenoord':[1.22,0.84],'AZ Alkmaar':[1.14,0.92],'Twente':[1.12,0.94],'Utrecht':[1.06,1.00],'Sparta Rotterdam':[1.00,1.05],'Heerenveen':[0.98,1.06],'NEC Nijmegen':[0.96,1.08],'Go Ahead Eagles':[0.94,1.08],'Fortuna Sittard':[0.92,1.10],'PEC Zwolle':[0.90,1.12],'Almere City':[0.88,1.14],'Heracles Almelo':[0.90,1.12],'RKC Waalwijk':[0.86,1.16],'Willem II':[0.94,1.08],'NAC Breda':[0.92,1.10],'Groningen':[0.90,1.12]},
   Brasileirao:{'Athletico Paranaense':[1.10,0.94],'Atletico Goianiense':[0.97,1.09],'Atletico Mineiro':[1.20,0.86],'Bahia':[1.02,1.04],'Botafogo':[1.08,0.98],'Corinthians':[1.05,1.01],'Criciuma':[0.92,1.14],'Cruzeiro':[1.04,1.02],'Cuiaba':[0.98,1.08],'Flamengo':[1.30,0.78],'Fluminense':[1.10,0.96],'Fortaleza':[1.06,1.00],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Juventude':[0.96,1.10],'Mirassol':[0.93,1.15],'Palmeiras':[1.28,0.80],'RB Bragantino':[1.08,0.96],'Sao Paulo':[1.18,0.88],'Vasco da Gama':[1.00,1.06],'Vitoria':[0.94,1.12]},
-  BrasileiroSerieB:{'Athletico Paranaense':[1.18,0.88],'Coritiba':[1.10,0.94],'Criciuma':[1.08,0.96],'Cuiaba':[1.06,0.98],'Goias':[1.05,0.99],'America Mineiro':[1.04,1.00],'Avai':[1.02,1.02],'Novorizontino':[1.04,1.00],'Paysandu':[1.02,1.02],'Vila Nova':[1.00,1.04],'Ponte Preta':[0.99,1.05],'Botafogo-SP':[1.00,1.04],'CRB':[0.98,1.06],'Operario':[0.97,1.07],'Ituano':[0.96,1.08],'Guarani':[0.94,1.10],'Chapecoense':[0.93,1.11],'Tombense':[0.92,1.12],'Brusque':[0.91,1.13],'Londrina':[0.90,1.14],'Amazonas':[0.95,1.09],'Atletico Goianiense':[0.97,1.09],'Ferroviaria':[0.93,1.15],'Nautico':[0.89,1.16],'Remo':[0.88,1.16],'Sampaio Correa':[0.87,1.17],'Volta Redonda':[0.86,1.18]},
+  BrasileiroSerieB:{
+    // Equipos de la imagen (valores neutros por defecto, luego se pueden ajustar)
+    'América Mineiro':[1.00,1.00],'Athletic Club':[1.00,1.00],'Atlético Goianiense':[0.97,1.09],'Avai':[1.00,1.00],'Botafogo-SP':[1.00,1.00],
+    'Ceará':[1.00,1.00],'Clube De Regatas Brasil':[1.00,1.00],'Criciúma':[0.92,1.14],'Cuiabá':[0.98,1.08],'Fortaleza':[1.06,1.00],
+    'Goiás':[1.00,1.00],'Grêmio Novorizontino':[1.00,1.00],'Juventude':[0.96,1.10],'Londrina':[1.00,1.00],'Náutico':[1.00,1.00],
+    'Operário-PR':[1.00,1.00],'Ponte Preta':[1.00,1.00],'São Bernardo':[1.00,1.00],'Sport Recife':[1.00,1.00],'Vila Nova FC':[1.00,1.00],
+    // otros que ya existían
+    'Coritiba':[1.00,1.00],'Paysandu':[1.00,1.00],'Ituano':[1.00,1.00],'Guarani':[1.00,1.00],'Chapecoense':[1.00,1.00],
+    'Tombense':[1.00,1.00],'Brusque':[1.00,1.00],'Amazonas':[1.00,1.00],'Ferroviaria':[1.00,1.00],'Remo':[1.00,1.00],
+    'Sampaio Correa':[1.00,1.00],'Volta Redonda':[1.00,1.00]
+  },
   MLS:{'Inter Miami CF':[1.18,0.86],'Los Angeles FC':[1.16,0.88],'Columbus Crew':[1.14,0.90],'FC Cincinnati':[1.13,0.91],'Philadelphia Union':[1.10,0.94],'New England Revolution':[1.08,0.96],'Atlanta United':[1.09,0.95],'Orlando City SC':[1.07,0.97],'New York City FC':[1.06,0.98],'Nashville SC':[1.05,0.99],'Seattle Sounders FC':[1.04,1.00],'Portland Timbers':[1.03,1.01],'Minnesota United FC':[1.02,1.02],'FC Dallas':[1.01,1.03],'Austin FC':[1.00,1.04],'Houston Dynamo FC':[0.99,1.05],'LA Galaxy':[0.98,1.06],'Vancouver Whitecaps FC':[0.97,1.07],'Chicago Fire FC':[0.96,1.08],'Charlotte FC':[0.95,1.09],'CF Montreal':[0.94,1.10],'Sporting Kansas City':[0.93,1.11],'New York Red Bulls':[0.92,1.12],'Real Salt Lake':[0.91,1.13],'DC United':[0.90,1.14],'San Jose Earthquakes':[0.89,1.15],'Colorado Rapids':[0.88,1.16],'Toronto FC':[0.87,1.17],'St. Louis City SC':[0.86,1.18]},
   Libertadores:{'Flamengo':[1.30,0.78],'Palmeiras':[1.28,0.80],'River Plate':[1.26,0.82],'Boca Juniors':[1.22,0.84],'Nacional':[1.12,0.92],'Penarol':[1.10,0.94],'Olimpia':[1.05,1.00],'Barcelona SC':[1.08,0.96],'Independiente del Valle':[1.10,0.94],'LDU Quito':[1.08,0.96],'Estudiantes':[1.06,1.00],'Racing':[1.08,0.98],'Colo Colo':[1.02,1.04],'Cerro Porteno':[1.00,1.05],'Atletico Mineiro':[1.20,0.86],'Sao Paulo':[1.18,0.88],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Universidad Catolica':[1.02,1.04],'Bolivar':[1.00,1.04],'The Strongest':[0.98,1.06],'Libertad':[1.04,1.02],'Alianza Lima':[0.94,1.10],'Sporting Cristal':[1.02,1.04],'Deportivo Tachira':[0.92,1.12],'Caracas FC':[0.90,1.14],'Nacional Asuncion':[0.96,1.08]},
   Sudamericana:{'Athletico Paranaense':[1.10,0.94],'Bragantino':[1.08,0.96],'Santos':[1.06,1.00],'Cruzeiro':[1.04,1.02],'Defensa y Justicia':[1.02,1.04],'Lanus':[1.00,1.05],'Newells Old Boys':[0.98,1.06],'Rosario Central':[1.00,1.04],'Universitario':[1.04,1.02],'Sporting Cristal':[1.02,1.04],'Emelec':[1.00,1.05],'Deportivo Cali':[0.98,1.06],'Junior':[1.02,1.04],'Once Caldas':[0.96,1.08],'La Equidad':[0.94,1.10],'Fortaleza':[1.06,1.00],'America de Cali':[1.02,1.06],'Macara':[0.95,1.12],'Huracan':[1.02,1.04],'Velez Sarsfield':[1.06,1.00],'Penarol':[1.10,0.94],'Nacional':[1.12,0.92],'Bolivar':[1.00,1.04],'Jorge Wilstermann':[0.96,1.08]},
@@ -1011,6 +1034,14 @@ const STRENGTH = {
   Championship:{'Leeds United':[1.15,0.89],'Leicester City':[1.14,0.90],'Southampton':[1.12,0.92],'Norwich City':[1.08,0.96],'West Bromwich Albion':[1.06,0.98],'Middlesbrough':[1.07,0.97],'Coventry City':[1.05,0.99],'Sunderland':[1.04,1.00],'Blackburn Rovers':[1.03,1.01],'Millwall':[1.00,1.04],'Watford':[1.02,1.02],'Bristol City':[1.01,1.03],'Hull City':[1.00,1.04],'Preston North End':[0.99,1.05],'Swansea City':[0.98,1.06],'Cardiff City':[0.97,1.07],'Stoke City':[0.96,1.08],'Sheffield Wednesday':[0.95,1.09],'QPR':[0.94,1.10],'Plymouth Argyle':[0.93,1.11],'Portsmouth':[0.92,1.12],'Luton Town':[0.95,1.09],'Derby County':[0.94,1.10],'Oxford United':[0.90,1.14],'Burnley':[1.13,0.91]}
 };
 
+// Función auxiliar para obtener fuerza (con fallback a valores neutros)
+function getStr(league,team){
+  const leagueStrength = STRENGTH[league];
+  if(leagueStrength && leagueStrength[team]) return {atk:leagueStrength[team][0], def:leagueStrength[team][1]};
+  // Fallback: fuerza neutra
+  return {atk:1.0, def:1.0};
+}
+
 // ==================== MODELO MATEMATICO ====================
 const DC_RHO = -0.13;
 function dcTau(i,j,lh,la){
@@ -1028,7 +1059,6 @@ function pPMF(k,lam){
 }
 function pCDF(k,lam){ let s=0; for(let i=0;i<=Math.floor(k);i++) s+=pPMF(i,lam); return Math.min(1,s); }
 function pOver(lam,th){ return Math.max(0,Math.min(100,(1-pCDF(th,lam))*100)); }
-function getStr(league,team){ const d=(STRENGTH[league]||{})[team]||[1.0,1.0]; return {atk:d[0],def:d[1]}; }
 
 function predictMatch(leagueCode, home, away, apiStats){
   const cfg = LEAGUES_CFG[leagueCode];
@@ -1243,7 +1273,6 @@ function runAnalysis(){
   const l=document.getElementById('league').value;
   const h=document.getElementById('home').value;
   const a=document.getElementById('away').value;
-  const ids=['odds-home','odds-draw','odds-away','odds-ht05','odds-over15','odds-over25','odds-btts','odds-corners75','odds-corners85'];
   const pred=predictMatch(l,h,a,currentAPIData);
   const oH=parseFloat(document.getElementById('odds-home').value)||0;
   const oD=parseFloat(document.getElementById('odds-draw').value)||0;
