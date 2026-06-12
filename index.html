@@ -1292,8 +1292,7 @@ function renderResults(pred, markets){
           +'<div style="font-size:.62rem;color:var(--muted)">Kelly '+(config.kellyFraction*100).toFixed(0)+'% &middot; Max '+(config.maxStakePct*100).toFixed(0)+'% bankroll</div>'
           +'<div class="stake-amount">$'+stake.toFixed(2)+'</div>'
           +'<div class="stake-meta">'+(stake/bankroll*100).toFixed(1)+'% bankroll &middot; EV <span class="pos">+'+(m.ev?m.ev.toFixed(1):'?')+'%</span></div>'
-          +'<button class="btn-secondary" onclick="placeBet(\''+m.name+'\','+m.prob+','+m.odds+','+stake.toFixed(2)+',\''+pred.home+' vs '+pred.away+'\')" style="margin-top:8px;width:100%;font-size:.72rem">REGISTRAR APUESTA</button>'
-          +'</div>';
+          +'<div style="text-align:center;margin-top:12px"><button onclick="placeBet(\\\'\'+m.name+\'\\\',\'+m.prob+\',\'+m.odds+\',\'+stake.toFixed(2)+\',\\\'\'+pred.home+\' vs \'+pred.away+\'\\\')" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:10px 26px;border-radius:50px;font-size:.73rem;font-weight:800;letter-spacing:.5px;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,.3)">&#10003; Registrar Apuesta</button></div>'
       }
     }
     html+='<div class="market '+(m.hasValue?'has-value':(iv?'no-value':''))+'">'
