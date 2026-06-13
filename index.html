@@ -881,6 +881,23 @@ function runAnalysis(){
 
 function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
 
+// Registro temporal de apuestas pendientes de confirmar (evita datos en onclick)
+var _pendingBets={};
+var _pendingIdx=0;
+
+function registerPending(data){
+  var id=_pendingIdx++;
+  _pendingBets[id]=data;
+  return id;
+}
+
+function confirmBet(id){
+  var d=_pendingBets[id];
+  if(!d){showToast('Error: apuesta no encontrada','error');return;}
+  placeBet(d.market,d.prob,d.odds,d.stake,d.match);
+  delete _pendingBets[id];
+}
+
 function renderResults(pred,markets){
   document.getElementById('main-screen').classList.add('hidden');
   document.getElementById('result-screen').classList.remove('hidden');
@@ -921,8 +938,13 @@ function renderResults(pred,markets){
         var pct=stake/bankroll*100;
         var riskCls=pct<1.5?'risk-low':(pct<2.5?'risk-mid':'risk-high');
         var riskLabel=pct<1.5?'BAJO':(pct<2.5?'MEDIO':'ALTO');
-        var matchS=escAttr(pred.home+' vs '+pred.away);
-        var mktS=escAttr(m.name);
+        var pid=registerPending({
+          market:m.name,
+          prob:m.prob,
+          odds:m.odds,
+          stake:parseFloat(stake.toFixed(2)),
+          match:pred.home+' vs '+pred.away
+        });
         stakeH='<div class="stake-card">'
           +'<div class="stake-label">Stake recomendado &middot; Kelly '+(config.kellyFraction*100).toFixed(0)+'% &middot; <span class="'+riskCls+'">RIESGO '+riskLabel+'</span></div>'
           +'<div class="stake-amount">$'+stake.toFixed(2)+'</div>'
@@ -932,7 +954,7 @@ function renderResults(pred,markets){
           +'<span>Max '+(config.maxStakePct*100).toFixed(0)+'%</span>'
           +'</div>'
           +(pct>=2.5?'<div class="small-note" style="margin-top:6px;color:var(--accent2);font-style:normal;font-weight:700">Stake alto: considera reducir Kelly en Config</div>':'')
-          +'<button class="btn btn-primary mt8" onclick="placeBet('+JSON.stringify(mktS)+','+m.prob+','+m.odds+','+stake.toFixed(2)+','+JSON.stringify(matchS)+')" style="font-size:.72rem;padding:10px 20px">Registrar Apuesta</button>'
+          +'<button class="btn btn-primary mt8" onclick="confirmBet('+pid+')" style="font-size:.72rem;padding:10px 20px">Registrar Apuesta</button>'
           +'</div>';
       }
     } else if(iv&&m.ev>0&&!isValue){
