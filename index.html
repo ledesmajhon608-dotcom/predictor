@@ -508,6 +508,14 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         <input type="number" id="cfg-maxstake" step="0.01" min="0.01" max="1">
       </div>
       <div class="config-row">
+        <span class="cfg-label">Stake Minimo ($)</span>
+        <input type="number" id="cfg-minstake-abs" step="10" min="0">
+      </div>
+      <div class="config-row">
+        <span class="cfg-label">Stake Maximo ($)</span>
+        <input type="number" id="cfg-maxstake-abs" step="10" min="0">
+      </div>
+      <div class="config-row">
         <span class="cfg-label">EV Minimo (%)</span>
         <input type="number" id="cfg-minev" step="1" min="1" max="30">
       </div>
@@ -550,7 +558,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       </div>
       <button class="btn btn-primary mt16" onclick="saveConfig()">Guardar Configuracion</button>
       <button class="btn btn-danger mt8" onclick="resetData()">Resetear Todos los Datos</button>
-      <p class="small-note" style="margin-top:8px">El stake nunca supera el % maximo del bankroll. Defaults conservadores para dinero real.</p>
+      <p class="small-note" style="margin-top:8px">El stake respeta el mínimo y máximo en dólares, además del tope porcentual.</p>
     </div>
 
   </div>
@@ -564,7 +572,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
 </div>
 
 <script>
-const DEFAULT_CONFIG={initialBankroll:20000,kellyFraction:0.10,maxStakePct:0.03,minEV:8,apiKey:'',apiBaseUrl:'https://sports.bzzoiro.com'};
+const DEFAULT_CONFIG={initialBankroll:20000,kellyFraction:0.10,maxStakePct:0.03,minEV:8,minStake:500,maxStake:1000,apiKey:'',apiBaseUrl:'https://sports.bzzoiro.com'};
 let config=JSON.parse(localStorage.getItem('betConfig')||'null')||Object.assign({},DEFAULT_CONFIG);
 let bankroll=parseFloat(localStorage.getItem('bankroll'))||config.initialBankroll;
 let betHistory=JSON.parse(localStorage.getItem('betHistory')||'[]');
@@ -572,9 +580,8 @@ let teamIdCache=JSON.parse(localStorage.getItem('teamIdCache')||'{}');
 let seasonIdCache=JSON.parse(localStorage.getItem('seasonIdCache')||'{}');
 let currentAPIData=null;
 
-// NUEVO: ELOs dinámicos y forma reciente
 let eloRatings=JSON.parse(localStorage.getItem('eloRatings')||'{}');
-let teamForm=JSON.parse(localStorage.getItem('teamForm')||'{}'); // { "EPL|Manchester City": [1,0,1,1,0] } 1=win,0=loss,0.5=draw
+let teamForm=JSON.parse(localStorage.getItem('teamForm')||'{}');
 
 function saveAll(){
   localStorage.setItem('bankroll',String(bankroll));
@@ -654,7 +661,6 @@ function getBaseStr(league,team){
   return {atk:1.0,def:1.0};
 }
 
-// SISTEMA ELO: inicializar con 1500 base, ajustado por fuerza base
 function initELO(league,team){
   var base=getBaseStr(league,team);
   var avg=(base.atk+base.def)/2;
@@ -677,7 +683,6 @@ function updateELO(league,home,away,result){
   saveAll();
 }
 
-// FORMA RECIENTE
 function getFormFactor(league,team){
   var key=league+'|'+team;
   var form=teamForm[key]||[];
@@ -685,7 +690,7 @@ function getFormFactor(league,team){
   var sum=0;
   for(var i=0;i<form.length;i++) sum+=form[i];
   var avg=sum/form.length;
-  return 0.85 + 0.3*avg; // entre 0.85 y 1.15
+  return 0.85 + 0.3*avg;
 }
 function updateForm(league,home,away,result){
   var hKey=league+'|'+home, aKey=league+'|'+away;
@@ -697,7 +702,6 @@ function updateForm(league,home,away,result){
   saveAll();
 }
 
-// FUERZA COMBINADA (base + ELO + forma)
 function getStr(league,team){
   var base=getBaseStr(league,team);
   var elo=getELO(league,team);
@@ -708,7 +712,6 @@ function getStr(league,team){
   return {atk:Math.max(0.5,atk),def:Math.max(0.5,def)};
 }
 
-// DIXON-COLES con rho de liga
 function getRho(leagueCode){
   return LEAGUES_CFG[leagueCode]?LEAGUES_CFG[leagueCode].rho:-0.13;
 }
@@ -822,12 +825,17 @@ function calcFair(oH,oD,oA){
   return{home:(1/oH)/s,draw:(1/oD)/s,away:(1/oA)/s,vig:(s-1)*100};
 }
 function kellyStake(prob,odds){
+  if(odds<=1) return 0;
   var b=odds-1,k=(prob*b-(1-prob))/b;
-  var fraction=Math.max(0,k*config.kellyFraction);
-  return Math.min(bankroll*fraction,bankroll*config.maxStakePct);
+  var rawStake=Math.max(0,k*config.kellyFraction*bankroll);
+  var stake=Math.min(rawStake,bankroll*config.maxStakePct);
+  var minAbs=config.minStake||500;
+  var maxAbs=config.maxStake||1000;
+  if(stake<minAbs&&stake>0) stake=Math.min(minAbs,maxAbs);
+  if(stake>maxAbs) stake=maxAbs;
+  return Math.min(stake,bankroll);
 }
 
-// API sin cambios
 function apiBase(){return(config.apiBaseUrl||'https://sports.bzzoiro.com').replace(/\/+$/,'');}
 function apiHdrs(key){return{'Authorization':'Token '+(key||config.apiKey),'Accept':'application/json'};}
 async function apiFetch(path){
@@ -972,10 +980,8 @@ function checkBtns(){
   document.getElementById('api-btn').disabled=!(h&&a&&h!==a&&l&&API_LEAGUE_IDS[l]);
 }
 
-// CALIBRACIÓN: guardar sesgo medio del modelo vs mercado
 let calibrationBias=JSON.parse(localStorage.getItem('calibrationBias')||'{"home":1,"draw":1,"away":1}');
 function applyCalibration(probs){
-  // probs: {hw, dr, aw} en porcentaje
   var total=probs.hw*calibrationBias.home + probs.dr*calibrationBias.draw + probs.aw*calibrationBias.away;
   return {
     hw:probs.hw*calibrationBias.home/total*100,
@@ -994,7 +1000,6 @@ function runAnalysis(){
   var oA=parseFloat(document.getElementById('odds-away').value)||0;
   var fair=calcFair(oH,oD,oA);
 
-  // Aplicar calibración a 1X2
   var raw1x2={hw:parseFloat(pred.hw),dr:parseFloat(pred.dr),aw:parseFloat(pred.aw)};
   var cal1x2=applyCalibration(raw1x2);
   pred.hw=cal1x2.hw.toFixed(1);
@@ -1126,7 +1131,6 @@ function updateBetResult(idx,won){
   b.status='settled';b.result=won?'win':'loss';
   if(won) bankroll+=b.stake*b.odds;
 
-  // Actualizar ELO y forma si es un mercado 1X2
   if(b.market==='Victoria Local'||b.market==='Empate'||b.market==='Victoria Visitante'){
     var parts=b.match.split(' vs ');
     if(parts.length===2){
@@ -1137,10 +1141,6 @@ function updateBetResult(idx,won){
         if(won){
           result=b.market==='Victoria Local'?'home':(b.market==='Victoria Visitante'?'away':'draw');
         }else{
-          // determinar resultado real (el que ocurrió, no la apuesta)
-          // Simplificación: si ganó, asumimos que el resultado real es el de la apuesta
-          // Si perdió, necesitamos saber cuál fue. Como no lo tenemos, no actualizamos.
-          // Mejor: solo actualizar si la apuesta ganó (sabemos el resultado real)
           if(b.market==='Victoria Local') result='home';
           else if(b.market==='Empate') result='draw';
           else result='away';
@@ -1268,11 +1268,9 @@ function updateStats(){
   document.getElementById('stat-streak').textContent=streakDir===1?'W'+streak:(streakDir===-1?'L'+streak:'--');
   document.getElementById('stat-streak').className='stat-val '+(streakDir===1?'green':(streakDir===-1?'red':''));
 
-  // Mostrar precisión del modelo (solo para apuestas 1X2 liquidadas)
   var modelBets=settled.filter(function(b){return b.market==='Victoria Local'||b.market==='Empate'||b.market==='Victoria Visitante';});
   var correct=0;
   modelBets.forEach(function(b){
-    // Asumimos que si ganó, la predicción fue correcta (simplificación)
     if(b.result==='win') correct++;
   });
   var acc=modelBets.length?Math.round(correct/modelBets.length*100):'--';
@@ -1311,6 +1309,8 @@ function loadConfig(){
   document.getElementById('cfg-kelly').value=config.kellyFraction;
   document.getElementById('cfg-maxstake').value=config.maxStakePct;
   document.getElementById('cfg-minev').value=config.minEV!=null?config.minEV:8;
+  document.getElementById('cfg-minstake-abs').value=config.minStake||500;
+  document.getElementById('cfg-maxstake-abs').value=config.maxStake||1000;
   document.getElementById('cfg-apikey').value=config.apiKey||'';
   document.getElementById('cfg-apibase').value=config.apiBaseUrl||'https://sports.bzzoiro.com';
   updateDataModeBanner();
@@ -1326,12 +1326,15 @@ function saveConfig(){
   var kel=parseFloat(document.getElementById('cfg-kelly').value);
   var ms=parseFloat(document.getElementById('cfg-maxstake').value);
   var minev=parseFloat(document.getElementById('cfg-minev').value);
+  var minStake=parseFloat(document.getElementById('cfg-minstake-abs').value);
+  var maxStake=parseFloat(document.getElementById('cfg-maxstake-abs').value);
   var key=document.getElementById('cfg-apikey').value.trim();
   var base=document.getElementById('cfg-apibase').value.trim();
   if(ini>0) config.initialBankroll=ini;
   if(kel>0&&kel<=1) config.kellyFraction=kel;
   if(ms>0&&ms<=1) config.maxStakePct=ms;
   if(minev>=0&&minev<=50) config.minEV=minev;
+  if(minStake>=0&&maxStake>=minStake){config.minStake=minStake;config.maxStake=maxStake;}
   config.apiKey=key;config.apiBaseUrl=base||'https://sports.bzzoiro.com';
   saveAll();updateBankrollDisplay();updateDataModeBanner();
   showToast('Configuracion guardada','success');
