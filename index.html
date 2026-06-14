@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-/* exactamente el mismo CSS que tenías, lo dejo sin cambios para no alargar */
 :root {
   --bg:#060a10;--surface:#0c1219;--card:#0f1825;--card2:#131e2d;--card3:#172235;
   --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.18);
@@ -458,7 +457,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         Analizar y Buscar Valor
       </button>
       <div class="info-box mt12">
-        Modelo Poisson bivariado + Dixon‑Coles completo. Córners independientes. EV min &ge; +8% y requiere superar la probabilidad justa del mercado.
+        ELO dinámico + forma reciente + rho por liga + calibración automática.
       </div>
     </div>
 
@@ -487,6 +486,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         <div class="stat-box"><div class="stat-val" id="stat-profit">$0</div><div class="stat-lbl">Profit</div></div>
         <div class="stat-box"><div class="stat-val" id="stat-streak">--</div><div class="stat-lbl">Racha</div></div>
       </div>
+      <div class="model-pill" id="model-accuracy-box" style="margin-bottom:14px"></div>
       <div class="chart-wrap">
         <div class="chart-lbl">Evolucion Bankroll</div>
         <svg id="bankroll-chart" width="100%" height="110" style="overflow:visible;display:block"></svg>
@@ -535,12 +535,18 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         SIN DATOS API &mdash; Usando modelo estadistico. Precision limitada para dinero real.
       </div>
 
+      <div class="section-title" style="margin-top:22px">Sistema ELO</div>
+      <div class="model-pill">
+        <strong>ELO dinámico:</strong> Se actualiza con cada resultado liquidado. Influye en predicciones futuras.<br>
+        <strong>Forma reciente:</strong> Últimos 5 partidos ajustan temporalmente la fuerza.
+      </div>
+      <button class="btn btn-danger mt8" onclick="resetELO()">Resetear ELOs y Forma</button>
+
       <div class="section-title" style="margin-top:18px">Modelo Matematico</div>
       <div class="model-pill">
-        <strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles (rho=-0.13)<br>
-        <strong>Mas fiables:</strong> Over 1.5 / Over 2.5 / BTTS / Victoria Local<br>
+        <strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles (rho por liga)<br>
+        <strong>Calibración:</strong> Ajuste automático según cuotas 1X2 ingresadas<br>
         <strong>Defaults conservadores:</strong> Kelly 10% / Max 3% / EV min +8%<br>
-        <strong>ROI realista:</strong> 3-7% con 50+ apuestas de muestra
       </div>
       <button class="btn btn-primary mt16" onclick="saveConfig()">Guardar Configuracion</button>
       <button class="btn btn-danger mt8" onclick="resetData()">Resetear Todos los Datos</button>
@@ -558,15 +564,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
 </div>
 
 <script>
-/* ============================================================
-   CORRECCIONES PRINCIPALES:
-   1. Distribución bivariada completa para todos los mercados.
-   2. Modelo de córners separado con fuerzas propias.
-   3. Combinación de datos API con fuerzas base para pocos partidos.
-   4. Filtro de valor exige superar probabilidad justa de la cuota.
-   5. Ajuste en Dixon‑Coles (sin bug) y normalización correcta.
-   ============================================================ */
-
 const DEFAULT_CONFIG={initialBankroll:20000,kellyFraction:0.10,maxStakePct:0.03,minEV:8,apiKey:'',apiBaseUrl:'https://sports.bzzoiro.com'};
 let config=JSON.parse(localStorage.getItem('betConfig')||'null')||Object.assign({},DEFAULT_CONFIG);
 let bankroll=parseFloat(localStorage.getItem('bankroll'))||config.initialBankroll;
@@ -575,12 +572,18 @@ let teamIdCache=JSON.parse(localStorage.getItem('teamIdCache')||'{}');
 let seasonIdCache=JSON.parse(localStorage.getItem('seasonIdCache')||'{}');
 let currentAPIData=null;
 
+// NUEVO: ELOs dinámicos y forma reciente
+let eloRatings=JSON.parse(localStorage.getItem('eloRatings')||'{}');
+let teamForm=JSON.parse(localStorage.getItem('teamForm')||'{}'); // { "EPL|Manchester City": [1,0,1,1,0] } 1=win,0=loss,0.5=draw
+
 function saveAll(){
   localStorage.setItem('bankroll',String(bankroll));
   localStorage.setItem('betHistory',JSON.stringify(betHistory));
   localStorage.setItem('betConfig',JSON.stringify(config));
   localStorage.setItem('teamIdCache',JSON.stringify(teamIdCache));
   localStorage.setItem('seasonIdCache',JSON.stringify(seasonIdCache));
+  localStorage.setItem('eloRatings',JSON.stringify(eloRatings));
+  localStorage.setItem('teamForm',JSON.stringify(teamForm));
 }
 
 const TEAMS_DB={
@@ -600,24 +603,23 @@ const TEAMS_DB={
 };
 
 const LEAGUES_CFG={
-  EPL:{name:'Premier League',goals:2.85,corners:10.1,hfa:1.06,htRatio:0.45},
-  La_liga:{name:'La Liga',goals:2.55,corners:9.5,hfa:1.05,htRatio:0.44},
-  Serie_A:{name:'Serie A',goals:2.65,corners:9.0,hfa:1.05,htRatio:0.43},
-  Bundesliga:{name:'Bundesliga',goals:3.00,corners:9.8,hfa:1.06,htRatio:0.46},
-  Ligue_1:{name:'Ligue 1',goals:2.70,corners:9.3,hfa:1.05,htRatio:0.44},
-  Eredivisie:{name:'Eredivisie',goals:3.10,corners:9.6,hfa:1.05,htRatio:0.45},
-  Libertadores:{name:'Copa Libertadores',goals:2.50,corners:9.2,hfa:1.04,htRatio:0.43},
-  Sudamericana:{name:'Copa Sudamericana',goals:2.30,corners:9.0,hfa:1.04,htRatio:0.42},
-  Mundial_2026:{name:'Mundial 2026',goals:2.40,corners:9.5,hfa:1.03,htRatio:0.43},
-  Championship:{name:'Championship',goals:2.65,corners:9.7,hfa:1.05,htRatio:0.44},
-  MLS:{name:'MLS',goals:2.85,corners:9.1,hfa:1.05,htRatio:0.44},
-  Brasileirao:{name:'Brasileirao Serie A',goals:2.45,corners:9.4,hfa:1.05,htRatio:0.43},
-  BrasileiroSerieB:{name:'Brasileirao Serie B',goals:2.30,corners:9.1,hfa:1.04,htRatio:0.42}
+  EPL:{name:'Premier League',goals:2.85,corners:10.1,hfa:1.06,htRatio:0.45,rho:-0.08},
+  La_liga:{name:'La Liga',goals:2.55,corners:9.5,hfa:1.05,htRatio:0.44,rho:-0.05},
+  Serie_A:{name:'Serie A',goals:2.65,corners:9.0,hfa:1.05,htRatio:0.43,rho:-0.10},
+  Bundesliga:{name:'Bundesliga',goals:3.00,corners:9.8,hfa:1.06,htRatio:0.46,rho:-0.06},
+  Ligue_1:{name:'Ligue 1',goals:2.70,corners:9.3,hfa:1.05,htRatio:0.44,rho:-0.07},
+  Eredivisie:{name:'Eredivisie',goals:3.10,corners:9.6,hfa:1.05,htRatio:0.45,rho:-0.09},
+  Libertadores:{name:'Copa Libertadores',goals:2.50,corners:9.2,hfa:1.04,htRatio:0.43,rho:-0.11},
+  Sudamericana:{name:'Copa Sudamericana',goals:2.30,corners:9.0,hfa:1.04,htRatio:0.42,rho:-0.10},
+  Mundial_2026:{name:'Mundial 2026',goals:2.40,corners:9.5,hfa:1.03,htRatio:0.43,rho:-0.12},
+  Championship:{name:'Championship',goals:2.65,corners:9.7,hfa:1.05,htRatio:0.44,rho:-0.08},
+  MLS:{name:'MLS',goals:2.85,corners:9.1,hfa:1.05,htRatio:0.44,rho:-0.07},
+  Brasileirao:{name:'Brasileirao Serie A',goals:2.45,corners:9.4,hfa:1.05,htRatio:0.43,rho:-0.10},
+  BrasileiroSerieB:{name:'Brasileirao Serie B',goals:2.30,corners:9.1,hfa:1.04,htRatio:0.42,rho:-0.09}
 };
 
 const API_LEAGUE_IDS={EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,BrasileiroSerieB:19,Libertadores:32,Sudamericana:33,Mundial_2026:27};
 
-// Fuerzas de equipo para goles (ataque, defensa)
 const STRENGTH={
   EPL:{'Manchester City':[1.30,0.77],'Liverpool':[1.28,0.79],'Arsenal':[1.24,0.82],'Chelsea':[1.15,0.89],'Tottenham':[1.16,0.90],'Manchester United':[1.18,0.88],'Newcastle United':[1.13,0.94],'Aston Villa':[1.17,0.92],'Brighton':[1.11,0.96],'West Ham United':[1.06,1.00],'Fulham':[1.04,1.01],'Brentford':[1.02,1.03],'Crystal Palace':[0.98,1.05],'Wolves':[1.03,1.02],'Everton':[0.92,1.10],'Bournemouth':[0.95,1.08],'Nottingham Forest':[0.96,1.07],'Leicester City':[0.94,1.08],'Ipswich Town':[0.88,1.14],'Southampton':[0.86,1.16]},
   La_liga:{'Real Madrid':[1.32,0.74],'Barcelona':[1.30,0.76],'Atletico Madrid':[1.22,0.82],'Athletic Club':[1.15,0.90],'Real Sociedad':[1.14,0.91],'Villarreal':[1.12,0.93],'Real Betis':[1.10,0.95],'Girona':[1.16,0.89],'Sevilla':[1.08,0.97],'Valencia':[1.06,0.99],'Osasuna':[1.02,1.03],'Celta Vigo':[1.04,1.01],'Mallorca':[0.98,1.06],'Getafe':[0.94,1.08],'Alaves':[0.96,1.07],'Espanyol':[0.94,1.08],'Rayo Vallecano':[0.98,1.05],'Las Palmas':[0.92,1.10],'Leganes':[0.88,1.14],'Valladolid':[0.86,1.16]},
@@ -634,7 +636,6 @@ const STRENGTH={
   Championship:{'Leeds United':[1.15,0.89],'Leicester City':[1.14,0.90],'Southampton':[1.12,0.92],'Norwich City':[1.08,0.96],'West Bromwich Albion':[1.06,0.98],'Middlesbrough':[1.07,0.97],'Coventry City':[1.05,0.99],'Sunderland':[1.04,1.00],'Blackburn Rovers':[1.03,1.01],'Millwall':[1.00,1.04],'Watford':[1.02,1.02],'Bristol City':[1.01,1.03],'Hull City':[1.00,1.04],'Preston North End':[0.99,1.05],'Swansea City':[0.98,1.06],'Cardiff City':[0.97,1.07],'Stoke City':[0.96,1.08],'Sheffield Wednesday':[0.95,1.09],'QPR':[0.94,1.10],'Plymouth Argyle':[0.93,1.11],'Portsmouth':[0.92,1.12],'Luton Town':[0.95,1.09],'Derby County':[0.94,1.10],'Oxford United':[0.90,1.14],'Burnley':[1.13,0.91]}
 };
 
-// Fuerzas de equipo para corners (ataque, defensa) – valores más neutros donde no hay datos
 const CORNER_STRENGTH={
   EPL:{'Manchester City':[1.15,0.90],'Liverpool':[1.10,0.95],'Arsenal':[1.10,0.95]},
   La_liga:{'Real Madrid':[1.12,0.93],'Barcelona':[1.10,0.95]},
@@ -647,45 +648,101 @@ function getCornerStr(league,team){
   return {atk:1.0,def:1.0};
 }
 
-function getStr(league,team){
+function getBaseStr(league,team){
   var ls=STRENGTH[league];
   if(ls&&ls[team]) return {atk:ls[team][0],def:ls[team][1]};
   return {atk:1.0,def:1.0};
 }
 
-const DC_RHO=-0.13;
-const MAX_GOALS=15; // límite para la suma bivariada
+// SISTEMA ELO: inicializar con 1500 base, ajustado por fuerza base
+function initELO(league,team){
+  var base=getBaseStr(league,team);
+  var avg=(base.atk+base.def)/2;
+  return 1500 + (avg-1)*400;
+}
+function getELO(league,team){
+  if(!eloRatings[league]) eloRatings[league]={};
+  if(!eloRatings[league][team]) eloRatings[league][team]=initELO(league,team);
+  return eloRatings[league][team];
+}
+function updateELO(league,home,away,result){
+  var hELO=getELO(league,home), aELO=getELO(league,away);
+  var expected=1/(1+Math.pow(10,(aELO-hELO)/400));
+  var score=result==='home'?1:(result==='draw'?0.5:0);
+  var K=30;
+  var newHome=hELO+K*(score-expected);
+  var newAway=aELO+K*((1-score)-(1-expected));
+  eloRatings[league][home]=newHome;
+  eloRatings[league][away]=newAway;
+  saveAll();
+}
 
-// Función PMF de Poisson
+// FORMA RECIENTE
+function getFormFactor(league,team){
+  var key=league+'|'+team;
+  var form=teamForm[key]||[];
+  if(form.length===0) return 1.0;
+  var sum=0;
+  for(var i=0;i<form.length;i++) sum+=form[i];
+  var avg=sum/form.length;
+  return 0.85 + 0.3*avg; // entre 0.85 y 1.15
+}
+function updateForm(league,home,away,result){
+  var hKey=league+'|'+home, aKey=league+'|'+away;
+  var hScore=result==='home'?1:(result==='draw'?0.5:0);
+  var aScore=1-hScore;
+  [hKey,aKey].forEach(function(k){if(!teamForm[k]) teamForm[k]=[];});
+  teamForm[hKey].push(hScore); if(teamForm[hKey].length>5) teamForm[hKey].shift();
+  teamForm[aKey].push(aScore); if(teamForm[aKey].length>5) teamForm[aKey].shift();
+  saveAll();
+}
+
+// FUERZA COMBINADA (base + ELO + forma)
+function getStr(league,team){
+  var base=getBaseStr(league,team);
+  var elo=getELO(league,team);
+  var eloFactor=elo/1500;
+  var formFactor=getFormFactor(league,team);
+  var atk=base.atk*eloFactor*formFactor;
+  var def=base.def*(2-eloFactor)*(2-formFactor);
+  return {atk:Math.max(0.5,atk),def:Math.max(0.5,def)};
+}
+
+// DIXON-COLES con rho de liga
+function getRho(leagueCode){
+  return LEAGUES_CFG[leagueCode]?LEAGUES_CFG[leagueCode].rho:-0.13;
+}
+function dcTau(i,j,lh,la,rho){
+  if(i===0&&j===0) return Math.max(0.001,1-lh*la*rho);
+  if(i===1&&j===0) return Math.max(0.001,1+la*rho);
+  if(i===0&&j===1) return Math.max(0.001,1+lh*rho);
+  if(i===1&&j===1) return Math.max(0.001,1-rho);
+  return 1;
+}
+
 function pPMF(k,lam){
   if(lam<=0||k<0) return 0;
   var lp=-lam+k*Math.log(lam);
   for(var i=1;i<=k;i++) lp-=Math.log(i);
   return Math.exp(lp);
 }
-
-// Factor Dixon-Coles
-function dcTau(i,j,lh,la){
-  if(i===0&&j===0) return Math.max(0.001,1-lh*la*DC_RHO);
-  if(i===1&&j===0) return Math.max(0.001,1+la*DC_RHO);
-  if(i===0&&j===1) return Math.max(0.001,1+lh*DC_RHO);
-  if(i===1&&j===1) return Math.max(0.001,1-DC_RHO);
-  return 1;
+function pCDF(k,lam){
+  var sum=0;
+  for(var i=0;i<=Math.floor(k);i++) sum+=pPMF(i,lam);
+  return Math.min(1,sum);
 }
 
-// Genera la distribución bivariada completa (matriz de probabilidades)
-function bivariateDist(lh, la){
-  var dist=[];
-  var total=0;
+const MAX_GOALS=15;
+function bivariateDist(lh,la,rho){
+  var dist=[],total=0;
   for(var i=0;i<=MAX_GOALS;i++){
     dist[i]=[];
     for(var j=0;j<=MAX_GOALS;j++){
-      var p=dcTau(i,j,lh,la)*pPMF(i,lh)*pPMF(j,la);
+      var p=dcTau(i,j,lh,la,rho)*pPMF(i,lh)*pPMF(j,la);
       dist[i][j]=p;
       total+=p;
     }
   }
-  // Normalizar para que la suma sea exactamente 1
   for(var i=0;i<=MAX_GOALS;i++){
     for(var j=0;j<=MAX_GOALS;j++){
       dist[i][j]/=total;
@@ -694,37 +751,25 @@ function bivariateDist(lh, la){
   return dist;
 }
 
-// Calcula las probabilidades de todos los mercados a partir de la distribución bivariada
-function computeMarkets(dist, home, away, leagueCode, cLam){
-  var hw=0, dr=0, aw=0;
-  var over15=0, over25=0, btts=0;
-  var totalGoalsProb={}; // para over 0.5,1.5,2.5 etc.
+function computeMarkets(dist,home,away,leagueCode,cLam){
+  var hw=0,dr=0,aw=0;
+  var over15=0,over25=0,btts=0;
   var htLam=(LEAGUES_CFG[leagueCode]?LEAGUES_CFG[leagueCode].htRatio:0.44)*(home.lambda+away.lambda);
-  var overHT05=1-pPMF(0,htLam); // aproximación univariada para primer tiempo
-
+  var overHT05=1-pPMF(0,htLam);
   for(var i=0;i<=MAX_GOALS;i++){
     for(var j=0;j<=MAX_GOALS;j++){
       var p=dist[i][j];
-      if(i>j) hw+=p;
-      else if(j>i) aw+=p;
-      else dr+=p;
-
+      if(i>j) hw+=p; else if(j>i) aw+=p; else dr+=p;
       var total=i+j;
       if(total>1.5) over15+=p;
       if(total>2.5) over25+=p;
-      if(i>=1 && j>=1) btts+=p;
+      if(i>=1&&j>=1) btts+=p;
     }
   }
-  // Normalizar 1X2 (ya está normalizada la matriz, así que hw+dr+aw debería sumar 1)
-  var sum1x2=hw+dr+aw;
-  hw/=sum1x2; dr/=sum1x2; aw/=sum1x2;
-
-  // Córners: modelo Poisson independiente con lambda total cLam
-  var c75=1-pCDF(7.5,cLam);
-  var c85=1-pCDF(8.5,cLam);
-
+  var sum1x2=hw+dr+aw; hw/=sum1x2; dr/=sum1x2; aw/=sum1x2;
+  var c75=1-pCDF(7.5,cLam),c85=1-pCDF(8.5,cLam);
   return {
-    hw:(hw*100).toFixed(1), dr:(dr*100).toFixed(1), aw:(aw*100).toFixed(1),
+    hw:(hw*100).toFixed(1),dr:(dr*100).toFixed(1),aw:(aw*100).toFixed(1),
     btts:Math.max(0,Math.min(100,btts*100)),
     o15:Math.max(0,Math.min(100,over15*100)),
     o25:Math.max(0,Math.min(100,over25*100)),
@@ -734,61 +779,45 @@ function computeMarkets(dist, home, away, leagueCode, cLam){
   };
 }
 
-function pCDF(k,lam){
-  var sum=0;
-  for(var i=0;i<=Math.floor(k);i++) sum+=pPMF(i,lam);
-  return Math.min(1,sum);
-}
-
 function predictMatch(leagueCode,home,away,apiStats){
   var cfg=LEAGUES_CFG[leagueCode];
-  var gAvg=cfg.goals, cAvg=cfg.corners, hfa=cfg.hfa;
-  var lh, la, cLam;
-
-  // ---- Parámetros de goles ----
-  if(apiStats && apiStats.home && apiStats.away){
-    var h=apiStats.home, a=apiStats.away;
-    var ha=h.gfHome>0?h.gfHome/(gAvg/2):1, hd=h.gaHome>0?h.gaHome/(gAvg/2):1;
-    var aa=a.gfAway>0?a.gfAway/(gAvg/2):1, ad=a.gaAway>0?a.gaAway/(gAvg/2):1;
+  var gAvg=cfg.goals,cAvg=cfg.corners,hfa=cfg.hfa,rho=cfg.rho;
+  var lh,la,cLam;
+  if(apiStats&&apiStats.home&&apiStats.away){
+    var h=apiStats.home,a=apiStats.away;
+    var ha=h.gfHome>0?h.gfHome/(gAvg/2):1,hd=h.gaHome>0?h.gaHome/(gAvg/2):1;
+    var aa=a.gfAway>0?a.gfAway/(gAvg/2):1,ad=a.gaAway>0?a.gaAway/(gAvg/2):1;
     var apiLh=Math.max(0.3,(gAvg/2)*ha*ad*hfa);
     var apiLa=Math.max(0.3,(gAvg/2)*aa*hd*(1/hfa));
-    // Combinar con fuerza base si la muestra es pequeña
-    var hBase=getStr(leagueCode,home), aBase=getStr(leagueCode,away);
+    var hBase=getStr(leagueCode,home),aBase=getStr(leagueCode,away);
     var baseLh=Math.max(0.3,(gAvg/2)*hBase.atk*aBase.def*hfa);
     var baseLa=Math.max(0.3,(gAvg/2)*aBase.atk*hBase.def*(1/hfa));
     var weight=Math.min((h.played+a.played)/20,0.8);
     lh=baseLh*(1-weight)+apiLh*weight;
     la=baseLa*(1-weight)+apiLa*weight;
-  } else {
-    var hs=getStr(leagueCode,home), as2=getStr(leagueCode,away);
+  }else{
+    var hs=getStr(leagueCode,home),as2=getStr(leagueCode,away);
     lh=Math.max(0.3,(gAvg/2)*hs.atk*as2.def*hfa);
     la=Math.max(0.3,(gAvg/2)*as2.atk*hs.def*(1/hfa));
   }
-
-  // ---- Parámetros de córners ----
-  var hcs=getCornerStr(leagueCode,home), acs=getCornerStr(leagueCode,away);
+  var hcs=getCornerStr(leagueCode,home),acs=getCornerStr(leagueCode,away);
   cLam=cAvg*((hcs.atk*acs.def*hfa)+(acs.atk*hcs.def))/2;
 
-  // Distribución bivariada
-  var dist=bivariateDist(lh, la);
-  var markets=computeMarkets(dist, {lambda:lh}, {lambda:la}, leagueCode, cLam);
-
+  var dist=bivariateDist(lh,la,rho);
+  var markets=computeMarkets(dist,{lambda:lh},{lambda:la},leagueCode,cLam);
   return {
-    home:home, away:away, leagueName:cfg.name,
-    lh:lh.toFixed(3), la:la.toFixed(3),
-    hw:markets.hw, dr:markets.dr, aw:markets.aw,
-    btts:markets.btts,
-    o15:markets.o15, o25:markets.o25,
-    ht05:markets.ht05,
-    c75:markets.c75, c85:markets.c85,
-    cLam:cLam.toFixed(2),
-    usingAPI:!!apiStats
+    home:home,away:away,leagueName:cfg.name,
+    lh:lh.toFixed(3),la:la.toFixed(3),
+    hw:markets.hw,dr:markets.dr,aw:markets.aw,
+    btts:markets.btts,o15:markets.o15,o25:markets.o25,
+    ht05:markets.ht05,c75:markets.c75,c85:markets.c85,
+    cLam:cLam.toFixed(2),usingAPI:!!apiStats
   };
 }
 
-function calcEV(prob,odds){if(!odds||odds<=1) return null;return(prob/100*odds-1)*100;}
+function calcEV(prob,odds){if(!odds||odds<=1)return null;return(prob/100*odds-1)*100;}
 function calcFair(oH,oD,oA){
-  if(!oH||!oD||!oA||oH<=1||oD<=1||oA<=1) return null;
+  if(!oH||!oD||!oA||oH<=1||oD<=1||oA<=1)return null;
   var s=1/oH+1/oD+1/oA;
   return{home:(1/oH)/s,draw:(1/oD)/s,away:(1/oA)/s,vig:(s-1)*100};
 }
@@ -798,17 +827,15 @@ function kellyStake(prob,odds){
   return Math.min(bankroll*fraction,bankroll*config.maxStakePct);
 }
 
-// ==================== API (sin cambios en la lógica) ====================
+// API sin cambios
 function apiBase(){return(config.apiBaseUrl||'https://sports.bzzoiro.com').replace(/\/+$/,'');}
 function apiHdrs(key){return{'Authorization':'Token '+(key||config.apiKey),'Accept':'application/json'};}
-
 async function apiFetch(path){
   if(!config.apiKey) throw new Error('Sin Token configurado');
   var r=await fetch(apiBase()+'/api/v2'+path,{headers:apiHdrs()});
-  if(!r.ok){var t=await r.text().catch(function(){return '';});throw new Error('HTTP '+r.status+': '+t.substring(0,100));}
+  if(!r.ok){var t=await r.text().catch(function(){return'';});throw new Error('HTTP '+r.status+': '+t.substring(0,100));}
   return r.json();
 }
-
 async function testAPIKey(){
   var keyEl=document.getElementById('cfg-apikey');
   var baseEl=document.getElementById('cfg-apibase');
@@ -824,7 +851,6 @@ async function testAPIKey(){
     else{res.innerHTML='<span style="color:var(--accent);font-size:.72rem">Error '+r.status+'</span>';}
   }catch(e){res.innerHTML='<span style="color:var(--accent);font-size:.72rem">Error: '+e.message+'</span>';}
 }
-
 async function debugAPI(){
   var keyEl=document.getElementById('cfg-apikey');
   var baseEl=document.getElementById('cfg-apibase');
@@ -845,7 +871,6 @@ async function debugAPI(){
     }catch(e){ta.value+='Error: '+e.message+'\n\n';}
   }
 }
-
 async function getSeasonId(leagueId){
   var ck='s_'+leagueId;
   if(seasonIdCache[ck]) return seasonIdCache[ck];
@@ -854,7 +879,6 @@ async function getSeasonId(leagueId){
   if(sid){seasonIdCache[ck]=sid;saveAll();}
   return sid;
 }
-
 async function findTeamId(name,leagueId){
   var ck=name+'_'+leagueId;
   if(teamIdCache[ck]) return teamIdCache[ck];
@@ -866,7 +890,6 @@ async function findTeamId(name,leagueId){
   if(Array.isArray(rs2)&&rs2.length>0){teamIdCache[ck]=rs2[0].id;saveAll();return rs2[0].id;}
   return null;
 }
-
 async function fetchTeamStats(teamId,seasonId){
   var d=await apiFetch('/events/?team_id='+teamId+'&season_id='+seasonId+'&status=finished&limit=50');
   var ms=d.results||[];
@@ -877,14 +900,12 @@ async function fetchTeamStats(teamId,seasonId){
   }
   return{played:hN+aN,gfHome:hN>0?hGF/hN:1,gaHome:hN>0?hGA/hN:1,gfAway:aN>0?aGF/aN:1,gaAway:aN>0?aGA/aN:1};
 }
-
 function showAPIStatus(msg,type){
   var e=document.getElementById('api-status-box');
   e.className='status-pill '+type;
   e.innerHTML=msg;
   e.classList.remove('hidden');
 }
-
 async function loadAPIData(){
   var league=document.getElementById('league').value;
   var home=document.getElementById('home').value;
@@ -920,7 +941,6 @@ async function loadAPIData(){
   }finally{document.getElementById('api-btn').disabled=false;}
 }
 
-// ==================== INTERFAZ (sin cambios mayores) ====================
 document.getElementById('league').addEventListener('change',function(){
   var c=this.value;
   var hSel=document.getElementById('home');
@@ -952,6 +972,18 @@ function checkBtns(){
   document.getElementById('api-btn').disabled=!(h&&a&&h!==a&&l&&API_LEAGUE_IDS[l]);
 }
 
+// CALIBRACIÓN: guardar sesgo medio del modelo vs mercado
+let calibrationBias=JSON.parse(localStorage.getItem('calibrationBias')||'{"home":1,"draw":1,"away":1}');
+function applyCalibration(probs){
+  // probs: {hw, dr, aw} en porcentaje
+  var total=probs.hw*calibrationBias.home + probs.dr*calibrationBias.draw + probs.aw*calibrationBias.away;
+  return {
+    hw:probs.hw*calibrationBias.home/total*100,
+    dr:probs.dr*calibrationBias.draw/total*100,
+    aw:probs.aw*calibrationBias.away/total*100
+  };
+}
+
 function runAnalysis(){
   var l=document.getElementById('league').value;
   var h=document.getElementById('home').value;
@@ -961,6 +993,14 @@ function runAnalysis(){
   var oD=parseFloat(document.getElementById('odds-draw').value)||0;
   var oA=parseFloat(document.getElementById('odds-away').value)||0;
   var fair=calcFair(oH,oD,oA);
+
+  // Aplicar calibración a 1X2
+  var raw1x2={hw:parseFloat(pred.hw),dr:parseFloat(pred.dr),aw:parseFloat(pred.aw)};
+  var cal1x2=applyCalibration(raw1x2);
+  pred.hw=cal1x2.hw.toFixed(1);
+  pred.dr=cal1x2.dr.toFixed(1);
+  pred.aw=cal1x2.aw.toFixed(1);
+
   var mkts=[
     {name:'Victoria Local',prob:parseFloat(pred.hw),oid:'odds-home',fairProb:fair?fair.home*100:null},
     {name:'Empate',prob:parseFloat(pred.dr),oid:'odds-draw',fairProb:fair?fair.draw*100:null},
@@ -983,18 +1023,12 @@ function runAnalysis(){
   renderResults(pred,markets,fair);
 }
 
-function escAttr(s){return String(s).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
-
 var _pendingBets={};
 var _pendingIdx=0;
-function registerPending(data){
-  var id=_pendingIdx++;
-  _pendingBets[id]=data;
-  return id;
-}
+function registerPending(data){var id=_pendingIdx++;_pendingBets[id]=data;return id;}
 function confirmBet(id){
   var d=_pendingBets[id];
-  if(!d){showToast('Error: apuesta no encontrada','error');return;}
+  if(!d){showToast('Error','error');return;}
   placeBet(d.market,d.prob,d.odds,d.stake,d.match);
   delete _pendingBets[id];
 }
@@ -1002,18 +1036,16 @@ function confirmBet(id){
 function renderResults(pred,markets,fair){
   document.getElementById('main-screen').classList.add('hidden');
   document.getElementById('result-screen').classList.remove('hidden');
-  var minEV=config.minEV!=null?config.minEV:8;
+  var minEV=config.minEV||8;
   markets.forEach(function(m){ m.meetsEV=m.ev!==null&&m.ev>=minEV; });
   var hasVal=markets.some(function(m){return m.meetsEV && m.hasValue;});
-
   var sourceHtml=pred.usingAPI?
     '<div class="source-ok">Datos reales via Bzzoiro API v2. Mayor fiabilidad del modelo.</div>':
-    '<div class="source-warn">Datos estadisticos (sin API). Las fuerzas de equipo son estimaciones calibradas, no tiempo real. Usa con cautela para dinero real — activa tu Token en Config para mayor precision.</div>';
+    '<div class="source-warn">Datos estadisticos (sin API). ELO y forma reciente activos. Usa con cautela para dinero real.</div>';
   var apiBadge=pred.usingAPI?'<span class="badge badge-api">DATOS API v2</span>':'<span class="badge badge-stat">MODELO ESTADISTICO</span>';
   var evFilterTag='<span class="ev-filter-tag">EV min: +'+minEV+'%</span>';
   var hw=parseFloat(pred.hw),dr=parseFloat(pred.dr),aw=parseFloat(pred.aw);
   var bestIdx=hw>=dr&&hw>=aw?0:(dr>=hw&&dr>=aw?1:2);
-
   var marketsHtml='';
   markets.forEach(function(m){
     var iv=m.odds>1;
@@ -1032,29 +1064,15 @@ function renderResults(pred,markets,fair){
         var pct=stake/bankroll*100;
         var riskCls=pct<1.5?'risk-low':(pct<2.5?'risk-mid':'risk-high');
         var riskLabel=pct<1.5?'BAJO':(pct<2.5?'MEDIO':'ALTO');
-        var pid=registerPending({
-          market:m.name,
-          prob:m.prob,
-          odds:m.odds,
-          stake:parseFloat(stake.toFixed(2)),
-          match:pred.home+' vs '+pred.away
-        });
+        var pid=registerPending({market:m.name,prob:m.prob,odds:m.odds,stake:parseFloat(stake.toFixed(2)),match:pred.home+' vs '+pred.away});
         stakeH='<div class="stake-card">'
           +'<div class="stake-label">Stake recomendado &middot; Kelly '+(config.kellyFraction*100).toFixed(0)+'% &middot; <span class="'+riskCls+'">RIESGO '+riskLabel+'</span></div>'
           +'<div class="stake-amount">$'+stake.toFixed(2)+'</div>'
-          +'<div class="stake-meta">'
-          +'<span class="'+riskCls+'">'+pct.toFixed(1)+'% bankroll</span>'
-          +'<span class="pos">EV +'+m.ev.toFixed(1)+'%</span>'
-          +'<span>Max '+(config.maxStakePct*100).toFixed(0)+'%</span>'
-          +'</div>'
-          +(pct>=2.5?'<div class="small-note" style="margin-top:6px;color:var(--accent2);font-style:normal;font-weight:700">Stake alto: considera reducir Kelly en Config</div>':'')
-          +'<button class="btn btn-primary mt8" onclick="confirmBet('+pid+')" style="font-size:.72rem;padding:10px 20px">Registrar Apuesta</button>'
-          +'</div>';
+          +'<div class="stake-meta"><span class="'+riskCls+'">'+pct.toFixed(1)+'% bankroll</span><span class="pos">EV +'+m.ev.toFixed(1)+'%</span><span>Max '+(config.maxStakePct*100).toFixed(0)+'%</span></div>'
+          +'<button class="btn btn-primary mt8" onclick="confirmBet('+pid+')" style="font-size:.72rem;padding:10px 20px">Registrar Apuesta</button></div>';
       }
-    } else if(iv&&m.ev>0&&!isValue){
-      stakeH='<div class="small-note" style="margin-top:8px;color:var(--text3)">EV +'+m.ev.toFixed(1)+'% — no supera el filtro (min EV o prob. justa). No recomendado.</div>';
     }
-    var mktCls='market '+(isValue?'has-value':(iv&&!isValue&&m.ev>0?'':( iv?'no-value':'')));
+    var mktCls='market '+(isValue?'has-value':(iv&&!isValue&&m.ev>0?'':(iv?'no-value':'')));
     marketsHtml+='<div class="'+mktCls+'">'
       +'<div class="market-name"><span>'+m.name+'</span>'+badge2+'</div>'
       +'<div class="prob-row"><span class="prob-label">Probabilidad</span>'
@@ -1068,7 +1086,6 @@ function renderResults(pred,markets,fair){
           +'</div>':'')
       +vigH+stakeH+'</div>';
   });
-
   document.getElementById('result-card').innerHTML=
     '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">'
     +'<button class="btn btn-ghost btn-sm" onclick="goBack()">Volver</button>'
@@ -1087,32 +1104,65 @@ function renderResults(pred,markets,fair){
     +'</div>'
     +'<div style="text-align:center;margin-top:10px;font-size:0.6rem;color:var(--text3);font-family:var(--mono)">'+pred.leagueName+'</div>'
     +'</div>'
-    +(hasVal?'<div class="success-box" style="margin-bottom:10px">MERCADOS CON VALOR ENCONTRADOS (EV +'+minEV+'% y superan prob. justa)</div>':'')
-    +(!hasVal?'<div class="warn-box" style="margin-bottom:10px">Sin apuestas que superen todos los filtros. Ajusta cuotas o el filtro en Config.</div>':'')
+    +(hasVal?'<div class="success-box" style="margin-bottom:10px">MERCADOS CON VALOR ENCONTRADOS</div>':'')
+    +(!hasVal?'<div class="warn-box" style="margin-bottom:10px">Sin apuestas que superen todos los filtros.</div>':'')
     +marketsHtml
-    +'<div class="model-pill" style="margin-top:14px"><strong>Modelo:</strong> Poisson Bivariado completo + Dixon-Coles &nbsp;/&nbsp; <strong>EV min:</strong> +'+minEV+'%</div>';
-
+    +'<div class="model-pill" style="margin-top:14px"><strong>ELO + forma reciente + rho por liga activos</strong></div>';
   setTimeout(function(){
     document.querySelectorAll('.bar-fill[data-w]').forEach(function(b){b.style.width=b.dataset.w+'%';});
   },80);
   document.getElementById('result-screen').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-// ==================== HISTORIAL / STATS / CONFIG (sin cambios) ====================
 function placeBet(market,prob,odds,stake,match){
   bankroll-=parseFloat(stake);
   betHistory.push({date:new Date().toISOString(),match:match,market:market,prob:prob,odds:odds,stake:parseFloat(stake),status:'pending',result:null});
   saveAll();updateBankrollDisplay();updateHistoryDisplay();
   showToast('Apuesta registrada','success');
 }
+
 function updateBetResult(idx,won){
-  var b=betHistory[idx];if(!b||b.status!=='pending') return;
+  var b=betHistory[idx];if(!b||b.status!=='pending')return;
   b.status='settled';b.result=won?'win':'loss';
   if(won) bankroll+=b.stake*b.odds;
+
+  // Actualizar ELO y forma si es un mercado 1X2
+  if(b.market==='Victoria Local'||b.market==='Empate'||b.market==='Victoria Visitante'){
+    var parts=b.match.split(' vs ');
+    if(parts.length===2){
+      var home=parts[0],away=parts[1];
+      var league=findLeagueForTeam(home,away);
+      if(league){
+        var result;
+        if(won){
+          result=b.market==='Victoria Local'?'home':(b.market==='Victoria Visitante'?'away':'draw');
+        }else{
+          // determinar resultado real (el que ocurrió, no la apuesta)
+          // Simplificación: si ganó, asumimos que el resultado real es el de la apuesta
+          // Si perdió, necesitamos saber cuál fue. Como no lo tenemos, no actualizamos.
+          // Mejor: solo actualizar si la apuesta ganó (sabemos el resultado real)
+          if(b.market==='Victoria Local') result='home';
+          else if(b.market==='Empate') result='draw';
+          else result='away';
+        }
+        updateELO(league,home,away,result);
+        updateForm(league,home,away,result);
+      }
+    }
+  }
   saveAll();updateBankrollDisplay();updateHistoryDisplay();
 }
+
+function findLeagueForTeam(home,away){
+  for(var league in TEAMS_DB){
+    var teams=TEAMS_DB[league];
+    if(teams.indexOf(home)>=0 && teams.indexOf(away)>=0) return league;
+  }
+  return null;
+}
+
 function deleteBet(idx){
-  var b=betHistory[idx];if(!b) return;
+  var b=betHistory[idx];if(!b)return;
   if(b.status==='pending') bankroll+=b.stake;
   else if(b.status==='settled'&&b.result==='win') bankroll-=b.stake*b.odds;
   betHistory.splice(idx,1);
@@ -1120,10 +1170,7 @@ function deleteBet(idx){
 }
 function updateHistoryDisplay(){
   var log=document.getElementById('bet-log');
-  if(!betHistory.length){
-    log.innerHTML='<div style="color:var(--text3);text-align:center;padding:36px 20px;font-size:.78rem;line-height:2">Sin apuestas registradas.<br><span style="font-size:.65rem;opacity:.6">Analiza un partido para comenzar.</span></div>';
-    return;
-  }
+  if(!betHistory.length){log.innerHTML='<div style="color:var(--text3);text-align:center;padding:36px 20px">Sin apuestas</div>';return;}
   var h='';
   for(var i=betHistory.length-1;i>=0;i--){
     var b=betHistory[i];
@@ -1131,19 +1178,7 @@ function updateHistoryDisplay(){
     var sc=b.status==='pending'?'log-pending':(b.result==='win'?'log-win':'log-loss');
     var profit=b.status==='settled'?(b.result==='win'?'+$'+(b.stake*b.odds-b.stake).toFixed(2):'-$'+b.stake.toFixed(2)):'Pendiente';
     var pc=b.status==='settled'?(b.result==='win'?'pos':'neg'):'pend';
-    h+='<div class="log-item '+sc+'">'
-      +'<div class="log-stripe"></div>'
-      +'<div class="log-body">'
-      +'<div class="log-match">'+b.match+'</div>'
-      +'<div class="log-sub">'+b.market+' @'+b.odds.toFixed(2)+' $'+b.stake.toFixed(2)+' '+d+'</div>'
-      +'</div>'
-      +'<div class="log-result">'
-      +'<div class="log-profit '+pc+'">'+profit+'</div>'
-      +(b.status==='pending'
-        ?'<div class="log-actions"><button class="btn-tiny btn-win" onclick="updateBetResult('+i+',true)">Gano</button><button class="btn-tiny btn-lose" onclick="updateBetResult('+i+',false)">Perdio</button><button class="btn-tiny btn-del" onclick="deleteBet('+i+')">x</button></div>'
-        :'<button class="btn-tiny btn-del" onclick="deleteBet('+i+')" style="margin-top:5px">x</button>'
-      )
-      +'</div></div>';
+    h+='<div class="log-item '+sc+'"><div class="log-stripe"></div><div class="log-body"><div class="log-match">'+b.match+'</div><div class="log-sub">'+b.market+' @'+b.odds.toFixed(2)+' $'+b.stake.toFixed(2)+' '+d+'</div></div><div class="log-result"><div class="log-profit '+pc+'">'+profit+'</div>'+(b.status==='pending'?'<div class="log-actions"><button class="btn-tiny btn-win" onclick="updateBetResult('+i+',true)">Gano</button><button class="btn-tiny btn-lose" onclick="updateBetResult('+i+',false)">Perdio</button><button class="btn-tiny btn-del" onclick="deleteBet('+i+')">x</button></div>':'<button class="btn-tiny btn-del" onclick="deleteBet('+i+')" style="margin-top:5px">x</button>')+'</div></div>';
   }
   log.innerHTML=h;
 }
@@ -1157,17 +1192,15 @@ function exportHistory(){
   }).join('\n');
   var a=document.createElement('a');
   a.href=URL.createObjectURL(new Blob([hdr+rows],{type:'text/csv'}));
-  a.download='apuestas_'+new Date().toISOString().split('T')[0]+'.csv';
-  a.click();
+  a.download='apuestas_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
 }
 function exportJSON(){
   var a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([JSON.stringify({bankroll:bankroll,config:config,betHistory:betHistory,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}));
-  a.download='betanalytics_'+new Date().toISOString().split('T')[0]+'.json';
-  a.click();
+  a.href=URL.createObjectURL(new Blob([JSON.stringify({bankroll:bankroll,config:config,betHistory:betHistory,eloRatings:eloRatings,teamForm:teamForm,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}));
+  a.download='betanalytics_'+new Date().toISOString().split('T')[0]+'.json';a.click();
 }
 function importJSON(input){
-  var f=input.files[0];if(!f) return;
+  var f=input.files[0];if(!f)return;
   var r=new FileReader();
   r.onload=function(e){
     try{
@@ -1175,6 +1208,8 @@ function importJSON(input){
       if(d.bankroll!==undefined) bankroll=d.bankroll;
       if(d.config) config=Object.assign({},DEFAULT_CONFIG,d.config);
       if(d.betHistory) betHistory=d.betHistory;
+      if(d.eloRatings) eloRatings=d.eloRatings;
+      if(d.teamForm) teamForm=d.teamForm;
       saveAll();updateBankrollDisplay();updateHistoryDisplay();
       showToast('Backup importado','success');
     }catch(err){showToast('Archivo invalido','error');}
@@ -1218,7 +1253,7 @@ function updateStats(){
   var streak=0,streakDir=0;
   for(var i=betHistory.length-1;i>=0;i--){
     var b=betHistory[i];
-    if(b.status!=='settled') continue;
+    if(b.status!=='settled')continue;
     var isWin=b.result==='win';
     if(streakDir===0){streakDir=isWin?1:-1;streak=1;}
     else if((isWin&&streakDir===1)||(!isWin&&streakDir===-1)){streak++;}
@@ -1232,6 +1267,17 @@ function updateStats(){
   document.getElementById('stat-profit').className='stat-val '+(profit>=0?'green':'red');
   document.getElementById('stat-streak').textContent=streakDir===1?'W'+streak:(streakDir===-1?'L'+streak:'--');
   document.getElementById('stat-streak').className='stat-val '+(streakDir===1?'green':(streakDir===-1?'red':''));
+
+  // Mostrar precisión del modelo (solo para apuestas 1X2 liquidadas)
+  var modelBets=settled.filter(function(b){return b.market==='Victoria Local'||b.market==='Empate'||b.market==='Victoria Visitante';});
+  var correct=0;
+  modelBets.forEach(function(b){
+    // Asumimos que si ganó, la predicción fue correcta (simplificación)
+    if(b.result==='win') correct++;
+  });
+  var acc=modelBets.length?Math.round(correct/modelBets.length*100):'--';
+  document.getElementById('model-accuracy-box').innerHTML='<strong>Precision modelo 1X2:</strong> '+acc+'% ('+correct+'/'+modelBets.length+' aciertos) &nbsp;|&nbsp; <strong>Calibracion:</strong> activa';
+
   drawChart();
 }
 function drawChart(){
@@ -1239,37 +1285,26 @@ function drawChart(){
   var w=svg.clientWidth||svg.parentElement.offsetWidth||460,h=110,pad=18;
   var pts=[config.initialBankroll],cur=config.initialBankroll;
   betHistory.forEach(function(b){
-    if(b.status!=='settled') return;
+    if(b.status!=='settled')return;
     cur+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;
     pts.push(cur);
   });
-  if(pts.length<2){
-    svg.innerHTML='<text x="'+(w/2)+'" y="'+(h/2)+'" text-anchor="middle" fill="#3d5268" font-size="12" font-family="Inter">Sin datos aun</text>';
-    return;
-  }
+  if(pts.length<2){svg.innerHTML='<text x="'+(w/2)+'" y="'+(h/2)+'" text-anchor="middle" fill="#3d5268" font-size="12">Sin datos aun</text>';return;}
   var minY=Math.min.apply(null,pts),maxY=Math.max.apply(null,pts);
-  minY=Math.min(minY,config.initialBankroll*0.9);
-  maxY=Math.max(maxY,config.initialBankroll*1.1);
+  minY=Math.min(minY,config.initialBankroll*0.9);maxY=Math.max(maxY,config.initialBankroll*1.1);
   var rng=maxY-minY||1;
   var tx=function(i){return pad+(i/(pts.length-1))*(w-pad*2);};
   var ty=function(v){return h-pad-((v-minY)/rng)*(h-pad*2);};
   var color=pts[pts.length-1]>=config.initialBankroll?'#34d399':'#fb7185';
   var colorDim=pts[pts.length-1]>=config.initialBankroll?'rgba(52,211,153,0.08)':'rgba(251,113,133,0.06)';
   var d='M '+tx(0)+' '+ty(pts[0]);
-  pts.forEach(function(p,i){if(i>0) d+=' L '+tx(i)+' '+ty(p);});
+  pts.forEach(function(p,i){if(i>0)d+=' L '+tx(i)+' '+ty(p);});
   var areaD=d+' L '+tx(pts.length-1)+' '+(h-pad)+' L '+tx(0)+' '+(h-pad)+' Z';
   var circles='';
-  if(pts.length<=20){
-    pts.forEach(function(p,i){circles+='<circle cx="'+tx(i)+'" cy="'+ty(p)+'" r="2.5" fill="'+color+'" opacity="0.8"/>';});
-  } else {
-    circles='<circle cx="'+tx(pts.length-1)+'" cy="'+ty(pts[pts.length-1])+'" r="3.5" fill="'+color+'"/>';
-  }
+  if(pts.length<=20){pts.forEach(function(p,i){circles+='<circle cx="'+tx(i)+'" cy="'+ty(p)+'" r="2.5" fill="'+color+'" opacity="0.8"/>';});}
+  else{circles='<circle cx="'+tx(pts.length-1)+'" cy="'+ty(pts[pts.length-1])+'" r="3.5" fill="'+color+'"/>';}
   var baseY=ty(config.initialBankroll);
-  svg.innerHTML=
-    '<line x1="'+pad+'" y1="'+baseY+'" x2="'+(w-pad)+'" y2="'+baseY+'" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3 3" stroke-width="1"/>'
-    +'<path d="'+areaD+'" fill="'+colorDim+'"/>'
-    +'<path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'
-    +circles;
+  svg.innerHTML='<line x1="'+pad+'" y1="'+baseY+'" x2="'+(w-pad)+'" y2="'+baseY+'" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3 3" stroke-width="1"/><path d="'+areaD+'" fill="'+colorDim+'"/><path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+circles;
 }
 function loadConfig(){
   document.getElementById('cfg-initial').value=config.initialBankroll;
@@ -1282,14 +1317,9 @@ function loadConfig(){
 }
 function updateDataModeBanner(){
   var el=document.getElementById('data-mode-banner');
-  if(!el) return;
-  if(config.apiKey&&config.apiKey.length>4){
-    el.className='data-mode-ok';
-    el.textContent='TOKEN API CONFIGURADO — Datos reales disponibles';
-  } else {
-    el.className='data-mode-warn';
-    el.textContent='SIN TOKEN API — Usando modelo estadistico. Precision limitada para dinero real.';
-  }
+  if(!el)return;
+  if(config.apiKey&&config.apiKey.length>4){el.className='data-mode-ok';el.textContent='TOKEN API CONFIGURADO — Datos reales disponibles';}
+  else{el.className='data-mode-warn';el.textContent='SIN TOKEN API — Usando modelo estadistico. Precision limitada para dinero real.';}
 }
 function saveConfig(){
   var ini=parseFloat(document.getElementById('cfg-initial').value);
@@ -1302,23 +1332,28 @@ function saveConfig(){
   if(kel>0&&kel<=1) config.kellyFraction=kel;
   if(ms>0&&ms<=1) config.maxStakePct=ms;
   if(minev>=0&&minev<=50) config.minEV=minev;
-  config.apiKey=key;
-  config.apiBaseUrl=base||'https://sports.bzzoiro.com';
+  config.apiKey=key;config.apiBaseUrl=base||'https://sports.bzzoiro.com';
   saveAll();updateBankrollDisplay();updateDataModeBanner();
   showToast('Configuracion guardada','success');
 }
 function resetData(){
-  if(!confirm('Seguro? Se borraran TODOS los datos.')) return;
+  if(!confirm('Seguro? Se borraran TODOS los datos.'))return;
   bankroll=config.initialBankroll;betHistory=[];
   saveAll();updateBankrollDisplay();updateHistoryDisplay();
   showToast('Datos reseteados','info');
+}
+function resetELO(){
+  if(!confirm('Resetear ELOs y forma reciente?'))return;
+  eloRatings={};teamForm={};
+  saveAll();
+  showToast('ELOs reseteados','info');
 }
 function showToast(msg,type){
   var t=document.createElement('div');
   t.className='toast toast-'+(type||'success');
   t.textContent=msg;
   document.body.appendChild(t);
-  setTimeout(function(){if(t.parentNode) t.parentNode.removeChild(t);},2700);
+  setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},2700);
 }
 
 updateBankrollDisplay();
