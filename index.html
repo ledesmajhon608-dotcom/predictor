@@ -628,7 +628,6 @@ const OLD_TEAM_NAMES_MUNDIAL = {
   'Turquia':'Turquía',
   'Uzbekistan':'Uzbekistán',
   'Haiti':'Haití'
-  // Los que ya tenían tilde o no cambiaron se omiten
 };
 
 function normalizarNombreMundial(nombre) {
@@ -1017,7 +1016,6 @@ async function loadAPIData(){
     var sid=await getSeasonId(lid);
     if(!sid){showAPIStatus('No se pudo obtener temporada actual','error');return;}
     showAPIStatus('<span class="spin"></span> Buscando equipos...','loading');
-    // La función findTeamId ahora recibe leagueCode para mapear nombres
     var results=await Promise.all([findTeamId(home,lid,league),findTeamId(away,lid,league)]);
     var hid=results[0],aid=results[1];
     if(!hid){showAPIStatus('No encontrado: '+home,'error');currentAPIData=null;return;}
@@ -1225,7 +1223,6 @@ function updateBetResult(idx,won){
     var parts=b.match.split(' vs ');
     if(parts.length===2){
       var homeRaw=parts[0],awayRaw=parts[1];
-      // Normalizar nombres antiguos a los nuevos para que coincidan con TEAMS_DB
       var home = normalizarNombreMundial(homeRaw);
       var away = normalizarNombreMundial(awayRaw);
       var league=findLeagueForTeam(home,away);
@@ -1240,14 +1237,12 @@ function updateBetResult(idx,won){
 }
 
 function findLeagueForTeam(home,away){
-  // Primero normalizar por si vienen de historial antiguo
   var homeNorm = normalizarNombreMundial(home);
   var awayNorm = normalizarNombreMundial(away);
   for(var league in TEAMS_DB){
     var teams=TEAMS_DB[league];
     if(teams.indexOf(homeNorm)>=0 && teams.indexOf(awayNorm)>=0) return league;
   }
-  // Si no, intentar con los nombres originales
   for(var league in TEAMS_DB){
     var teams=TEAMS_DB[league];
     if(teams.indexOf(home)>=0 && teams.indexOf(away)>=0) return league;
@@ -1272,7 +1267,8 @@ function updateHistoryDisplay(){
     var sc=b.status==='pending'?'log-pending':(b.result==='win'?'log-win':'log-loss');
     var profit=b.status==='settled'?(b.result==='win'?'+$'+(b.stake*b.odds-b.stake).toFixed(2):'-$'+b.stake.toFixed(2)):'Pendiente';
     var pc=b.status==='settled'?(b.result==='win'?'pos':'neg'):'pend';
-    h+='<div class="log-item '+sc+'"><div class="log-stripe"></div><div class="log-body"><div class="log-match">'+b.match+'</div><div class="log-sub">'+b.market+' @'+b.odds.toFixed(2)+' $'+b.stake.toFixed(2)+' '+d+'</div></div><div class="log-result"><div class="log-profit '+pc+'">'+profit+'</div>'+(b.status==='pending'?'<div class="log-actions"><button class="btn-tiny btn-win" onclick="updateBetResult('+i+',true)">Gano</button><button class="btn-tiny btn-lose" onclick="updateBetResult('+i+',false)">Perdio</button><button class="btn-tiny btn-del" onclick="deleteBet('+i+')">x</button></div>':'<button class="btn-tiny btn-del" onclick="deleteBet('+i+')" style="margin-top:5px">x</button>')+'</div></div>';
+    // Se añade la probabilidad predicha (b.prob) en el texto
+    h+='<div class="log-item '+sc+'"><div class="log-stripe"></div><div class="log-body"><div class="log-match">'+b.match+'</div><div class="log-sub">'+b.market+' @'+b.odds.toFixed(2)+' $'+b.stake.toFixed(2)+' (Prob '+Math.round(b.prob)+'%) '+d+'</div></div><div class="log-result"><div class="log-profit '+pc+'">'+profit+'</div>'+(b.status==='pending'?'<div class="log-actions"><button class="btn-tiny btn-win" onclick="updateBetResult('+i+',true)">Gano</button><button class="btn-tiny btn-lose" onclick="updateBetResult('+i+',false)">Perdio</button><button class="btn-tiny btn-del" onclick="deleteBet('+i+')">x</button></div>':'<button class="btn-tiny btn-del" onclick="deleteBet('+i+')" style="margin-top:5px">x</button>')+'</div></div>';
   }
   log.innerHTML=h;
 }
