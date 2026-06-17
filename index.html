@@ -593,6 +593,7 @@ function saveAll(){
   localStorage.setItem('teamForm',JSON.stringify(teamForm));
 }
 
+// Nombres corregidos del Mundial 2026 (español)
 const TEAMS_DB={
   EPL:['Arsenal','Aston Villa','Bournemouth','Brentford','Brighton','Chelsea','Crystal Palace','Everton','Fulham','Ipswich Town','Leicester City','Liverpool','Manchester City','Manchester United','Newcastle United','Nottingham Forest','Southampton','Tottenham','West Ham United','Wolves'],
   La_liga:['Alaves','Athletic Club','Atletico Madrid','Barcelona','Celta Vigo','Espanyol','Getafe','Girona','Las Palmas','Leganes','Mallorca','Osasuna','Rayo Vallecano','Real Betis','Real Madrid','Real Sociedad','Sevilla','Valencia','Valladolid','Villarreal'],
@@ -602,12 +603,37 @@ const TEAMS_DB={
   Eredivisie:['Ajax','AZ Alkmaar','Feyenoord','PSV Eindhoven','Twente','Utrecht','Sparta Rotterdam','Heerenveen','NEC Nijmegen','Go Ahead Eagles','Fortuna Sittard','PEC Zwolle','Almere City','Heracles Almelo','RKC Waalwijk','Willem II','NAC Breda','Groningen'],
   Libertadores:['Flamengo','Palmeiras','River Plate','Boca Juniors','Nacional','Penarol','Olimpia','Barcelona SC','Independiente del Valle','LDU Quito','Estudiantes','Racing','Colo Colo','Cerro Porteno','Atletico Mineiro','Sao Paulo','Gremio','Internacional','Universidad Catolica','Bolivar','The Strongest','Libertad','Alianza Lima','Sporting Cristal','Deportivo Tachira','Caracas FC','Nacional Asuncion'],
   Sudamericana:['Athletico Paranaense','Bragantino','Santos','Cruzeiro','Defensa y Justicia','Lanus','Newells Old Boys','Rosario Central','Universitario','Sporting Cristal','Emelec','Deportivo Cali','Junior','Once Caldas','La Equidad','Fortaleza','America de Cali','Macara','Huracan','Velez Sarsfield','Penarol','Nacional','Bolivar','Jorge Wilstermann'],
-  Mundial_2026:['Alemania','Argentina','Australia','Austria','Belgica','Bosnia Herzegovina','Brasil','Cabo Verde','Canada','Catar','Colombia','Corea del Sur','Costa de Marfil','Croacia','Curazao','Ecuador','Egipto','Escocia','Espana','Estados Unidos','Francia','Ghana','Inglaterra','Irak','Iran','Japon','Jordania','Marruecos','Mexico','Nigeria','Noruega','Nueva Zelanda','Paises Bajos','Panama','Paraguay','Portugal','Arabia Saudita','Argelia','RD del Congo','Republica Checa','Senegal','Sudafrica','Suecia','Suiza','Tunez','Turquia','Uruguay','Uzbekistan','Haiti'],
+  // Mundial 2026 con nombres corregidos en español
+  Mundial_2026:['Alemania','Argentina','Australia','Austria','Bélgica','Bosnia y Herzegovina','Brasil','Cabo Verde','Canadá','Catar','Colombia','Corea del Sur','Costa de Marfil','Croacia','Curazao','Ecuador','Egipto','Escocia','España','Estados Unidos','Francia','Ghana','Inglaterra','Irak','Irán','Japón','Jordania','Marruecos','México','Nigeria','Noruega','Nueva Zelanda','Países Bajos','Panamá','Paraguay','Portugal','Arabia Saudita','Argelia','RD del Congo','República Checa','Senegal','Sudáfrica','Suecia','Suiza','Túnez','Turquía','Uruguay','Uzbekistán','Haití'],
   Championship:['Blackburn Rovers','Bristol City','Burnley','Cardiff City','Coventry City','Derby County','Hull City','Leeds United','Luton Town','Middlesbrough','Millwall','Norwich City','Oxford United','Plymouth Argyle','Portsmouth','Preston North End','QPR','Sheffield United','Sheffield Wednesday','Stoke City','Sunderland','Swansea City','Watford','West Bromwich Albion'],
   MLS:['Atlanta United','Austin FC','CF Montreal','Charlotte FC','Chicago Fire FC','FC Cincinnati','Colorado Rapids','Columbus Crew','DC United','FC Dallas','Houston Dynamo FC','Inter Miami CF','LA Galaxy','Los Angeles FC','Minnesota United FC','Nashville SC','New England Revolution','New York City FC','New York Red Bulls','Orlando City SC','Philadelphia Union','Portland Timbers','Real Salt Lake','San Jose Earthquakes','Seattle Sounders FC','Sporting Kansas City','St. Louis City SC','Toronto FC','Vancouver Whitecaps FC'],
   Brasileirao:['Athletico Paranaense','Atletico Goianiense','Atletico Mineiro','Bahia','Botafogo','Corinthians','Criciuma','Cruzeiro','Cuiaba','Flamengo','Fluminense','Fortaleza','Gremio','Internacional','Juventude','Mirassol','Palmeiras','RB Bragantino','Sao Paulo','Vasco da Gama','Vitoria'],
   BrasileiroSerieB:['America Mineiro','Athletic Club','Atletico Goianiense','Avai','Botafogo-SP','Ceara','Clube De Regatas Brasil','Criciuma','Cuiaba','Fortaleza','Goias','Gremio Novorizontino','Juventude','Londrina','Nautico','Operario-PR','Ponte Preta','Sao Bernardo','Sport Recife','Vila Nova FC','Coritiba','Paysandu','Ituano','Guarani','Chapecoense','Tombense','Brusque','Amazonas','Ferroviaria','Remo','Sampaio Correa','Volta Redonda']
 };
+
+// Mapeo de nombres antiguos (sin tildes) a los nuevos para compatibilidad con historial
+const OLD_TEAM_NAMES_MUNDIAL = {
+  'Belgica':'Bélgica',
+  'Bosnia Herzegovina':'Bosnia y Herzegovina',
+  'Canada':'Canadá',
+  'Espana':'España',
+  'Iran':'Irán',
+  'Japon':'Japón',
+  'Mexico':'México',
+  'Paises Bajos':'Países Bajos',
+  'Panama':'Panamá',
+  'Republica Checa':'República Checa',
+  'Sudafrica':'Sudáfrica',
+  'Tunez':'Túnez',
+  'Turquia':'Turquía',
+  'Uzbekistan':'Uzbekistán',
+  'Haiti':'Haití'
+  // Los que ya tenían tilde o no cambiaron se omiten
+};
+
+function normalizarNombreMundial(nombre) {
+  return OLD_TEAM_NAMES_MUNDIAL[nombre] || nombre;
+}
 
 const LEAGUES_CFG={
   EPL:{name:'Premier League',goals:2.85,corners:10.1,hfa:1.06,htRatio:0.45,rho:-0.08},
@@ -627,6 +653,62 @@ const LEAGUES_CFG={
 
 const API_LEAGUE_IDS={EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,BrasileiroSerieB:19,Libertadores:32,Sudamericana:33,Mundial_2026:27};
 
+// Mapeo de nombres en español (corregidos) -> inglés para la API de Bzzoiro
+const API_TEAM_NAME_MAP = {
+  Mundial_2026: {
+    'Alemania': 'Germany',
+    'Argentina': 'Argentina',
+    'Australia': 'Australia',
+    'Austria': 'Austria',
+    'Bélgica': 'Belgium',
+    'Bosnia y Herzegovina': 'Bosnia and Herzegovina',
+    'Brasil': 'Brazil',
+    'Cabo Verde': 'Cape Verde',
+    'Canadá': 'Canada',
+    'Catar': 'Qatar',
+    'Colombia': 'Colombia',
+    'Corea del Sur': 'South Korea',
+    'Costa de Marfil': 'Ivory Coast',
+    'Croacia': 'Croatia',
+    'Curazao': 'Curacao',
+    'Ecuador': 'Ecuador',
+    'Egipto': 'Egypt',
+    'Escocia': 'Scotland',
+    'España': 'Spain',
+    'Estados Unidos': 'United States',
+    'Francia': 'France',
+    'Ghana': 'Ghana',
+    'Inglaterra': 'England',
+    'Irak': 'Iraq',
+    'Irán': 'Iran',
+    'Japón': 'Japan',
+    'Jordania': 'Jordan',
+    'Marruecos': 'Morocco',
+    'México': 'Mexico',
+    'Nigeria': 'Nigeria',
+    'Noruega': 'Norway',
+    'Nueva Zelanda': 'New Zealand',
+    'Países Bajos': 'Netherlands',
+    'Panamá': 'Panama',
+    'Paraguay': 'Paraguay',
+    'Portugal': 'Portugal',
+    'Arabia Saudita': 'Saudi Arabia',
+    'Argelia': 'Algeria',
+    'RD del Congo': 'DR Congo',
+    'República Checa': 'Czech Republic',
+    'Senegal': 'Senegal',
+    'Sudáfrica': 'South Africa',
+    'Suecia': 'Sweden',
+    'Suiza': 'Switzerland',
+    'Túnez': 'Tunisia',
+    'Turquía': 'Turkey',
+    'Uruguay': 'Uruguay',
+    'Uzbekistán': 'Uzbekistan',
+    'Haití': 'Haiti'
+  }
+};
+
+// Fuerzas base actualizadas con las nuevas claves
 const STRENGTH={
   EPL:{'Manchester City':[1.30,0.77],'Liverpool':[1.28,0.79],'Arsenal':[1.24,0.82],'Chelsea':[1.15,0.89],'Tottenham':[1.16,0.90],'Manchester United':[1.18,0.88],'Newcastle United':[1.13,0.94],'Aston Villa':[1.17,0.92],'Brighton':[1.11,0.96],'West Ham United':[1.06,1.00],'Fulham':[1.04,1.01],'Brentford':[1.02,1.03],'Crystal Palace':[0.98,1.05],'Wolves':[1.03,1.02],'Everton':[0.92,1.10],'Bournemouth':[0.95,1.08],'Nottingham Forest':[0.96,1.07],'Leicester City':[0.94,1.08],'Ipswich Town':[0.88,1.14],'Southampton':[0.86,1.16]},
   La_liga:{'Real Madrid':[1.32,0.74],'Barcelona':[1.30,0.76],'Atletico Madrid':[1.22,0.82],'Athletic Club':[1.15,0.90],'Real Sociedad':[1.14,0.91],'Villarreal':[1.12,0.93],'Real Betis':[1.10,0.95],'Girona':[1.16,0.89],'Sevilla':[1.08,0.97],'Valencia':[1.06,0.99],'Osasuna':[1.02,1.03],'Celta Vigo':[1.04,1.01],'Mallorca':[0.98,1.06],'Getafe':[0.94,1.08],'Alaves':[0.96,1.07],'Espanyol':[0.94,1.08],'Rayo Vallecano':[0.98,1.05],'Las Palmas':[0.92,1.10],'Leganes':[0.88,1.14],'Valladolid':[0.86,1.16]},
@@ -639,7 +721,10 @@ const STRENGTH={
   MLS:{'Inter Miami CF':[1.18,0.86],'Los Angeles FC':[1.16,0.88],'Columbus Crew':[1.14,0.90],'FC Cincinnati':[1.13,0.91],'Philadelphia Union':[1.10,0.94],'New England Revolution':[1.08,0.96],'Atlanta United':[1.09,0.95],'Orlando City SC':[1.07,0.97],'New York City FC':[1.06,0.98],'Nashville SC':[1.05,0.99],'Seattle Sounders FC':[1.04,1.00],'Portland Timbers':[1.03,1.01],'Minnesota United FC':[1.02,1.02],'FC Dallas':[1.01,1.03],'Austin FC':[1.00,1.04],'Houston Dynamo FC':[0.99,1.05],'LA Galaxy':[0.98,1.06],'Vancouver Whitecaps FC':[0.97,1.07],'Chicago Fire FC':[0.96,1.08],'Charlotte FC':[0.95,1.09],'CF Montreal':[0.94,1.10],'Sporting Kansas City':[0.93,1.11],'New York Red Bulls':[0.92,1.12],'Real Salt Lake':[0.91,1.13],'DC United':[0.90,1.14],'San Jose Earthquakes':[0.89,1.15],'Colorado Rapids':[0.88,1.16],'Toronto FC':[0.87,1.17],'St. Louis City SC':[0.86,1.18]},
   Libertadores:{'Flamengo':[1.30,0.78],'Palmeiras':[1.28,0.80],'River Plate':[1.26,0.82],'Boca Juniors':[1.22,0.84],'Nacional':[1.12,0.92],'Penarol':[1.10,0.94],'Olimpia':[1.05,1.00],'Barcelona SC':[1.08,0.96],'Independiente del Valle':[1.10,0.94],'LDU Quito':[1.08,0.96],'Estudiantes':[1.06,1.00],'Racing':[1.08,0.98],'Colo Colo':[1.02,1.04],'Cerro Porteno':[1.00,1.05],'Atletico Mineiro':[1.20,0.86],'Sao Paulo':[1.18,0.88],'Gremio':[1.14,0.92],'Internacional':[1.12,0.94],'Universidad Catolica':[1.02,1.04],'Bolivar':[1.00,1.04],'The Strongest':[0.98,1.06],'Libertad':[1.04,1.02],'Alianza Lima':[0.94,1.10],'Sporting Cristal':[1.02,1.04],'Deportivo Tachira':[0.92,1.12],'Caracas FC':[0.90,1.14],'Nacional Asuncion':[0.96,1.08]},
   Sudamericana:{'Athletico Paranaense':[1.10,0.94],'Bragantino':[1.08,0.96],'Santos':[1.06,1.00],'Cruzeiro':[1.04,1.02],'Defensa y Justicia':[1.02,1.04],'Lanus':[1.00,1.05],'Newells Old Boys':[0.98,1.06],'Rosario Central':[1.00,1.04],'Universitario':[1.04,1.02],'Sporting Cristal':[1.02,1.04],'Emelec':[1.00,1.05],'Deportivo Cali':[0.98,1.06],'Junior':[1.02,1.04],'Once Caldas':[0.96,1.08],'La Equidad':[0.94,1.10],'Fortaleza':[1.06,1.00],'America de Cali':[1.02,1.06],'Macara':[0.95,1.12],'Huracan':[1.02,1.04],'Velez Sarsfield':[1.06,1.00],'Penarol':[1.10,0.94],'Nacional':[1.12,0.92],'Bolivar':[1.00,1.04],'Jorge Wilstermann':[0.96,1.08]},
-  Mundial_2026:{'Argentina':[1.32,0.78],'Francia':[1.28,0.80],'Brasil':[1.27,0.81],'Espana':[1.26,0.82],'Inglaterra':[1.24,0.83],'Portugal':[1.22,0.84],'Paises Bajos':[1.20,0.86],'Alemania':[1.18,0.87],'Colombia':[1.14,0.92],'Uruguay':[1.13,0.93],'Marruecos':[1.12,0.94],'Croacia':[1.10,0.95],'Japon':[1.10,0.96],'Mexico':[1.09,0.96],'Senegal':[1.08,0.97],'Estados Unidos':[1.08,0.97],'Ecuador':[1.06,0.99],'Austria':[1.06,0.99],'Belgica':[1.05,1.00],'Suiza':[1.05,1.00],'Turquia':[1.04,1.01],'Australia':[1.03,1.02],'Corea del Sur':[1.03,1.02],'Paraguay':[1.02,1.03],'Noruega':[1.04,1.01],'Escocia':[1.03,1.02],'Republica Checa':[1.02,1.03],'Canada':[1.04,1.00],'Iran':[1.01,1.04],'Suecia':[1.01,1.04],'Egipto':[1.01,1.04],'Costa de Marfil':[1.01,1.04],'Arabia Saudita':[1.00,1.05],'Argelia':[1.02,1.04],'Bosnia Herzegovina':[1.00,1.05],'Ghana':[0.99,1.06],'Uzbekistan':[0.99,1.06],'Nigeria':[0.99,1.06],'Jordania':[0.98,1.07],'Irak':[0.97,1.08],'RD del Congo':[0.97,1.08],'Sudafrica':[0.96,1.09],'Catar':[0.95,1.10],'Tunez':[0.95,1.10],'Panama':[0.94,1.11],'Nueva Zelanda':[0.90,1.15],'Cabo Verde':[0.89,1.16],'Curazao':[0.85,1.18],'Haiti':[0.86,1.17]},
+  // Fuerzas para Mundial 2026 con los nombres corregidos
+  Mundial_2026:{
+    'Argentina':[1.32,0.78],'Francia':[1.28,0.80],'Brasil':[1.27,0.81],'España':[1.26,0.82],'Inglaterra':[1.24,0.83],'Portugal':[1.22,0.84],'Países Bajos':[1.20,0.86],'Alemania':[1.18,0.87],'Colombia':[1.14,0.92],'Uruguay':[1.13,0.93],'Marruecos':[1.12,0.94],'Croacia':[1.10,0.95],'Japón':[1.10,0.96],'México':[1.09,0.96],'Senegal':[1.08,0.97],'Estados Unidos':[1.08,0.97],'Ecuador':[1.06,0.99],'Austria':[1.06,0.99],'Bélgica':[1.05,1.00],'Suiza':[1.05,1.00],'Turquía':[1.04,1.01],'Australia':[1.03,1.02],'Corea del Sur':[1.03,1.02],'Paraguay':[1.02,1.03],'Noruega':[1.04,1.01],'Escocia':[1.03,1.02],'República Checa':[1.02,1.03],'Canadá':[1.04,1.00],'Irán':[1.01,1.04],'Suecia':[1.01,1.04],'Egipto':[1.01,1.04],'Costa de Marfil':[1.01,1.04],'Arabia Saudita':[1.00,1.05],'Argelia':[1.02,1.04],'Bosnia y Herzegovina':[1.00,1.05],'Ghana':[0.99,1.06],'Uzbekistán':[0.99,1.06],'Nigeria':[0.99,1.06],'Jordania':[0.98,1.07],'Irak':[0.97,1.08],'RD del Congo':[0.97,1.08],'Sudáfrica':[0.96,1.09],'Catar':[0.95,1.10],'Túnez':[0.95,1.10],'Panamá':[0.94,1.11],'Nueva Zelanda':[0.90,1.15],'Cabo Verde':[0.89,1.16],'Curazao':[0.85,1.18],'Haití':[0.86,1.17]
+  },
   Championship:{'Leeds United':[1.15,0.89],'Leicester City':[1.14,0.90],'Southampton':[1.12,0.92],'Norwich City':[1.08,0.96],'West Bromwich Albion':[1.06,0.98],'Middlesbrough':[1.07,0.97],'Coventry City':[1.05,0.99],'Sunderland':[1.04,1.00],'Blackburn Rovers':[1.03,1.01],'Millwall':[1.00,1.04],'Watford':[1.02,1.02],'Bristol City':[1.01,1.03],'Hull City':[1.00,1.04],'Preston North End':[0.99,1.05],'Swansea City':[0.98,1.06],'Cardiff City':[0.97,1.07],'Stoke City':[0.96,1.08],'Sheffield Wednesday':[0.95,1.09],'QPR':[0.94,1.10],'Plymouth Argyle':[0.93,1.11],'Portsmouth':[0.92,1.12],'Luton Town':[0.95,1.09],'Derby County':[0.94,1.10],'Oxford United':[0.90,1.14],'Burnley':[1.13,0.91]}
 };
 
@@ -887,13 +972,17 @@ async function getSeasonId(leagueId){
   if(sid){seasonIdCache[ck]=sid;saveAll();}
   return sid;
 }
-async function findTeamId(name,leagueId){
+async function findTeamId(name,leagueId,leagueCode){
   var ck=name+'_'+leagueId;
   if(teamIdCache[ck]) return teamIdCache[ck];
-  var d=await apiFetch('/teams/?name='+encodeURIComponent(name)+'&league_id='+leagueId+'&limit=10');
+  var apiName = name;
+  if(leagueCode && API_TEAM_NAME_MAP[leagueCode] && API_TEAM_NAME_MAP[leagueCode][name]){
+    apiName = API_TEAM_NAME_MAP[leagueCode][name];
+  }
+  var d=await apiFetch('/teams/?name='+encodeURIComponent(apiName)+'&league_id='+leagueId+'&limit=10');
   var rs=(d.results||d);
   if(Array.isArray(rs)&&rs.length>0){teamIdCache[ck]=rs[0].id;saveAll();return rs[0].id;}
-  var d2=await apiFetch('/teams/?name='+encodeURIComponent(name)+'&limit=10');
+  var d2=await apiFetch('/teams/?name='+encodeURIComponent(apiName)+'&limit=10');
   var rs2=(d2.results||d2);
   if(Array.isArray(rs2)&&rs2.length>0){teamIdCache[ck]=rs2[0].id;saveAll();return rs2[0].id;}
   return null;
@@ -928,7 +1017,8 @@ async function loadAPIData(){
     var sid=await getSeasonId(lid);
     if(!sid){showAPIStatus('No se pudo obtener temporada actual','error');return;}
     showAPIStatus('<span class="spin"></span> Buscando equipos...','loading');
-    var results=await Promise.all([findTeamId(home,lid),findTeamId(away,lid)]);
+    // La función findTeamId ahora recibe leagueCode para mapear nombres
+    var results=await Promise.all([findTeamId(home,lid,league),findTeamId(away,lid,league)]);
     var hid=results[0],aid=results[1];
     if(!hid){showAPIStatus('No encontrado: '+home,'error');currentAPIData=null;return;}
     if(!aid){showAPIStatus('No encontrado: '+away,'error');currentAPIData=null;return;}
@@ -1131,11 +1221,13 @@ function updateBetResult(idx,won){
   b.status='settled';b.result=won?'win':'loss';
   if(won) bankroll+=b.stake*b.odds;
 
-  // Only update ELO and form if the bet won, because only then we know the exact match outcome.
   if(won && (b.market==='Victoria Local'||b.market==='Empate'||b.market==='Victoria Visitante')){
     var parts=b.match.split(' vs ');
     if(parts.length===2){
-      var home=parts[0],away=parts[1];
+      var homeRaw=parts[0],awayRaw=parts[1];
+      // Normalizar nombres antiguos a los nuevos para que coincidan con TEAMS_DB
+      var home = normalizarNombreMundial(homeRaw);
+      var away = normalizarNombreMundial(awayRaw);
       var league=findLeagueForTeam(home,away);
       if(league){
         var result = b.market==='Victoria Local' ? 'home' : (b.market==='Victoria Visitante' ? 'away' : 'draw');
@@ -1148,6 +1240,14 @@ function updateBetResult(idx,won){
 }
 
 function findLeagueForTeam(home,away){
+  // Primero normalizar por si vienen de historial antiguo
+  var homeNorm = normalizarNombreMundial(home);
+  var awayNorm = normalizarNombreMundial(away);
+  for(var league in TEAMS_DB){
+    var teams=TEAMS_DB[league];
+    if(teams.indexOf(homeNorm)>=0 && teams.indexOf(awayNorm)>=0) return league;
+  }
+  // Si no, intentar con los nombres originales
   for(var league in TEAMS_DB){
     var teams=TEAMS_DB[league];
     if(teams.indexOf(home)>=0 && teams.indexOf(away)>=0) return league;
