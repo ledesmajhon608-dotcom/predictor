@@ -1780,7 +1780,7 @@
                 return html;
             }
 
-            // ==================== GESTIÓN DE APUESTAS (NO REINICIA LA PANTALLA) ====================
+            // ==================== GESTIÓN DE APUESTAS ====================
             function placeBet(marketId, stake, odds, marketName, league, home, away, prob, buttonElement) {
                 if (stake > bankroll) { showToast('Bankroll insuficiente', 'error'); return; }
                 const bet = {
@@ -1792,23 +1792,18 @@
                 bankroll -= stake;
                 saveAll();
                 updateUI();
-                // Mostrar confirmación visual en el mismo mercado sin recargar la página
                 if (buttonElement) {
                     const marketDiv = buttonElement.closest('.market');
                     if (marketDiv) {
-                        // Ocultar el botón de apuesta
                         buttonElement.style.display = 'none';
-                        // Mostrar mensaje de confirmación
                         const confirmMsg = document.createElement('div');
                         confirmMsg.className = 'bet-confirmed';
                         confirmMsg.textContent = '✓ Apuesta guardada';
                         marketDiv.appendChild(confirmMsg);
-                        // Eliminar el mensaje después de 2 segundos
                         setTimeout(() => { if (confirmMsg.parentNode) confirmMsg.remove(); }, 2000);
                     }
                 }
                 showToast('Apuesta registrada: $' + stake.toFixed(0) + ' a ' + marketName, 'success');
-                // NO cambiamos de pantalla para que el usuario pueda seguir eligiendo más apuestas del mismo partido
             }
 
             function liquidateBet(index, won) {
@@ -1900,7 +1895,7 @@
                     const statusClass = b.status === 'win' ? 'log-win' : (b.status === 'loss' ? 'log-loss' : 'log-pending');
                     const profitClass = b.status === 'win' ? 'pos' : (b.status === 'loss' ? 'neg' : 'pend');
                     const profitSign = b.profit >= 0 ? '+' : '';
-                    return `<div class="log-item ${statusClass}"><div class="log-stripe"></div><div class="log-body"><div class="log-match">${b.home} vs ${b.away}</div><div class="log-sub">${b.marketName} | Cuota ${b.odds} | Stake $${b.stake.toFixed(0)}</div>${b.resultReal ? `<div class="log-sub" style="color:var(--text2)">Resultado real: ${b.resultReal === 'home' ? b.home : (b.resultReal === 'away' ? b.away : 'Empate')}</div>` : ''}</div><div class="log-result"><div class="log-profit ${profitClass}">${b.status === 'pending' ? 'Pend.' : profitSign + '$' + b.profit.toFixed(2)}</div><div class="log-actions">${b.status === 'pending' ? `<button class="btn-tiny btn-win" onclick="liquidateBet(${realIndex}, true)()">Ganó</button><button class="btn-tiny btn-lose" onclick="liquidateBet(${realIndex}, false)()">Perdió</button>` : ''}<button class="btn-tiny btn-del" onclick="deleteBet(${realIndex})()">✕</button></div></div></div>`;
+                    return `<div class="log-item ${statusClass}"><div class="log-stripe"></div><div class="log-body"><div class="log-match">${b.home} vs ${b.away}</div><div class="log-sub">${b.marketName} | Cuota ${b.odds} | Stake $${b.stake.toFixed(0)}</div><div class="log-sub" style="color:var(--text2)">Prob. estimada: ${b.prob.toFixed(1)}%</div>${b.resultReal ? `<div class="log-sub" style="color:var(--text2)">Resultado real: ${b.resultReal === 'home' ? b.home : (b.resultReal === 'away' ? b.away : 'Empate')}</div>` : ''}</div><div class="log-result"><div class="log-profit ${profitClass}">${b.status === 'pending' ? 'Pend.' : profitSign + '$' + b.profit.toFixed(2)}</div><div class="log-actions">${b.status === 'pending' ? `<button class="btn-tiny btn-win" onclick="liquidateBet(${realIndex}, true)()">Ganó</button><button class="btn-tiny btn-lose" onclick="liquidateBet(${realIndex}, false)()">Perdió</button>` : ''}<button class="btn-tiny btn-del" onclick="deleteBet(${realIndex})()">✕</button></div></div></div>`;
                 }).join('');
             }
 
@@ -1975,8 +1970,8 @@
 
             function exportHistory() {
                 if (betHistory.length === 0) return showToast('Sin datos', 'error');
-                let csv = 'Fecha,Local,Visitante,Mercado,Cuota,Stake,Estado,Profit,ResultadoReal\n';
-                betHistory.forEach(b => { csv += `${b.date},${b.home},${b.away},${b.marketName},${b.odds},${b.stake},${b.status},${b.profit},${b.resultReal||''}\n`; });
+                let csv = 'Fecha,Local,Visitante,Mercado,Cuota,Stake,Probabilidad,Estado,Profit,ResultadoReal\n';
+                betHistory.forEach(b => { csv += `${b.date},${b.home},${b.away},${b.marketName},${b.odds},${b.stake},${b.prob.toFixed(1)}%,${b.status},${b.profit},${b.resultReal||''}\n`; });
                 const blob = new Blob([csv], { type: 'text/csv' }), url = URL.createObjectURL(blob), a = document.createElement('a');
                 a.href = url; a.download = 'bet_history.csv'; a.click();
             }
