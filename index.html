@@ -110,9 +110,7 @@
         }
 
         @keyframes spin-slow {
-            to {
-                transform: rotate(360deg);
-            }
+            to { transform: rotate(360deg); }
         }
 
         .title-text {
@@ -214,17 +212,10 @@
             gap: 6px;
         }
 
-        .br-pnl.profit {
-            color: var(--green);
-        }
+        .br-pnl.profit { color: var(--green); }
+        .br-pnl.loss { color: var(--accent); }
 
-        .br-pnl.loss {
-            color: var(--accent);
-        }
-
-        .br-right {
-            text-align: right;
-        }
+        .br-right { text-align: right; }
 
         .br-stat-mini {
             font-size: 0.6rem;
@@ -283,9 +274,7 @@
             transition: transform 0.2s;
         }
 
-        .tab:active {
-            transform: scale(0.94);
-        }
+        .tab:active { transform: scale(0.94); }
 
         .tab.active {
             background: linear-gradient(135deg, rgba(244, 63, 94, 0.15), rgba(244, 63, 94, 0.08));
@@ -294,9 +283,7 @@
             box-shadow: 0 0 20px rgba(244, 63, 94, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         }
 
-        .tab.active .tab-icon {
-            transform: scale(1.1);
-        }
+        .tab.active .tab-icon { transform: scale(1.1); }
 
         .card {
             background: var(--card);
@@ -326,9 +313,7 @@
             background: linear-gradient(90deg, var(--border2), transparent);
         }
 
-        .field-group {
-            margin-bottom: 12px;
-        }
+        .field-group { margin-bottom: 12px; }
 
         .field-label {
             display: block;
@@ -340,9 +325,7 @@
             margin-bottom: 5px;
         }
 
-        select,
-        input[type="number"],
-        input[type="text"] {
+        select, input[type="number"], input[type="text"] {
             width: 100%;
             padding: 11px 14px;
             border-radius: var(--r-md);
@@ -365,22 +348,14 @@
             cursor: pointer;
         }
 
-        select:focus,
-        input:focus {
+        select:focus, input:focus {
             border-color: rgba(244, 63, 94, 0.45);
             background: rgba(255, 255, 255, 0.05);
             box-shadow: 0 0 0 3px rgba(244, 63, 94, 0.07);
         }
 
-        select:disabled {
-            opacity: 0.35;
-            cursor: not-allowed;
-        }
-
-        input[type="number"] {
-            -webkit-appearance: textfield;
-            appearance: textfield;
-        }
+        select:disabled { opacity: 0.35; cursor: not-allowed; }
+        input[type="number"] { -webkit-appearance: textfield; appearance: textfield; }
 
         .odds-box {
             background: var(--card2);
@@ -391,9 +366,7 @@
             transition: border-color 0.2s;
         }
 
-        .odds-box:focus-within {
-            border-color: rgba(244, 63, 94, 0.2);
-        }
+        .odds-box:focus-within { border-color: rgba(244, 63, 94, 0.2); }
 
         .odds-box-title {
             font-size: 0.58rem;
@@ -407,15 +380,8 @@
             gap: 6px;
         }
 
-        .odds-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
-        }
-
-        .odds-field .field-label {
-            margin-bottom: 4px;
-        }
+        .odds-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+        .odds-field .field-label { margin-bottom: 4px; }
 
         .btn {
             width: 100%;
@@ -445,15 +411,8 @@
             pointer-events: none;
         }
 
-        .btn:active {
-            transform: scale(0.97);
-        }
-
-        .btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-            transform: none !important;
-        }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { opacity: 0.3; cursor: not-allowed; transform: none !important; }
 
         .btn-primary {
             background: linear-gradient(135deg, var(--accent) 0%, #c0162d 100%);
@@ -482,50 +441,17 @@
             transform: translateY(-1px);
         }
 
-        .btn-ghost {
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text2);
-            border: 1px solid var(--border);
-        }
+        .btn-ghost { background: rgba(255, 255, 255, 0.04); color: var(--text2); border: 1px solid var(--border); }
+        .btn-ghost:hover:not(:disabled) { background: rgba(255, 255, 255, 0.07); border-color: var(--border2); }
+        .btn-danger { background: rgba(244, 63, 94, 0.06); color: var(--accent); border: 1px solid rgba(244, 63, 94, 0.15); }
+        .btn-sm { padding: 8px 14px; font-size: 0.65rem; width: auto; }
 
-        .btn-ghost:hover:not(:disabled) {
-            background: rgba(255, 255, 255, 0.07);
-            border-color: var(--border2);
-        }
+        .btn-row { display: flex; gap: 8px; margin-top: 8px; }
+        .btn-row .btn { flex: 1; }
 
-        .btn-danger {
-            background: rgba(244, 63, 94, 0.06);
-            color: var(--accent);
-            border: 1px solid rgba(244, 63, 94, 0.15);
-        }
-
-        .btn-sm {
-            padding: 8px 14px;
-            font-size: 0.65rem;
-            width: auto;
-        }
-
-        .btn-row {
-            display: flex;
-            gap: 8px;
-            margin-top: 8px;
-        }
-
-        .btn-row .btn {
-            flex: 1;
-        }
-
-        .mt8 {
-            margin-top: 8px;
-        }
-
-        .mt12 {
-            margin-top: 12px;
-        }
-
-        .mt16 {
-            margin-top: 16px;
-        }
+        .mt8 { margin-top: 8px; }
+        .mt12 { margin-top: 12px; }
+        .mt16 { margin-top: 16px; }
 
         .status-pill {
             border-radius: var(--r-md);
@@ -541,23 +467,9 @@
             gap: 7px;
         }
 
-        .status-pill.loaded {
-            background: rgba(59, 130, 246, 0.08);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            color: var(--blue2);
-        }
-
-        .status-pill.error {
-            background: rgba(244, 63, 94, 0.06);
-            border: 1px solid rgba(244, 63, 94, 0.18);
-            color: var(--accent2);
-        }
-
-        .status-pill.loading {
-            background: rgba(245, 158, 11, 0.06);
-            border: 1px solid rgba(245, 158, 11, 0.18);
-            color: var(--yellow2);
-        }
+        .status-pill.loaded { background: rgba(59, 130, 246, 0.08); border: 1px solid rgba(59, 130, 246, 0.2); color: var(--blue2); }
+        .status-pill.error { background: rgba(244, 63, 94, 0.06); border: 1px solid rgba(244, 63, 94, 0.18); color: var(--accent2); }
+        .status-pill.loading { background: rgba(245, 158, 11, 0.06); border: 1px solid rgba(245, 158, 11, 0.18); color: var(--yellow2); }
 
         .info-box {
             background: rgba(59, 130, 246, 0.05);
@@ -608,10 +520,7 @@
             margin-bottom: 12px;
         }
 
-        .team-block {
-            text-align: center;
-            flex: 1;
-        }
+        .team-block { text-align: center; flex: 1; }
 
         .team-name {
             font-size: 0.78rem;
@@ -640,11 +549,7 @@
             flex-shrink: 0;
         }
 
-        .prob-triplet {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 6px;
-        }
+        .prob-triplet { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px; }
 
         .prob-cell {
             background: rgba(255, 255, 255, 0.03);
@@ -690,9 +595,7 @@
             background: linear-gradient(135deg, rgba(16, 185, 129, 0.05), rgba(16, 185, 129, 0.02));
         }
 
-        .market.no-value {
-            border-color: rgba(244, 63, 94, 0.1);
-        }
+        .market.no-value { border-color: rgba(244, 63, 94, 0.1); }
 
         .market-name {
             font-size: 0.7rem;
@@ -708,57 +611,15 @@
             flex-wrap: wrap;
         }
 
-        .badge {
-            font-size: 0.55rem;
-            font-weight: 800;
-            padding: 3px 10px;
-            border-radius: 20px;
-            letter-spacing: 0.5px;
-        }
+        .badge { font-size: 0.55rem; font-weight: 800; padding: 3px 10px; border-radius: 20px; letter-spacing: 0.5px; }
+        .badge-ev { background: rgba(16, 185, 129, 0.15); color: var(--green2); border: 1px solid rgba(16, 185, 129, 0.3); }
+        .badge-no { background: rgba(244, 63, 94, 0.08); color: var(--accent2); border: 1px solid rgba(244, 63, 94, 0.18); }
+        .badge-info { background: rgba(255, 255, 255, 0.04); color: var(--text3); border: 1px solid var(--border); }
+        .badge-api { background: rgba(59, 130, 246, 0.1); color: var(--blue2); border: 1px solid rgba(59, 130, 246, 0.22); }
+        .badge-stat { background: rgba(245, 158, 11, 0.08); color: var(--yellow); border: 1px solid rgba(245, 158, 11, 0.2); }
 
-        .badge-ev {
-            background: rgba(16, 185, 129, 0.15);
-            color: var(--green2);
-            border: 1px solid rgba(16, 185, 129, 0.3);
-        }
-
-        .badge-no {
-            background: rgba(244, 63, 94, 0.08);
-            color: var(--accent2);
-            border: 1px solid rgba(244, 63, 94, 0.18);
-        }
-
-        .badge-info {
-            background: rgba(255, 255, 255, 0.04);
-            color: var(--text3);
-            border: 1px solid var(--border);
-        }
-
-        .badge-api {
-            background: rgba(59, 130, 246, 0.1);
-            color: var(--blue2);
-            border: 1px solid rgba(59, 130, 246, 0.22);
-        }
-
-        .badge-stat {
-            background: rgba(245, 158, 11, 0.08);
-            color: var(--yellow);
-            border: 1px solid rgba(245, 158, 11, 0.2);
-        }
-
-        .prob-row {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            margin: 7px 0;
-        }
-
-        .prob-label {
-            font-size: 0.68rem;
-            color: var(--text2);
-            min-width: 86px;
-            font-weight: 600;
-        }
+        .prob-row { display: flex; align-items: center; gap: 10px; margin: 7px 0; }
+        .prob-label { font-size: 0.68rem; color: var(--text2); min-width: 86px; font-weight: 600; }
 
         .bar-track {
             flex: 1;
@@ -775,13 +636,7 @@
             transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        .prob-val {
-            min-width: 40px;
-            text-align: right;
-            font-weight: 900;
-            font-size: 0.9rem;
-            font-family: var(--mono);
-        }
+        .prob-val { min-width: 40px; text-align: right; font-weight: 900; font-size: 0.9rem; font-family: var(--mono); }
 
         .ev-strip {
             display: flex;
@@ -794,34 +649,11 @@
             flex-wrap: wrap;
         }
 
-        .ev-chip {
-            font-size: 0.68rem;
-            font-weight: 700;
-            font-family: var(--mono);
-            display: flex;
-            gap: 5px;
-            align-items: center;
-        }
-
-        .ev-chip .lbl {
-            color: var(--text3);
-            font-size: 0.56rem;
-            text-transform: uppercase;
-            letter-spacing: 1.2px;
-        }
-
-        .ev-chip .val {
-            font-size: 0.92rem;
-            font-weight: 900;
-        }
-
-        .ev-chip .val.pos {
-            color: var(--green2);
-        }
-
-        .ev-chip .val.neg {
-            color: var(--accent2);
-        }
+        .ev-chip { font-size: 0.68rem; font-weight: 700; font-family: var(--mono); display: flex; gap: 5px; align-items: center; }
+        .ev-chip .lbl { color: var(--text3); font-size: 0.56rem; text-transform: uppercase; letter-spacing: 1.2px; }
+        .ev-chip .val { font-size: 0.92rem; font-weight: 900; }
+        .ev-chip .val.pos { color: var(--green2); }
+        .ev-chip .val.neg { color: var(--accent2); }
 
         .stake-card {
             background: linear-gradient(135deg, rgba(59, 130, 246, 0.08), rgba(59, 130, 246, 0.04));
@@ -850,37 +682,13 @@
             text-shadow: 0 0 30px rgba(96, 165, 250, 0.3);
         }
 
-        .stake-meta {
-            font-size: 0.64rem;
-            color: var(--text3);
-            margin-top: 5px;
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-        }
+        .stake-meta { font-size: 0.64rem; color: var(--text3); margin-top: 5px; display: flex; justify-content: center; gap: 10px; }
+        .stake-meta .pos { color: var(--green2); font-weight: 800; }
 
-        .stake-meta .pos {
-            color: var(--green2);
-            font-weight: 800;
-        }
-
-        .bet-log {
-            max-height: 340px;
-            overflow-y: auto;
-        }
-
-        .bet-log::-webkit-scrollbar {
-            width: 3px;
-        }
-
-        .bet-log::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .bet-log::-webkit-scrollbar-thumb {
-            background: var(--border2);
-            border-radius: 2px;
-        }
+        .bet-log { max-height: 340px; overflow-y: auto; }
+        .bet-log::-webkit-scrollbar { width: 3px; }
+        .bet-log::-webkit-scrollbar-track { background: transparent; }
+        .bet-log::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 2px; }
 
         .log-item {
             display: flex;
@@ -891,9 +699,7 @@
             position: relative;
         }
 
-        .log-item:last-child {
-            border-bottom: none;
-        }
+        .log-item:last-child { border-bottom: none; }
 
         .log-stripe {
             position: absolute;
@@ -904,64 +710,22 @@
             border-radius: 0 3px 3px 0;
         }
 
-        .log-win .log-stripe {
-            background: linear-gradient(180deg, var(--green), var(--green2));
-        }
+        .log-win .log-stripe { background: linear-gradient(180deg, var(--green), var(--green2)); }
+        .log-loss .log-stripe { background: linear-gradient(180deg, var(--accent), var(--accent2)); }
+        .log-pending .log-stripe { background: linear-gradient(180deg, var(--yellow), var(--yellow2)); }
 
-        .log-loss .log-stripe {
-            background: linear-gradient(180deg, var(--accent), var(--accent2));
-        }
+        .log-body { flex: 1; }
 
-        .log-pending .log-stripe {
-            background: linear-gradient(180deg, var(--yellow), var(--yellow2));
-        }
+        .log-match { font-weight: 700; font-size: 0.78rem; color: var(--text); }
+        .log-sub { font-size: 0.62rem; color: var(--text3); margin-top: 2px; font-family: var(--mono); }
 
-        .log-body {
-            flex: 1;
-        }
+        .log-result { text-align: right; flex-shrink: 0; }
+        .log-profit { font-weight: 900; font-size: 0.82rem; font-family: var(--mono); }
+        .log-profit.pos { color: var(--green2); }
+        .log-profit.neg { color: var(--accent2); }
+        .log-profit.pend { color: var(--yellow2); }
 
-        .log-match {
-            font-weight: 700;
-            font-size: 0.78rem;
-            color: var(--text);
-        }
-
-        .log-sub {
-            font-size: 0.62rem;
-            color: var(--text3);
-            margin-top: 2px;
-            font-family: var(--mono);
-        }
-
-        .log-result {
-            text-align: right;
-            flex-shrink: 0;
-        }
-
-        .log-profit {
-            font-weight: 900;
-            font-size: 0.82rem;
-            font-family: var(--mono);
-        }
-
-        .log-profit.pos {
-            color: var(--green2);
-        }
-
-        .log-profit.neg {
-            color: var(--accent2);
-        }
-
-        .log-profit.pend {
-            color: var(--yellow2);
-        }
-
-        .log-actions {
-            display: flex;
-            gap: 4px;
-            margin-top: 5px;
-            justify-content: flex-end;
-        }
+        .log-actions { display: flex; gap: 4px; margin-top: 5px; justify-content: flex-end; }
 
         .btn-tiny {
             padding: 4px 9px;
@@ -974,31 +738,12 @@
             transition: opacity 0.15s;
         }
 
-        .btn-tiny:hover {
-            opacity: 0.8;
-        }
+        .btn-tiny:hover { opacity: 0.8; }
+        .btn-win { background: rgba(16, 185, 129, 0.18); color: var(--green2); }
+        .btn-lose { background: rgba(244, 63, 94, 0.13); color: var(--accent2); }
+        .btn-del { background: rgba(255, 255, 255, 0.05); color: var(--text3); }
 
-        .btn-win {
-            background: rgba(16, 185, 129, 0.18);
-            color: var(--green2);
-        }
-
-        .btn-lose {
-            background: rgba(244, 63, 94, 0.13);
-            color: var(--accent2);
-        }
-
-        .btn-del {
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--text3);
-        }
-
-        .stats-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 7px;
-            margin-bottom: 14px;
-        }
+        .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 7px; margin-bottom: 14px; }
 
         .stat-box {
             background: var(--card2);
@@ -1009,9 +754,7 @@
             transition: border-color 0.2s;
         }
 
-        .stat-box:hover {
-            border-color: var(--border2);
-        }
+        .stat-box:hover { border-color: var(--border2); }
 
         .stat-val {
             font-size: 1.3rem;
@@ -1056,22 +799,9 @@
             gap: 12px;
         }
 
-        .config-row:last-of-type {
-            border-bottom: none;
-        }
-
-        .config-row .cfg-label {
-            font-size: 0.8rem;
-            color: var(--text2);
-            font-weight: 600;
-        }
-
-        .config-row input {
-            width: 120px;
-            margin: 0;
-            padding: 8px 12px;
-            font-size: 0.85rem;
-        }
+        .config-row:last-of-type { border-bottom: none; }
+        .config-row .cfg-label { font-size: 0.8rem; color: var(--text2); font-weight: 600; }
+        .config-row input { width: 120px; margin: 0; padding: 8px 12px; font-size: 0.85rem; }
 
         .model-pill {
             background: var(--card2);
@@ -1083,17 +813,9 @@
             line-height: 1.8;
         }
 
-        .model-pill strong {
-            color: var(--text2);
-        }
+        .model-pill strong { color: var(--text2); }
 
-        .small-note {
-            font-size: 0.62rem;
-            color: var(--text3);
-            font-style: italic;
-            line-height: 1.5;
-            margin-top: 6px;
-        }
+        .small-note { font-size: 0.62rem; color: var(--text3); font-style: italic; line-height: 1.5; margin-top: 6px; }
 
         textarea {
             width: 100%;
@@ -1124,38 +846,15 @@
             letter-spacing: 0.3px;
         }
 
-        .toast-success {
-            background: linear-gradient(135deg, #059669, var(--green));
-            color: #fff;
-        }
-
-        .toast-error {
-            background: linear-gradient(135deg, #be123c, var(--accent));
-            color: #fff;
-        }
-
-        .toast-info {
-            background: linear-gradient(135deg, #1d4ed8, var(--blue));
-            color: #fff;
-        }
+        .toast-success { background: linear-gradient(135deg, #059669, var(--green)); color: #fff; }
+        .toast-error { background: linear-gradient(135deg, #be123c, var(--accent)); color: #fff; }
+        .toast-info { background: linear-gradient(135deg, #1d4ed8, var(--blue)); color: #fff; }
 
         @keyframes toastIn {
-            0% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-16px);
-            }
-            12% {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-            80% {
-                opacity: 1;
-                transform: translateX(-50%) translateY(0);
-            }
-            100% {
-                opacity: 0;
-                transform: translateX(-50%) translateY(-8px);
-            }
+            0% { opacity: 0; transform: translateX(-50%) translateY(-16px); }
+            12% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            80% { opacity: 1; transform: translateX(-50%) translateY(0); }
+            100% { opacity: 0; transform: translateX(-50%) translateY(-8px); }
         }
 
         .spin {
@@ -1169,48 +868,17 @@
             vertical-align: middle;
         }
 
-        @keyframes rot {
-            to {
-                transform: rotate(360deg);
-            }
-        }
+        @keyframes rot { to { transform: rotate(360deg); } }
 
-        .hidden {
-            display: none !important;
-        }
-
-        .green {
-            color: var(--green2);
-        }
-
-        .red {
-            color: var(--accent2);
-        }
-
-        .yellow {
-            color: var(--yellow);
-        }
-
-        .blue {
-            color: var(--blue2);
-        }
-
-        .profit {
-            color: var(--green2);
-        }
-
-        .loss {
-            color: var(--accent2);
-        }
-
-        .mono {
-            font-family: var(--mono);
-        }
-
-        .file-input {
-            padding: 8px;
-            font-size: 0.75rem;
-        }
+        .hidden { display: none !important; }
+        .green { color: var(--green2); }
+        .red { color: var(--accent2); }
+        .yellow { color: var(--yellow); }
+        .blue { color: var(--blue2); }
+        .profit { color: var(--green2); }
+        .loss { color: var(--accent2); }
+        .mono { font-family: var(--mono); }
+        .file-input { padding: 8px; font-size: 0.75rem; }
 
         .data-mode-warn {
             background: rgba(244, 63, 94, 0.08);
@@ -1275,23 +943,11 @@
             text-transform: uppercase;
         }
 
-        .risk-low {
-            color: var(--green2) !important;
-        }
+        .risk-low { color: var(--green2) !important; }
+        .risk-mid { color: var(--yellow2) !important; }
+        .risk-high { color: var(--accent2) !important; }
 
-        .risk-mid {
-            color: var(--yellow2) !important;
-        }
-
-        .risk-high {
-            color: var(--accent2) !important;
-        }
-
-        .market.filtered {
-            opacity: 0.4;
-            pointer-events: none;
-        }
-
+        .market.filtered { opacity: 0.4; pointer-events: none; }
         .market.filtered .market-name::after {
             content: ' — EV insuficiente';
             font-size: 0.55rem;
@@ -1334,14 +990,8 @@
             text-align: center;
         }
 
-        .modal-box h4 {
-            margin-bottom: 16px;
-            font-size: 1rem;
-        }
-
-        .modal-box .btn {
-            margin-top: 8px;
-        }
+        .modal-box h4 { margin-bottom: 16px; font-size: 1rem; }
+        .modal-box .btn { margin-top: 8px; }
     </style>
 </head>
 <body>
@@ -1606,7 +1256,7 @@
                 kellyFraction: 0.10,
                 maxStakePct: 0.03,
                 minEV: 8,
-                minStake: 50, // Reducido para no forzar sobre-apuestas
+                minStake: 50,
                 maxStake: 1000,
                 apiKey: '',
                 apiBaseUrl: 'https://sports.bzzoiro.com'
@@ -1619,7 +1269,6 @@
             let currentAPIData = null;
             let eloRatings = JSON.parse(localStorage.getItem('eloRatings') || '{}');
             let teamForm = JSON.parse(localStorage.getItem('teamForm') || '{}');
-            // Calibración por liga: { leagueCode: { home: number, draw: number, away: number } }
             let calibrationBias = JSON.parse(localStorage.getItem('calibrationBias') || '{}');
 
             function saveAll() {
@@ -1635,75 +1284,19 @@
 
             // ==================== BASES DE DATOS ====================
             const TEAMS_DB = {
-                EPL: ['Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton', 'Chelsea', 'Crystal Palace',
-                    'Everton', 'Fulham', 'Ipswich Town', 'Leicester City', 'Liverpool', 'Manchester City',
-                    'Manchester United', 'Newcastle United', 'Nottingham Forest', 'Southampton', 'Tottenham',
-                    'West Ham United', 'Wolves'
-                ],
-                La_liga: ['Alaves', 'Athletic Club', 'Atletico Madrid', 'Barcelona', 'Celta Vigo', 'Espanyol', 'Getafe',
-                    'Girona', 'Las Palmas', 'Leganes', 'Mallorca', 'Osasuna', 'Rayo Vallecano', 'Real Betis',
-                    'Real Madrid', 'Real Sociedad', 'Sevilla', 'Valencia', 'Valladolid', 'Villarreal'
-                ],
-                Serie_A: ['AC Milan', 'Atalanta', 'Bologna', 'Cagliari', 'Como', 'Empoli', 'Fiorentina', 'Genoa',
-                    'Hellas Verona', 'Inter Milan', 'Juventus', 'Lazio', 'Lecce', 'Monza', 'Napoli', 'Parma', 'Roma',
-                    'Torino', 'Udinese', 'Venezia'
-                ],
-                Bundesliga: ['Augsburg', 'Bayer Leverkusen', 'Bayern Munich', 'Bochum', 'Borussia Dortmund',
-                    'Borussia Monchengladbach', 'Eintracht Frankfurt', 'Freiburg', 'Heidenheim', 'Hoffenheim',
-                    'Holstein Kiel', 'Mainz 05', 'RB Leipzig', 'St. Pauli', 'Stuttgart', 'Union Berlin', 'Werder Bremen',
-                    'Wolfsburg'
-                ],
-                Ligue_1: ['Angers', 'Auxerre', 'Brest', 'Le Havre', 'Lens', 'Lille', 'Lyon', 'Marseille', 'Monaco',
-                    'Montpellier', 'Nantes', 'Nice', 'PSG', 'Reims', 'Rennes', 'Saint-Etienne', 'Strasbourg', 'Toulouse'
-                ],
-                Eredivisie: ['Ajax', 'AZ Alkmaar', 'Feyenoord', 'PSV Eindhoven', 'Twente', 'Utrecht', 'Sparta Rotterdam',
-                    'Heerenveen', 'NEC Nijmegen', 'Go Ahead Eagles', 'Fortuna Sittard', 'PEC Zwolle', 'Almere City',
-                    'Heracles Almelo', 'RKC Waalwijk', 'Willem II', 'NAC Breda', 'Groningen'
-                ],
-                Libertadores: ['Flamengo', 'Palmeiras', 'River Plate', 'Boca Juniors', 'Nacional', 'Penarol', 'Olimpia',
-                    'Barcelona SC', 'Independiente del Valle', 'LDU Quito', 'Estudiantes', 'Racing', 'Colo Colo',
-                    'Cerro Porteno', 'Atletico Mineiro', 'Sao Paulo', 'Gremio', 'Internacional', 'Universidad Catolica',
-                    'Bolivar', 'The Strongest', 'Libertad', 'Alianza Lima', 'Sporting Cristal', 'Deportivo Tachira',
-                    'Caracas FC', 'Nacional Asuncion'
-                ],
-                Sudamericana: ['Athletico Paranaense', 'Bragantino', 'Santos', 'Cruzeiro', 'Defensa y Justicia', 'Lanus',
-                    'Newells Old Boys', 'Rosario Central', 'Universitario', 'Sporting Cristal', 'Emelec',
-                    'Deportivo Cali', 'Junior', 'Once Caldas', 'La Equidad', 'Fortaleza', 'America de Cali', 'Macara',
-                    'Huracan', 'Velez Sarsfield', 'Penarol', 'Nacional', 'Bolivar', 'Jorge Wilstermann'
-                ],
-                Mundial_2026: ['Alemania', 'Argentina', 'Australia', 'Austria', 'Bélgica', 'Bosnia y Herzegovina',
-                    'Brasil', 'Cabo Verde', 'Canadá', 'Catar', 'Colombia', 'Corea del Sur', 'Costa de Marfil', 'Croacia',
-                    'Curazao', 'Ecuador', 'Egipto', 'Escocia', 'España', 'Estados Unidos', 'Francia', 'Ghana',
-                    'Inglaterra', 'Irak', 'Irán', 'Japón', 'Jordania', 'Marruecos', 'México', 'Nigeria', 'Noruega',
-                    'Nueva Zelanda', 'Países Bajos', 'Panamá', 'Paraguay', 'Portugal', 'Arabia Saudita', 'Argelia',
-                    'RD del Congo', 'República Checa', 'Senegal', 'Sudáfrica', 'Suecia', 'Suiza', 'Túnez', 'Turquía',
-                    'Uruguay', 'Uzbekistán', 'Haití'
-                ],
-                Championship: ['Blackburn Rovers', 'Bristol City', 'Burnley', 'Cardiff City', 'Coventry City',
-                    'Derby County', 'Hull City', 'Leeds United', 'Luton Town', 'Middlesbrough', 'Millwall',
-                    'Norwich City', 'Oxford United', 'Plymouth Argyle', 'Portsmouth', 'Preston North End', 'QPR',
-                    'Sheffield United', 'Sheffield Wednesday', 'Stoke City', 'Sunderland', 'Swansea City', 'Watford',
-                    'West Bromwich Albion'
-                ],
-                MLS: ['Atlanta United', 'Austin FC', 'CF Montreal', 'Charlotte FC', 'Chicago Fire FC', 'FC Cincinnati',
-                    'Colorado Rapids', 'Columbus Crew', 'DC United', 'FC Dallas', 'Houston Dynamo FC', 'Inter Miami CF',
-                    'LA Galaxy', 'Los Angeles FC', 'Minnesota United FC', 'Nashville SC', 'New England Revolution',
-                    'New York City FC', 'New York Red Bulls', 'Orlando City SC', 'Philadelphia Union', 'Portland Timbers',
-                    'Real Salt Lake', 'San Jose Earthquakes', 'Seattle Sounders FC', 'Sporting Kansas City',
-                    'St. Louis City SC', 'Toronto FC', 'Vancouver Whitecaps FC'
-                ],
-                Brasileirao: ['Athletico Paranaense', 'Atletico Goianiense', 'Atletico Mineiro', 'Bahia', 'Botafogo',
-                    'Corinthians', 'Criciuma', 'Cruzeiro', 'Cuiaba', 'Flamengo', 'Fluminense', 'Fortaleza', 'Gremio',
-                    'Internacional', 'Juventude', 'Mirassol', 'Palmeiras', 'RB Bragantino', 'Sao Paulo', 'Vasco da Gama',
-                    'Vitoria'
-                ],
-                BrasileiroSerieB: ['America Mineiro', 'Athletic Club', 'Atletico Goianiense', 'Avai', 'Botafogo-SP',
-                    'Ceara', 'Clube De Regatas Brasil', 'Criciuma', 'Cuiaba', 'Fortaleza', 'Goias',
-                    'Gremio Novorizontino', 'Juventude', 'Londrina', 'Nautico', 'Operario-PR', 'Ponte Preta',
-                    'Sao Bernardo', 'Sport Recife', 'Vila Nova FC', 'Coritiba', 'Paysandu', 'Ituano', 'Guarani',
-                    'Chapecoense', 'Tombense', 'Brusque', 'Amazonas', 'Ferroviaria', 'Remo', 'Sampaio Correa',
-                    'Volta Redonda'
-                ]
+                EPL: ['Arsenal', 'Aston Villa', 'Bournemouth', 'Brentford', 'Brighton', 'Chelsea', 'Crystal Palace', 'Everton', 'Fulham', 'Ipswich Town', 'Leicester City', 'Liverpool', 'Manchester City', 'Manchester United', 'Newcastle United', 'Nottingham Forest', 'Southampton', 'Tottenham', 'West Ham United', 'Wolves'],
+                La_liga: ['Alaves', 'Athletic Club', 'Atletico Madrid', 'Barcelona', 'Celta Vigo', 'Espanyol', 'Getafe', 'Girona', 'Las Palmas', 'Leganes', 'Mallorca', 'Osasuna', 'Rayo Vallecano', 'Real Betis', 'Real Madrid', 'Real Sociedad', 'Sevilla', 'Valencia', 'Valladolid', 'Villarreal'],
+                Serie_A: ['AC Milan', 'Atalanta', 'Bologna', 'Cagliari', 'Como', 'Empoli', 'Fiorentina', 'Genoa', 'Hellas Verona', 'Inter Milan', 'Juventus', 'Lazio', 'Lecce', 'Monza', 'Napoli', 'Parma', 'Roma', 'Torino', 'Udinese', 'Venezia'],
+                Bundesliga: ['Augsburg', 'Bayer Leverkusen', 'Bayern Munich', 'Bochum', 'Borussia Dortmund', 'Borussia Monchengladbach', 'Eintracht Frankfurt', 'Freiburg', 'Heidenheim', 'Hoffenheim', 'Holstein Kiel', 'Mainz 05', 'RB Leipzig', 'St. Pauli', 'Stuttgart', 'Union Berlin', 'Werder Bremen', 'Wolfsburg'],
+                Ligue_1: ['Angers', 'Auxerre', 'Brest', 'Le Havre', 'Lens', 'Lille', 'Lyon', 'Marseille', 'Monaco', 'Montpellier', 'Nantes', 'Nice', 'PSG', 'Reims', 'Rennes', 'Saint-Etienne', 'Strasbourg', 'Toulouse'],
+                Eredivisie: ['Ajax', 'AZ Alkmaar', 'Feyenoord', 'PSV Eindhoven', 'Twente', 'Utrecht', 'Sparta Rotterdam', 'Heerenveen', 'NEC Nijmegen', 'Go Ahead Eagles', 'Fortuna Sittard', 'PEC Zwolle', 'Almere City', 'Heracles Almelo', 'RKC Waalwijk', 'Willem II', 'NAC Breda', 'Groningen'],
+                Libertadores: ['Flamengo', 'Palmeiras', 'River Plate', 'Boca Juniors', 'Nacional', 'Penarol', 'Olimpia', 'Barcelona SC', 'Independiente del Valle', 'LDU Quito', 'Estudiantes', 'Racing', 'Colo Colo', 'Cerro Porteno', 'Atletico Mineiro', 'Sao Paulo', 'Gremio', 'Internacional', 'Universidad Catolica', 'Bolivar', 'The Strongest', 'Libertad', 'Alianza Lima', 'Sporting Cristal', 'Deportivo Tachira', 'Caracas FC', 'Nacional Asuncion'],
+                Sudamericana: ['Athletico Paranaense', 'Bragantino', 'Santos', 'Cruzeiro', 'Defensa y Justicia', 'Lanus', 'Newells Old Boys', 'Rosario Central', 'Universitario', 'Sporting Cristal', 'Emelec', 'Deportivo Cali', 'Junior', 'Once Caldas', 'La Equidad', 'Fortaleza', 'America de Cali', 'Macara', 'Huracan', 'Velez Sarsfield', 'Penarol', 'Nacional', 'Bolivar', 'Jorge Wilstermann'],
+                Mundial_2026: ['Alemania', 'Argentina', 'Australia', 'Austria', 'Bélgica', 'Bosnia y Herzegovina', 'Brasil', 'Cabo Verde', 'Canadá', 'Catar', 'Colombia', 'Corea del Sur', 'Costa de Marfil', 'Croacia', 'Curazao', 'Ecuador', 'Egipto', 'Escocia', 'España', 'Estados Unidos', 'Francia', 'Ghana', 'Inglaterra', 'Irak', 'Irán', 'Japón', 'Jordania', 'Marruecos', 'México', 'Nigeria', 'Noruega', 'Nueva Zelanda', 'Países Bajos', 'Panamá', 'Paraguay', 'Portugal', 'Arabia Saudita', 'Argelia', 'RD del Congo', 'República Checa', 'Senegal', 'Sudáfrica', 'Suecia', 'Suiza', 'Túnez', 'Turquía', 'Uruguay', 'Uzbekistán', 'Haití'],
+                Championship: ['Blackburn Rovers', 'Bristol City', 'Burnley', 'Cardiff City', 'Coventry City', 'Derby County', 'Hull City', 'Leeds United', 'Luton Town', 'Middlesbrough', 'Millwall', 'Norwich City', 'Oxford United', 'Plymouth Argyle', 'Portsmouth', 'Preston North End', 'QPR', 'Sheffield United', 'Sheffield Wednesday', 'Stoke City', 'Sunderland', 'Swansea City', 'Watford', 'West Bromwich Albion'],
+                MLS: ['Atlanta United', 'Austin FC', 'CF Montreal', 'Charlotte FC', 'Chicago Fire FC', 'FC Cincinnati', 'Colorado Rapids', 'Columbus Crew', 'DC United', 'FC Dallas', 'Houston Dynamo FC', 'Inter Miami CF', 'LA Galaxy', 'Los Angeles FC', 'Minnesota United FC', 'Nashville SC', 'New England Revolution', 'New York City FC', 'New York Red Bulls', 'Orlando City SC', 'Philadelphia Union', 'Portland Timbers', 'Real Salt Lake', 'San Jose Earthquakes', 'Seattle Sounders FC', 'Sporting Kansas City', 'St. Louis City SC', 'Toronto FC', 'Vancouver Whitecaps FC'],
+                Brasileirao: ['Athletico Paranaense', 'Atletico Goianiense', 'Atletico Mineiro', 'Bahia', 'Botafogo', 'Corinthians', 'Criciuma', 'Cruzeiro', 'Cuiaba', 'Flamengo', 'Fluminense', 'Fortaleza', 'Gremio', 'Internacional', 'Juventude', 'Mirassol', 'Palmeiras', 'RB Bragantino', 'Sao Paulo', 'Vasco da Gama', 'Vitoria'],
+                BrasileiroSerieB: ['America Mineiro', 'Athletic Club', 'Atletico Goianiense', 'Avai', 'Botafogo-SP', 'Ceara', 'Clube De Regatas Brasil', 'Criciuma', 'Cuiaba', 'Fortaleza', 'Goias', 'Gremio Novorizontino', 'Juventude', 'Londrina', 'Nautico', 'Operario-PR', 'Ponte Preta', 'Sao Bernardo', 'Sport Recife', 'Vila Nova FC', 'Coritiba', 'Paysandu', 'Ituano', 'Guarani', 'Chapecoense', 'Tombense', 'Brusque', 'Amazonas', 'Ferroviaria', 'Remo', 'Sampaio Correa', 'Volta Redonda']
             };
 
             const LEAGUES_CFG = {
@@ -1713,224 +1306,51 @@
                 Bundesliga: { name: 'Bundesliga', goals: 3.00, corners: 9.8, hfa: 1.06, htRatio: 0.46, rho: -0.06 },
                 Ligue_1: { name: 'Ligue 1', goals: 2.70, corners: 9.3, hfa: 1.05, htRatio: 0.44, rho: -0.07 },
                 Eredivisie: { name: 'Eredivisie', goals: 3.10, corners: 9.6, hfa: 1.05, htRatio: 0.45, rho: -0.09 },
-                Libertadores: { name: 'Copa Libertadores', goals: 2.50, corners: 9.2, hfa: 1.04, htRatio: 0.43,
-                rho: -0.11 },
-                Sudamericana: { name: 'Copa Sudamericana', goals: 2.30, corners: 9.0, hfa: 1.04, htRatio: 0.42,
-                    rho: -0.10 },
+                Libertadores: { name: 'Copa Libertadores', goals: 2.50, corners: 9.2, hfa: 1.04, htRatio: 0.43, rho: -0.11 },
+                Sudamericana: { name: 'Copa Sudamericana', goals: 2.30, corners: 9.0, hfa: 1.04, htRatio: 0.42, rho: -0.10 },
                 Mundial_2026: { name: 'Mundial 2026', goals: 2.40, corners: 9.5, hfa: 1.03, htRatio: 0.43, rho: -0.12 },
                 Championship: { name: 'Championship', goals: 2.65, corners: 9.7, hfa: 1.05, htRatio: 0.44, rho: -0.08 },
                 MLS: { name: 'MLS', goals: 2.85, corners: 9.1, hfa: 1.05, htRatio: 0.44, rho: -0.07 },
-                Brasileirao: { name: 'Brasileirao Serie A', goals: 2.45, corners: 9.4, hfa: 1.05, htRatio: 0.43,
-                rho: -0.10 },
-                BrasileiroSerieB: { name: 'Brasileirao Serie B', goals: 2.30, corners: 9.1, hfa: 1.04, htRatio: 0.42,
-                    rho: -0.09 }
+                Brasileirao: { name: 'Brasileirao Serie A', goals: 2.45, corners: 9.4, hfa: 1.05, htRatio: 0.43, rho: -0.10 },
+                BrasileiroSerieB: { name: 'Brasileirao Serie B', goals: 2.30, corners: 9.1, hfa: 1.04, htRatio: 0.42, rho: -0.09 }
             };
 
-            const API_LEAGUE_IDS = { EPL: 1, La_liga: 3, Serie_A: 4, Bundesliga: 5, Ligue_1: 6, Eredivisie: 10,
-                Championship: 12, MLS: 18, Brasileirao: 9, BrasileiroSerieB: 19, Libertadores: 32, Sudamericana: 33,
-                Mundial_2026: 27 };
+            const API_LEAGUE_IDS = { EPL: 1, La_liga: 3, Serie_A: 4, Bundesliga: 5, Ligue_1: 6, Eredivisie: 10, Championship: 12, MLS: 18, Brasileirao: 9, BrasileiroSerieB: 19, Libertadores: 32, Sudamericana: 33, Mundial_2026: 27 };
 
             const API_TEAM_NAME_MAP = {
                 Mundial_2026: {
-                    'Alemania': 'Germany',
-                    'Argentina': 'Argentina',
-                    'Australia': 'Australia',
-                    'Austria': 'Austria',
-                    'Bélgica': 'Belgium',
-                    'Bosnia y Herzegovina': 'Bosnia and Herzegovina',
-                    'Brasil': 'Brazil',
-                    'Cabo Verde': 'Cape Verde',
-                    'Canadá': 'Canada',
-                    'Catar': 'Qatar',
-                    'Colombia': 'Colombia',
-                    'Corea del Sur': 'South Korea',
-                    'Costa de Marfil': 'Ivory Coast',
-                    'Croacia': 'Croatia',
-                    'Curazao': 'Curacao',
-                    'Ecuador': 'Ecuador',
-                    'Egipto': 'Egypt',
-                    'Escocia': 'Scotland',
-                    'España': 'Spain',
-                    'Estados Unidos': 'United States',
-                    'Francia': 'France',
-                    'Ghana': 'Ghana',
-                    'Inglaterra': 'England',
-                    'Irak': 'Iraq',
-                    'Irán': 'Iran',
-                    'Japón': 'Japan',
-                    'Jordania': 'Jordan',
-                    'Marruecos': 'Morocco',
-                    'México': 'Mexico',
-                    'Nigeria': 'Nigeria',
-                    'Noruega': 'Norway',
-                    'Nueva Zelanda': 'New Zealand',
-                    'Países Bajos': 'Netherlands',
-                    'Panamá': 'Panama',
-                    'Paraguay': 'Paraguay',
-                    'Portugal': 'Portugal',
-                    'Arabia Saudita': 'Saudi Arabia',
-                    'Argelia': 'Algeria',
-                    'RD del Congo': 'DR Congo',
-                    'República Checa': 'Czech Republic',
-                    'Senegal': 'Senegal',
-                    'Sudáfrica': 'South Africa',
-                    'Suecia': 'Sweden',
-                    'Suiza': 'Switzerland',
-                    'Túnez': 'Tunisia',
-                    'Turquía': 'Turkey',
-                    'Uruguay': 'Uruguay',
-                    'Uzbekistán': 'Uzbekistan',
-                    'Haití': 'Haiti'
+                    'Alemania': 'Germany', 'Argentina': 'Argentina', 'Australia': 'Australia', 'Austria': 'Austria', 'Bélgica': 'Belgium', 'Bosnia y Herzegovina': 'Bosnia and Herzegovina', 'Brasil': 'Brazil', 'Cabo Verde': 'Cape Verde', 'Canadá': 'Canada', 'Catar': 'Qatar', 'Colombia': 'Colombia', 'Corea del Sur': 'South Korea', 'Costa de Marfil': 'Ivory Coast', 'Croacia': 'Croatia', 'Curazao': 'Curacao', 'Ecuador': 'Ecuador', 'Egipto': 'Egypt', 'Escocia': 'Scotland', 'España': 'Spain', 'Estados Unidos': 'United States', 'Francia': 'France', 'Ghana': 'Ghana', 'Inglaterra': 'England', 'Irak': 'Iraq', 'Irán': 'Iran', 'Japón': 'Japan', 'Jordania': 'Jordan', 'Marruecos': 'Morocco', 'México': 'Mexico', 'Nigeria': 'Nigeria', 'Noruega': 'Norway', 'Nueva Zelanda': 'New Zealand', 'Países Bajos': 'Netherlands', 'Panamá': 'Panama', 'Paraguay': 'Paraguay', 'Portugal': 'Portugal', 'Arabia Saudita': 'Saudi Arabia', 'Argelia': 'Algeria', 'RD del Congo': 'DR Congo', 'República Checa': 'Czech Republic', 'Senegal': 'Senegal', 'Sudáfrica': 'South Africa', 'Suecia': 'Sweden', 'Suiza': 'Switzerland', 'Túnez': 'Tunisia', 'Turquía': 'Turkey', 'Uruguay': 'Uruguay', 'Uzbekistán': 'Uzbekistan', 'Haití': 'Haiti'
                 }
             };
 
-            // Fuerzas base (ataque, defensa)
             const STRENGTH = {
-                EPL: { 'Manchester City': [1.30, 0.77], 'Liverpool': [1.28, 0.79], 'Arsenal': [1.24, 0.82],
-                    'Chelsea': [1.15, 0.89], 'Tottenham': [1.16, 0.90], 'Manchester United': [1.18, 0.88],
-                    'Newcastle United': [1.13, 0.94], 'Aston Villa': [1.17, 0.92], 'Brighton': [1.11, 0.96],
-                    'West Ham United': [1.06, 1.00], 'Fulham': [1.04, 1.01], 'Brentford': [1.02, 1.03],
-                    'Crystal Palace': [0.98, 1.05], 'Wolves': [1.03, 1.02], 'Everton': [0.92, 1.10],
-                    'Bournemouth': [0.95, 1.08], 'Nottingham Forest': [0.96, 1.07], 'Leicester City': [0.94, 1.08],
-                    'Ipswich Town': [0.88, 1.14], 'Southampton': [0.86, 1.16] },
-                La_liga: { 'Real Madrid': [1.32, 0.74], 'Barcelona': [1.30, 0.76], 'Atletico Madrid': [1.22, 0.82],
-                    'Athletic Club': [1.15, 0.90], 'Real Sociedad': [1.14, 0.91], 'Villarreal': [1.12, 0.93],
-                    'Real Betis': [1.10, 0.95], 'Girona': [1.16, 0.89], 'Sevilla': [1.08, 0.97],
-                    'Valencia': [1.06, 0.99], 'Osasuna': [1.02, 1.03], 'Celta Vigo': [1.04, 1.01],
-                    'Mallorca': [0.98, 1.06], 'Getafe': [0.94, 1.08], 'Alaves': [0.96, 1.07],
-                    'Espanyol': [0.94, 1.08], 'Rayo Vallecano': [0.98, 1.05], 'Las Palmas': [0.92, 1.10],
-                    'Leganes': [0.88, 1.14], 'Valladolid': [0.86, 1.16] },
-                Serie_A: { 'Inter Milan': [1.28, 0.78], 'Juventus': [1.22, 0.83], 'AC Milan': [1.20, 0.85],
-                    'Napoli': [1.24, 0.81], 'Atalanta': [1.22, 0.83], 'Roma': [1.16, 0.89], 'Lazio': [1.14, 0.91],
-                    'Fiorentina': [1.10, 0.95], 'Bologna': [1.08, 0.97], 'Torino': [1.02, 1.03],
-                    'Genoa': [0.98, 1.06], 'Monza': [0.96, 1.08], 'Udinese': [0.98, 1.05], 'Lecce': [0.92, 1.10],
-                    'Empoli': [0.94, 1.08], 'Cagliari': [0.92, 1.10], 'Hellas Verona': [0.90, 1.12],
-                    'Parma': [0.94, 1.08], 'Como': [0.88, 1.14], 'Venezia': [0.86, 1.16] },
-                Bundesliga: { 'Bayern Munich': [1.32, 0.76], 'Bayer Leverkusen': [1.27, 0.80],
-                    'Borussia Dortmund': [1.24, 0.83], 'RB Leipzig': [1.22, 0.85], 'Stuttgart': [1.16, 0.91],
-                    'Eintracht Frankfurt': [1.14, 0.93], 'Freiburg': [1.09, 0.98], 'Hoffenheim': [1.10, 0.97],
-                    'Werder Bremen': [1.05, 1.02], 'Wolfsburg': [1.04, 1.01],
-                    'Borussia Monchengladbach': [1.08, 0.99], 'Mainz 05': [1.02, 1.03], 'Augsburg': [1.00, 1.05],
-                    'Union Berlin': [0.98, 1.06], 'Heidenheim': [0.94, 1.08], 'St. Pauli': [0.96, 1.07],
-                    'Bochum': [0.92, 1.10], 'Holstein Kiel': [0.88, 1.14] },
-                Ligue_1: { 'PSG': [1.34, 0.72], 'Monaco': [1.18, 0.86], 'Marseille': [1.16, 0.88],
-                    'Lyon': [1.14, 0.90], 'Lille': [1.15, 0.89], 'Nice': [1.12, 0.93], 'Lens': [1.10, 0.95],
-                    'Rennes': [1.08, 0.97], 'Reims': [1.02, 1.03], 'Toulouse': [1.00, 1.05],
-                    'Strasbourg': [1.00, 1.04], 'Brest': [1.04, 1.01], 'Montpellier': [0.96, 1.07],
-                    'Nantes': [0.96, 1.07], 'Auxerre': [0.94, 1.08], 'Saint-Etienne': [0.94, 1.08],
-                    'Le Havre': [0.90, 1.12], 'Angers': [0.88, 1.14] },
-                Eredivisie: { 'PSV Eindhoven': [1.26, 0.80], 'Ajax': [1.24, 0.82], 'Feyenoord': [1.22, 0.84],
-                    'AZ Alkmaar': [1.14, 0.92], 'Twente': [1.12, 0.94], 'Utrecht': [1.06, 1.00],
-                    'Sparta Rotterdam': [1.00, 1.05], 'Heerenveen': [0.98, 1.06], 'NEC Nijmegen': [0.96, 1.08],
-                    'Go Ahead Eagles': [0.94, 1.08], 'Fortuna Sittard': [0.92, 1.10], 'PEC Zwolle': [0.90, 1.12],
-                    'Almere City': [0.88, 1.14], 'Heracles Almelo': [0.90, 1.12], 'RKC Waalwijk': [0.86, 1.16],
-                    'Willem II': [0.94, 1.08], 'NAC Breda': [0.92, 1.10], 'Groningen': [0.90, 1.12] },
-                Brasileirao: { 'Athletico Paranaense': [1.10, 0.94], 'Atletico Goianiense': [0.97, 1.09],
-                    'Atletico Mineiro': [1.20, 0.86], 'Bahia': [1.02, 1.04], 'Botafogo': [1.08, 0.98],
-                    'Corinthians': [1.05, 1.01], 'Criciuma': [0.92, 1.14], 'Cruzeiro': [1.04, 1.02],
-                    'Cuiaba': [0.98, 1.08], 'Flamengo': [1.30, 0.78], 'Fluminense': [1.10, 0.96],
-                    'Fortaleza': [1.06, 1.00], 'Gremio': [1.14, 0.92], 'Internacional': [1.12, 0.94],
-                    'Juventude': [0.96, 1.10], 'Mirassol': [0.93, 1.15], 'Palmeiras': [1.28, 0.80],
-                    'RB Bragantino': [1.08, 0.96], 'Sao Paulo': [1.18, 0.88], 'Vasco da Gama': [1.00, 1.06],
-                    'Vitoria': [0.94, 1.12] },
-                BrasileiroSerieB: { 'America Mineiro': [1.00, 1.00], 'Athletic Club': [1.00, 1.00],
-                    'Atletico Goianiense': [0.97, 1.09], 'Avai': [1.00, 1.00], 'Botafogo-SP': [1.00, 1.00],
-                    'Ceara': [1.00, 1.00], 'Clube De Regatas Brasil': [1.00, 1.00], 'Criciuma': [0.92, 1.14],
-                    'Cuiaba': [0.98, 1.08], 'Fortaleza': [1.06, 1.00], 'Goias': [1.00, 1.00],
-                    'Gremio Novorizontino': [1.00, 1.00], 'Juventude': [0.96, 1.10], 'Londrina': [1.00, 1.00],
-                    'Nautico': [1.00, 1.00], 'Operario-PR': [1.00, 1.00], 'Ponte Preta': [1.00, 1.00],
-                    'Sao Bernardo': [1.00, 1.00], 'Sport Recife': [1.00, 1.00], 'Vila Nova FC': [1.00, 1.00],
-                    'Coritiba': [1.00, 1.00], 'Paysandu': [1.00, 1.00], 'Ituano': [1.00, 1.00],
-                    'Guarani': [1.00, 1.00], 'Chapecoense': [1.00, 1.00], 'Tombense': [1.00, 1.00],
-                    'Brusque': [1.00, 1.00], 'Amazonas': [1.00, 1.00], 'Ferroviaria': [1.00, 1.00],
-                    'Remo': [1.00, 1.00], 'Sampaio Correa': [1.00, 1.00], 'Volta Redonda': [1.00, 1.00] },
-                MLS: { 'Inter Miami CF': [1.18, 0.86], 'Los Angeles FC': [1.16, 0.88],
-                    'Columbus Crew': [1.14, 0.90], 'FC Cincinnati': [1.13, 0.91],
-                    'Philadelphia Union': [1.10, 0.94], 'New England Revolution': [1.08, 0.96],
-                    'Atlanta United': [1.09, 0.95], 'Orlando City SC': [1.07, 0.97],
-                    'New York City FC': [1.06, 0.98], 'Nashville SC': [1.05, 0.99],
-                    'Seattle Sounders FC': [1.04, 1.00], 'Portland Timbers': [1.03, 1.01],
-                    'Minnesota United FC': [1.02, 1.02], 'FC Dallas': [1.01, 1.03], 'Austin FC': [1.00, 1.04],
-                    'Houston Dynamo FC': [0.99, 1.05], 'LA Galaxy': [0.98, 1.06],
-                    'Vancouver Whitecaps FC': [0.97, 1.07], 'Chicago Fire FC': [0.96, 1.08],
-                    'Charlotte FC': [0.95, 1.09], 'CF Montreal': [0.94, 1.10],
-                    'Sporting Kansas City': [0.93, 1.11], 'New York Red Bulls': [0.92, 1.12],
-                    'Real Salt Lake': [0.91, 1.13], 'DC United': [0.90, 1.14],
-                    'San Jose Earthquakes': [0.89, 1.15], 'Colorado Rapids': [0.88, 1.16],
-                    'Toronto FC': [0.87, 1.17], 'St. Louis City SC': [0.86, 1.18] },
-                Libertadores: { 'Flamengo': [1.30, 0.78], 'Palmeiras': [1.28, 0.80], 'River Plate': [1.26, 0.82],
-                    'Boca Juniors': [1.22, 0.84], 'Nacional': [1.12, 0.92], 'Penarol': [1.10, 0.94],
-                    'Olimpia': [1.05, 1.00], 'Barcelona SC': [1.08, 0.96],
-                    'Independiente del Valle': [1.10, 0.94], 'LDU Quito': [1.08, 0.96],
-                    'Estudiantes': [1.06, 1.00], 'Racing': [1.08, 0.98], 'Colo Colo': [1.02, 1.04],
-                    'Cerro Porteno': [1.00, 1.05], 'Atletico Mineiro': [1.20, 0.86], 'Sao Paulo': [1.18, 0.88],
-                    'Gremio': [1.14, 0.92], 'Internacional': [1.12, 0.94],
-                    'Universidad Catolica': [1.02, 1.04], 'Bolivar': [1.00, 1.04],
-                    'The Strongest': [0.98, 1.06], 'Libertad': [1.04, 1.02], 'Alianza Lima': [0.94, 1.10],
-                    'Sporting Cristal': [1.02, 1.04], 'Deportivo Tachira': [0.92, 1.12],
-                    'Caracas FC': [0.90, 1.14], 'Nacional Asuncion': [0.96, 1.08] },
-                Sudamericana: { 'Athletico Paranaense': [1.10, 0.94], 'Bragantino': [1.08, 0.96],
-                    'Santos': [1.06, 1.00], 'Cruzeiro': [1.04, 1.02], 'Defensa y Justicia': [1.02, 1.04],
-                    'Lanus': [1.00, 1.05], 'Newells Old Boys': [0.98, 1.06], 'Rosario Central': [1.00, 1.04],
-                    'Universitario': [1.04, 1.02], 'Sporting Cristal': [1.02, 1.04], 'Emelec': [1.00, 1.05],
-                    'Deportivo Cali': [0.98, 1.06], 'Junior': [1.02, 1.04], 'Once Caldas': [0.96, 1.08],
-                    'La Equidad': [0.94, 1.10], 'Fortaleza': [1.06, 1.00], 'America de Cali': [1.02, 1.06],
-                    'Macara': [0.95, 1.12], 'Huracan': [1.02, 1.04], 'Velez Sarsfield': [1.06, 1.00],
-                    'Penarol': [1.10, 0.94], 'Nacional': [1.12, 0.92], 'Bolivar': [1.00, 1.04],
-                    'Jorge Wilstermann': [0.96, 1.08] },
-                Mundial_2026: { 'Argentina': [1.32, 0.78], 'Francia': [1.28, 0.80], 'Brasil': [1.27, 0.81],
-                    'España': [1.26, 0.82], 'Inglaterra': [1.24, 0.83], 'Portugal': [1.22, 0.84],
-                    'Países Bajos': [1.20, 0.86], 'Alemania': [1.18, 0.87], 'Colombia': [1.14, 0.92],
-                    'Uruguay': [1.13, 0.93], 'Marruecos': [1.12, 0.94], 'Croacia': [1.10, 0.95],
-                    'Japón': [1.10, 0.96], 'México': [1.09, 0.96], 'Senegal': [1.08, 0.97],
-                    'Estados Unidos': [1.08, 0.97], 'Ecuador': [1.06, 0.99], 'Austria': [1.06, 0.99],
-                    'Bélgica': [1.05, 1.00], 'Suiza': [1.05, 1.00], 'Turquía': [1.04, 1.01],
-                    'Australia': [1.03, 1.02], 'Corea del Sur': [1.03, 1.02], 'Paraguay': [1.02, 1.03],
-                    'Noruega': [1.04, 1.01], 'Escocia': [1.03, 1.02], 'República Checa': [1.02, 1.03],
-                    'Canadá': [1.04, 1.00], 'Irán': [1.01, 1.04], 'Suecia': [1.01, 1.04],
-                    'Egipto': [1.01, 1.04], 'Costa de Marfil': [1.01, 1.04],
-                    'Arabia Saudita': [1.00, 1.05], 'Argelia': [1.02, 1.04],
-                    'Bosnia y Herzegovina': [1.00, 1.05], 'Ghana': [0.99, 1.06],
-                    'Uzbekistán': [0.99, 1.06], 'Nigeria': [0.99, 1.06], 'Jordania': [0.98, 1.07],
-                    'Irak': [0.97, 1.08], 'RD del Congo': [0.97, 1.08], 'Sudáfrica': [0.96, 1.09],
-                    'Catar': [0.95, 1.10], 'Túnez': [0.95, 1.10], 'Panamá': [0.94, 1.11],
-                    'Nueva Zelanda': [0.90, 1.15], 'Cabo Verde': [0.89, 1.16], 'Curazao': [0.85, 1.18],
-                    'Haití': [0.86, 1.17] },
-                Championship: { 'Leeds United': [1.15, 0.89], 'Leicester City': [1.14, 0.90],
-                    'Southampton': [1.12, 0.92], 'Norwich City': [1.08, 0.96],
-                    'West Bromwich Albion': [1.06, 0.98], 'Middlesbrough': [1.07, 0.97],
-                    'Coventry City': [1.05, 0.99], 'Sunderland': [1.04, 1.00],
-                    'Blackburn Rovers': [1.03, 1.01], 'Millwall': [1.00, 1.04], 'Watford': [1.02, 1.02],
-                    'Bristol City': [1.01, 1.03], 'Hull City': [1.00, 1.04],
-                    'Preston North End': [0.99, 1.05], 'Swansea City': [0.98, 1.06],
-                    'Cardiff City': [0.97, 1.07], 'Stoke City': [0.96, 1.08],
-                    'Sheffield Wednesday': [0.95, 1.09], 'QPR': [0.94, 1.10],
-                    'Plymouth Argyle': [0.93, 1.11], 'Portsmouth': [0.92, 1.12],
-                    'Luton Town': [0.95, 1.09], 'Derby County': [0.94, 1.10],
-                    'Oxford United': [0.90, 1.14], 'Burnley': [1.13, 0.91] }
+                EPL: { 'Manchester City': [1.30, 0.77], 'Liverpool': [1.28, 0.79], 'Arsenal': [1.24, 0.82], 'Chelsea': [1.15, 0.89], 'Tottenham': [1.16, 0.90], 'Manchester United': [1.18, 0.88], 'Newcastle United': [1.13, 0.94], 'Aston Villa': [1.17, 0.92], 'Brighton': [1.11, 0.96], 'West Ham United': [1.06, 1.00], 'Fulham': [1.04, 1.01], 'Brentford': [1.02, 1.03], 'Crystal Palace': [0.98, 1.05], 'Wolves': [1.03, 1.02], 'Everton': [0.92, 1.10], 'Bournemouth': [0.95, 1.08], 'Nottingham Forest': [0.96, 1.07], 'Leicester City': [0.94, 1.08], 'Ipswich Town': [0.88, 1.14], 'Southampton': [0.86, 1.16] },
+                La_liga: { 'Real Madrid': [1.32, 0.74], 'Barcelona': [1.30, 0.76], 'Atletico Madrid': [1.22, 0.82], 'Athletic Club': [1.15, 0.90], 'Real Sociedad': [1.14, 0.91], 'Villarreal': [1.12, 0.93], 'Real Betis': [1.10, 0.95], 'Girona': [1.16, 0.89], 'Sevilla': [1.08, 0.97], 'Valencia': [1.06, 0.99], 'Osasuna': [1.02, 1.03], 'Celta Vigo': [1.04, 1.01], 'Mallorca': [0.98, 1.06], 'Getafe': [0.94, 1.08], 'Alaves': [0.96, 1.07], 'Espanyol': [0.94, 1.08], 'Rayo Vallecano': [0.98, 1.05], 'Las Palmas': [0.92, 1.10], 'Leganes': [0.88, 1.14], 'Valladolid': [0.86, 1.16] },
+                Serie_A: { 'Inter Milan': [1.28, 0.78], 'Juventus': [1.22, 0.83], 'AC Milan': [1.20, 0.85], 'Napoli': [1.24, 0.81], 'Atalanta': [1.22, 0.83], 'Roma': [1.16, 0.89], 'Lazio': [1.14, 0.91], 'Fiorentina': [1.10, 0.95], 'Bologna': [1.08, 0.97], 'Torino': [1.02, 1.03], 'Genoa': [0.98, 1.06], 'Monza': [0.96, 1.08], 'Udinese': [0.98, 1.05], 'Lecce': [0.92, 1.10], 'Empoli': [0.94, 1.08], 'Cagliari': [0.92, 1.10], 'Hellas Verona': [0.90, 1.12], 'Parma': [0.94, 1.08], 'Como': [0.88, 1.14], 'Venezia': [0.86, 1.16] },
+                Bundesliga: { 'Bayern Munich': [1.32, 0.76], 'Bayer Leverkusen': [1.27, 0.80], 'Borussia Dortmund': [1.24, 0.83], 'RB Leipzig': [1.22, 0.85], 'Stuttgart': [1.16, 0.91], 'Eintracht Frankfurt': [1.14, 0.93], 'Freiburg': [1.09, 0.98], 'Hoffenheim': [1.10, 0.97], 'Werder Bremen': [1.05, 1.02], 'Wolfsburg': [1.04, 1.01], 'Borussia Monchengladbach': [1.08, 0.99], 'Mainz 05': [1.02, 1.03], 'Augsburg': [1.00, 1.05], 'Union Berlin': [0.98, 1.06], 'Heidenheim': [0.94, 1.08], 'St. Pauli': [0.96, 1.07], 'Bochum': [0.92, 1.10], 'Holstein Kiel': [0.88, 1.14] },
+                Ligue_1: { 'PSG': [1.34, 0.72], 'Monaco': [1.18, 0.86], 'Marseille': [1.16, 0.88], 'Lyon': [1.14, 0.90], 'Lille': [1.15, 0.89], 'Nice': [1.12, 0.93], 'Lens': [1.10, 0.95], 'Rennes': [1.08, 0.97], 'Reims': [1.02, 1.03], 'Toulouse': [1.00, 1.05], 'Strasbourg': [1.00, 1.04], 'Brest': [1.04, 1.01], 'Montpellier': [0.96, 1.07], 'Nantes': [0.96, 1.07], 'Auxerre': [0.94, 1.08], 'Saint-Etienne': [0.94, 1.08], 'Le Havre': [0.90, 1.12], 'Angers': [0.88, 1.14] },
+                Eredivisie: { 'PSV Eindhoven': [1.26, 0.80], 'Ajax': [1.24, 0.82], 'Feyenoord': [1.22, 0.84], 'AZ Alkmaar': [1.14, 0.92], 'Twente': [1.12, 0.94], 'Utrecht': [1.06, 1.00], 'Sparta Rotterdam': [1.00, 1.05], 'Heerenveen': [0.98, 1.06], 'NEC Nijmegen': [0.96, 1.08], 'Go Ahead Eagles': [0.94, 1.08], 'Fortuna Sittard': [0.92, 1.10], 'PEC Zwolle': [0.90, 1.12], 'Almere City': [0.88, 1.14], 'Heracles Almelo': [0.90, 1.12], 'RKC Waalwijk': [0.86, 1.16], 'Willem II': [0.94, 1.08], 'NAC Breda': [0.92, 1.10], 'Groningen': [0.90, 1.12] },
+                Brasileirao: { 'Athletico Paranaense': [1.10, 0.94], 'Atletico Goianiense': [0.97, 1.09], 'Atletico Mineiro': [1.20, 0.86], 'Bahia': [1.02, 1.04], 'Botafogo': [1.08, 0.98], 'Corinthians': [1.05, 1.01], 'Criciuma': [0.92, 1.14], 'Cruzeiro': [1.04, 1.02], 'Cuiaba': [0.98, 1.08], 'Flamengo': [1.30, 0.78], 'Fluminense': [1.10, 0.96], 'Fortaleza': [1.06, 1.00], 'Gremio': [1.14, 0.92], 'Internacional': [1.12, 0.94], 'Juventude': [0.96, 1.10], 'Mirassol': [0.93, 1.15], 'Palmeiras': [1.28, 0.80], 'RB Bragantino': [1.08, 0.96], 'Sao Paulo': [1.18, 0.88], 'Vasco da Gama': [1.00, 1.06], 'Vitoria': [0.94, 1.12] },
+                BrasileiroSerieB: { 'America Mineiro': [1.00, 1.00], 'Athletic Club': [1.00, 1.00], 'Atletico Goianiense': [0.97, 1.09], 'Avai': [1.00, 1.00], 'Botafogo-SP': [1.00, 1.00], 'Ceara': [1.00, 1.00], 'Clube De Regatas Brasil': [1.00, 1.00], 'Criciuma': [0.92, 1.14], 'Cuiaba': [0.98, 1.08], 'Fortaleza': [1.06, 1.00], 'Goias': [1.00, 1.00], 'Gremio Novorizontino': [1.00, 1.00], 'Juventude': [0.96, 1.10], 'Londrina': [1.00, 1.00], 'Nautico': [1.00, 1.00], 'Operario-PR': [1.00, 1.00], 'Ponte Preta': [1.00, 1.00], 'Sao Bernardo': [1.00, 1.00], 'Sport Recife': [1.00, 1.00], 'Vila Nova FC': [1.00, 1.00], 'Coritiba': [1.00, 1.00], 'Paysandu': [1.00, 1.00], 'Ituano': [1.00, 1.00], 'Guarani': [1.00, 1.00], 'Chapecoense': [1.00, 1.00], 'Tombense': [1.00, 1.00], 'Brusque': [1.00, 1.00], 'Amazonas': [1.00, 1.00], 'Ferroviaria': [1.00, 1.00], 'Remo': [1.00, 1.00], 'Sampaio Correa': [1.00, 1.00], 'Volta Redonda': [1.00, 1.00] },
+                MLS: { 'Inter Miami CF': [1.18, 0.86], 'Los Angeles FC': [1.16, 0.88], 'Columbus Crew': [1.14, 0.90], 'FC Cincinnati': [1.13, 0.91], 'Philadelphia Union': [1.10, 0.94], 'New England Revolution': [1.08, 0.96], 'Atlanta United': [1.09, 0.95], 'Orlando City SC': [1.07, 0.97], 'New York City FC': [1.06, 0.98], 'Nashville SC': [1.05, 0.99], 'Seattle Sounders FC': [1.04, 1.00], 'Portland Timbers': [1.03, 1.01], 'Minnesota United FC': [1.02, 1.02], 'FC Dallas': [1.01, 1.03], 'Austin FC': [1.00, 1.04], 'Houston Dynamo FC': [0.99, 1.05], 'LA Galaxy': [0.98, 1.06], 'Vancouver Whitecaps FC': [0.97, 1.07], 'Chicago Fire FC': [0.96, 1.08], 'Charlotte FC': [0.95, 1.09], 'CF Montreal': [0.94, 1.10], 'Sporting Kansas City': [0.93, 1.11], 'New York Red Bulls': [0.92, 1.12], 'Real Salt Lake': [0.91, 1.13], 'DC United': [0.90, 1.14], 'San Jose Earthquakes': [0.89, 1.15], 'Colorado Rapids': [0.88, 1.16], 'Toronto FC': [0.87, 1.17], 'St. Louis City SC': [0.86, 1.18] },
+                Libertadores: { 'Flamengo': [1.30, 0.78], 'Palmeiras': [1.28, 0.80], 'River Plate': [1.26, 0.82], 'Boca Juniors': [1.22, 0.84], 'Nacional': [1.12, 0.92], 'Penarol': [1.10, 0.94], 'Olimpia': [1.05, 1.00], 'Barcelona SC': [1.08, 0.96], 'Independiente del Valle': [1.10, 0.94], 'LDU Quito': [1.08, 0.96], 'Estudiantes': [1.06, 1.00], 'Racing': [1.08, 0.98], 'Colo Colo': [1.02, 1.04], 'Cerro Porteno': [1.00, 1.05], 'Atletico Mineiro': [1.20, 0.86], 'Sao Paulo': [1.18, 0.88], 'Gremio': [1.14, 0.92], 'Internacional': [1.12, 0.94], 'Universidad Catolica': [1.02, 1.04], 'Bolivar': [1.00, 1.04], 'The Strongest': [0.98, 1.06], 'Libertad': [1.04, 1.02], 'Alianza Lima': [0.94, 1.10], 'Sporting Cristal': [1.02, 1.04], 'Deportivo Tachira': [0.92, 1.12], 'Caracas FC': [0.90, 1.14], 'Nacional Asuncion': [0.96, 1.08] },
+                Sudamericana: { 'Athletico Paranaense': [1.10, 0.94], 'Bragantino': [1.08, 0.96], 'Santos': [1.06, 1.00], 'Cruzeiro': [1.04, 1.02], 'Defensa y Justicia': [1.02, 1.04], 'Lanus': [1.00, 1.05], 'Newells Old Boys': [0.98, 1.06], 'Rosario Central': [1.00, 1.04], 'Universitario': [1.04, 1.02], 'Sporting Cristal': [1.02, 1.04], 'Emelec': [1.00, 1.05], 'Deportivo Cali': [0.98, 1.06], 'Junior': [1.02, 1.04], 'Once Caldas': [0.96, 1.08], 'La Equidad': [0.94, 1.10], 'Fortaleza': [1.06, 1.00], 'America de Cali': [1.02, 1.06], 'Macara': [0.95, 1.12], 'Huracan': [1.02, 1.04], 'Velez Sarsfield': [1.06, 1.00], 'Penarol': [1.10, 0.94], 'Nacional': [1.12, 0.92], 'Bolivar': [1.00, 1.04], 'Jorge Wilstermann': [0.96, 1.08] },
+                Mundial_2026: { 'Argentina': [1.32, 0.78], 'Francia': [1.28, 0.80], 'Brasil': [1.27, 0.81], 'España': [1.26, 0.82], 'Inglaterra': [1.24, 0.83], 'Portugal': [1.22, 0.84], 'Países Bajos': [1.20, 0.86], 'Alemania': [1.18, 0.87], 'Colombia': [1.14, 0.92], 'Uruguay': [1.13, 0.93], 'Marruecos': [1.12, 0.94], 'Croacia': [1.10, 0.95], 'Japón': [1.10, 0.96], 'México': [1.09, 0.96], 'Senegal': [1.08, 0.97], 'Estados Unidos': [1.08, 0.97], 'Ecuador': [1.06, 0.99], 'Austria': [1.06, 0.99], 'Bélgica': [1.05, 1.00], 'Suiza': [1.05, 1.00], 'Turquía': [1.04, 1.01], 'Australia': [1.03, 1.02], 'Corea del Sur': [1.03, 1.02], 'Paraguay': [1.02, 1.03], 'Noruega': [1.04, 1.01], 'Escocia': [1.03, 1.02], 'República Checa': [1.02, 1.03], 'Canadá': [1.04, 1.00], 'Irán': [1.01, 1.04], 'Suecia': [1.01, 1.04], 'Egipto': [1.01, 1.04], 'Costa de Marfil': [1.01, 1.04], 'Arabia Saudita': [1.00, 1.05], 'Argelia': [1.02, 1.04], 'Bosnia y Herzegovina': [1.00, 1.05], 'Ghana': [0.99, 1.06], 'Uzbekistán': [0.99, 1.06], 'Nigeria': [0.99, 1.06], 'Jordania': [0.98, 1.07], 'Irak': [0.97, 1.08], 'RD del Congo': [0.97, 1.08], 'Sudáfrica': [0.96, 1.09], 'Catar': [0.95, 1.10], 'Túnez': [0.95, 1.10], 'Panamá': [0.94, 1.11], 'Nueva Zelanda': [0.90, 1.15], 'Cabo Verde': [0.89, 1.16], 'Curazao': [0.85, 1.18], 'Haití': [0.86, 1.17] },
+                Championship: { 'Leeds United': [1.15, 0.89], 'Leicester City': [1.14, 0.90], 'Southampton': [1.12, 0.92], 'Norwich City': [1.08, 0.96], 'West Bromwich Albion': [1.06, 0.98], 'Middlesbrough': [1.07, 0.97], 'Coventry City': [1.05, 0.99], 'Sunderland': [1.04, 1.00], 'Blackburn Rovers': [1.03, 1.01], 'Millwall': [1.00, 1.04], 'Watford': [1.02, 1.02], 'Bristol City': [1.01, 1.03], 'Hull City': [1.00, 1.04], 'Preston North End': [0.99, 1.05], 'Swansea City': [0.98, 1.06], 'Cardiff City': [0.97, 1.07], 'Stoke City': [0.96, 1.08], 'Sheffield Wednesday': [0.95, 1.09], 'QPR': [0.94, 1.10], 'Plymouth Argyle': [0.93, 1.11], 'Portsmouth': [0.92, 1.12], 'Luton Town': [0.95, 1.09], 'Derby County': [0.94, 1.10], 'Oxford United': [0.90, 1.14], 'Burnley': [1.13, 0.91] }
             };
 
-            // Fuerza de corners generada dinámicamente a partir de STRENGTH
             function buildCornerStrength() {
                 const cs = {};
                 for (const league in STRENGTH) {
                     cs[league] = {};
                     const teams = STRENGTH[league];
-                    // Calcular promedio de ataque y defensa en la liga
-                    let sumAtk = 0,
-                        sumDef = 0,
-                        count = 0;
-                    for (const t in teams) {
-                        sumAtk += teams[t][0];
-                        sumDef += teams[t][1];
-                        count++;
-                    }
+                    let sumAtk = 0, sumDef = 0, count = 0;
+                    for (const t in teams) { sumAtk += teams[t][0]; sumDef += teams[t][1]; count++; }
                     const avgAtk = sumAtk / count;
                     const avgDef = sumDef / count;
                     for (const t in teams) {
                         const atkRatio = teams[t][0] / avgAtk;
                         const defRatio = teams[t][1] / avgDef;
-                        // Equipos más ofensivos generan más corners; más defensivos conceden menos
                         cs[league][t] = [
                             Math.max(0.7, 0.7 + 0.3 * atkRatio),
                             Math.max(0.7, 0.7 + 0.3 * (2 - defRatio))
@@ -2006,7 +1426,6 @@
                 const base = getBaseStr(league, team);
                 const elo = getELO(league, team);
                 let eloFactor = elo / 1500;
-                // TECHO: limitar eloFactor entre 0.82 y 1.18 para evitar valores extremos
                 eloFactor = Math.max(0.82, Math.min(1.18, eloFactor));
                 const formFactor = getFormFactor(league, team);
                 const atk = base.atk * eloFactor * formFactor;
@@ -2015,9 +1434,7 @@
             }
 
             // ==================== MODELO POISSON / DIXON-COLES ====================
-            function getRho(leagueCode) {
-                return LEAGUES_CFG[leagueCode] ? LEAGUES_CFG[leagueCode].rho : -0.13;
-            }
+            function getRho(leagueCode) { return LEAGUES_CFG[leagueCode] ? LEAGUES_CFG[leagueCode].rho : -0.13; }
 
             function dcTau(i, j, lh, la, rho) {
                 if (i === 0 && j === 0) return Math.max(0.001, 1 - lh * la * rho);
@@ -2053,11 +1470,9 @@
                         total += p;
                     }
                 }
-                for (let i = 0; i <= MAX_GOALS; i++) {
-                    for (let j = 0; j <= MAX_GOALS; j++) {
+                for (let i = 0; i <= MAX_GOALS; i++)
+                    for (let j = 0; j <= MAX_GOALS; j++)
                         dist[i][j] /= total;
-                    }
-                }
                 return dist;
             }
 
@@ -2067,22 +1482,13 @@
                 const dr = probs.dr * bias.draw;
                 const aw = probs.aw * bias.away;
                 const sum = hw + dr + aw;
-                return {
-                    hw: hw / sum * 100,
-                    dr: dr / sum * 100,
-                    aw: aw / sum * 100
-                };
+                return { hw: hw / sum * 100, dr: dr / sum * 100, aw: aw / sum * 100 };
             }
 
             function computeMarkets(dist, home, away, leagueCode, cLam) {
-                let hw = 0,
-                    dr = 0,
-                    aw = 0;
-                let over15 = 0,
-                    over25 = 0,
-                    btts = 0;
-                const htLam = (LEAGUES_CFG[leagueCode] ? LEAGUES_CFG[leagueCode].htRatio : 0.44) * (home.lambda + away
-                    .lambda);
+                let hw = 0, dr = 0, aw = 0;
+                let over15 = 0, over25 = 0, btts = 0;
+                const htLam = (LEAGUES_CFG[leagueCode] ? LEAGUES_CFG[leagueCode].htRatio : 0.44) * (home.lambda + away.lambda);
                 const overHT05 = 1 - pPMF(0, htLam);
                 for (let i = 0; i <= MAX_GOALS; i++) {
                     for (let j = 0; j <= MAX_GOALS; j++) {
@@ -2097,19 +1503,11 @@
                     }
                 }
                 const sum1x2 = hw + dr + aw;
-                const rawProbs = {
-                    hw: hw / sum1x2 * 100,
-                    dr: dr / sum1x2 * 100,
-                    aw: aw / sum1x2 * 100
-                };
-                const calibrated = applyCalibration(leagueCode, { hw: rawProbs.hw / 100, dr: rawProbs.dr / 100, aw: rawProbs
-                        .aw / 100 });
-                const c75 = 1 - pCDF(7.5, cLam),
-                    c85 = 1 - pCDF(8.5, cLam);
+                const rawProbs = { hw: hw / sum1x2 * 100, dr: dr / sum1x2 * 100, aw: aw / sum1x2 * 100 };
+                const calibrated = applyCalibration(leagueCode, { hw: rawProbs.hw / 100, dr: rawProbs.dr / 100, aw: rawProbs.aw / 100 });
+                const c75 = 1 - pCDF(7.5, cLam), c85 = 1 - pCDF(8.5, cLam);
                 return {
-                    hw: calibrated.hw.toFixed(1),
-                    dr: calibrated.dr.toFixed(1),
-                    aw: calibrated.aw.toFixed(1),
+                    hw: calibrated.hw.toFixed(1), dr: calibrated.dr.toFixed(1), aw: calibrated.aw.toFixed(1),
                     btts: Math.max(0, Math.min(100, btts * 100)),
                     o15: Math.max(0, Math.min(100, over15 * 100)),
                     o25: Math.max(0, Math.min(100, over25 * 100)),
@@ -2121,56 +1519,36 @@
 
             function predictMatch(leagueCode, home, away, apiStats) {
                 const cfg = LEAGUES_CFG[leagueCode];
-                const gAvg = cfg.goals,
-                    cAvg = cfg.corners,
-                    hfa = cfg.hfa,
-                    rho = cfg.rho;
+                const gAvg = cfg.goals, cAvg = cfg.corners, hfa = cfg.hfa, rho = cfg.rho;
                 let lh, la, cLam;
                 if (apiStats && apiStats.home && apiStats.away) {
-                    const h = apiStats.home,
-                        a = apiStats.away;
-                    const ha = h.gfHome > 0 ? h.gfHome / (gAvg / 2) : 1,
-                        hd = h.gaHome > 0 ? h.gaHome / (gAvg / 2) : 1;
-                    const aa = a.gfAway > 0 ? a.gfAway / (gAvg / 2) : 1,
-                        ad = a.gaAway > 0 ? a.gaAway / (gAvg / 2) : 1;
+                    const h = apiStats.home, a = apiStats.away;
+                    const ha = h.gfHome > 0 ? h.gfHome / (gAvg / 2) : 1, hd = h.gaHome > 0 ? h.gaHome / (gAvg / 2) : 1;
+                    const aa = a.gfAway > 0 ? a.gfAway / (gAvg / 2) : 1, ad = a.gaAway > 0 ? a.gaAway / (gAvg / 2) : 1;
                     const apiLh = Math.max(0.3, (gAvg / 2) * ha * ad * hfa);
                     const apiLa = Math.max(0.3, (gAvg / 2) * aa * hd * (1 / hfa));
-                    const hBase = getStr(leagueCode, home),
-                        aBase = getStr(leagueCode, away);
+                    const hBase = getStr(leagueCode, home), aBase = getStr(leagueCode, away);
                     const baseLh = Math.max(0.3, (gAvg / 2) * hBase.atk * aBase.def * hfa);
                     const baseLa = Math.max(0.3, (gAvg / 2) * aBase.atk * hBase.def * (1 / hfa));
                     const weight = Math.min((h.played + a.played) / 20, 0.8);
                     lh = baseLh * (1 - weight) + apiLh * weight;
                     la = baseLa * (1 - weight) + apiLa * weight;
                 } else {
-                    const hs = getStr(leagueCode, home),
-                        as2 = getStr(leagueCode, away);
+                    const hs = getStr(leagueCode, home), as2 = getStr(leagueCode, away);
                     lh = Math.max(0.3, (gAvg / 2) * hs.atk * as2.def * hfa);
                     la = Math.max(0.3, (gAvg / 2) * as2.atk * hs.def * (1 / hfa));
                 }
-                const hcs = getCornerStr(leagueCode, home),
-                    acs = getCornerStr(leagueCode, away);
+                const hcs = getCornerStr(leagueCode, home), acs = getCornerStr(leagueCode, away);
                 cLam = cAvg * ((hcs.atk * acs.def * hfa) + (acs.atk * hcs.def)) / 2;
-
                 const dist = bivariateDist(lh, la, rho);
                 const markets = computeMarkets(dist, { lambda: lh }, { lambda: la }, leagueCode, cLam);
                 return {
-                    home: home,
-                    away: away,
-                    leagueName: cfg.name,
-                    lh: lh.toFixed(3),
-                    la: la.toFixed(3),
-                    hw: markets.hw,
-                    dr: markets.dr,
-                    aw: markets.aw,
-                    btts: markets.btts,
-                    o15: markets.o15,
-                    o25: markets.o25,
-                    ht05: markets.ht05,
-                    c75: markets.c75,
-                    c85: markets.c85,
-                    cLam: cLam.toFixed(2),
-                    usingAPI: !!apiStats
+                    home, away, leagueName: cfg.name,
+                    lh: lh.toFixed(3), la: la.toFixed(3),
+                    hw: markets.hw, dr: markets.dr, aw: markets.aw,
+                    btts: markets.btts, o15: markets.o15, o25: markets.o25,
+                    ht05: markets.ht05, c75: markets.c75, c85: markets.c85,
+                    cLam: cLam.toFixed(2), usingAPI: !!apiStats
                 };
             }
 
@@ -2188,8 +1566,6 @@
                 let stake = Math.min(rawStake, bankroll * config.maxStakePct);
                 const minAbs = config.minStake || 50;
                 const maxAbs = config.maxStake || 1000;
-                // Si el stake calculado es menor que el mínimo, NO se fuerza.
-                // Se devuelve 0 para indicar "stake insuficiente".
                 if (stake < minAbs) return 0;
                 if (stake > maxAbs) stake = maxAbs;
                 return Math.min(stake, bankroll);
@@ -2197,56 +1573,42 @@
 
             // ==================== API BZZOIRO ====================
             function apiBase() { return (config.apiBaseUrl || 'https://sports.bzzoiro.com').replace(/\/+$/, ''); }
-
-            function apiHdrs(key) { return { 'Authorization': 'Token ' + (key || config.apiKey),
-                    'Accept': 'application/json' }; }
+            function apiHdrs(key) { return { 'Authorization': 'Token ' + (key || config.apiKey), 'Accept': 'application/json' }; }
             async function apiFetch(path) {
                 if (!config.apiKey) throw new Error('Sin Token configurado');
                 const r = await fetch(apiBase() + '/api/v2' + path, { headers: apiHdrs() });
-                if (!r.ok) { const t = await r.text().catch(function() { return ''; }); throw new Error('HTTP ' + r
-                        .status + ': ' + t.substring(0, 100)); }
+                if (!r.ok) { const t = await r.text().catch(function() { return ''; }); throw new Error('HTTP ' + r.status + ': ' + t.substring(0, 100)); }
                 return r.json();
             }
             async function testAPIKey() {
-                const keyEl = document.getElementById('cfg-apikey');
-                const baseEl = document.getElementById('cfg-apibase');
+                const keyEl = document.getElementById('cfg-apikey'), baseEl = document.getElementById('cfg-apibase');
                 const key = (keyEl ? keyEl.value : '').trim();
                 const base = ((baseEl ? baseEl.value : '') || 'https://sports.bzzoiro.com').replace(/\/+$/, '');
                 const res = document.getElementById('api-test-result');
-                if (!key) { res.innerHTML =
-                        '<span style="color:var(--accent);font-size:.72rem">Ingresa tu token primero</span>'; return; }
-                res.innerHTML =
-                    '<span style="color:var(--yellow);font-size:.72rem"><span class="spin"></span> Verificando...</span>';
+                if (!key) { res.innerHTML = '<span style="color:var(--accent);font-size:.72rem">Ingresa tu token primero</span>'; return; }
+                res.innerHTML = '<span style="color:var(--yellow);font-size:.72rem"><span class="spin"></span> Verificando...</span>';
                 try {
                     const r = await fetch(base + '/api/v2/events/live/', { headers: apiHdrs(key) });
-                    if (r.ok) { const d = await r.json(); res.innerHTML =
-                            '<span style="color:var(--green);font-size:.72rem">Token valido - ' + (d.count || 0) +
-                            ' partidos en vivo</span>'; } else if (r.status === 401 || r.status === 403) { res
-                            .innerHTML = '<span style="color:var(--accent);font-size:.72rem">Token invalido (' + r
-                            .status + ')</span>'; } else { res.innerHTML =
-                            '<span style="color:var(--accent);font-size:.72rem">Error ' + r.status + '</span>'; }
-                } catch (e) { res.innerHTML = '<span style="color:var(--accent);font-size:.72rem">Error: ' + e.message +
-                        '</span>'; }
+                    if (r.ok) { const d = await r.json(); res.innerHTML = '<span style="color:var(--green);font-size:.72rem">Token valido - ' + (d.count || 0) + ' partidos en vivo</span>'; }
+                    else if (r.status === 401 || r.status === 403) { res.innerHTML = '<span style="color:var(--accent);font-size:.72rem">Token invalido (' + r.status + ')</span>'; }
+                    else { res.innerHTML = '<span style="color:var(--accent);font-size:.72rem">Error ' + r.status + '</span>'; }
+                } catch (e) { res.innerHTML = '<span style="color:var(--accent);font-size:.72rem">Error: ' + e.message + '</span>'; }
             }
             async function debugAPI() {
-                const keyEl = document.getElementById('cfg-apikey');
-                const baseEl = document.getElementById('cfg-apibase');
+                const keyEl = document.getElementById('cfg-apikey'), baseEl = document.getElementById('cfg-apibase');
                 const key = (keyEl ? keyEl.value : '').trim();
                 const base = ((baseEl ? baseEl.value : '') || 'https://sports.bzzoiro.com').replace(/\/+$/, '');
-                const out = document.getElementById('api-debug-output');
-                const ta = document.getElementById('debug-textarea');
+                const out = document.getElementById('api-debug-output'), ta = document.getElementById('debug-textarea');
                 out.style.display = 'block';
                 if (!key) { ta.value = 'Ingresa tu token primero.'; return; }
-                ta.value = 'Bzzoiro v2 Debug\nBase: ' + base + '\nHeader: Authorization: Token ' + key.substring(0, 8) +
-                    '...\n\n';
+                ta.value = 'Bzzoiro v2 Debug\nBase: ' + base + '\nHeader: Authorization: Token ' + key.substring(0, 8) + '...\n\n';
                 const eps = ['/api/v2/events/live/', '/api/v2/leagues/?limit=3', '/api/v2/teams/?limit=3&league_id=1'];
                 for (const ep of eps) {
                     ta.value += '--- GET ' + ep + ' ---\n';
                     try {
                         const r = await fetch(base + ep, { headers: apiHdrs(key) });
                         const body = await r.text();
-                        ta.value += (r.ok ? 'OK ' : 'FAIL ') + r.status + '\n' + body.substring(0, 400) + (body.length >
-                            400 ? '\n...(truncado)' : '') + '\n\n';
+                        ta.value += (r.ok ? 'OK ' : 'FAIL ') + r.status + '\n' + body.substring(0, 400) + (body.length > 400 ? '\n...(truncado)' : '') + '\n\n';
                     } catch (e) { ta.value += 'Error: ' + e.message + '\n\n'; }
                 }
             }
@@ -2255,29 +1617,19 @@
                 if (seasonIdCache[ck]) return seasonIdCache[ck];
                 const d = await apiFetch('/leagues/' + leagueId + '/season/');
                 const sid = d.season ? d.season.id : null;
-                if (sid) { seasonIdCache[ck] = sid;
-                    saveAll(); }
+                if (sid) { seasonIdCache[ck] = sid; saveAll(); }
                 return sid;
             }
             async function findTeamId(name, leagueId, leagueCode) {
                 const ck = name + '_' + leagueId;
                 if (teamIdCache[ck]) return teamIdCache[ck];
                 let apiName = name;
-                if (leagueCode && API_TEAM_NAME_MAP[leagueCode] && API_TEAM_NAME_MAP[leagueCode][name]) {
-                    apiName = API_TEAM_NAME_MAP[leagueCode][name];
-                }
+                if (leagueCode && API_TEAM_NAME_MAP[leagueCode] && API_TEAM_NAME_MAP[leagueCode][name]) apiName = API_TEAM_NAME_MAP[leagueCode][name];
                 try {
-                    const d = await apiFetch('/teams/?name=' + encodeURIComponent(apiName) + '&league_id=' + leagueId +
-                        '&limit=10');
+                    const d = await apiFetch('/teams/?name=' + encodeURIComponent(apiName) + '&league_id=' + leagueId + '&limit=10');
                     const rs = (d.results || d);
-                    if (Array.isArray(rs) && rs.length > 0) {
-                        teamIdCache[ck] = rs[0].id;
-                        saveAll();
-                        return rs[0].id;
-                    }
-                } catch (e) {
-                    console.warn('Error buscando equipo:', e);
-                }
+                    if (Array.isArray(rs) && rs.length > 0) { teamIdCache[ck] = rs[0].id; saveAll(); return rs[0].id; }
+                } catch (e) { console.warn('Error buscando equipo:', e); }
                 return null;
             }
             async function loadAPIData() {
@@ -2285,10 +1637,7 @@
                 const home = document.getElementById('home').value;
                 const away = document.getElementById('away').value;
                 const statusBox = document.getElementById('api-status-box');
-                if (!league || !home || !away || !config.apiKey) {
-                    showToast('Selecciona liga, equipos y configura el token', 'error');
-                    return;
-                }
+                if (!league || !home || !away || !config.apiKey) { showToast('Selecciona liga, equipos y configura el token', 'error'); return; }
                 statusBox.className = 'status-pill loading';
                 statusBox.textContent = 'Cargando datos de Bzzoiro...';
                 statusBox.classList.remove('hidden');
@@ -2298,16 +1647,12 @@
                     const homeId = await findTeamId(home, leagueId, league);
                     const awayId = await findTeamId(away, leagueId, league);
                     if (!homeId || !awayId) throw new Error('No se encontraron los equipos en la API');
-                    currentAPIData = {
-                        home: { played: 5, gfHome: 7, gaHome: 4 },
-                        away: { played: 5, gfAway: 3, gaAway: 5 }
-                    };
+                    currentAPIData = { home: { played: 5, gfHome: 7, gaHome: 4 }, away: { played: 5, gfAway: 3, gaAway: 5 } };
                     statusBox.className = 'status-pill loaded';
                     statusBox.textContent = 'Datos cargados correctamente';
                     document.getElementById('analyze-btn').disabled = false;
                     document.getElementById('data-mode-banner').className = 'data-mode-ok';
-                    document.getElementById('data-mode-banner').textContent =
-                        'MODO API ACTIVO — Datos reales combinados con modelo';
+                    document.getElementById('data-mode-banner').textContent = 'MODO API ACTIVO — Datos reales combinados con modelo';
                 } catch (e) {
                     statusBox.className = 'status-pill error';
                     statusBox.textContent = 'Error: ' + e.message;
@@ -2322,42 +1667,22 @@
                 const oA = parseFloat(document.getElementById('odds-away').value);
                 if (!oH || !oD || !oA || oH <= 1 || oD <= 1 || oA <= 1) return;
                 const s = 1 / oH + 1 / oD + 1 / oA;
-                const impHome = (1 / oH) / s;
-                const impDraw = (1 / oD) / s;
-                const impAway = (1 / oA) / s;
-                // Calcular las probabilidades del modelo sin calibrar
-                const home = document.getElementById('home').value;
-                const away = document.getElementById('away').value;
+                const impHome = (1 / oH) / s, impDraw = (1 / oD) / s, impAway = (1 / oA) / s;
+                const home = document.getElementById('home').value, away = document.getElementById('away').value;
                 if (!home || !away) return;
-                const hs = getStr(leagueCode, home),
-                    as = getStr(leagueCode, away);
+                const hs = getStr(leagueCode, home), as = getStr(leagueCode, away);
                 const cfg = LEAGUES_CFG[leagueCode];
-                const gAvg = cfg.goals,
-                    hfa = cfg.hfa,
-                    rho = cfg.rho;
+                const gAvg = cfg.goals, hfa = cfg.hfa, rho = cfg.rho;
                 const lh = Math.max(0.3, (gAvg / 2) * hs.atk * as.def * hfa);
                 const la = Math.max(0.3, (gAvg / 2) * as.atk * hs.def * (1 / hfa));
                 const dist = bivariateDist(lh, la, rho);
-                let hw = 0,
-                    dr = 0,
-                    aw = 0;
-                for (let i = 0; i <= MAX_GOALS; i++) {
-                    for (let j = 0; j <= MAX_GOALS; j++) {
-                        const p = dist[i][j];
-                        if (i > j) hw += p;
-                        else if (j > i) aw += p;
-                        else dr += p;
-                    }
-                }
+                let hw = 0, dr = 0, aw = 0;
+                for (let i = 0; i <= MAX_GOALS; i++) for (let j = 0; j <= MAX_GOALS; j++) { const p = dist[i][j]; if (i > j) hw += p; else if (j > i) aw += p; else dr += p; }
                 const sumRaw = hw + dr + aw;
-                const modelHome = hw / sumRaw;
-                const modelDraw = dr / sumRaw;
-                const modelAway = aw / sumRaw;
-                // Calcular bias: ratio entre implícita del mercado y modelo
+                const modelHome = hw / sumRaw, modelDraw = dr / sumRaw, modelAway = aw / sumRaw;
                 const biasHome = modelHome > 0.001 ? impHome / modelHome : 1;
                 const biasDraw = modelDraw > 0.001 ? impDraw / modelDraw : 1;
                 const biasAway = modelAway > 0.001 ? impAway / modelAway : 1;
-                // Suavizar con sesgo anterior
                 const prev = calibrationBias[leagueCode] || { home: 1, draw: 1, away: 1 };
                 calibrationBias[leagueCode] = {
                     home: prev.home * 0.7 + biasHome * 0.3,
@@ -2372,10 +1697,7 @@
                 const league = document.getElementById('league').value;
                 const home = document.getElementById('home').value;
                 const away = document.getElementById('away').value;
-                if (!league || !home || !away) {
-                    showToast('Selecciona liga y equipos', 'error');
-                    return;
-                }
+                if (!league || !home || !away) { showToast('Selecciona liga y equipos', 'error'); return; }
                 updateCalibrationFromOdds(league);
                 const odds = {
                     home: parseFloat(document.getElementById('odds-home').value) || 0,
@@ -2393,55 +1715,26 @@
                 document.getElementById('main-screen').classList.add('hidden');
                 document.getElementById('result-screen').classList.remove('hidden');
                 document.getElementById('result-card').innerHTML = resultHTML;
-                // Animación de barras
-                setTimeout(() => {
-                    document.querySelectorAll('.bar-fill').forEach(bar => {
-                        bar.style.width = bar.getAttribute('data-width') + '%';
-                    });
-                }, 100);
+                setTimeout(() => { document.querySelectorAll('.bar-fill').forEach(bar => { bar.style.width = bar.getAttribute('data-width') + '%'; }); }, 100);
             }
 
             function buildResultHTML(pred, odds, league, home, away) {
                 const markets = [
-                    { id: '1X2-H', name: 'Victoria ' + home, prob: parseFloat(pred.hw), odds: odds.home,
-                        betType: 'home' },
+                    { id: '1X2-H', name: 'Victoria ' + home, prob: parseFloat(pred.hw), odds: odds.home, betType: 'home' },
                     { id: '1X2-D', name: 'Empate', prob: parseFloat(pred.dr), odds: odds.draw, betType: 'draw' },
-                    { id: '1X2-A', name: 'Victoria ' + away, prob: parseFloat(pred.aw), odds: odds.away,
-                    betType: 'away' },
+                    { id: '1X2-A', name: 'Victoria ' + away, prob: parseFloat(pred.aw), odds: odds.away, betType: 'away' },
                     { id: 'O15', name: 'Over 1.5 goles', prob: pred.o15, odds: odds.over15, betType: 'over15' },
                     { id: 'O25', name: 'Over 2.5 goles', prob: pred.o25, odds: odds.over25, betType: 'over25' },
                     { id: 'BTTS', name: 'BTTS (Si)', prob: pred.btts, odds: odds.btts, betType: 'btts' },
                     { id: 'HT05', name: 'Over 0.5 1T', prob: pred.ht05, odds: odds.ht05, betType: 'ht05' },
-                    { id: 'C75', name: 'Over 7.5 corners', prob: pred.c75, odds: odds.corners75,
-                    betType: 'corners75' },
-                    { id: 'C85', name: 'Over 8.5 corners', prob: pred.c85, odds: odds.corners85,
-                    betType: 'corners85' }
+                    { id: 'C75', name: 'Over 7.5 corners', prob: pred.c75, odds: odds.corners75, betType: 'corners75' },
+                    { id: 'C85', name: 'Over 8.5 corners', prob: pred.c85, odds: odds.corners85, betType: 'corners85' }
                 ];
 
-                let html = `
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-                        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('main-screen').classList.remove('hidden');document.getElementById('result-screen').classList.add('hidden');updateUI();" style="width:auto;padding:6px 12px;font-size:.65rem">← Volver</button>
-                        <span class="badge badge-api" style="font-size:.6rem">${pred.usingAPI ? 'API + MODELO' : 'MODELO ESTADÍSTICO'}</span>
-                    </div>
-                    <div class="match-prediction-bar">
-                        <div class="match-teams">
-                            <div class="team-block"><div class="team-name">${home}</div><div class="team-lambda">λ ${pred.lh}</div></div>
-                            <div class="vs-divider">VS</div>
-                            <div class="team-block"><div class="team-name">${away}</div><div class="team-lambda">λ ${pred.la}</div></div>
-                        </div>
-                        <div class="prob-triplet">
-                            <div class="prob-cell${parseFloat(pred.hw) > Math.max(parseFloat(pred.dr), parseFloat(pred.aw)) ? ' best' : ''}">
-                                <div class="prob-cell-label">Local</div><div class="prob-cell-val">${pred.hw}%</div>
-                            </div>
-                            <div class="prob-cell${parseFloat(pred.dr) > Math.max(parseFloat(pred.hw), parseFloat(pred.aw)) ? ' best' : ''}">
-                                <div class="prob-cell-label">Empate</div><div class="prob-cell-val">${pred.dr}%</div>
-                            </div>
-                            <div class="prob-cell${parseFloat(pred.aw) > Math.max(parseFloat(pred.hw), parseFloat(pred.dr)) ? ' best' : ''}">
-                                <div class="prob-cell-label">Visitante</div><div class="prob-cell-val">${pred.aw}%</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="ev-filter-tag" style="margin-bottom:10px">EV mínimo requerido: +${config.minEV}% | Kelly: ${(config.kellyFraction*100).toFixed(0)}% | Stake máx: ${(config.maxStakePct*100).toFixed(1)}%</div>`;
+                let html = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><button class="btn btn-ghost btn-sm" onclick="document.getElementById('main-screen').classList.remove('hidden');document.getElementById('result-screen').classList.add('hidden');updateUI();" style="width:auto;padding:6px 12px;font-size:.65rem">← Volver</button><span class="badge badge-api" style="font-size:.6rem">${pred.usingAPI ? 'API + MODELO' : 'MODELO ESTADÍSTICO'}</span></div>
+                <div class="match-prediction-bar"><div class="match-teams"><div class="team-block"><div class="team-name">${home}</div><div class="team-lambda">λ ${pred.lh}</div></div><div class="vs-divider">VS</div><div class="team-block"><div class="team-name">${away}</div><div class="team-lambda">λ ${pred.la}</div></div></div>
+                <div class="prob-triplet"><div class="prob-cell${parseFloat(pred.hw) > Math.max(parseFloat(pred.dr), parseFloat(pred.aw)) ? ' best' : ''}"><div class="prob-cell-label">Local</div><div class="prob-cell-val">${pred.hw}%</div></div><div class="prob-cell${parseFloat(pred.dr) > Math.max(parseFloat(pred.hw), parseFloat(pred.aw)) ? ' best' : ''}"><div class="prob-cell-label">Empate</div><div class="prob-cell-val">${pred.dr}%</div></div><div class="prob-cell${parseFloat(pred.aw) > Math.max(parseFloat(pred.hw), parseFloat(pred.dr)) ? ' best' : ''}"><div class="prob-cell-label">Visitante</div><div class="prob-cell-val">${pred.aw}%</div></div></div></div>
+                <div class="ev-filter-tag" style="margin-bottom:10px">EV mínimo requerido: +${config.minEV}% | Kelly: ${(config.kellyFraction*100).toFixed(0)}% | Stake máx: ${(config.maxStakePct*100).toFixed(1)}%</div>`;
 
                 let hasAnyValue = false;
                 markets.forEach(m => {
@@ -2449,66 +1742,30 @@
                     const stake = ev !== null && ev >= config.minEV ? kellyStake(m.prob / 100, m.odds) : 0;
                     const hasValue = ev !== null && ev >= config.minEV && stake > 0;
                     if (hasValue) hasAnyValue = true;
-                    const barColor = hasValue ? 'var(--green)' : (ev !== null && ev > 0 ? 'var(--yellow)' :
-                        'var(--accent)');
-                    html += `
-                        <div class="market ${hasValue ? 'has-value' : 'no-value'}">
-                            <div class="market-name">
-                                ${m.name}
-                                ${hasValue ? '<span class="badge badge-ev">VALUE</span>' : (ev !== null && ev > 0 ? '<span class="badge badge-no">EV BAJO</span>' : '<span class="badge badge-info">SIN VALOR</span>')}
-                            </div>
-                            <div class="prob-row">
-                                <span class="prob-label">Probabilidad</span>
-                                <div class="bar-track"><div class="bar-fill" data-width="${Math.min(100, m.prob)}" style="width:0%;background:${barColor}"></div></div>
-                                <span class="prob-val">${typeof m.prob === 'number' ? m.prob.toFixed(1) : m.prob}%</span>
-                            </div>
-                            <div class="ev-strip">
-                                <div class="ev-chip"><span class="lbl">Cuota</span><span class="val">${m.odds || '--'}</span></div>
-                                <div class="ev-chip"><span class="lbl">EV</span><span class="val ${ev !== null && ev >= 0 ? 'pos' : 'neg'}">${ev !== null ? (ev >= 0 ? '+' : '') + ev.toFixed(1) + '%' : '--'}</span></div>
-                                ${hasValue ? `<div class="ev-chip"><span class="lbl">Kelly Stake</span><span class="val pos">$${stake.toFixed(0)}</span></div>` : (stake === 0 && ev !== null && ev >= config.minEV ? `<div class="ev-chip"><span class="lbl">Stake</span><span class="val" style="color:var(--yellow)">Insuficiente</span></div>` : '')}
-                            </div>
-                            ${hasValue ? `
-                                <div class="stake-card">
-                                    <div class="stake-label">Stake Recomendado</div>
-                                    <div class="stake-amount">$${stake.toFixed(0)}</div>
-                                    <div class="stake-meta">
-                                        <span>${(stake/bankroll*100).toFixed(2)}% del bankroll</span>
-                                        <span class="pos">+${ev.toFixed(1)}% EV</span>
-                                    </div>
-                                    <button class="btn btn-primary mt8" style="font-size:.7rem;padding:10px" onclick="placeBet('${m.id}', ${stake}, ${m.odds}, '${m.name.replace(/'/g, "\\'")}', '${league}', '${home.replace(/'/g, "\\'")}', '${away.replace(/'/g, "\\'")}', ${m.prob})">Realizar Apuesta</button>
-                                </div>
-                            ` : (stake === 0 && ev !== null && ev >= config.minEV ? `<div class="warn-box" style="margin-top:8px">Stake calculado ($${kellyStake(m.prob/100, m.odds).toFixed(0)}) menor al mínimo configurado ($${config.minStake}). No se fuerza la apuesta.</div>` : '')}
-                        </div>`;
+                    const barColor = hasValue ? 'var(--green)' : (ev !== null && ev > 0 ? 'var(--yellow)' : 'var(--accent)');
+                    html += `<div class="market ${hasValue ? 'has-value' : 'no-value'}">
+                        <div class="market-name">${m.name} ${hasValue ? '<span class="badge badge-ev">VALUE</span>' : (ev !== null && ev > 0 ? '<span class="badge badge-no">EV BAJO</span>' : '<span class="badge badge-info">SIN VALOR</span>')}</div>
+                        <div class="prob-row"><span class="prob-label">Probabilidad</span><div class="bar-track"><div class="bar-fill" data-width="${Math.min(100, m.prob)}" style="width:0%;background:${barColor}"></div></div><span class="prob-val">${typeof m.prob === 'number' ? m.prob.toFixed(1) : m.prob}%</span></div>
+                        <div class="ev-strip">
+                            <div class="ev-chip"><span class="lbl">Cuota</span><span class="val">${m.odds || '--'}</span></div>
+                            <div class="ev-chip"><span class="lbl">EV</span><span class="val ${ev !== null && ev >= 0 ? 'pos' : 'neg'}">${ev !== null ? (ev >= 0 ? '+' : '') + ev.toFixed(1) + '%' : '--'}</span></div>
+                            ${hasValue ? `<div class="ev-chip"><span class="lbl">Kelly Stake</span><span class="val pos">$${stake.toFixed(0)}</span></div>` : (stake === 0 && ev !== null && ev >= config.minEV ? `<div class="ev-chip"><span class="lbl">Stake</span><span class="val" style="color:var(--yellow)">Insuficiente</span></div>` : '')}
+                        </div>
+                        ${hasValue ? `<div class="stake-card"><div class="stake-label">Stake Recomendado</div><div class="stake-amount">$${stake.toFixed(0)}</div><div class="stake-meta"><span>${(stake/bankroll*100).toFixed(2)}% del bankroll</span><span class="pos">+${ev.toFixed(1)}% EV</span></div><button class="btn btn-primary mt8" style="font-size:.7rem;padding:10px" onclick="placeBet('${m.id}', ${stake}, ${m.odds}, '${m.name.replace(/'/g, "\\'")}', '${league}', '${home.replace(/'/g, "\\'")}', '${away.replace(/'/g, "\\'")}', ${m.prob})">Realizar Apuesta</button></div>` : (stake === 0 && ev !== null && ev >= config.minEV ? `<div class="warn-box" style="margin-top:8px">Stake calculado ($${kellyStake(m.prob/100, m.odds).toFixed(0)}) menor al mínimo configurado ($${config.minStake}). No se fuerza la apuesta.</div>` : '')}
+                    </div>`;
                 });
 
-                if (!hasAnyValue) {
-                    html +=
-                        '<div class="warn-box">Ningún mercado alcanza el EV mínimo configurado (+' + config.minEV +
-                        '%).</div>';
-                }
+                if (!hasAnyValue) html += '<div class="warn-box">Ningún mercado alcanza el EV mínimo configurado (+' + config.minEV + '%).</div>';
                 return html;
             }
 
-            // ==================== GESTIÓN DE APUESTAS (LIQUIDACIÓN CON RESULTADO REAL) ====================
+            // ==================== GESTIÓN DE APUESTAS ====================
             function placeBet(marketId, stake, odds, marketName, league, home, away, prob) {
-                if (stake > bankroll) {
-                    showToast('Bankroll insuficiente', 'error');
-                    return;
-                }
+                if (stake > bankroll) { showToast('Bankroll insuficiente', 'error'); return; }
                 const bet = {
-                    id: Date.now(),
-                    date: new Date().toISOString(),
-                    league: league,
-                    home: home,
-                    away: away,
-                    market: marketId,
-                    marketName: marketName,
-                    stake: stake,
-                    odds: odds,
-                    prob: prob,
-                    status: 'pending',
-                    profit: 0,
-                    resultReal: null
+                    id: Date.now(), date: new Date().toISOString(),
+                    league, home, away, market: marketId, marketName,
+                    stake, odds, prob, status: 'pending', profit: 0, resultReal: null
                 };
                 betHistory.push(bet);
                 bankroll -= stake;
@@ -2517,79 +1774,48 @@
                 showToast('Apuesta registrada: $' + stake.toFixed(0) + ' a ' + marketName, 'success');
                 document.getElementById('main-screen').classList.remove('hidden');
                 document.getElementById('result-screen').classList.add('hidden');
+                switchTab('history');
             }
 
             function liquidateBet(index, won) {
                 return function() {
                     const bet = betHistory[index];
                     if (bet.status !== 'pending') return;
-                    // Preguntar resultado real del partido SIEMPRE
                     showResultModal(bet, won, index);
                 };
             }
 
             function showResultModal(bet, won, index) {
-                // Eliminar modal existente si hay
                 const existing = document.querySelector('.modal-overlay');
                 if (existing) existing.remove();
-
                 const overlay = document.createElement('div');
                 overlay.className = 'modal-overlay';
-                overlay.innerHTML = `
-                    <div class="modal-box">
-                        <h4>¿Resultado real del partido?</h4>
-                        <p style="font-size:0.8rem;color:var(--text2);margin-bottom:12px">${bet.home} vs ${bet.away}</p>
-                        <p style="font-size:0.65rem;color:var(--text3);margin-bottom:8px">Esto actualizará ELO y forma, sin importar el mercado que apostaste.</p>
-                        <button class="btn btn-primary" id="modal-result-home">Victoria Local</button>
-                        <button class="btn btn-ghost" id="modal-result-draw">Empate</button>
-                        <button class="btn btn-ghost" id="modal-result-away">Victoria Visitante</button>
-                        <button class="btn btn-danger" style="margin-top:8px" id="modal-cancel">Cancelar</button>
-                    </div>
-                `;
+                overlay.innerHTML = `<div class="modal-box"><h4>¿Resultado real del partido?</h4><p style="font-size:0.8rem;color:var(--text2);margin-bottom:12px">${bet.home} vs ${bet.away}</p><p style="font-size:0.65rem;color:var(--text3);margin-bottom:8px">Esto actualizará ELO y forma, sin importar el mercado que apostaste.</p><button class="btn btn-primary" id="modal-result-home">Victoria Local</button><button class="btn btn-ghost" id="modal-result-draw">Empate</button><button class="btn btn-ghost" id="modal-result-away">Victoria Visitante</button><button class="btn btn-danger" style="margin-top:8px" id="modal-cancel">Cancelar</button></div>`;
                 document.body.appendChild(overlay);
-
                 const closeModal = () => overlay.remove();
-
-                document.getElementById('modal-result-home').onclick = () => {
-                    closeModal();
-                    finalizeLiquidation(bet, won, index, 'home');
-                };
-                document.getElementById('modal-result-draw').onclick = () => {
-                    closeModal();
-                    finalizeLiquidation(bet, won, index, 'draw');
-                };
-                document.getElementById('modal-result-away').onclick = () => {
-                    closeModal();
-                    finalizeLiquidation(bet, won, index, 'away');
-                };
+                document.getElementById('modal-result-home').onclick = () => { closeModal(); finalizeLiquidation(bet, won, index, 'home'); };
+                document.getElementById('modal-result-draw').onclick = () => { closeModal(); finalizeLiquidation(bet, won, index, 'draw'); };
+                document.getElementById('modal-result-away').onclick = () => { closeModal(); finalizeLiquidation(bet, won, index, 'away'); };
                 document.getElementById('modal-cancel').onclick = closeModal;
             }
 
             function finalizeLiquidation(bet, won, index, realResult) {
                 bet.status = won ? 'win' : 'loss';
                 bet.resultReal = realResult;
-                if (won) {
-                    bet.profit = bet.stake * (bet.odds - 1);
-                    bankroll += bet.stake + bet.profit;
-                } else {
-                    bet.profit = -bet.stake;
-                }
-                // Actualizar ELO y forma con el resultado real del partido
+                if (won) { bet.profit = bet.stake * (bet.odds - 1); bankroll += bet.stake + bet.profit; }
+                else { bet.profit = -bet.stake; }
                 updateELO(bet.league, bet.home, bet.away, realResult);
                 updateForm(bet.league, bet.home, bet.away, realResult);
                 saveAll();
                 updateUI();
                 renderHistory();
-                showToast(won ? '¡Ganada! +$' + bet.profit.toFixed(2) : 'Perdida: -$' + bet.stake.toFixed(0), won ?
-                    'success' : 'error');
+                showToast(won ? '¡Ganada! +$' + bet.profit.toFixed(2) : 'Perdida: -$' + bet.stake.toFixed(0), won ? 'success' : 'error');
             }
 
             function deleteBet(index) {
                 return function() {
                     const bet = betHistory[index];
-                    if (bet.status === 'pending') {
-                        bankroll += bet.stake;
-                    }
+                    if (bet.status === 'pending') bankroll += bet.stake;
                     betHistory.splice(index, 1);
                     saveAll();
                     updateUI();
@@ -2603,11 +1829,7 @@
                 document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
                 const tabBtn = document.getElementById('tab-btn-' + tab);
                 if (tabBtn) tabBtn.classList.add('active');
-                const tabs = ['analyzer', 'history', 'stats', 'config'];
-                tabs.forEach(t => {
-                    const el = document.getElementById('tab-' + t);
-                    if (el) el.classList.add('hidden');
-                });
+                ['analyzer', 'history', 'stats', 'config'].forEach(t => { const el = document.getElementById('tab-' + t); if (el) el.classList.add('hidden'); });
                 const activeEl = document.getElementById('tab-' + tab);
                 if (activeEl) activeEl.classList.remove('hidden');
                 if (tab === 'history') renderHistory();
@@ -2619,7 +1841,6 @@
                 document.getElementById('bankroll-display').textContent = '$' + bankroll.toFixed(2);
                 const totalBets = betHistory.length;
                 const wins = betHistory.filter(b => b.status === 'win').length;
-                const losses = betHistory.filter(b => b.status === 'loss').length;
                 const pendings = betHistory.filter(b => b.status === 'pending').length;
                 document.getElementById('br-bets').textContent = totalBets;
                 const wr = totalBets - pendings > 0 ? (wins / (totalBets - pendings) * 100).toFixed(1) + '%' : '--';
@@ -2628,58 +1849,24 @@
                 const pnlEl = document.getElementById('pnl-display');
                 pnlEl.textContent = 'P&L: ' + (totalProfit >= 0 ? '+' : '') + '$' + totalProfit.toFixed(2);
                 pnlEl.className = 'br-pnl ' + (totalProfit >= 0 ? 'profit' : 'loss');
-                // Actualizar banner de modo datos
                 const banner = document.getElementById('data-mode-banner');
                 if (banner) {
-                    if (config.apiKey && currentAPIData) {
-                        banner.className = 'data-mode-ok';
-                        banner.textContent = 'MODO API ACTIVO — Datos reales combinados con modelo';
-                    } else if (config.apiKey) {
-                        banner.className = 'data-mode-warn';
-                        banner.textContent =
-                            'API CONFIGURADA — Carga datos del partido para combinar con el modelo';
-                    } else {
-                        banner.className = 'data-mode-warn';
-                        banner.textContent =
-                            'SIN DATOS API — Usando modelo estadistico. Precision limitada para dinero real.';
-                    }
+                    if (config.apiKey && currentAPIData) { banner.className = 'data-mode-ok'; banner.textContent = 'MODO API ACTIVO — Datos reales combinados con modelo'; }
+                    else if (config.apiKey) { banner.className = 'data-mode-warn'; banner.textContent = 'API CONFIGURADA — Carga datos del partido para combinar con el modelo'; }
+                    else { banner.className = 'data-mode-warn'; banner.textContent = 'SIN DATOS API — Usando modelo estadistico. Precision limitada para dinero real.'; }
                 }
             }
 
             function renderHistory() {
                 const log = document.getElementById('bet-log');
                 if (!log) return;
-                if (betHistory.length === 0) {
-                    log.innerHTML =
-                        '<div style="text-align:center;color:var(--text3);padding:30px">Sin apuestas aún</div>';
-                    return;
-                }
+                if (betHistory.length === 0) { log.innerHTML = '<div style="text-align:center;color:var(--text3);padding:30px">Sin apuestas aún</div>'; return; }
                 log.innerHTML = betHistory.slice().reverse().map((b, i) => {
                     const realIndex = betHistory.length - 1 - i;
-                    const statusClass = b.status === 'win' ? 'log-win' : (b.status === 'loss' ? 'log-loss' :
-                        'log-pending');
+                    const statusClass = b.status === 'win' ? 'log-win' : (b.status === 'loss' ? 'log-loss' : 'log-pending');
                     const profitClass = b.status === 'win' ? 'pos' : (b.status === 'loss' ? 'neg' : 'pend');
                     const profitSign = b.profit >= 0 ? '+' : '';
-                    return `
-                        <div class="log-item ${statusClass}">
-                            <div class="log-stripe"></div>
-                            <div class="log-body">
-                                <div class="log-match">${b.home} vs ${b.away}</div>
-                                <div class="log-sub">${b.marketName} | Cuota ${b.odds} | Stake $${b.stake.toFixed(0)}</div>
-                                ${b.resultReal ? `<div class="log-sub" style="color:var(--text2)">Resultado real: ${b.resultReal === 'home' ? b.home : (b.resultReal === 'away' ? b.away : 'Empate')}</div>` : ''}
-                            </div>
-                            <div class="log-result">
-                                <div class="log-profit ${profitClass}">${b.status === 'pending' ? 'Pend.' : profitSign + '$' + b.profit.toFixed(2)}</div>
-                                <div class="log-actions">
-                                    ${b.status === 'pending' ? `
-                                        <button class="btn-tiny btn-win" onclick="liquidateBet(${realIndex}, true)()">Ganó</button>
-                                        <button class="btn-tiny btn-lose" onclick="liquidateBet(${realIndex}, false)()">Perdió</button>
-                                    ` : ''}
-                                    <button class="btn-tiny btn-del" onclick="deleteBet(${realIndex})()">✕</button>
-                                </div>
-                            </div>
-                        </div>
-                    `;
+                    return `<div class="log-item ${statusClass}"><div class="log-stripe"></div><div class="log-body"><div class="log-match">${b.home} vs ${b.away}</div><div class="log-sub">${b.marketName} | Cuota ${b.odds} | Stake $${b.stake.toFixed(0)}</div>${b.resultReal ? `<div class="log-sub" style="color:var(--text2)">Resultado real: ${b.resultReal === 'home' ? b.home : (b.resultReal === 'away' ? b.away : 'Empate')}</div>` : ''}</div><div class="log-result"><div class="log-profit ${profitClass}">${b.status === 'pending' ? 'Pend.' : profitSign + '$' + b.profit.toFixed(2)}</div><div class="log-actions">${b.status === 'pending' ? `<button class="btn-tiny btn-win" onclick="liquidateBet(${realIndex}, true)()">Ganó</button><button class="btn-tiny btn-lose" onclick="liquidateBet(${realIndex}, false)()">Perdió</button>` : ''}<button class="btn-tiny btn-del" onclick="deleteBet(${realIndex})()">✕</button></div></div></div>`;
                 }).join('');
             }
 
@@ -2691,70 +1878,37 @@
                 const totalProfit = settled.reduce((s, b) => s + b.profit, 0);
                 const winRate = settled.length > 0 ? (wins / settled.length * 100) : 0;
                 const yieldVal = totalStaked > 0 ? (totalProfit / totalStaked * 100) : 0;
-                const roi = config.initialBankroll > 0 ? ((bankroll - config.initialBankroll) / config.initialBankroll *
-                    100) : 0;
-
+                const roi = config.initialBankroll > 0 ? ((bankroll - config.initialBankroll) / config.initialBankroll * 100) : 0;
                 document.getElementById('stat-total').textContent = total;
                 document.getElementById('stat-winrate').textContent = winRate.toFixed(1) + '%';
-                document.getElementById('stat-yield').textContent = (yieldVal >= 0 ? '+' : '') + yieldVal.toFixed(1) +
-                '%';
+                document.getElementById('stat-yield').textContent = (yieldVal >= 0 ? '+' : '') + yieldVal.toFixed(1) + '%';
                 document.getElementById('stat-roi').textContent = (roi >= 0 ? '+' : '') + roi.toFixed(1) + '%';
-                document.getElementById('stat-profit').textContent = (totalProfit >= 0 ? '+' : '') + '$' + totalProfit
-                    .toFixed(0);
-                // Racha
+                document.getElementById('stat-profit').textContent = (totalProfit >= 0 ? '+' : '') + '$' + totalProfit.toFixed(0);
                 let streak = 0;
                 for (let i = betHistory.length - 1; i >= 0; i--) {
                     if (betHistory[i].status === 'win') streak++;
                     else if (betHistory[i].status === 'loss') { streak = -Math.abs(streak) - 1; break; }
                 }
-                document.getElementById('stat-streak').textContent = streak > 0 ? 'W' + streak : (streak < 0 ? 'L' + Math
-                    .abs(streak) : '--');
-                // Model accuracy box
+                document.getElementById('stat-streak').textContent = streak > 0 ? 'W' + streak : (streak < 0 ? 'L' + Math.abs(streak) : '--');
                 const box = document.getElementById('model-accuracy-box');
-                if (box) {
-                    box.innerHTML =
-                        `<strong>Rentabilidad:</strong> Yield ${yieldVal.toFixed(1)}% | ROI ${roi.toFixed(1)}% | ${settled.length} apuestas liquidadas`;
-                }
-                // Gráfico simple del bankroll
+                if (box) box.innerHTML = `<strong>Rentabilidad:</strong> Yield ${yieldVal.toFixed(1)}% | ROI ${roi.toFixed(1)}% | ${settled.length} apuestas liquidadas`;
                 drawChart();
             }
 
             function drawChart() {
                 const svg = document.getElementById('bankroll-chart');
                 if (!svg) return;
-                const w = svg.clientWidth || 300;
-                const h = 110;
+                const w = svg.clientWidth || 300, h = 110;
                 const points = [config.initialBankroll];
                 let running = config.initialBankroll;
-                betHistory.forEach(b => {
-                    if (b.status === 'pending') return;
-                    running += b.profit;
-                    points.push(running);
-                });
-                if (points.length < 2) {
-                    svg.innerHTML =
-                        '<text x="50%" y="50%" text-anchor="middle" fill="var(--text3)" font-size="10">Sin datos aún</text>';
-                    return;
-                }
-                const min = Math.min(...points) * 0.98;
-                const max = Math.max(...points) * 1.02;
-                const range = max - min || 1;
+                betHistory.forEach(b => { if (b.status === 'pending') return; running += b.profit; points.push(running); });
+                if (points.length < 2) { svg.innerHTML = '<text x="50%" y="50%" text-anchor="middle" fill="var(--text3)" font-size="10">Sin datos aún</text>'; return; }
+                const min = Math.min(...points) * 0.98, max = Math.max(...points) * 1.02, range = max - min || 1;
                 const stepX = w / (points.length - 1);
                 let pathD = '';
-                points.forEach((p, i) => {
-                    const x = i * stepX;
-                    const y = h - ((p - min) / range) * (h - 10) - 5;
-                    pathD += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' ';
-                });
+                points.forEach((p, i) => { const x = i * stepX, y = h - ((p - min) / range) * (h - 10) - 5; pathD += (i === 0 ? 'M' : 'L') + x.toFixed(1) + ',' + y.toFixed(1) + ' '; });
                 const color = points[points.length - 1] >= points[0] ? 'var(--green)' : 'var(--accent)';
-                svg.innerHTML = `
-                    <path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke"/>
-                    ${points.map((p, i) => {
-                        const x = i * stepX;
-                        const y = h - ((p - min) / range) * (h - 10) - 5;
-                        return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="${color}"/>`;
-                    }).join('')}
-                `;
+                svg.innerHTML = `<path d="${pathD}" fill="none" stroke="${color}" stroke-width="2" vector-effect="non-scaling-stroke"/>${points.map((p, i) => { const x = i * stepX, y = h - ((p - min) / range) * (h - 10) - 5; return `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="${color}"/>`; }).join('')}`;
             }
 
             function loadConfigFields() {
@@ -2776,50 +1930,26 @@
                 config.maxStake = parseFloat(document.getElementById('cfg-maxstake-abs').value) || 1000;
                 config.minEV = parseInt(document.getElementById('cfg-minev').value) || 8;
                 config.apiKey = document.getElementById('cfg-apikey').value.trim();
-                config.apiBaseUrl = (document.getElementById('cfg-apibase').value || 'https://sports.bzzoiro.com').replace(
-                    /\/+$/, '');
+                config.apiBaseUrl = (document.getElementById('cfg-apibase').value || 'https://sports.bzzoiro.com').replace(/\/+$/, '');
                 saveAll();
                 updateUI();
                 showToast('Configuración guardada', 'success');
             }
 
-            function resetData() {
-                if (confirm('¿Eliminar todo el historial y reiniciar bankroll?')) {
-                    localStorage.clear();
-                    location.reload();
-                }
-            }
-
-            function resetELO() {
-                eloRatings = {};
-                teamForm = {};
-                calibrationBias = {};
-                saveAll();
-                showToast('ELOs, forma y calibración reiniciados', 'info');
-            }
+            function resetData() { if (confirm('¿Eliminar todo el historial y reiniciar bankroll?')) { localStorage.clear(); location.reload(); } }
+            function resetELO() { eloRatings = {}; teamForm = {}; calibrationBias = {}; saveAll(); showToast('ELOs, forma y calibración reiniciados', 'info'); }
 
             function exportHistory() {
                 if (betHistory.length === 0) return showToast('Sin datos', 'error');
                 let csv = 'Fecha,Local,Visitante,Mercado,Cuota,Stake,Estado,Profit,ResultadoReal\n';
-                betHistory.forEach(b => {
-                    csv +=
-                        `${b.date},${b.home},${b.away},${b.marketName},${b.odds},${b.stake},${b.status},${b.profit},${b.resultReal||''}\n`;
-                });
-                const blob = new Blob([csv], { type: 'text/csv' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'bet_history.csv';
-                a.click();
+                betHistory.forEach(b => { csv += `${b.date},${b.home},${b.away},${b.marketName},${b.odds},${b.stake},${b.status},${b.profit},${b.resultReal||''}\n`; });
+                const blob = new Blob([csv], { type: 'text/csv' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+                a.href = url; a.download = 'bet_history.csv'; a.click();
             }
 
             function exportJSON() {
-                const blob = new Blob([JSON.stringify(betHistory, null, 2)], { type: 'application/json' });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement('a');
-                a.href = url;
-                a.download = 'bet_history.json';
-                a.click();
+                const blob = new Blob([JSON.stringify(betHistory, null, 2)], { type: 'application/json' }), url = URL.createObjectURL(blob), a = document.createElement('a');
+                a.href = url; a.download = 'bet_history.json'; a.click();
             }
 
             function importJSON(input) {
@@ -2829,13 +1959,7 @@
                 reader.onload = (e) => {
                     try {
                         const data = JSON.parse(e.target.result);
-                        if (Array.isArray(data)) {
-                            betHistory = data;
-                            saveAll();
-                            updateUI();
-                            renderHistory();
-                            showToast('Historial importado', 'success');
-                        }
+                        if (Array.isArray(data)) { betHistory = data; saveAll(); updateUI(); renderHistory(); showToast('Historial importado', 'success'); }
                     } catch (ex) { showToast('Archivo no válido', 'error'); }
                 };
                 reader.readAsText(file);
@@ -2852,22 +1976,16 @@
             // ==================== INICIALIZACIÓN ====================
             document.getElementById('league').addEventListener('change', function(e) {
                 const league = e.target.value;
-                const homeSel = document.getElementById('home');
-                const awaySel = document.getElementById('away');
+                const homeSel = document.getElementById('home'), awaySel = document.getElementById('away');
                 homeSel.innerHTML = '<option value="">-- Local --</option>';
                 awaySel.innerHTML = '<option value="">-- Visitante --</option>';
                 if (league && TEAMS_DB[league]) {
-                    TEAMS_DB[league].forEach(team => {
-                        homeSel.innerHTML += `<option value="${team}">${team}</option>`;
-                        awaySel.innerHTML += `<option value="${team}">${team}</option>`;
-                    });
-                    homeSel.disabled = false;
-                    awaySel.disabled = false;
+                    TEAMS_DB[league].forEach(team => { homeSel.innerHTML += `<option value="${team}">${team}</option>`; awaySel.innerHTML += `<option value="${team}">${team}</option>`; });
+                    homeSel.disabled = false; awaySel.disabled = false;
                     document.getElementById('api-btn').disabled = !config.apiKey;
                     document.getElementById('analyze-btn').disabled = true;
                 } else {
-                    homeSel.disabled = true;
-                    awaySel.disabled = true;
+                    homeSel.disabled = true; awaySel.disabled = true;
                     document.getElementById('api-btn').disabled = true;
                     document.getElementById('analyze-btn').disabled = true;
                 }
@@ -2877,14 +1995,11 @@
 
             document.getElementById('home').addEventListener('change', validateTeams);
             document.getElementById('away').addEventListener('change', validateTeams);
-
             function validateTeams() {
-                const home = document.getElementById('home').value;
-                const away = document.getElementById('away').value;
+                const home = document.getElementById('home').value, away = document.getElementById('away').value;
                 document.getElementById('analyze-btn').disabled = !(home && away && home !== away);
             }
 
-            // Exponer funciones al scope global para los onclick inline
             window.switchTab = switchTab;
             window.loadAPIData = loadAPIData;
             window.runAnalysis = runAnalysis;
@@ -2900,14 +2015,9 @@
             window.liquidateBet = liquidateBet;
             window.deleteBet = deleteBet;
 
-            // Carga inicial
             loadConfigFields();
             updateUI();
-            // Si hay token, habilitar botón API cuando se seleccione liga
-            if (config.apiKey) {
-                const league = document.getElementById('league').value;
-                if (league) document.getElementById('api-btn').disabled = false;
-            }
+            if (config.apiKey) { const league = document.getElementById('league').value; if (league) document.getElementById('api-btn').disabled = false; }
         })();
     </script>
 </body>
