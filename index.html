@@ -1336,7 +1336,7 @@
                 BrasileiroSerieB: { name: 'Brasileirao Serie B', goals: 2.30, corners: 9.1, hfa: 1.04, htRatio: 0.42, rho: -0.09 }
             };
 
-            const API_LEAGUE_IDS = { EPL: 1, La_liga: 3, Serie_A: 4, Bundesliga: 5, Ligue_1: 6, Eredivisie: 10, Championship: 12, MLS: 18, Brasileirao: 9, BrasileiroSerieB: 19, Libertadores: 32, Sudamericana: 33, Mundial_2026: 27 };
+            const API_LEAGUE_IDS = { EPL: 1, La_liga: 3, Serie_A: 4, Bundesliga: 5, Ligue_1: 6, Eredivisie: 10, Championship: 12, MLS: 18, Brasileirao: 9, BrasileiroSerieB: 19, Libertadores: 32, Sudamericana: 33, Mundial_2026: 39 };
 
             const API_TEAM_NAME_MAP = {
                 Mundial_2026: {
@@ -1527,7 +1527,6 @@
                 const rawProbs = { hw: hw / sum1x2 * 100, dr: dr / sum1x2 * 100, aw: aw / sum1x2 * 100 };
                 const calibrated = applyCalibration(leagueCode, { hw: rawProbs.hw / 100, dr: rawProbs.dr / 100, aw: rawProbs.aw / 100 });
                 const c75 = 1 - pCDF(7.5, cLam), c85 = 1 - pCDF(8.5, cLam);
-                // Aplicar límites realistas: mínimo 2%, máximo 95%
                 const clamp = (v) => Math.max(2, Math.min(95, v));
                 return {
                     hw: clamp(calibrated.hw).toFixed(1),
@@ -1650,12 +1649,23 @@
                 const ck = name + '_' + leagueId;
                 if (teamIdCache[ck]) return teamIdCache[ck];
                 let apiName = name;
-                if (leagueCode && API_TEAM_NAME_MAP[leagueCode] && API_TEAM_NAME_MAP[leagueCode][name]) apiName = API_TEAM_NAME_MAP[leagueCode][name];
+                if (leagueCode && API_TEAM_NAME_MAP[leagueCode] && API_TEAM_NAME_MAP[leagueCode][name]) {
+                    apiName = API_TEAM_NAME_MAP[leagueCode][name];
+                }
+                console.log('Buscando equipo:', name, '->', apiName, 'en liga', leagueId);
                 try {
                     const d = await apiFetch('/teams/?name=' + encodeURIComponent(apiName) + '&league_id=' + leagueId + '&limit=10');
                     const rs = (d.results || d);
-                    if (Array.isArray(rs) && rs.length > 0) { teamIdCache[ck] = rs[0].id; saveAll(); return rs[0].id; }
-                } catch (e) { console.warn('Error buscando equipo:', e); }
+                    if (Array.isArray(rs) && rs.length > 0) {
+                        console.log('Encontrado:', rs[0].name, 'ID:', rs[0].id);
+                        teamIdCache[ck] = rs[0].id;
+                        saveAll();
+                        return rs[0].id;
+                    }
+                    console.warn('No encontrado:', apiName, 'Resultados:', rs.length || 0);
+                } catch (e) {
+                    console.error('Error buscando equipo:', e);
+                }
                 return null;
             }
             async function loadAPIData() {
@@ -1663,16 +1673,24 @@
                 const home = document.getElementById('home').value;
                 const away = document.getElementById('away').value;
                 const statusBox = document.getElementById('api-status-box');
-                if (!league || !home || !away || !config.apiKey) { showToast('Selecciona liga, equipos y configura el token', 'error'); return; }
+                if (!league || !home || !away || !config.apiKey) {
+                    showToast('Selecciona liga, equipos y configura el token', 'error');
+                    return;
+                }
                 statusBox.className = 'status-pill loading';
                 statusBox.textContent = 'Cargando datos de Bzzoiro...';
                 statusBox.classList.remove('hidden');
                 try {
                     const leagueId = API_LEAGUE_IDS[league];
-                    if (!leagueId) throw new Error('ID de liga no encontrado');
+                    if (!leagueId) throw new Error('ID de liga no encontrado para ' + league);
+                    console.log('Cargando datos para liga ' + league + ' (ID: ' + leagueId + ')');
+                    
                     const homeId = await findTeamId(home, leagueId, league);
+                    if (!homeId) throw new Error('Equipo local "' + home + '" no encontrado (liga ID: ' + leagueId + ')');
+                    
                     const awayId = await findTeamId(away, leagueId, league);
-                    if (!homeId || !awayId) throw new Error('No se encontraron los equipos en la API');
+                    if (!awayId) throw new Error('Equipo visitante "' + away + '" no encontrado (liga ID: ' + leagueId + ')');
+                    
                     currentAPIData = { home: { played: 5, gfHome: 7, gaHome: 4 }, away: { played: 5, gfAway: 3, gaAway: 5 } };
                     statusBox.className = 'status-pill loaded';
                     statusBox.textContent = 'Datos cargados correctamente';
@@ -1680,6 +1698,7 @@
                     document.getElementById('data-mode-banner').className = 'data-mode-ok';
                     document.getElementById('data-mode-banner').textContent = 'MODO API ACTIVO — Datos reales combinados con modelo';
                 } catch (e) {
+                    console.error(e);
                     statusBox.className = 'status-pill error';
                     statusBox.textContent = 'Error: ' + e.message;
                     currentAPIData = null;
