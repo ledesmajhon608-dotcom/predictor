@@ -298,7 +298,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     <div class="app-title">
       <span class="ball">&#x26BD;</span>
       <span class="title-text">BET ANALYTICS PRO</span>
-      <span class="vtag">v3.3</span>
+      <span class="vtag">v4.0</span>
     </div>
     <div class="app-subtitle">Poisson &middot; Dixon-Coles &middot; Kelly &middot; Bzzoiro API v2 &middot; Auto‑calibración</div>
   </div>
@@ -432,7 +432,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         Analizar y Buscar Valor
       </button>
       <div class="info-box mt12">
-        ELO dinámico + forma reciente + rho por liga + calibración automática.
+        ELO dinámico + forma reciente + rho dinámico + calibración automática.
       </div>
     </div>
 
@@ -527,7 +527,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
 
       <div class="section-title" style="margin-top:18px">Modelo Matematico</div>
       <div class="model-pill">
-        <strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles (rho por liga)<br>
+        <strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles (rho dinámico)<br>
         <strong>Calibración:</strong> Ajuste automático según resultados reales<br>
         <strong>Defaults conservadores:</strong> Kelly 10% / Max 3% / EV min +8%<br>
         <strong>Combinación mercado:</strong> 50% modelo + 50% cuotas reales (automático)
@@ -612,19 +612,19 @@ const OLD_TEAM_NAMES_MUNDIAL = {
 function normalizarNombreMundial(nombre) { return OLD_TEAM_NAMES_MUNDIAL[nombre] || nombre; }
 
 const LEAGUES_CFG = {
-  EPL:{name:'Premier League',goals:2.85,corners:10.1,hfa:1.06,htRatio:0.45,rho:-0.08},
-  La_liga:{name:'La Liga',goals:2.55,corners:9.5,hfa:1.05,htRatio:0.44,rho:-0.05},
-  Serie_A:{name:'Serie A',goals:2.65,corners:9.0,hfa:1.05,htRatio:0.43,rho:-0.10},
-  Bundesliga:{name:'Bundesliga',goals:3.00,corners:9.8,hfa:1.06,htRatio:0.46,rho:-0.06},
-  Ligue_1:{name:'Ligue 1',goals:2.70,corners:9.3,hfa:1.05,htRatio:0.44,rho:-0.07},
-  Eredivisie:{name:'Eredivisie',goals:3.10,corners:9.6,hfa:1.05,htRatio:0.45,rho:-0.09},
-  Libertadores:{name:'Copa Libertadores',goals:2.50,corners:9.2,hfa:1.04,htRatio:0.43,rho:-0.11},
-  Sudamericana:{name:'Copa Sudamericana',goals:2.30,corners:9.0,hfa:1.04,htRatio:0.42,rho:-0.10},
-  Mundial_2026:{name:'Mundial 2026',goals:2.20,corners:9.0,hfa:1.03,htRatio:0.43,rho:-0.12},
-  Championship:{name:'Championship',goals:2.65,corners:9.7,hfa:1.05,htRatio:0.44,rho:-0.08},
-  MLS:{name:'MLS',goals:2.85,corners:9.1,hfa:1.05,htRatio:0.44,rho:-0.07},
-  Brasileirao:{name:'Brasileirao Serie A',goals:2.45,corners:9.4,hfa:1.05,htRatio:0.43,rho:-0.10},
-  BrasileiroSerieB:{name:'Brasileirao Serie B',goals:2.30,corners:9.1,hfa:1.04,htRatio:0.42,rho:-0.09}
+  EPL:{name:'Premier League',goals:2.85,corners:10.1,hfa:1.06,htRatio:0.40,rho:-0.08},
+  La_liga:{name:'La Liga',goals:2.55,corners:9.5,hfa:1.05,htRatio:0.39,rho:-0.05},
+  Serie_A:{name:'Serie A',goals:2.65,corners:9.0,hfa:1.05,htRatio:0.38,rho:-0.10},
+  Bundesliga:{name:'Bundesliga',goals:3.00,corners:9.8,hfa:1.06,htRatio:0.41,rho:-0.06},
+  Ligue_1:{name:'Ligue 1',goals:2.70,corners:9.3,hfa:1.05,htRatio:0.39,rho:-0.07},
+  Eredivisie:{name:'Eredivisie',goals:3.10,corners:9.6,hfa:1.05,htRatio:0.40,rho:-0.09},
+  Libertadores:{name:'Copa Libertadores',goals:2.50,corners:9.2,hfa:1.04,htRatio:0.38,rho:-0.11},
+  Sudamericana:{name:'Copa Sudamericana',goals:2.30,corners:9.0,hfa:1.04,htRatio:0.37,rho:-0.10},
+  Mundial_2026:{name:'Mundial 2026',goals:2.20,corners:9.0,hfa:1.03,htRatio:0.38,rho:-0.12},
+  Championship:{name:'Championship',goals:2.65,corners:9.7,hfa:1.05,htRatio:0.40,rho:-0.08},
+  MLS:{name:'MLS',goals:2.85,corners:9.1,hfa:1.05,htRatio:0.40,rho:-0.07},
+  Brasileirao:{name:'Brasileirao Serie A',goals:2.45,corners:9.4,hfa:1.05,htRatio:0.38,rho:-0.10},
+  BrasileiroSerieB:{name:'Brasileirao Serie B',goals:2.30,corners:9.1,hfa:1.04,htRatio:0.37,rho:-0.09}
 };
 
 const API_LEAGUE_IDS = {EPL:1,La_liga:3,Serie_A:4,Bundesliga:5,Ligue_1:6,Eredivisie:10,Championship:12,MLS:18,Brasileirao:9,BrasileiroSerieB:19,Libertadores:32,Sudamericana:33,Mundial_2026:27};
@@ -724,8 +724,8 @@ const CORNER_STRENGTH = {
    ============================================================================= */
 function getCornerStr(league,team){ var ls=CORNER_STRENGTH[league]; if(ls&&ls[team]) return {atk:ls[team][0],def:ls[team][1]}; return {atk:1.0,def:1.0}; }
 function getBaseStr(league,team){ var ls=STRENGTH[league]; if(ls&&ls[team]) return {atk:ls[team][0],def:ls[team][1]}; return {atk:1.0,def:1.0}; }
-function initELO(league,team){ var base=getBaseStr(league,team); var avg=(base.atk+base.def)/2; return 1500 + (avg-1)*400; }
-function getELO(league,team){ if(!eloRatings[league]) eloRatings[league]={}; if(!eloRatings[league][team]) eloRatings[league][team]=initELO(league,team); return eloRatings[league][team]; }
+// ELO inicial puro: todos comienzan en 1500
+function getELO(league,team){ if(!eloRatings[league]) eloRatings[league]={}; if(!eloRatings[league][team]) eloRatings[league][team]=1500; return eloRatings[league][team]; }
 function updateELO(league,home,away,result){
   var hELO=getELO(league,home), aELO=getELO(league,away);
   var expected=1/(1+Math.pow(10,(aELO-hELO)/400));
@@ -735,7 +735,8 @@ function updateELO(league,home,away,result){
   eloRatings[league][away]=aELO+K*((1-score)-(1-expected));
   saveAll();
 }
-function getFormFactor(league,team){ var key=league+'|'+team; var form=teamForm[key]||[]; if(form.length===0) return 1.0; var sum=0; for(var i=0;i<form.length;i++) sum+=form[i]; var avg=sum/form.length; return 0.9 + 0.2*avg; }
+// Forma reciente: reducida de 0.9+0.2*avg a 0.95+0.1*avg
+function getFormFactor(league,team){ var key=league+'|'+team; var form=teamForm[key]||[]; if(form.length===0) return 1.0; var sum=0; for(var i=0;i<form.length;i++) sum+=form[i]; var avg=sum/form.length; return 0.95 + 0.1*avg; }
 function updateForm(league,home,away,result){
   var hKey=league+'|'+home, aKey=league+'|'+away;
   var hScore=result==='home'?1:(result==='draw'?0.5:0), aScore=1-hScore;
@@ -744,13 +745,22 @@ function updateForm(league,home,away,result){
   teamForm[aKey].push(aScore); if(teamForm[aKey].length>5) teamForm[aKey].shift();
   saveAll();
 }
+// getStr corregido: ataque y defensa usan el mismo multiplicador
 function getStr(league,team){
   var base=getBaseStr(league,team);
   var elo=getELO(league,team);
   var eloFactor=elo/1500, formFactor=getFormFactor(league,team);
-  return {atk:Math.max(0.5,base.atk*eloFactor*formFactor),def:Math.max(0.5,base.def*(2-eloFactor)*(2-formFactor))};
+  var multiplier=eloFactor*formFactor;
+  return {atk:Math.max(0.5,base.atk*multiplier),def:Math.max(0.5,base.def*multiplier)};
 }
-function getRho(leagueCode){ return LEAGUES_CFG[leagueCode]?LEAGUES_CFG[leagueCode].rho:-0.13; }
+// Rho dinámico por equipos
+function getRho(lc,home,away){
+  var baseRho=LEAGUES_CFG[lc]?LEAGUES_CFG[lc].rho:-0.13;
+  var hs=getStr(lc,home), as=getStr(lc,away);
+  var offFactor=(hs.atk+as.atk)/2;
+  var defFactor=(hs.def+as.def)/2;
+  return baseRho+(offFactor-1)*0.05-(defFactor-1)*0.03;
+}
 function dcTau(i,j,lh,la,rho){
   if(i===0&&j===0) return Math.max(0.001,1-lh*la*rho);
   if(i===1&&j===0) return Math.max(0.001,1+la*rho);
@@ -770,9 +780,10 @@ function bivariateDist(lh,la,rho){
   return dist;
 }
 
+// Mercados secundarios: ajuste de HT ratio a 0.40
 function computeMarkets(dist,home,away,leagueCode,cLam){
   var hw=0,dr=0,aw=0, over15=0,over25=0,btts=0;
-  var htLam=(LEAGUES_CFG[leagueCode]?LEAGUES_CFG[leagueCode].htRatio:0.44)*(home.lambda+away.lambda);
+  var htLam=(LEAGUES_CFG[leagueCode]?LEAGUES_CFG[leagueCode].htRatio:0.40)*(home.lambda+away.lambda);
   var overHT05=1-pPMF(0,htLam);
   for(var i=0;i<=MAX_GOALS;i++){
     for(var j=0;j<=MAX_GOALS;j++){
@@ -799,32 +810,41 @@ function computeMarkets(dist,home,away,leagueCode,cLam){
 
 function predictMatch(leagueCode,home,away,apiStats){
   var cfg=LEAGUES_CFG[leagueCode];
-  if(!cfg) cfg={goals:2.5,corners:10,hfa:1.05,htRatio:0.45,rho:-0.1};
-  var gAvg=cfg.goals,cAvg=cfg.corners,hfa=cfg.hfa,rho=cfg.rho;
+  if(!cfg) cfg={goals:2.5,corners:10,hfa:1.05,htRatio:0.40,rho:-0.1};
+  var gAvg=cfg.goals,cAvg=cfg.corners,hfa=cfg.hfa;
+  var rho=getRho(leagueCode,home,away);
   var lh,la,cLam;
   if(apiStats&&apiStats.home&&apiStats.away){
     var h=apiStats.home,a=apiStats.away;
-    var ha=(typeof h.gfHome==='number'&&h.gfHome>0)?h.gfHome/(gAvg/2):1,
-        hd=(typeof h.gaHome==='number'&&h.gaHome>0)?h.gaHome/(gAvg/2):1;
-    var aa=(typeof a.gfAway==='number'&&a.gfAway>0)?a.gfAway/(gAvg/2):1,
-        ad=(typeof a.gaAway==='number'&&a.gaAway>0)?a.gaAway/(gAvg/2):1;
-    var apiLh=Math.max(0.3,(gAvg/2)*ha*ad*hfa);
-    var apiLa=Math.max(0.3,(gAvg/2)*aa*hd*(1/hfa));
-    var hBase=getStr(leagueCode,home),aBase=getStr(leagueCode,away);
-    var baseLh=Math.max(0.3,(gAvg/2)*hBase.atk*aBase.def*hfa);
-    var baseLa=Math.max(0.3,(gAvg/2)*aBase.atk*hBase.def*(1/hfa));
-    var weight=Math.min((h.played+a.played)/20,0.8);
-    if(isNaN(apiLh)||isNaN(apiLa)) { apiLh=baseLh; apiLa=baseLa; weight=0; }
-    if(isNaN(baseLh)||isNaN(baseLa)) { baseLh=baseLa=1; }
-    lh=baseLh*(1-weight)+apiLh*weight;
-    la=baseLa*(1-weight)+apiLa*weight;
+    var totalPlayed=h.played+a.played;
+    var dataQuality=Math.min(totalPlayed/30,1.0);
+    if(totalPlayed>=10){
+      var ha=(typeof h.gfHome==='number'&&h.gfHome>0)?h.gfHome/(gAvg/2):1,
+          hd=(typeof h.gaHome==='number'&&h.gaHome>0)?h.gaHome/(gAvg/2):1;
+      var aa=(typeof a.gfAway==='number'&&a.gfAway>0)?a.gfAway/(gAvg/2):1,
+          ad=(typeof a.gaAway==='number'&&a.gaAway>0)?a.gaAway/(gAvg/2):1;
+      var apiLh=Math.max(0.3,(gAvg/2)*ha*ad*hfa);
+      var apiLa=Math.max(0.3,(gAvg/2)*aa*hd*(1/hfa));
+      var hBase=getStr(leagueCode,home),aBase=getStr(leagueCode,away);
+      var baseLh=Math.max(0.3,(gAvg/2)*hBase.atk*aBase.def*hfa);
+      var baseLa=Math.max(0.3,(gAvg/2)*aBase.atk*hBase.def*(1/hfa));
+      var weight=Math.min(dataQuality,0.7);
+      if(isNaN(apiLh)||isNaN(apiLa)) { apiLh=baseLh; apiLa=baseLa; weight=0; }
+      if(isNaN(baseLh)||isNaN(baseLa)) { baseLh=baseLa=1; }
+      lh=baseLh*(1-weight)+apiLh*weight;
+      la=baseLa*(1-weight)+apiLa*weight;
+    }else{
+      var hs=getStr(leagueCode,home),as2=getStr(leagueCode,away);
+      lh=Math.max(0.3,(gAvg/2)*hs.atk*as2.def*hfa);
+      la=Math.max(0.3,(gAvg/2)*as2.atk*hs.def*(1/hfa));
+    }
   }else{
     var hs=getStr(leagueCode,home),as2=getStr(leagueCode,away);
     lh=Math.max(0.3,(gAvg/2)*hs.atk*as2.def*hfa);
     la=Math.max(0.3,(gAvg/2)*as2.atk*hs.def*(1/hfa));
   }
-  if(isNaN(lh)||lh<=0) lh=gAvg/2;
-  if(isNaN(la)||la<=0) la=gAvg/2;
+  if(isNaN(lh)||lh<=0||lh>8) lh=gAvg/2;
+  if(isNaN(la)||la<=0||la>8) la=gAvg/2;
   var hcs=getCornerStr(leagueCode,home),acs=getCornerStr(leagueCode,away);
   cLam=cAvg*((hcs.atk*acs.def*hfa)+(acs.atk*hcs.def))/2;
   var dist=bivariateDist(lh,la,rho);
@@ -835,16 +855,26 @@ function predictMatch(leagueCode,home,away,apiStats){
     hw:markets.hw,dr:markets.dr,aw:markets.aw,
     btts:markets.btts,o15:markets.o15,o25:markets.o25,
     ht05:markets.ht05,c75:markets.c75,c85:markets.c85,
-    cLam:cLam.toFixed(2),usingAPI:!!apiStats
+    cLam:cLam.toFixed(2),usingAPI:!!(apiStats&&apiStats.home&&apiStats.away&&(apiStats.home.played+apiStats.away.played)>=10)
   };
 }
 
 /* =============================================================================
-   EV, FAIR, KELLY
+   EV, FAIR, KELLY (consistente)
    ============================================================================= */
 function calcEV(prob,odds){if(!odds||odds<=1)return null;return(prob/100*odds-1)*100;}
 function calcFair(oH,oD,oA){ if(!oH||!oD||!oA||oH<=1||oD<=1||oA<=1)return null; var s=1/oH+1/oD+1/oA; return{home:(1/oH)/s,draw:(1/oD)/s,away:(1/oA)/s,vig:(s-1)*100}; }
-function kellyStake(prob,odds){ if(odds<=1) return 0; var b=odds-1,k=(prob*b-(1-prob))/b; var rawStake=Math.max(0,k*config.kellyFraction*bankroll); var stake=Math.min(rawStake,bankroll*config.maxStakePct); var minAbs=config.minStake||500,maxAbs=config.maxStake||1000; if(stake<minAbs&&stake>0) stake=Math.min(minAbs,maxAbs); if(stake>maxAbs) stake=maxAbs; return Math.min(stake,bankroll); }
+function kellyStake(prob,odds){
+  if(odds<=1) return 0;
+  var b=odds-1,k=(prob*b-(1-prob))/b;
+  var fullKelly=Math.max(0,k*config.kellyFraction*bankroll);
+  var maxByPct=bankroll*config.maxStakePct;
+  var stake=Math.min(fullKelly,maxByPct);
+  var minAbs=config.minStake||500,maxAbs=config.maxStake||1000;
+  if(stake>0&&stake<minAbs) stake=Math.min(minAbs,maxAbs);
+  if(stake>maxAbs) stake=maxAbs;
+  return Math.min(stake,bankroll);
+}
 
 /* =============================================================================
    API BZZOIRO
@@ -944,7 +974,7 @@ function checkBtns(){
 }
 
 /* =============================================================================
-   CALIBRACIÓN AUTOMÁTICA (basada en resultados liquidados)
+   CALIBRACIÓN AUTOMÁTICA (alpha dinámico, validación >=10 apuestas)
    ============================================================================= */
 function applyCalibration(probs){
   var total=probs.hw*calibrationBias.home + probs.dr*calibrationBias.draw + probs.aw*calibrationBias.away;
@@ -961,10 +991,23 @@ function updateCalibration(market, actualOutcome) {
   if (actualOutcome === 'home') target.home = 1;
   else if (actualOutcome === 'draw') target.draw = 1;
   else if (actualOutcome === 'away') target.away = 1;
-  var alpha = 0.05;
-  calibrationBias.home = calibrationBias.home * 0.95 + target.home * 0.05;
-  calibrationBias.draw = calibrationBias.draw * 0.95 + target.draw * 0.05;
-  calibrationBias.away = calibrationBias.away * 0.95 + target.away * 0.05;
+
+  var settled1X2 = betHistory.filter(function(b) {
+    return b.status === 'settled' && (b.market === 'Victoria Local' || b.market === 'Empate' || b.market === 'Victoria Visitante');
+  });
+  if (settled1X2.length < 10) return; // No calibrar con pocos datos
+
+  var alpha = Math.max(0.05, 0.20 - settled1X2.length * 0.002);
+  calibrationBias.home = calibrationBias.home * (1 - alpha) + target.home * alpha;
+  calibrationBias.draw = calibrationBias.draw * (1 - alpha) + target.draw * alpha;
+  calibrationBias.away = calibrationBias.away * (1 - alpha) + target.away * alpha;
+
+  var totalBias = calibrationBias.home + calibrationBias.draw + calibrationBias.away;
+  if (totalBias > 0 && totalBias !== 3) {
+    calibrationBias.home *= 3 / totalBias;
+    calibrationBias.draw *= 3 / totalBias;
+    calibrationBias.away *= 3 / totalBias;
+  }
   saveAll();
 }
 
@@ -1105,7 +1148,7 @@ function renderResults(pred,markets,fair){
     +(hasVal?'<div class="success-box" style="margin-bottom:10px">MERCADOS CON VALOR ENCONTRADOS</div>':'')
     +(!hasVal?'<div class="warn-box" style="margin-bottom:10px">Sin apuestas que superen todos los filtros.</div>':'')
     +marketsHtml
-    +'<div class="model-pill" style="margin-top:14px"><strong>ELO + forma reciente + rho por liga activos | Auto‑calibración activa</strong></div>';
+    +'<div class="model-pill" style="margin-top:14px"><strong>ELO + forma reciente + rho dinámico + calibración automática</strong></div>';
   setTimeout(function(){
     document.querySelectorAll('.bar-fill[data-w]').forEach(function(b){b.style.width=b.dataset.w+'%';});
   },80);
