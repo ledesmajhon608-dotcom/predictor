@@ -1527,19 +1527,24 @@
                 const rawProbs = { hw: hw / sum1x2 * 100, dr: dr / sum1x2 * 100, aw: aw / sum1x2 * 100 };
                 const calibrated = applyCalibration(leagueCode, { hw: rawProbs.hw / 100, dr: rawProbs.dr / 100, aw: rawProbs.aw / 100 });
                 const c75 = 1 - pCDF(7.5, cLam), c85 = 1 - pCDF(8.5, cLam);
+                // Aplicar límites realistas: mínimo 2%, máximo 95%
+                const clamp = (v) => Math.max(2, Math.min(95, v));
                 return {
-                    hw: calibrated.hw.toFixed(1), dr: calibrated.dr.toFixed(1), aw: calibrated.aw.toFixed(1),
-                    btts: Math.max(0, Math.min(100, btts * 100)),
-                    o15: Math.max(0, Math.min(100, over15 * 100)),
-                    o25: Math.max(0, Math.min(100, over25 * 100)),
-                    ht05: Math.max(0, Math.min(100, overHT05 * 100)),
-                    c75: Math.max(0, Math.min(100, c75 * 100)),
-                    c85: Math.max(0, Math.min(100, c85 * 100))
+                    hw: clamp(calibrated.hw).toFixed(1),
+                    dr: clamp(calibrated.dr).toFixed(1),
+                    aw: clamp(calibrated.aw).toFixed(1),
+                    btts: clamp(btts * 100).toFixed(1),
+                    o15: clamp(over15 * 100).toFixed(1),
+                    o25: clamp(over25 * 100).toFixed(1),
+                    ht05: clamp(overHT05 * 100).toFixed(1),
+                    c75: clamp(c75 * 100).toFixed(1),
+                    c85: clamp(c85 * 100).toFixed(1)
                 };
             }
 
             function predictMatch(leagueCode, home, away, apiStats) {
                 const cfg = LEAGUES_CFG[leagueCode];
+                if (!cfg) throw new Error('Liga no configurada');
                 const gAvg = cfg.goals, cAvg = cfg.corners, hfa = cfg.hfa, rho = cfg.rho;
                 let lh, la, cLam;
                 if (apiStats && apiStats.home && apiStats.away) {
