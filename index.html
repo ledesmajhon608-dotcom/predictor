@@ -1336,7 +1336,7 @@
                 BrasileiroSerieB: { name: 'Brasileirao Serie B', goals: 2.30, corners: 9.1, hfa: 1.04, htRatio: 0.42, rho: -0.09 }
             };
 
-            const API_LEAGUE_IDS = { EPL: 1, La_liga: 3, Serie_A: 4, Bundesliga: 5, Ligue_1: 6, Eredivisie: 10, Championship: 12, MLS: 18, Brasileirao: 9, BrasileiroSerieB: 19, Libertadores: 32, Sudamericana: 33, Mundial_2026: 39 };
+            const API_LEAGUE_IDS = { EPL: 1, La_liga: 3, Serie_A: 4, Bundesliga: 5, Ligue_1: 6, Eredivisie: 10, Championship: 12, MLS: 18, Brasileirao: 9, BrasileiroSerieB: 19, Libertadores: 32, Sudamericana: 33, Mundial_2026: 27 };
 
             const API_TEAM_NAME_MAP = {
                 Mundial_2026: {
@@ -1653,19 +1653,50 @@
                     apiName = API_TEAM_NAME_MAP[leagueCode][name];
                 }
                 console.log('Buscando equipo:', name, '->', apiName, 'en liga', leagueId);
+                // Intento 1: buscar con league_id
                 try {
                     const d = await apiFetch('/teams/?name=' + encodeURIComponent(apiName) + '&league_id=' + leagueId + '&limit=10');
                     const rs = (d.results || d);
                     if (Array.isArray(rs) && rs.length > 0) {
-                        console.log('Encontrado:', rs[0].name, 'ID:', rs[0].id);
+                        console.log('Encontrado (con liga):', rs[0].name, 'ID:', rs[0].id);
                         teamIdCache[ck] = rs[0].id;
                         saveAll();
                         return rs[0].id;
                     }
-                    console.warn('No encontrado:', apiName, 'Resultados:', rs.length || 0);
                 } catch (e) {
-                    console.error('Error buscando equipo:', e);
+                    console.warn('Error buscando con liga:', e.message);
                 }
+                // Intento 2: buscar sin league_id
+                try {
+                    console.log('Intentando buscar sin liga:', apiName);
+                    const d = await apiFetch('/teams/?name=' + encodeURIComponent(apiName) + '&limit=10');
+                    const rs = (d.results || d);
+                    if (Array.isArray(rs) && rs.length > 0) {
+                        console.log('Encontrado (sin liga):', rs[0].name, 'ID:', rs[0].id);
+                        teamIdCache[ck] = rs[0].id;
+                        saveAll();
+                        return rs[0].id;
+                    }
+                } catch (e) {
+                    console.warn('Error buscando sin liga:', e.message);
+                }
+                // Intento 3: buscar con nombre original (español) sin league_id
+                if (apiName !== name) {
+                    try {
+                        console.log('Intentando buscar con nombre original:', name);
+                        const d = await apiFetch('/teams/?name=' + encodeURIComponent(name) + '&limit=10');
+                        const rs = (d.results || d);
+                        if (Array.isArray(rs) && rs.length > 0) {
+                            console.log('Encontrado (nombre original):', rs[0].name, 'ID:', rs[0].id);
+                            teamIdCache[ck] = rs[0].id;
+                            saveAll();
+                            return rs[0].id;
+                        }
+                    } catch (e) {
+                        console.warn('Error buscando con nombre original:', e.message);
+                    }
+                }
+                console.warn('No se encontró el equipo:', name, '/', apiName);
                 return null;
             }
             async function loadAPIData() {
@@ -1684,13 +1715,14 @@
                     const leagueId = API_LEAGUE_IDS[league];
                     if (!leagueId) throw new Error('ID de liga no encontrado para ' + league);
                     console.log('Cargando datos para liga ' + league + ' (ID: ' + leagueId + ')');
-                    
                     const homeId = await findTeamId(home, leagueId, league);
-                    if (!homeId) throw new Error('Equipo local "' + home + '" no encontrado (liga ID: ' + leagueId + ')');
-                    
+                    if (!homeId) {
+                        throw new Error('Equipo local "' + home + '" no encontrado en la API. Prueba a usar el modelo estadístico sin API.');
+                    }
                     const awayId = await findTeamId(away, leagueId, league);
-                    if (!awayId) throw new Error('Equipo visitante "' + away + '" no encontrado (liga ID: ' + leagueId + ')');
-                    
+                    if (!awayId) {
+                        throw new Error('Equipo visitante "' + away + '" no encontrado en la API. Prueba a usar el modelo estadístico sin API.');
+                    }
                     currentAPIData = { home: { played: 5, gfHome: 7, gaHome: 4 }, away: { played: 5, gfAway: 3, gaAway: 5 } };
                     statusBox.className = 'status-pill loaded';
                     statusBox.textContent = 'Datos cargados correctamente';
