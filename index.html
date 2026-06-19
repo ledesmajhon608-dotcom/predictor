@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-/* ========== TODO EL CSS SE MANTIENE EXACTAMENTE IGUAL ========== */
 :root {
   --bg:#060a10;--surface:#0c1219;--card:#0f1825;--card2:#131e2d;--card3:#172235;
   --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.18);
@@ -728,7 +727,7 @@ function updateELO(league,home,away,result){
   eloRatings[league][away]=aELO+K*((1-score)-(1-expected));
   saveAll();
 }
-function getFormFactor(league,team){ var key=league+'|'+team; var form=teamForm[key]||[]; if(form.length===0) return 1.0; var sum=0; for(var i=0;i<form.length;i++) sum+=form[i]; var avg=sum/form.length; return 0.9 + 0.2*avg; } // reducido de 0.3 a 0.2
+function getFormFactor(league,team){ var key=league+'|'+team; var form=teamForm[key]||[]; if(form.length===0) return 1.0; var sum=0; for(var i=0;i<form.length;i++) sum+=form[i]; var avg=sum/form.length; return 0.9 + 0.2*avg; }
 function updateForm(league,home,away,result){
   var hKey=league+'|'+home, aKey=league+'|'+away;
   var hScore=result==='home'?1:(result==='draw'?0.5:0), aScore=1-hScore;
@@ -932,7 +931,7 @@ function updateCalibration(market, actualOutcome) {
   else if (actualOutcome === 'draw') target.draw = 1;
   else if (actualOutcome === 'away') target.away = 1;
 
-  var alpha = 0.05; // 5% de ajuste por apuesta
+  var alpha = 0.05;
   calibrationBias.home = calibrationBias.home * 0.95 + target.home * 0.05;
   calibrationBias.draw = calibrationBias.draw * 0.95 + target.draw * 0.05;
   calibrationBias.away = calibrationBias.away * 0.95 + target.away * 0.05;
@@ -956,7 +955,7 @@ function runAnalysis(){
   var marketProb=fair?{hw:fair.home*100,dr:fair.draw*100,aw:fair.away*100}:null;
   var combinedProb={hw:modelProb.hw,dr:modelProb.dr,aw:modelProb.aw};
   if(marketProb){
-    var w=(config.marketWeight||50)/100; // 50% por defecto
+    var w=(config.marketWeight||50)/100;
     combinedProb.hw=modelProb.hw*(1-w)+marketProb.hw*w;
     combinedProb.dr=modelProb.dr*(1-w)+marketProb.dr*w;
     combinedProb.aw=modelProb.aw*(1-w)+marketProb.aw*w;
@@ -1106,8 +1105,6 @@ function updateBetResult(idx,won){
         var result;
         if(won){
           result = b.market==='Victoria Local' ? 'home' : (b.market==='Victoria Visitante' ? 'away' : 'draw');
-        } else {
-          // Si perdió no podemos estar seguros del resultado exacto, así que no actualizamos calibración/ELO
         }
         if(result){
           updateELO(league,home,away,result);
