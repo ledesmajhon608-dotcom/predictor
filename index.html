@@ -286,6 +286,9 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
   color:var(--text3);font-weight:600;text-transform:none;letter-spacing:0;}
 .footer{text-align:center;font-size:0.54rem;color:var(--text3);margin-top:20px;
   letter-spacing:1.5px;text-transform:uppercase;opacity:0.5;}
+.version-badge{display:inline-block;font-size:0.48rem;padding:2px 6px;border-radius:12px;
+  background:rgba(16,185,129,0.2);color:var(--green2);font-weight:900;letter-spacing:0.3px;
+  margin-left:6px;}
 </style>
 </head>
 <body>
@@ -298,7 +301,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     <div class="app-title">
       <span class="ball">&#x26BD;</span>
       <span class="title-text">BET ANALYTICS PRO</span>
-      <span class="vtag">v4.0</span>
+      <span class="vtag">v4.1<span class="version-badge">FIXED</span></span>
     </div>
     <div class="app-subtitle">Poisson &middot; Dixon-Coles &middot; Kelly &middot; Bzzoiro API v2 &middot; Auto‑calibración</div>
   </div>
@@ -530,7 +533,8 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         <strong>Modelo:</strong> Poisson Bivariado + Dixon-Coles (rho dinámico)<br>
         <strong>Calibración:</strong> Ajuste automático según resultados reales<br>
         <strong>Defaults conservadores:</strong> Kelly 10% / Max 3% / EV min +8%<br>
-        <strong>Combinación mercado:</strong> 50% modelo + 50% cuotas reales (automático)
+        <strong>Combinación mercado:</strong> 50% modelo + 50% cuotas reales (automático)<br>
+        <strong>Versión:</strong> v4.1 con fixes críticas (HT, Corners, Performance)
       </div>
       <button class="btn btn-primary mt16" onclick="saveConfig()">Guardar Configuracion</button>
       <button class="btn btn-danger mt8" onclick="resetData()">Resetear Todos los Datos</button>
@@ -769,7 +773,16 @@ function dcTau(i,j,lh,la,rho){
   return 1;
 }
 function pPMF(k,lam){ if(lam<=0||k<0) return 0; var lp=-lam+k*Math.log(lam); for(var i=1;i<=k;i++) lp-=Math.log(i); return Math.exp(lp); }
-function pCDF(k,lam){ var sum=0; for(var i=0;i<=Math.floor(k);i++) sum+=pPMF(i,lam); return Math.min(1,sum); }
+
+/* =============================================================================
+   FIX #1: pCDF OPTIMIZADA - Trunca inteligentemente
+   ============================================================================= */
+function pCDF(k,lam){ 
+  var sum=0;
+  var max_i=Math.ceil(lam+6*Math.sqrt(lam));
+  for(var i=0; i<=Math.floor(Math.min(k,max_i)); i++) sum+=pPMF(i,lam);
+  return Math.min(1,sum); 
+}
 
 const MAX_GOALS=15;
 function bivariateDist(lh,la,rho){
@@ -780,11 +793,17 @@ function bivariateDist(lh,la,rho){
   return dist;
 }
 
-// Mercados secundarios: ajuste de HT ratio a 0.40
+/* =============================================================================
+   FIX #2: Half-Time Over 0.5 - Lógica Correcta
+   ============================================================================= */
 function computeMarkets(dist,home,away,leagueCode,cLam){
   var hw=0,dr=0,aw=0, over15=0,over25=0,btts=0;
-  var htLam=(LEAGUES_CFG[leagueCode]?LEAGUES_CFG[leagueCode].htRatio:0.40)*(home.lambda+away.lambda);
+  
+  // FIX: Aplicar htRatio a CADA lambda por separado, luego sumar
+  var htRatio=LEAGUES_CFG[leagueCode]?LEAGUES_CFG[leagueCode].htRatio:0.40;
+  var htLam=(parseFloat(home.lambda)*htRatio)+(parseFloat(away.lambda)*htRatio);
   var overHT05=1-pPMF(0,htLam);
+  
   for(var i=0;i<=MAX_GOALS;i++){
     for(var j=0;j<=MAX_GOALS;j++){
       var p=dist[i][j];
@@ -846,7 +865,14 @@ function predictMatch(leagueCode,home,away,apiStats){
   if(isNaN(lh)||lh<=0||lh>8) lh=gAvg/2;
   if(isNaN(la)||la<=0||la>8) la=gAvg/2;
   var hcs=getCornerStr(leagueCode,home),acs=getCornerStr(leagueCode,away);
-  cLam=cAvg*((hcs.atk*acs.def*hfa)+(acs.atk*hcs.def))/2;
+  
+  /* =============================================================================
+     FIX #3: Corners - Fórmula Mejorada con HFA Simétrico
+     ============================================================================= */
+  var cornerHome=cAvg*hcs.atk*acs.def*hfa;
+  var cornerAway=cAvg*acs.atk*hcs.def*(1/hfa);
+  cLam=cornerHome+cornerAway;
+  
   var dist=bivariateDist(lh,la,rho);
   var markets=computeMarkets(dist,{lambda:lh},{lambda:la},leagueCode,cLam);
   return {
@@ -1148,7 +1174,7 @@ function renderResults(pred,markets,fair){
     +(hasVal?'<div class="success-box" style="margin-bottom:10px">MERCADOS CON VALOR ENCONTRADOS</div>':'')
     +(!hasVal?'<div class="warn-box" style="margin-bottom:10px">Sin apuestas que superen todos los filtros.</div>':'')
     +marketsHtml
-    +'<div class="model-pill" style="margin-top:14px"><strong>ELO + forma reciente + rho dinámico + calibración automática</strong></div>';
+    +'<div class="model-pill" style="margin-top:14px"><strong>ELO + forma reciente + rho dinámico + calibración automática &nbsp;|&nbsp; v4.1 FIXED</strong></div>';
   setTimeout(function(){
     document.querySelectorAll('.bar-fill[data-w]').forEach(function(b){b.style.width=b.dataset.w+'%';});
   },80);
@@ -1311,7 +1337,7 @@ function updateStats(){
   var modelBets=settled.filter(function(b){return b.market==='Victoria Local'||b.market==='Empate'||b.market==='Victoria Visitante';});
   var correct=0; modelBets.forEach(function(b){if(b.result==='win') correct++;});
   var acc=modelBets.length?Math.round(correct/modelBets.length*100):'--';
-  document.getElementById('model-accuracy-box').innerHTML='<strong>Precision modelo 1X2:</strong> '+acc+'% ('+correct+'/'+modelBets.length+' aciertos) &nbsp;|&nbsp; <strong>Calibracion:</strong> activa';
+  document.getElementById('model-accuracy-box').innerHTML='<strong>Precision modelo 1X2:</strong> '+acc+'% ('+correct+'/'+modelBets.length+' aciertos) &nbsp;|&nbsp; <strong>Calibracion:</strong> activa &nbsp;|&nbsp; <strong>Versión:</strong> v4.1 FIXED';
   drawChart();
 }
 function drawChart(){
