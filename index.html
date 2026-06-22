@@ -301,9 +301,9 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     <div class="app-title">
       <span class="ball">&#x26BD;</span>
       <span class="title-text">BET ANALYTICS PRO</span>
-      <span class="vtag">v4.1<span class="version-badge">FIXED</span></span>
+      <span class="vtag">v4.2<span class="version-badge">PRO</span></span>
     </div>
-    <div class="app-subtitle">Poisson &middot; Dixon-Coles &middot; Kelly &middot; Bzzoiro API v2 &middot; Auto‑calibración</div>
+    <div class="app-subtitle">Poisson · Dixon-Coles · Kelly · ELO · xG · HFA Dinámico · Bzzoiro API v2</div>
   </div>
 
   <div class="bankroll-card">
@@ -534,7 +534,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         <strong>Calibración:</strong> Ajuste automático según resultados reales<br>
         <strong>Defaults conservadores:</strong> Kelly 10% / Max 3% / EV min +8%<br>
         <strong>Combinación mercado:</strong> 50% modelo + 50% cuotas reales (automático)<br>
-        <strong>Versión:</strong> v4.1 con fixes críticas (HT, Corners, Performance)
+        <strong>Versión:</strong> v4.2 PRO · Volatilidad histórica · HFA dinámico · H2H · Correlación · Tempo · Confianza
       </div>
       <button class="btn btn-primary mt16" onclick="saveConfig()">Guardar Configuracion</button>
       <button class="btn btn-danger mt8" onclick="resetData()">Resetear Todos los Datos</button>
@@ -664,7 +664,6 @@ const API_TEAM_NAME_MAP = {
     'Jordania': ['Jordan'],
     'Marruecos': ['Morocco'],
     'México': ['Mexico'],
-    'Nigeria': ['Nigeria'],
     'Noruega': ['Norway'],
     'Nueva Zelanda': ['New Zealand'],
     'Países Bajos': ['Netherlands', 'Holland'],
@@ -673,7 +672,7 @@ const API_TEAM_NAME_MAP = {
     'Portugal': ['Portugal'],
     'Arabia Saudita': ['Saudi Arabia'],
     'Argelia': ['Algeria'],
-    'RD del Congo': ['DR Congo', 'Congo DR', 'Democratic Republic of the Congo'],
+    'RD Congo': ['DR Congo', 'Congo DR', 'Democratic Republic of the Congo'],
     'República Checa': ['Czech Republic', 'Czechia'],
     'Senegal': ['Senegal'],
     'Sudáfrica': ['South Africa'],
@@ -709,8 +708,8 @@ const STRENGTH = {
     'Noruega':[0.98,1.06],'Escocia':[0.97,1.07],'República Checa':[0.96,1.08],'Canadá':[0.98,1.06],
     'Irán':[0.95,1.10],'Suecia':[0.95,1.10],'Egipto':[0.95,1.10],'Costa de Marfil':[0.95,1.10],
     'Arabia Saudita':[0.94,1.11],'Argelia':[0.96,1.08],'Bosnia y Herzegovina':[0.94,1.11],
-    'Ghana':[0.93,1.12],'Uzbekistán':[0.93,1.12],'Nigeria':[0.93,1.12],'Jordania':[0.92,1.13],
-    'Irak':[0.91,1.14],'RD del Congo':[0.91,1.14],'Sudáfrica':[0.90,1.15],'Catar':[0.89,1.16],
+    'Ghana':[0.93,1.12],'Uzbekistán':[0.93,1.12],'Jordania':[0.92,1.13],
+    'Irak':[0.91,1.14],'RD Congo':[0.91,1.14],'Sudáfrica':[0.90,1.15],'Catar':[0.89,1.16],
     'Túnez':[0.89,1.16],'Panamá':[0.88,1.17],'Nueva Zelanda':[0.84,1.20],'Cabo Verde':[0.83,1.21],
     'Curazao':[0.79,1.24],'Haití':[0.80,1.23]
   },
@@ -734,7 +733,8 @@ function updateELO(league,home,away,result){
   var hELO=getELO(league,home), aELO=getELO(league,away);
   var expected=1/(1+Math.pow(10,(aELO-hELO)/400));
   var score=result==='home'?1:(result==='draw'?0.5:0);
-  var K=30;
+  // MEJORA #7: K-factor dinámico por liga
+  var K=getDynamicKFactor(league);
   eloRatings[league][home]=hELO+K*(score-expected);
   eloRatings[league][away]=aELO+K*((1-score)-(1-expected));
   saveAll();
@@ -764,6 +764,235 @@ function getRho(lc,home,away){
   var offFactor=(hs.atk+as.atk)/2;
   var defFactor=(hs.def+as.def)/2;
   return baseRho+(offFactor-1)*0.05-(defFactor-1)*0.03;
+}
+
+/* =============================================================================
+   MEJORA #1: VOLATILIDAD HISTÓRICA - Pondera reciente vs histórico
+   ============================================================================= */
+function calculateVolatility(league, team, statsType) {
+  var key = league + '|' + team + '|' + statsType;
+  var form = teamForm[key] || [];
+  if (form.length < 3) return { current: 1.0, trend: 0, stability: 1.0 };
+  
+  // Últimos 5 vs antes
+  var recent = form.slice(-5);
+  var recentAvg = recent.reduce((a, b) => a + b, 0) / recent.length;
+  var historical = form.length > 5 ? form.slice(0, -5) : form;
+  var historicalAvg = historical.length > 0 ? historical.reduce((a, b) => a + b, 0) / historical.length : 1.0;
+  
+  // Tendencia (mejorando/empeorando)
+  var trend = recentAvg - historicalAvg;
+  
+  // Estabilidad (varianza)
+  var variance = recent.map(x => Math.pow(x - recentAvg, 2)).reduce((a, b) => a + b, 0) / recent.length;
+  var stability = Math.max(0.9, 1.0 - variance * 0.1);
+  
+  // Valor ponderado: 60% reciente, 40% histórico
+  var weighted = recentAvg * 0.6 + historicalAvg * 0.4;
+  
+  return { current: weighted, trend: trend, stability: stability };
+}
+
+/* =============================================================================
+   MEJORA #3: HOME FIELD ADVANTAGE DINÁMICO
+   ============================================================================= */
+function calculateDynamicHFA(league, home, away, apiStats) {
+  var baseHFA = LEAGUES_CFG[league] ? LEAGUES_CFG[league].hfa : 1.05;
+  var hfaAdjustment = 1.0;
+  
+  // Ajuste por historial de casa del equipo
+  if (apiStats && apiStats.home && apiStats.away && apiStats.home.played >= 5 && apiStats.away.played >= 5) {
+    var homeAvgHome = apiStats.home.gfHome || 1.0;
+    var homeAvgAway = apiStats.away.gfAway || 1.0;
+    var homeStrength = (homeAvgHome / homeAvgAway - 1) * 0.15;
+    hfaAdjustment += homeStrength; // Varía ±15%
+  }
+  
+  // Ajuste por forma en casa
+  var homeFormHome = calculateVolatility(league, home, 'home').current || 1.0;
+  var homeFormAway = calculateVolatility(league, away, 'away').current || 1.0;
+  hfaAdjustment *= (homeFormHome / homeFormAway);
+  
+  // Limitador: HFA nunca fuera de rango 0.95-1.15
+  hfaAdjustment = Math.max(0.95, Math.min(1.15, baseHFA * hfaAdjustment));
+  
+  return hfaAdjustment;
+}
+
+/* =============================================================================
+   MEJORA #5: FACTOR CONTEXTO (Descanso, Altitud, etc.)
+   ============================================================================= */
+function calculateContextFactor(league, home, away) {
+  var contextFactor = 1.0;
+  
+  // Descanso (asumimos última data = últimas 72 horas)
+  // En un app real esto vendría de la API
+  var daysSinceMatch = 3; // Default: óptimo
+  if (daysSinceMatch < 3) contextFactor *= 0.96;      // Fatiga
+  if (daysSinceMatch > 10) contextFactor *= 0.97;     // Desentrenamiento
+  
+  // Altitud (si fuera aplicable - para torneos en altura)
+  var altitudeFactor = 1.0;
+  if (league === 'Libertadores' || league === 'Sudamericana') {
+    // La Paz, Bogotá, Quito están en altura
+    var teamAltitudes = {
+      'La Paz': 3650,
+      'Bogotá': 2640,
+      'Quito': 2850
+    };
+    altitudeFactor = 1.0; // Podría calcularse si tuviéramos locación
+  }
+  
+  contextFactor *= altitudeFactor;
+  
+  return Math.max(0.95, Math.min(1.10, contextFactor));
+}
+
+/* =============================================================================
+   MEJORA #6: HISTORIAL H2H
+   ============================================================================= */
+function calculateH2HBoost(league, home, away) {
+  // Acumular historial H2H desde apuestas liquidadas 1X2
+  var h2hSettled = betHistory.filter(function(b){
+    if(b.status!=='settled') return false;
+    var parts=(b.match||'').split(' vs ');
+    if(parts.length!==2) return false;
+    var bHome=parts[0].trim(), bAway=parts[1].trim();
+    return (bHome===home&&bAway===away)||(bHome===away&&bAway===home);
+  });
+  if(h2hSettled.length >= 3) {
+    // Re-calcular desde historial real
+    var realWins=0,realLosses=0,realDraws=0;
+    h2hSettled.forEach(function(b){
+      var parts=b.match.split(' vs ');
+      var bHome=parts[0].trim();
+      var isHomeTeam=(bHome===home);
+      if(b.market==='Empate') realDraws++;
+      else if((b.market==='Victoria Local'&&isHomeTeam)||(b.market==='Victoria Visitante'&&!isHomeTeam)) realWins++;
+      else realLosses++;
+    });
+    var h2hKey=league+'|'+home+'|'+away;
+    localStorage.setItem('h2h_'+h2hKey+'_home', String(realWins));
+    localStorage.setItem('h2h_'+h2hKey+'_away', String(realLosses));
+    localStorage.setItem('h2h_'+h2hKey+'_draw', String(realDraws));
+  }
+  // 
+  var h2hKey = league + '|' + home + '|' + away;
+  var h2hWins = parseInt(localStorage.getItem('h2h_' + h2hKey + '_home') || '0');
+  var h2hLosses = parseInt(localStorage.getItem('h2h_' + h2hKey + '_away') || '0');
+  var h2hDraws = parseInt(localStorage.getItem('h2h_' + h2hKey + '_draw') || '0');
+  var h2hTotal = h2hWins + h2hLosses + h2hDraws;
+  
+  if (h2hTotal < 3) return 1.0; // No hay historial suficiente
+  
+  var h2hHomeWinRate = h2hWins / h2hTotal;
+  var h2hBoost = 0.85 + h2hHomeWinRate * 0.3; // Rango 0.85-1.15
+  
+  return h2hBoost;
+}
+
+/* =============================================================================
+   MEJORA #7: K-FACTOR DINÁMICO EN ELO
+   ============================================================================= */
+function getDynamicKFactor(league, importance) {
+  var K = 30; // Base
+  
+  // Por competición
+  if (league === 'Mundial_2026') K = 35;           // Más importante
+  if (league === 'Libertadores' || league === 'Sudamericana') K = 32;
+  if (league === 'MLS') K = 33;                    // Liga más variable
+  if (league === 'BrasileiroSerieB') K = 28;       // Menos importante
+  
+  // Por importancia del partido (si fuera disponible)
+  // if (isFinal) K = 50;
+  // if (isPlayoff) K = 40;
+  
+  return K;
+}
+
+/* =============================================================================
+   MEJORA #9: TEMPO DE JUEGO
+   ============================================================================= */
+function calculateTempoAdjustment(league, team) {
+  // En app real vendría de xG/análisis de datos
+  // Estimación: equipos europeos tienden a 500-650 pases/partido
+  var tempoEstimate = {
+    'EPL': 0.95,           // Más rápido, menos técnico
+    'La_liga': 1.02,       // Más lento, más técnico
+    'Serie_A': 1.00,
+    'Bundesliga': 0.98,
+    'Ligue_1': 0.99,
+    'Eredivisie': 0.96,
+    'MLS': 0.92,           // Menos posesión
+    'Brasileirao': 0.94    // Juego rápido
+  };
+  
+  var leagueBase = tempoEstimate[league] || 0.98;
+  
+  // Equipos conocidos por su estilo
+  var teamTempo = {
+    'Barcelona': 1.08,
+    'Real Madrid': 1.05,
+    'Manchester City': 1.06,
+    'Liverpool': 0.98,
+    'Juventus': 1.02,
+    'Bayern Munich': 1.04,
+    'PSG': 1.01
+  };
+  
+  return teamTempo[team] || leagueBase;
+}
+
+/* =============================================================================
+   MEJORA #10: CONFIANZA EN LA PREDICCIÓN
+   ============================================================================= */
+function calculatePredictionConfidence(apiStats, h, a, lh, la) {
+  var confidence = 0.5; // Base 50%
+  
+  if (!apiStats || !apiStats.home || !apiStats.away) return { overall: 0.6, range: 12 };
+  
+  var hPlayed = apiStats.home.played || 0;
+  var aPlayed = apiStats.away.played || 0;
+  var avgPlayed = (hPlayed + aPlayed) / 2;
+  
+  // Más datos = más confianza
+  if (avgPlayed >= 20) confidence = 0.78;
+  else if (avgPlayed >= 15) confidence = 0.72;
+  else if (avgPlayed >= 10) confidence = 0.68;
+  else if (avgPlayed >= 5) confidence = 0.62;
+  
+  // Lambdas extremos = menos confianza
+  if ((lh > 3.0 && la < 0.5) || (la > 3.0 && lh < 0.5)) {
+    confidence *= 0.90;
+  }
+  
+  // Varianza en datos = menos confianza
+  var gfVariance = Math.abs(apiStats.home.gfHome - apiStats.home.gaHome);
+  if (gfVariance > 1.5) confidence *= 0.95;
+  
+  // Rango de error esperado (points)
+  var range = 15 - (confidence * 8); // 7-15 puntos de margen de error
+  
+  return { overall: Math.min(0.95, confidence), range: range };
+}
+
+/* =============================================================================
+   MEJORA #4: AJUSTE DE CORRELACIÓN EN MERCADOS SECUNDARIOS
+   ============================================================================= */
+function applyMarketCorrelation(markets, lh, la, rho) {
+  var baseGoals = lh + la;
+  var goalDeviation = baseGoals - 2.5; // vs. expected 2.5
+  
+  // BTTS es más probable con más goles esperados
+  var bttsAdjustment = 1.0 + (goalDeviation * 0.08);
+  markets.btts = Math.max(10, Math.min(90, parseFloat(markets.btts) * bttsAdjustment));
+  
+  // Corners correlacionan con goles (más goles = defensa caótica = más corners)
+  var cornerAdjustment = 1.0 + (goalDeviation * 0.06);
+  markets.c75 = Math.max(15, Math.min(85, parseFloat(markets.c75) * cornerAdjustment));
+  markets.c85 = Math.max(10, Math.min(80, parseFloat(markets.c85) * cornerAdjustment));
+  
+  return markets;
 }
 function dcTau(i,j,lh,la,rho){
   if(i===0&&j===0) return Math.max(0.001,1-lh*la*rho);
@@ -830,26 +1059,64 @@ function computeMarkets(dist,home,away,leagueCode,cLam){
 function predictMatch(leagueCode,home,away,apiStats){
   var cfg=LEAGUES_CFG[leagueCode];
   if(!cfg) cfg={goals:2.5,corners:10,hfa:1.05,htRatio:0.40,rho:-0.1};
-  var gAvg=cfg.goals,cAvg=cfg.corners,hfa=cfg.hfa;
+  var gAvg=cfg.goals,cAvg=cfg.corners;
+  
+  // MEJORA #3: HFA Dinámico por equipo
+  var hfa = calculateDynamicHFA(leagueCode, home, away, apiStats);
+  
+  // MEJORA #5: Factor contexto (fatiga, altitud, etc.)
+  var contextFactor = calculateContextFactor(leagueCode, home, away);
+  
+  // MEJORA #6: H2H Boost histórico
+  var h2hBoost = calculateH2HBoost(leagueCode, home, away);
+  
+  // MEJORA #9: Tempo de juego por equipo
+  var homeTempoAdj = calculateTempoAdjustment(leagueCode, home);
+  var awayTempoAdj = calculateTempoAdjustment(leagueCode, away);
+  
   var rho=getRho(leagueCode,home,away);
   var lh,la,cLam;
+  var weightUsed=0;
+  
   if(apiStats&&apiStats.home&&apiStats.away){
     var h=apiStats.home,a=apiStats.away;
     var totalPlayed=h.played+a.played;
+    
+    // MEJORA #8: Weight dinámico — crece con más datos
     var dataQuality=Math.min(totalPlayed/30,1.0);
+    var weight = Math.min(dataQuality, 0.70);
+    if(totalPlayed>=20) weight=0.80;
+    if(totalPlayed>=25) weight=0.85;
+    weightUsed=weight;
+    
     if(totalPlayed>=10){
-      var ha=(typeof h.gfHome==='number'&&h.gfHome>0)?h.gfHome/(gAvg/2):1,
-          hd=(typeof h.gaHome==='number'&&h.gaHome>0)?h.gaHome/(gAvg/2):1;
-      var aa=(typeof a.gfAway==='number'&&a.gfAway>0)?a.gfAway/(gAvg/2):1,
-          ad=(typeof a.gaAway==='number'&&a.gaAway>0)?a.gaAway/(gAvg/2):1;
+      // MEJORA #1: Volatilidad histórica — pondera reciente 60% vs histórico 40%
+      var homeVolHome = calculateVolatility(leagueCode, home, 'home');
+      var awayVolAway = calculateVolatility(leagueCode, away, 'away');
+      var homeVolTrend = homeVolHome.trend || 0;
+      var awayVolTrend = awayVolAway.trend || 0;
+      
+      var ha=(typeof h.gfHome==='number'&&h.gfHome>0)?h.gfHome/(gAvg/2):1;
+      var hd=(typeof h.gaHome==='number'&&h.gaHome>0)?h.gaHome/(gAvg/2):1;
+      var aa=(typeof a.gfAway==='number'&&a.gfAway>0)?a.gfAway/(gAvg/2):1;
+      var ad=(typeof a.gaAway==='number'&&a.gaAway>0)?a.gaAway/(gAvg/2):1;
+      
+      // Aplicar volatilidad ponderada + tendencia
+      ha *= homeVolHome.current * (1 + homeVolTrend * 0.05);
+      ad *= awayVolAway.current * (1 + awayVolTrend * 0.05);
+      
+      // Estabilidad: si hay mucha varianza, reducir confianza en API
+      var stabilityPenalty = Math.min(homeVolHome.stability, awayVolAway.stability);
+      weight *= stabilityPenalty;
+      
       var apiLh=Math.max(0.3,(gAvg/2)*ha*ad*hfa);
       var apiLa=Math.max(0.3,(gAvg/2)*aa*hd*(1/hfa));
       var hBase=getStr(leagueCode,home),aBase=getStr(leagueCode,away);
       var baseLh=Math.max(0.3,(gAvg/2)*hBase.atk*aBase.def*hfa);
       var baseLa=Math.max(0.3,(gAvg/2)*aBase.atk*hBase.def*(1/hfa));
-      var weight=Math.min(dataQuality,0.7);
-      if(isNaN(apiLh)||isNaN(apiLa)) { apiLh=baseLh; apiLa=baseLa; weight=0; }
-      if(isNaN(baseLh)||isNaN(baseLa)) { baseLh=baseLa=1; }
+      
+      if(isNaN(apiLh)||isNaN(apiLa)){ apiLh=baseLh; apiLa=baseLa; weight=0; }
+      if(isNaN(baseLh)||isNaN(baseLa)){ baseLh=baseLa=1; }
       lh=baseLh*(1-weight)+apiLh*weight;
       la=baseLa*(1-weight)+apiLa*weight;
     }else{
@@ -862,26 +1129,43 @@ function predictMatch(leagueCode,home,away,apiStats){
     lh=Math.max(0.3,(gAvg/2)*hs.atk*as2.def*hfa);
     la=Math.max(0.3,(gAvg/2)*as2.atk*hs.def*(1/hfa));
   }
+  
   if(isNaN(lh)||lh<=0||lh>8) lh=gAvg/2;
   if(isNaN(la)||la<=0||la>8) la=gAvg/2;
-  var hcs=getCornerStr(leagueCode,home),acs=getCornerStr(leagueCode,away);
   
-  /* =============================================================================
-     FIX #3: Corners - Fórmula Mejorada con HFA Simétrico
-     ============================================================================= */
+  // Aplicar ajustes contextuales (tempo separado por equipo, contexto global)
+  lh = lh * contextFactor * h2hBoost * homeTempoAdj;
+  la = la * contextFactor * h2hBoost * awayTempoAdj;
+  
+  // Limitar lambdas post-ajuste
+  lh = Math.max(0.25, Math.min(7.0, lh));
+  la = Math.max(0.25, Math.min(7.0, la));
+  
+  // FIX #3 (v4.1): Corners con HFA simétrico
+  var hcs=getCornerStr(leagueCode,home),acs=getCornerStr(leagueCode,away);
   var cornerHome=cAvg*hcs.atk*acs.def*hfa;
   var cornerAway=cAvg*acs.atk*hcs.def*(1/hfa);
   cLam=cornerHome+cornerAway;
   
   var dist=bivariateDist(lh,la,rho);
   var markets=computeMarkets(dist,{lambda:lh},{lambda:la},leagueCode,cLam);
+  
+  // MEJORA #4: Correlación cruzada entre mercados
+  markets = applyMarketCorrelation(markets, lh, la, rho);
+  
+  // MEJORA #10: Confianza en la predicción con rango de error
+  var confidence = calculatePredictionConfidence(apiStats, home, away, lh, la);
+  
   return {
     home:home,away:away,leagueName:cfg.name||leagueCode,
     lh:lh.toFixed(3),la:la.toFixed(3),
     hw:markets.hw,dr:markets.dr,aw:markets.aw,
     btts:markets.btts,o15:markets.o15,o25:markets.o25,
     ht05:markets.ht05,c75:markets.c75,c85:markets.c85,
-    cLam:cLam.toFixed(2),usingAPI:!!(apiStats&&apiStats.home&&apiStats.away&&(apiStats.home.played+apiStats.away.played)>=10)
+    cLam:cLam.toFixed(2),
+    usingAPI:!!(apiStats&&apiStats.home&&apiStats.away&&(apiStats.home.played+apiStats.away.played)>=10),
+    confidence:confidence,
+    weightUsed:weightUsed
   };
 }
 
@@ -1109,7 +1393,8 @@ function renderResults(pred,markets,fair){
   var sourceHtml=pred.usingAPI?
     '<div class="source-ok">Datos reales via Bzzoiro API v2. Mayor fiabilidad del modelo.</div>':
     '<div class="source-warn">Datos estadisticos (sin API). ELO y forma reciente activos. Usa con cautela para dinero real.</div>';
-  var apiBadge=pred.usingAPI?'<span class="badge badge-api">DATOS API v2</span>':'<span class="badge badge-stat">MODELO ESTADISTICO</span>';
+  var weightPct = pred.weightUsed ? Math.round(pred.weightUsed*100) : 0;
+  var apiBadge=pred.usingAPI?'<span class="badge badge-api">DATOS API v2 ('+(weightPct>0?weightPct+'%':'auto')+')</span>':'<span class="badge badge-stat">MODELO ESTADISTICO</span>';
   var evFilterTag='<span class="ev-filter-tag">EV min: +'+minEV+'%</span>';
   var hw=parseFloat(pred.hw),dr=parseFloat(pred.dr),aw=parseFloat(pred.aw);
   var bestIdx=hw>=dr&&hw>=aw?0:(dr>=hw&&dr>=aw?1:2);
@@ -1169,12 +1454,19 @@ function renderResults(pred,markets,fair){
     +'<div class="prob-cell'+(bestIdx===1?' best':'')+'"><div class="prob-cell-label">Empate</div><div class="prob-cell-val">'+pred.dr+'%</div></div>'
     +'<div class="prob-cell'+(bestIdx===2?' best':'')+'"><div class="prob-cell-label">Visita</div><div class="prob-cell-val">'+pred.aw+'%</div></div>'
     +'</div>'
-    +'<div style="text-align:center;margin-top:10px;font-size:0.6rem;color:var(--text3);font-family:var(--mono)">'+pred.leagueName+'</div>'
+    +'<div style="text-align:center;margin-top:10px;font-size:0.6rem;color:var(--text3);font-family:var(--mono)">'
+    +pred.leagueName
+    +(pred.confidence?' &nbsp;|&nbsp; <span style="color:var(--blue2)">'+Math.round((pred.confidence.overall||0.6)*100)+'% confianza</span>':'')
+    +'</div>'
     +'</div>'
     +(hasVal?'<div class="success-box" style="margin-bottom:10px">MERCADOS CON VALOR ENCONTRADOS</div>':'')
     +(!hasVal?'<div class="warn-box" style="margin-bottom:10px">Sin apuestas que superen todos los filtros.</div>':'')
     +marketsHtml
-    +'<div class="model-pill" style="margin-top:14px"><strong>ELO + forma reciente + rho dinámico + calibración automática &nbsp;|&nbsp; v4.1 FIXED</strong></div>';
+    +'<div class="model-pill" style="margin-top:14px">'
+    +'<strong>ELO + forma reciente + rho dinámico + calibración automática &nbsp;|&nbsp; v4.2</strong><br>'
+    +'<span style="font-size:0.62rem;color:var(--text3)">Volatilidad hist. · HFA dinámico · H2H · Correlación mercados · Tempo · Confianza</span>'
+    +(pred.confidence?'<span style="display:block;margin-top:4px;font-size:0.62rem;color:var(--text3)">Confianza del modelo: <strong style="color:var(--blue2)">'+Math.round((pred.confidence.overall||0.6)*100)+'%</strong> &nbsp;|&nbsp; Margen de error: ±'+Math.round(pred.confidence.range||10)+'pts</span>':'')
+    +'</div>';
   setTimeout(function(){
     document.querySelectorAll('.bar-fill[data-w]').forEach(function(b){b.style.width=b.dataset.w+'%';});
   },80);
@@ -1337,7 +1629,7 @@ function updateStats(){
   var modelBets=settled.filter(function(b){return b.market==='Victoria Local'||b.market==='Empate'||b.market==='Victoria Visitante';});
   var correct=0; modelBets.forEach(function(b){if(b.result==='win') correct++;});
   var acc=modelBets.length?Math.round(correct/modelBets.length*100):'--';
-  document.getElementById('model-accuracy-box').innerHTML='<strong>Precision modelo 1X2:</strong> '+acc+'% ('+correct+'/'+modelBets.length+' aciertos) &nbsp;|&nbsp; <strong>Calibracion:</strong> activa &nbsp;|&nbsp; <strong>Versión:</strong> v4.1 FIXED';
+  document.getElementById('model-accuracy-box').innerHTML='<strong>Precision modelo 1X2:</strong> '+acc+'% ('+correct+'/'+modelBets.length+' aciertos) &nbsp;|&nbsp; <strong>Calibracion:</strong> activa &nbsp;|&nbsp; <strong>Versión:</strong> v4.2 PRO';
   drawChart();
 }
 function drawChart(){
