@@ -825,35 +825,119 @@ function calculateDynamicHFA(league, home, away, apiStats) {
    ============================================================================= */
 function calculateContextFactor(league, home, away) {
   var contextFactor = 1.0;
-  
-  // Descanso (asumimos última data = últimas 72 horas)
-  // En un app real esto vendría de la API
-  var daysSinceMatch = 3; // Default: óptimo
-  if (daysSinceMatch < 3) contextFactor *= 0.96;      // Fatiga
-  if (daysSinceMatch > 10) contextFactor *= 0.97;     // Desentrenamiento
-  
-  // Altitud (si fuera aplicable - para torneos en altura)
-  var altitudeFactor = 1.0;
-  if (league === 'Libertadores' || league === 'Sudamericana') {
-    // La Paz, Bogotá, Quito están en altura
-    var teamAltitudes = {
-      'La Paz': 3650,
-      'Bogotá': 2640,
-      'Quito': 2850
-    };
-    altitudeFactor = 1.0; // Podría calcularse si tuviéramos locación
+
+  // --- DESCANSO REAL: calcular días desde último partido en betHistory ---
+  var now = Date.now();
+  var msDay = 86400000;
+
+  function lastMatchDays(team) {
+    var relevant = betHistory.filter(function(b) {
+      if (!b.date) return false;
+      var parts = (b.match || '').split(' vs ');
+      return parts.length === 2 && (parts[0].trim() === team || parts[1].trim() === team);
+    });
+    if (!relevant.length) return 4; // Sin historial → asume descanso óptimo
+    var latest = Math.max.apply(null, relevant.map(function(b) { return new Date(b.date).getTime(); }));
+    return Math.round((now - latest) / msDay);
   }
-  
-  contextFactor *= altitudeFactor;
-  
-  return Math.max(0.95, Math.min(1.10, contextFactor));
+
+  var homeDays = lastMatchDays(home);
+  var awayDays = lastMatchDays(away);
+
+  // Fatiga local: menos de 3 días de descanso
+  if (homeDays < 3) contextFactor *= 0.97;
+  else if (homeDays > 12) contextFactor *= 0.98; // Desentrenamiento
+
+  // Fatiga visitante afecta más (viaje + menos descanso penaliza más)
+  if (awayDays < 3) contextFactor *= 0.96;
+  else if (awayDays > 12) contextFactor *= 0.98;
+
+  // --- ALTITUD REAL: equipos que juegan de local en altura ---
+  var HIGH_ALTITUDE_TEAMS = {
+    // Libertadores / Sudamericana
+    'Bolivar': 3640, 'The Strongest': 3640, 'Jorge Wilstermann': 2558,
+    'LDU Quito': 2850, 'Independiente del Valle': 2850,
+    'Nacional Asuncion': 100, 'Olimpia': 100,
+    'Alianza Lima': 154, 'Sporting Cristal': 154, 'Universitario': 154,
+    'Deportivo Tachira': 1050, 'Caracas FC': 900,
+    // Mundial 2026 — ciudades sede en altura
+    'México': 2240, 'Colombia': 2640, 'Ecuador': 2850,
+    'Bolivia': 3640, // No clasificó pero por si acaso
+  };
+
+  var homeAltitude = HIGH_ALTITUDE_TEAMS[home] || 0;
+  if (homeAltitude > 2000) {
+    // Visitante sufre altitud: más esfuerzo, menos oxígeno
+    var altitudePenalty = 1.0 + (homeAltitude - 2000) / 10000; // +0.0 a +0.16
+    contextFactor *= Math.min(1.08, altitudePenalty); // local se beneficia
+  }
+
+  return Math.max(0.93, Math.min(1.10, contextFactor));
 }
 
 /* =============================================================================
    MEJORA #6: HISTORIAL H2H
    ============================================================================= */
+/* Base de datos H2H histórica para clásicos conocidos.
+   Formato: 'TeamA|TeamB' → [wins_A, draws, wins_B] (siempre TeamA < TeamB alfabéticamente) */
+var H2H_BASE = {
+  // Clásicos mundiales de selecciones
+  'Argentina|Brasil':       [45, 25, 42],
+  'Argentina|Francia':      [6,  2,  3 ],
+  'Argentina|Alemania':     [8,  5,  7 ],
+  'Argentina|Uruguay':      [47, 24, 41],
+  'Argentina|Países Bajos': [5,  3,  4 ],
+  'Argentina|Portugal':     [2,  1,  1 ],
+  'Brasil|Alemania':        [8,  2,  7 ],
+  'Brasil|Francia':         [5,  2,  4 ],
+  'Brasil|España':          [5,  3,  5 ],
+  'Brasil|Uruguay':         [49, 17, 27],
+  'Alemania|España':        [7,  3,  5 ],
+  'Alemania|Francia':       [12, 4,  7 ],
+  'Alemania|Inglaterra':    [14, 5,  5 ],
+  'España|Francia':         [16, 8,  11],
+  'España|Portugal':        [17, 10, 18],
+  'España|Inglaterra':      [11, 7,  12],
+  'Francia|Portugal':       [9,  4,  7 ],
+  'Inglaterra|Francia':     [17, 9,  12],
+  'Inglaterra|Portugal':    [11, 4,  8 ],
+  'Inglaterra|Italia':      [7,  5,  4 ],
+  'Italia|Francia':         [12, 6,  9 ],
+  // Clásicos de clubes EPL
+  'Arsenal|Chelsea':        [80, 60, 70],
+  'Arsenal|Manchester City':[55, 35, 60],
+  'Arsenal|Manchester United':[65,50,72],
+  'Chelsea|Liverpool':      [60, 45, 65],
+  'Chelsea|Manchester City':[52, 40, 58],
+  'Liverpool|Manchester City':[50,35,55],
+  'Liverpool|Manchester United':[80,55,70],
+  'Manchester City|Manchester United':[35,25,58],
+  // Clásicos La Liga
+  'Barcelona|Real Madrid':  [96, 52, 100],
+  'Atletico Madrid|Barcelona':[55,35,65],
+  'Atletico Madrid|Real Madrid':[60,45,70],
+  // Clásicos Serie A
+  'Inter Milan|Juventus':   [70, 50, 68],
+  'Inter Milan|AC Milan':   [80, 55, 72],
+  'AC Milan|Juventus':      [60, 45, 65],
+  // Clásicos Bundesliga
+  'Bayern Munich|Borussia Dortmund':[60,30,38],
+  // Clásicos Libertadores
+  'Boca Juniors|River Plate':[85,55,80],
+  'Flamengo|Palmeiras':     [55, 35, 50],
+  'Flamengo|Fluminense':    [65, 40, 58],
+};
+
+function getH2HBase(teamA, teamB) {
+  var key1 = teamA + '|' + teamB;
+  var key2 = teamB + '|' + teamA;
+  if (H2H_BASE[key1]) return { wins: H2H_BASE[key1][0], draws: H2H_BASE[key1][1], losses: H2H_BASE[key1][2] };
+  if (H2H_BASE[key2]) return { wins: H2H_BASE[key2][2], draws: H2H_BASE[key2][1], losses: H2H_BASE[key2][0] };
+  return null;
+}
+
 function calculateH2HBoost(league, home, away) {
-  // Acumular historial H2H desde apuestas liquidadas 1X2
+  // 1. Acumular H2H desde apuestas liquidadas propias
   var h2hSettled = betHistory.filter(function(b){
     if(b.status!=='settled') return false;
     var parts=(b.match||'').split(' vs ');
@@ -861,35 +945,43 @@ function calculateH2HBoost(league, home, away) {
     var bHome=parts[0].trim(), bAway=parts[1].trim();
     return (bHome===home&&bAway===away)||(bHome===away&&bAway===home);
   });
-  if(h2hSettled.length >= 3) {
-    // Re-calcular desde historial real
-    var realWins=0,realLosses=0,realDraws=0;
-    h2hSettled.forEach(function(b){
-      var parts=b.match.split(' vs ');
-      var bHome=parts[0].trim();
-      var isHomeTeam=(bHome===home);
-      if(b.market==='Empate') realDraws++;
-      else if((b.market==='Victoria Local'&&isHomeTeam)||(b.market==='Victoria Visitante'&&!isHomeTeam)) realWins++;
-      else realLosses++;
-    });
-    var h2hKey=league+'|'+home+'|'+away;
-    localStorage.setItem('h2h_'+h2hKey+'_home', String(realWins));
-    localStorage.setItem('h2h_'+h2hKey+'_away', String(realLosses));
-    localStorage.setItem('h2h_'+h2hKey+'_draw', String(realDraws));
+
+  var personalWins=0, personalLosses=0, personalDraws=0;
+  h2hSettled.forEach(function(b){
+    var parts=b.match.split(' vs ');
+    var bHome=parts[0].trim();
+    var isHomeTeam=(bHome===home);
+    if(b.market==='Empate') personalDraws++;
+    else if((b.market==='Victoria Local'&&isHomeTeam)||(b.market==='Victoria Visitante'&&!isHomeTeam)) personalWins++;
+    else personalLosses++;
+  });
+
+  // 2. Obtener H2H base histórico si existe
+  var baseH2H = getH2HBase(home, away);
+
+  // 3. Combinar: historial personal pesa más si hay suficiente
+  var totalPersonal = personalWins + personalLosses + personalDraws;
+  var totalBase = baseH2H ? (baseH2H.wins + baseH2H.draws + baseH2H.losses) : 0;
+
+  var finalWins, finalTotal;
+  if (totalPersonal >= 5 && totalBase > 0) {
+    // Mezcla: 60% personal, 40% histórico
+    finalWins = personalWins * 0.6 + baseH2H.wins * 0.4;
+    finalTotal = totalPersonal * 0.6 + totalBase * 0.4;
+  } else if (totalPersonal >= 3) {
+    finalWins = personalWins;
+    finalTotal = totalPersonal;
+  } else if (baseH2H && totalBase >= 10) {
+    finalWins = baseH2H.wins;
+    finalTotal = totalBase;
+  } else {
+    return 1.0; // Sin datos suficientes → neutro
   }
-  // 
-  var h2hKey = league + '|' + home + '|' + away;
-  var h2hWins = parseInt(localStorage.getItem('h2h_' + h2hKey + '_home') || '0');
-  var h2hLosses = parseInt(localStorage.getItem('h2h_' + h2hKey + '_away') || '0');
-  var h2hDraws = parseInt(localStorage.getItem('h2h_' + h2hKey + '_draw') || '0');
-  var h2hTotal = h2hWins + h2hLosses + h2hDraws;
-  
-  if (h2hTotal < 3) return 1.0; // No hay historial suficiente
-  
-  var h2hHomeWinRate = h2hWins / h2hTotal;
-  var h2hBoost = 0.85 + h2hHomeWinRate * 0.3; // Rango 0.85-1.15
-  
-  return h2hBoost;
+
+  if (finalTotal === 0) return 1.0;
+  var homeWinRate = finalWins / finalTotal;
+  // Rango boost: 0.88 (rival domina) a 1.12 (local domina)
+  return 0.88 + homeWinRate * 0.24;
 }
 
 /* =============================================================================
@@ -915,33 +1007,69 @@ function getDynamicKFactor(league, importance) {
    MEJORA #9: TEMPO DE JUEGO
    ============================================================================= */
 function calculateTempoAdjustment(league, team) {
-  // En app real vendría de xG/análisis de datos
-  // Estimación: equipos europeos tienden a 500-650 pases/partido
-  var tempoEstimate = {
-    'EPL': 0.95,           // Más rápido, menos técnico
-    'La_liga': 1.02,       // Más lento, más técnico
-    'Serie_A': 1.00,
-    'Bundesliga': 0.98,
-    'Ligue_1': 0.99,
-    'Eredivisie': 0.96,
-    'MLS': 0.92,           // Menos posesión
-    'Brasileirao': 0.94    // Juego rápido
+  // Tabla de tempo por liga: representa el ritmo goles/atacante relativo
+  var leagueTempo = {
+    'EPL':           0.97,  // Rápido, físico
+    'La_liga':       1.02,  // Técnico, pausado
+    'Serie_A':       1.00,  // Equilibrado
+    'Bundesliga':    0.98,  // Presión alta, intenso
+    'Ligue_1':       0.99,
+    'Eredivisie':    0.97,  // Ataque directo
+    'MLS':           0.94,  // Menos sofisticado
+    'Brasileirao':   0.96,
+    'BrasileiroSerieB': 0.95,
+    'Libertadores':  0.98,
+    'Sudamericana':  0.97,
+    'Mundial_2026':  1.00,  // Neutro — estilos muy distintos
+    'Championship':  0.96
   };
-  
-  var leagueBase = tempoEstimate[league] || 0.98;
-  
-  // Equipos conocidos por su estilo
+
+  // Tabla de tempo por equipo — basada en estilo de juego histórico
+  // Escala: >1.0 = más posesión/técnico → goles más concentrados (lambda más preciso)
+  //         <1.0 = más directo/físico → más varianza
   var teamTempo = {
-    'Barcelona': 1.08,
-    'Real Madrid': 1.05,
-    'Manchester City': 1.06,
-    'Liverpool': 0.98,
-    'Juventus': 1.02,
-    'Bayern Munich': 1.04,
-    'PSG': 1.01
+    // La Liga
+    'Barcelona':        1.08, 'Real Madrid':        1.05,
+    'Atletico Madrid':  0.95, 'Girona':             1.03,
+    // EPL
+    'Manchester City':  1.07, 'Liverpool':          0.98,
+    'Arsenal':          1.02, 'Chelsea':            1.00,
+    'Manchester United':0.96, 'Tottenham':          0.97,
+    // Bundesliga
+    'Bayern Munich':    1.06, 'Bayer Leverkusen':   1.04,
+    'Borussia Dortmund':1.01, 'RB Leipzig':         1.00,
+    // Serie A
+    'Inter Milan':      1.01, 'Napoli':             1.03,
+    'Juventus':         0.98, 'AC Milan':           1.00,
+    // Ligue 1
+    'PSG':              1.05, 'Monaco':             1.02,
+    'Marseille':        0.97, 'Lille':              0.99,
+    // Brasil
+    'Flamengo':         1.02, 'Palmeiras':          0.99,
+    'Atletico Mineiro': 0.98,
+    // Libertadores
+    'River Plate':      1.03, 'Boca Juniors':       0.96,
+    // Selecciones Mundial — estilo de juego característico
+    'España':           1.06, 'Brasil':             1.03,
+    'Argentina':        1.01, 'Francia':            1.00,
+    'Alemania':         1.02, 'Inglaterra':         0.97,
+    'Países Bajos':     1.01, 'Portugal':           1.02,
+    'Marruecos':        0.95, 'Uruguay':            0.94,
+    'Japón':            0.99, 'Corea del Sur':      0.98,
+    'México':           0.97, 'Estados Unidos':     0.96,
+    'Senegal':          0.96, 'Colombia':           1.00,
+    'Noruega':          0.97, 'Austria':            0.98,
   };
-  
-  return teamTempo[team] || leagueBase;
+
+  // Si el equipo tiene tempo conocido, usarlo; sino usar base de liga
+  var leagueBase = leagueTempo[league] || 0.98;
+  var base = teamTempo[team] || leagueBase;
+
+  // Ajuste desde ELO: equipos con ELO muy alto tienden a controlar el juego
+  var elo = getELO(league, team);
+  var eloAdj = 1.0 + (elo - 1500) / 10000; // ±0.05 máximo
+
+  return Math.max(0.90, Math.min(1.12, base * eloAdj));
 }
 
 /* =============================================================================
@@ -1541,95 +1669,4 @@ function updateHistoryDisplay(){
   var h='';
   for(var i=betHistory.length-1;i>=0;i--){
     var b=betHistory[i];
-    var d=new Date(b.date).toLocaleDateString();
-    var sc=b.status==='pending'?'log-pending':(b.result==='win'?'log-win':'log-loss');
-    var profit=b.status==='settled'?(b.result==='win'?'+$'+(b.stake*b.odds-b.stake).toFixed(2):'-$'+b.stake.toFixed(2)):'Pendiente';
-    var pc=b.status==='settled'?(b.result==='win'?'pos':'neg'):'pend';
-    h+='<div class="log-item '+sc+'"><div class="log-stripe"></div><div class="log-body"><div class="log-match">'+b.match+'</div><div class="log-sub">'+b.market+' @'+b.odds.toFixed(2)+' $'+b.stake.toFixed(2)+' (Prob '+Math.round(b.prob)+'%) '+d+'</div></div><div class="log-result"><div class="log-profit '+pc+'">'+profit+'</div>'+(b.status==='pending'?'<div class="log-actions"><button class="btn-tiny btn-win" onclick="updateBetResult('+i+',true)">Gano</button><button class="btn-tiny btn-lose" onclick="updateBetResult('+i+',false)">Perdio</button><button class="btn-tiny btn-del" onclick="deleteBet('+i+')">x</button></div>':'<button class="btn-tiny btn-del" onclick="deleteBet('+i+')" style="margin-top:5px">x</button>')+'</div></div>';
-  }
-  log.innerHTML=h;
-}
-function exportHistory(){
-  if(!betHistory.length){alert('No hay apuestas');return;}
-  var esc=function(s){return'"'+String(s).replace(/"/g,'""')+'"';};
-  var hdr='Fecha,Partido,Mercado,Probabilidad,Cuota,Stake,Estado,Resultado,Ganancia\n';
-  var rows=betHistory.map(function(b){
-    var p=b.status==='settled'?(b.result==='win'?(b.stake*b.odds-b.stake).toFixed(2):(-b.stake).toFixed(2)):'0';
-    return[esc(new Date(b.date).toLocaleDateString()),esc(b.match),esc(b.market),b.prob+'%',b.odds,'$'+b.stake.toFixed(2),b.status,b.result||'N/A',p].join(',');
-  }).join('\n');
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([hdr+rows],{type:'text/csv'}));
-  a.download='apuestas_'+new Date().toISOString().split('T')[0]+'.csv';a.click();
-}
-function exportJSON(){
-  var a=document.createElement('a');
-  a.href=URL.createObjectURL(new Blob([JSON.stringify({bankroll:bankroll,config:config,betHistory:betHistory,eloRatings:eloRatings,teamForm:teamForm,exportedAt:new Date().toISOString()},null,2)],{type:'application/json'}));
-  a.download='betanalytics_'+new Date().toISOString().split('T')[0]+'.json';a.click();
-}
-function importJSON(input){
-  var f=input.files[0];if(!f)return;
-  var r=new FileReader();
-  r.onload=function(e){
-    try{
-      var d=JSON.parse(e.target.result);
-      if(d.bankroll!==undefined) bankroll=d.bankroll;
-      if(d.config) config=Object.assign({},DEFAULT_CONFIG,d.config);
-      if(d.betHistory) betHistory=d.betHistory;
-      if(d.eloRatings) eloRatings=d.eloRatings;
-      if(d.teamForm) teamForm=d.teamForm;
-      saveAll();updateBankrollDisplay();updateHistoryDisplay();
-      showToast('Backup importado','success');
-    }catch(err){showToast('Archivo invalido','error');}
-  };
-  r.readAsText(f);input.value='';
-}
-function switchTab(tab){
-  ['analyzer','history','stats','config'].forEach(function(t){
-    document.getElementById('tab-'+t).classList.toggle('hidden',t!==tab);
-    document.getElementById('tab-btn-'+t).classList.toggle('active',t===tab);
-  });
-  if(tab==='history') updateHistoryDisplay();
-  if(tab==='stats') updateStats();
-  if(tab==='config') loadConfig();
-}
-function goBack(){
-  document.getElementById('main-screen').classList.remove('hidden');
-  document.getElementById('result-screen').classList.add('hidden');
-  window.scrollTo({top:0,behavior:'smooth'});
-}
-function updateBankrollDisplay(){
-  document.getElementById('bankroll-display').textContent='$'+bankroll.toFixed(2);
-  var pnl=bankroll-config.initialBankroll;
-  var pct=((pnl/config.initialBankroll)*100).toFixed(1);
-  var el=document.getElementById('pnl-display');
-  el.innerHTML=(pnl>=0?'+ ':'- ')+'$'+Math.abs(pnl).toFixed(2)+' ('+Math.abs(parseFloat(pct)).toFixed(1)+'%)';
-  el.className='br-pnl '+(pnl>=0?'profit':'loss');
-  var settled=betHistory.filter(function(b){return b.status==='settled';}), wins=settled.filter(function(b){return b.result==='win';}).length;
-  document.getElementById('br-bets').textContent=betHistory.length;
-  document.getElementById('br-wr').textContent=settled.length?(Math.round(wins/settled.length*100)+'%'):'--';
-}
-function updateStats(){
-  var settled=betHistory.filter(function(b){return b.status==='settled';});
-  var wins=settled.filter(function(b){return b.result==='win';}).length;
-  var wr=settled.length?((wins/settled.length)*100).toFixed(1):'0.0';
-  var staked=0,profit=0;
-  settled.forEach(function(b){staked+=b.stake;profit+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake;});
-  var yld=staked?((profit/staked)*100).toFixed(1):'0.0';
-  var roi=((profit/config.initialBankroll)*100).toFixed(1);
-  var streak=0,streakDir=0;
-  for(var i=betHistory.length-1;i>=0;i--){
-    var b=betHistory[i]; if(b.status!=='settled')continue;
-    var isWin=b.result==='win';
-    if(streakDir===0){streakDir=isWin?1:-1;streak=1;}
-    else if((isWin&&streakDir===1)||(!isWin&&streakDir===-1)){streak++;}
-    else break;
-  }
-  document.getElementById('stat-total').textContent=betHistory.length;
-  document.getElementById('stat-winrate').textContent=wr+'%';
-  document.getElementById('stat-yield').textContent=yld+'%';
-  document.getElementById('stat-roi').textContent=roi+'%';
-  document.getElementById('stat-profit').textContent=(profit>=0?'+':'')+'$'+profit.toFixed(0);
-  document.getElementById('stat-profit').className='stat-val '+(profit>=0?'green':'red');
-  document.getElementById('stat-streak').textContent=streakDir===1?'W'+streak:(streakDir===-1?'L'+streak:'--');
-  document.getElementById('stat-streak').className='stat-val '+(streakDir===1?'green':(streakDir===-1?'red':''));
- 
+    var d=new Date(b.date).toLocaleDateString
