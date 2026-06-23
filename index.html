@@ -801,7 +801,8 @@ function calculateDynamicHFA(league, home, away, apiStats) {
   var hfaAdjustment = 1.0;
   
   // Ajuste por historial de casa del equipo
-  if (apiStats && apiStats.home && apiStats.away && apiStats.home.played >= 5 && apiStats.away.played >= 5) {
+  var hfaMinPlayed = ['Mundial_2026','Libertadores','Sudamericana'].indexOf(league)>=0 ? 1 : 5;
+  if (apiStats && apiStats.home && apiStats.away && apiStats.home.played >= hfaMinPlayed && apiStats.away.played >= hfaMinPlayed) {
     var homeAvgHome = apiStats.home.gfHome || 1.0;
     var homeAvgAway = apiStats.away.gfAway || 1.0;
     var homeStrength = (homeAvgHome / homeAvgAway - 1) * 0.15;
@@ -1089,7 +1090,9 @@ function predictMatch(leagueCode,home,away,apiStats){
     if(totalPlayed>=25) weight=0.85;
     weightUsed=weight;
     
-    if(totalPlayed>=10){
+    var shortTournament=['Mundial_2026','Libertadores','Sudamericana'].indexOf(leagueCode)>=0;
+    var minForAPI = shortTournament ? 2 : 10;
+    if(totalPlayed>=minForAPI){
       // MEJORA #1: Volatilidad histórica — pondera reciente 60% vs histórico 40%
       var homeVolHome = calculateVolatility(leagueCode, home, 'home');
       var awayVolAway = calculateVolatility(leagueCode, away, 'away');
@@ -1163,7 +1166,7 @@ function predictMatch(leagueCode,home,away,apiStats){
     btts:markets.btts,o15:markets.o15,o25:markets.o25,
     ht05:markets.ht05,c75:markets.c75,c85:markets.c85,
     cLam:cLam.toFixed(2),
-    usingAPI:!!(apiStats&&apiStats.home&&apiStats.away&&(apiStats.home.played+apiStats.away.played)>=10),
+    usingAPI:!!(apiStats&&apiStats.home&&apiStats.away&&(apiStats.home.played+apiStats.away.played)>=((['Mundial_2026','Libertadores','Sudamericana'].indexOf(leagueCode)>=0)?2:10)),
     confidence:confidence,
     weightUsed:weightUsed
   };
@@ -1242,8 +1245,11 @@ async function loadAPIData(){
     showAPIStatus('<span class="spin"></span> Descargando estadisticas...','loading');
     var stats=await Promise.all([fetchTeamStats(hid,sid),fetchTeamStats(aid,sid)]);
     var hs=stats[0],as=stats[1];
-    if(!hs||hs.played<5||!as||as.played<5){
-      showAPIStatus('Pocos partidos: '+home+' ('+(hs?hs.played:0)+'PJ) o '+away+' ('+(as?as.played:0)+'PJ). Min. 5 requeridos.','error');
+    // Mínimo dinámico: torneos cortos (Mundial, Libertadores, Sudamericana) = 1PJ; ligas largas = 5PJ
+    var shortTournaments=['Mundial_2026','Libertadores','Sudamericana'];
+    var minPlayed = shortTournaments.indexOf(league)>=0 ? 1 : 5;
+    if(!hs||hs.played<minPlayed||!as||as.played<minPlayed){
+      showAPIStatus('Pocos partidos: '+home+' ('+(hs?hs.played:0)+'PJ) o '+away+' ('+(as?as.played:0)+'PJ). Min. '+minPlayed+' requerido'+(minPlayed===1?'':'s')+'.','error');
       currentAPIData=null;
       return;
     }
@@ -1626,87 +1632,4 @@ function updateStats(){
   document.getElementById('stat-profit').className='stat-val '+(profit>=0?'green':'red');
   document.getElementById('stat-streak').textContent=streakDir===1?'W'+streak:(streakDir===-1?'L'+streak:'--');
   document.getElementById('stat-streak').className='stat-val '+(streakDir===1?'green':(streakDir===-1?'red':''));
-  var modelBets=settled.filter(function(b){return b.market==='Victoria Local'||b.market==='Empate'||b.market==='Victoria Visitante';});
-  var correct=0; modelBets.forEach(function(b){if(b.result==='win') correct++;});
-  var acc=modelBets.length?Math.round(correct/modelBets.length*100):'--';
-  document.getElementById('model-accuracy-box').innerHTML='<strong>Precision modelo 1X2:</strong> '+acc+'% ('+correct+'/'+modelBets.length+' aciertos) &nbsp;|&nbsp; <strong>Calibracion:</strong> activa &nbsp;|&nbsp; <strong>Versión:</strong> v4.2 PRO';
-  drawChart();
-}
-function drawChart(){
-  var svg=document.getElementById('bankroll-chart'), w=svg.clientWidth||svg.parentElement.offsetWidth||460, h=110, pad=18;
-  var pts=[config.initialBankroll],cur=config.initialBankroll;
-  betHistory.forEach(function(b){ if(b.status!=='settled')return; cur+=b.result==='win'?(b.stake*b.odds-b.stake):-b.stake; pts.push(cur); });
-  if(pts.length<2){svg.innerHTML='<text x="'+(w/2)+'" y="'+(h/2)+'" text-anchor="middle" fill="#3d5268" font-size="12">Sin datos aun</text>';return;}
-  var minY=Math.min.apply(null,pts),maxY=Math.max.apply(null,pts);
-  minY=Math.min(minY,config.initialBankroll*0.9);maxY=Math.max(maxY,config.initialBankroll*1.1);
-  var rng=maxY-minY||1;
-  var tx=function(i){return pad+(i/(pts.length-1))*(w-pad*2);};
-  var ty=function(v){return h-pad-((v-minY)/rng)*(h-pad*2);};
-  var color=pts[pts.length-1]>=config.initialBankroll?'#34d399':'#fb7185';
-  var colorDim=pts[pts.length-1]>=config.initialBankroll?'rgba(52,211,153,0.08)':'rgba(251,113,133,0.06)';
-  var d='M '+tx(0)+' '+ty(pts[0]); pts.forEach(function(p,i){if(i>0)d+=' L '+tx(i)+' '+ty(p);});
-  var areaD=d+' L '+tx(pts.length-1)+' '+(h-pad)+' L '+tx(0)+' '+(h-pad)+' Z';
-  var circles=''; if(pts.length<=20) pts.forEach(function(p,i){circles+='<circle cx="'+tx(i)+'" cy="'+ty(p)+'" r="2.5" fill="'+color+'" opacity="0.8"/>';});
-  else circles='<circle cx="'+tx(pts.length-1)+'" cy="'+ty(pts[pts.length-1])+'" r="3.5" fill="'+color+'"/>';
-  var baseY=ty(config.initialBankroll);
-  svg.innerHTML='<line x1="'+pad+'" y1="'+baseY+'" x2="'+(w-pad)+'" y2="'+baseY+'" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3 3" stroke-width="1"/><path d="'+areaD+'" fill="'+colorDim+'"/><path d="'+d+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+circles;
-}
-function loadConfig(){
-  document.getElementById('cfg-initial').value=config.initialBankroll;
-  document.getElementById('cfg-kelly').value=config.kellyFraction;
-  document.getElementById('cfg-maxstake').value=config.maxStakePct;
-  document.getElementById('cfg-minev').value=config.minEV!=null?config.minEV:8;
-  document.getElementById('cfg-minstake-abs').value=config.minStake||500;
-  document.getElementById('cfg-maxstake-abs').value=config.maxStake||1000;
-  document.getElementById('cfg-apikey').value=config.apiKey||'';
-  document.getElementById('cfg-apibase').value=config.apiBaseUrl||'https://sports.bzzoiro.com';
-  updateDataModeBanner();
-}
-function updateDataModeBanner(){
-  var el=document.getElementById('data-mode-banner'); if(!el)return;
-  if(config.apiKey&&config.apiKey.length>4){el.className='data-mode-ok';el.textContent='TOKEN API CONFIGURADO — Datos reales disponibles';}
-  else{el.className='data-mode-warn';el.textContent='SIN TOKEN API — Usando modelo estadistico. Precision limitada para dinero real.';}
-}
-function saveConfig(){
-  var ini=parseFloat(document.getElementById('cfg-initial').value);
-  var kel=parseFloat(document.getElementById('cfg-kelly').value);
-  var ms=parseFloat(document.getElementById('cfg-maxstake').value);
-  var minev=parseFloat(document.getElementById('cfg-minev').value);
-  var minStake=parseFloat(document.getElementById('cfg-minstake-abs').value);
-  var maxStake=parseFloat(document.getElementById('cfg-maxstake-abs').value);
-  var key=document.getElementById('cfg-apikey').value.trim();
-  var base=document.getElementById('cfg-apibase').value.trim();
-  if(ini>0) config.initialBankroll=ini;
-  if(kel>0&&kel<=1) config.kellyFraction=kel;
-  if(ms>0&&ms<=1) config.maxStakePct=ms;
-  if(minev>=0&&minev<=50) config.minEV=minev;
-  if(minStake>=0&&maxStake>=minStake){config.minStake=minStake;config.maxStake=maxStake;}
-  config.apiKey=key;config.apiBaseUrl=base||'https://sports.bzzoiro.com';
-  saveAll();updateBankrollDisplay();updateDataModeBanner();
-  showToast('Configuracion guardada','success');
-}
-function resetData(){
-  if(!confirm('Seguro? Se borraran TODOS los datos.'))return;
-  bankroll=config.initialBankroll;betHistory=[];
-  saveAll();updateBankrollDisplay();updateHistoryDisplay();
-  showToast('Datos reseteados','info');
-}
-function resetELO(){
-  if(!confirm('Resetear ELOs y forma reciente?'))return;
-  eloRatings={};teamForm={};
-  saveAll(); showToast('ELOs reseteados','info');
-}
-function showToast(msg,type){
-  var t=document.createElement('div');
-  t.className='toast toast-'+(type||'success'); t.textContent=msg;
-  document.body.appendChild(t);
-  setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},2700);
-}
-
-// Inicialización
-updateBankrollDisplay();
-updateHistoryDisplay();
-updateDataModeBanner();
-</script>
-</body>
-</html>
+ 
