@@ -10,7 +10,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
 <style>
-/* ESTILOS - SIN CAMBIOS */
 :root { --bg:#060a10;--surface:#0c1219;--card:#0f1825;--card2:#131e2d;--card3:#172235; --border:rgba(255,255,255,0.06);--border2:rgba(255,255,255,0.12);--border3:rgba(255,255,255,0.18); --accent:#f43f5e;--accent2:#fb7185;--green:#10b981;--green2:#34d399; --yellow:#f59e0b;--yellow2:#fbbf24;--blue:#3b82f6;--blue2:#60a5fa; --purple:#8b5cf6;--purple2:#a78bfa;--text:#f0f4f8;--text2:#8fa3bc;--text3:#3d5268; --mono:'JetBrains Mono',monospace;--sans:'Inter',-apple-system,sans-serif; --r-sm:8px;--r-md:12px;--r-lg:18px;--r-xl:22px; --shadow:0 8px 40px rgba(0,0,0,0.6);--shadow-sm:0 2px 12px rgba(0,0,0,0.4); }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
 html{-webkit-tap-highlight-color:transparent;scroll-behavior:smooth;}
@@ -190,7 +189,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     <div class="app-title">
       <span class="ball">⚽</span>
       <span class="title-text"> FUTBOLLOGIC </span>
-      <span class="vtag">v4.4<span class="version-badge">CORNERS FIXED</span></span>
+      <span class="vtag">v4.5 REAL<span class="version-badge">NO INFLADO</span></span>
     </div>
     <div class="app-subtitle">Poisson · Dixon-Coles · Kelly · ELO · xG · HFA Dinámico · Bzzoiro API v2</div>
   </div>
@@ -389,7 +388,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         <strong>Calibración:</strong> Ajuste automático según resultados reales<br>
         <strong>Defaults conservadores:</strong> Kelly 10% / Max 3% / EV min +8%<br>
         <strong>Combinación mercado:</strong> 50% modelo + 50% cuotas reales (automático)<br>
-        <strong>Versión:</strong> v4.4 CORNERS FIXED · Volatilidad histórica · HFA dinámico · H2H · Correlación · Tempo · Confianza
+        <strong>Versión:</strong> v4.5 REAL · Volatilidad histórica · HFA dinámico · H2H · Correlación · Tempo · Confianza
       </div>
       <button class="btn btn-primary mt16" onclick="saveConfig()">Guardar Configuracion</button>
       <button class="btn btn-danger mt8" onclick="resetData()">Resetear Todos los Datos</button>
@@ -571,70 +570,35 @@ const STRENGTH = {
 };
 
 /* ============================================================================
-   CORNER STRENGTH – AÑADIMOS DATOS PARA MUNDIAL Y OTRAS LIGAS
+   CORNER STRENGTH – DATOS REALISTAS PARA MUNDIAL Y OTRAS LIGAS
    ============================================================================ */
 const CORNER_STRENGTH = {
   EPL:{'Manchester City':[1.15,0.90],'Liverpool':[1.10,0.95],'Arsenal':[1.10,0.95]},
   La_liga:{'Real Madrid':[1.12,0.93],'Barcelona':[1.10,0.95]},
-  // ----- NUEVOS DATOS PARA MUNDIAL 2026 -----
   Mundial_2026: {
-    'Argentina': [1.08, 0.96],
-    'Brasil': [1.10, 0.95],
-    'Francia': [1.07, 0.97],
-    'Inglaterra': [1.06, 0.98],
-    'España': [1.05, 0.98],
-    'Alemania': [1.08, 0.96],
-    'Países Bajos': [1.04, 1.00],
-    'Portugal': [1.06, 0.97],
-    'Bélgica': [1.03, 1.01],
-    'Croacia': [1.02, 1.02],
-    'Marruecos': [1.00, 1.03],
-    'Senegal': [1.01, 1.02],
-    'Colombia': [1.05, 0.99],
-    'Uruguay': [1.02, 1.02],
-    'México': [1.00, 1.04],
-    'Estados Unidos': [1.02, 1.02],
-    'Japón': [1.00, 1.03],
-    'Corea del Sur': [1.01, 1.03],
-    'Australia': [0.98, 1.05],
-    'Canadá': [0.99, 1.04],
-    'Ecuador': [1.02, 1.01],
-    'Paraguay': [0.99, 1.04],
-    'Noruega': [1.04, 1.00],
-    'Suecia': [1.02, 1.02],
-    'Suiza': [1.00, 1.03],
-    'Austria': [1.02, 1.02],
-    'Turquía': [1.00, 1.03],
-    'Escocia': [1.01, 1.02],
-    'República Checa': [1.00, 1.03],
-    'Irán': [0.96, 1.05],
-    'Egipto': [0.97, 1.04],
-    'Costa de Marfil': [1.00, 1.03],
-    'Arabia Saudita': [0.95, 1.06],
-    'Argelia': [0.98, 1.04],
-    'Bosnia y Herzegovina': [0.97, 1.05],
-    'Ghana': [0.96, 1.06],
-    'Uzbekistán': [0.95, 1.06],
-    'Jordania': [0.94, 1.07],
-    'Irak': [0.93, 1.08],
-    'RD Congo': [0.94, 1.07],
-    'Sudáfrica': [0.93, 1.08],
-    'Catar': [0.92, 1.09],
-    'Túnez': [0.93, 1.08],
-    'Panamá': [0.90, 1.10],
-    'Nueva Zelanda': [0.88, 1.12],
-    'Cabo Verde': [0.87, 1.13],
-    'Curazao': [0.85, 1.15],
-    'Haití': [0.86, 1.14]
+    'Argentina': [1.08, 0.96], 'Brasil': [1.10, 0.95], 'Francia': [1.07, 0.97],
+    'Inglaterra': [1.06, 0.98], 'España': [1.05, 0.98], 'Alemania': [1.08, 0.96],
+    'Países Bajos': [1.04, 1.00], 'Portugal': [1.06, 0.97], 'Bélgica': [1.03, 1.01],
+    'Croacia': [1.02, 1.02], 'Marruecos': [1.00, 1.03], 'Senegal': [1.01, 1.02],
+    'Colombia': [1.05, 0.99], 'Uruguay': [1.02, 1.02], 'México': [1.00, 1.04],
+    'Estados Unidos': [1.02, 1.02], 'Japón': [1.00, 1.03], 'Corea del Sur': [1.01, 1.03],
+    'Australia': [0.98, 1.05], 'Canadá': [0.99, 1.04], 'Ecuador': [1.02, 1.01],
+    'Paraguay': [0.99, 1.04], 'Noruega': [1.04, 1.00], 'Suecia': [1.02, 1.02],
+    'Suiza': [1.00, 1.03], 'Austria': [1.02, 1.02], 'Turquía': [1.00, 1.03],
+    'Escocia': [1.01, 1.02], 'República Checa': [1.00, 1.03], 'Irán': [0.96, 1.05],
+    'Egipto': [0.97, 1.04], 'Costa de Marfil': [1.00, 1.03], 'Arabia Saudita': [0.95, 1.06],
+    'Argelia': [0.98, 1.04], 'Bosnia y Herzegovina': [0.97, 1.05], 'Ghana': [0.96, 1.06],
+    'Uzbekistán': [0.95, 1.06], 'Jordania': [0.94, 1.07], 'Irak': [0.93, 1.08],
+    'RD Congo': [0.94, 1.07], 'Sudáfrica': [0.93, 1.08], 'Catar': [0.92, 1.09],
+    'Túnez': [0.93, 1.08], 'Panamá': [0.90, 1.10], 'Nueva Zelanda': [0.88, 1.12],
+    'Cabo Verde': [0.87, 1.13], 'Curazao': [0.85, 1.15], 'Haití': [0.86, 1.14]
   },
-  // ----- DATOS PARA LIBERTADORES (aproximados) -----
   Libertadores: {
     'Flamengo': [1.07,0.96], 'Palmeiras': [1.06,0.97], 'River Plate': [1.05,0.98],
     'Boca Juniors': [1.02,1.01], 'Nacional': [1.00,1.02], 'Penarol': [1.00,1.02],
     'Olimpia': [0.98,1.04], 'Independiente del Valle': [1.02,1.00],
     'LDU Quito': [1.01,1.01], 'Atletico Mineiro': [1.04,0.99], 'Sao Paulo': [1.04,0.99]
   },
-  // ----- DATOS PARA SUDAMERICANA -----
   Sudamericana: {
     'Athletico Paranaense': [1.04,0.99], 'Bragantino': [1.02,1.00],
     'Santos': [1.00,1.02], 'Cruzeiro': [1.00,1.02],
@@ -647,7 +611,7 @@ const CORNER_STRENGTH = {
 };
 
 // -------------------------------------------------------------
-// FUNCIONES DE ELO, FORMA, ETC. (SIN CAMBIOS)
+// FUNCIONES DE ELO, FORMA, ETC. (CORREGIDAS PARA REALISMO)
 // -------------------------------------------------------------
 function getCornerStr(league,team){ var ls=CORNER_STRENGTH[league]; if(ls&&ls[team]) return {atk:ls[team][0],def:ls[team][1]}; return {atk:1.0,def:1.0}; }
 function getBaseStr(league,team){ var ls=STRENGTH[league]; if(ls&&ls[team]) return {atk:ls[team][0],def:ls[team][1]}; return {atk:1.0,def:1.0}; }
@@ -661,7 +625,18 @@ function updateELO(league,home,away,result){
   eloRatings[league][away]=aELO+K*((1-score)-(1-expected));
   saveAll();
 }
-function getFormFactor(league,team){ var key=league+'|'+team; var form=teamForm[key]||[]; if(form.length===0) return 1.0; var sum=0; for(var i=0;i<form.length;i++) sum+=form[i]; var avg=sum/form.length; return 0.95 + 0.1*avg; }
+
+// FORMA RECIENTE MÁS SUAVE (0.97 + 0.06*avg)
+function getFormFactor(league, team) {
+  var key = league + '|' + team;
+  var form = teamForm[key] || [];
+  if (form.length === 0) return 1.0;
+  var sum = 0;
+  for (var i = 0; i < form.length; i++) sum += form[i];
+  var avg = sum / form.length;
+  return 0.97 + 0.06 * avg;
+}
+
 function updateForm(league,home,away,result){
   var hKey=league+'|'+home, aKey=league+'|'+away;
   var hScore=result==='home'?1:(result==='draw'?0.5:0), aScore=1-hScore;
@@ -670,13 +645,28 @@ function updateForm(league,home,away,result){
   teamForm[aKey].push(aScore); if(teamForm[aKey].length>5) teamForm[aKey].shift();
   saveAll();
 }
-function getStr(league,team){
-  var base=getBaseStr(league,team);
-  var elo=getELO(league,team);
-  var eloFactor=elo/1500, formFactor=getFormFactor(league,team);
-  var multiplier=eloFactor*formFactor;
-  return {atk:Math.max(0.5,base.atk*multiplier),def:Math.max(0.5,base.def*multiplier)};
+
+// K-FACTOR DINÁMICO (MÁS CONSERVADOR)
+function getDynamicKFactor(league) {
+  var K = 30;
+  if (league === 'Mundial_2026') K = 25;
+  if (league === 'Libertadores' || league === 'Sudamericana') K = 28;
+  if (league === 'MLS') K = 32;
+  if (league === 'BrasileiroSerieB') K = 26;
+  return K;
 }
+
+// FUERZA CON LÍMITE (0.70 - 1.30)
+function getStr(league, team) {
+  var base = getBaseStr(league, team);
+  var elo = getELO(league, team);
+  var eloFactor = elo / 1500;
+  var formFactor = getFormFactor(league, team);
+  var multiplier = eloFactor * formFactor;
+  multiplier = Math.max(0.70, Math.min(1.30, multiplier));
+  return { atk: Math.max(0.5, base.atk * multiplier), def: Math.max(0.5, base.def * multiplier) };
+}
+
 function getRho(lc,home,away){
   var baseRho=LEAGUES_CFG[lc]?LEAGUES_CFG[lc].rho:-0.13;
   var hs=getStr(lc,home), as=getStr(lc,away);
@@ -750,7 +740,7 @@ function calculateContextFactor(league, home, away) {
   }
   return Math.max(0.93, Math.min(1.10, contextFactor));
 }
-// H2H (sin cambios)
+// H2H
 var H2H_BASE = {
   'Argentina|Brasil': [45, 25, 42], 'Argentina|Francia': [6, 2, 3], 'Argentina|Alemania': [8, 5, 7],
   'Argentina|Uruguay': [47, 24, 41], 'Argentina|Países Bajos': [5, 3, 4], 'Argentina|Portugal': [2, 1, 1],
@@ -810,14 +800,6 @@ function calculateH2HBoost(league, home, away) {
   var homeWinRate = finalWins / finalTotal;
   return 0.88 + homeWinRate * 0.24;
 }
-function getDynamicKFactor(league, importance) {
-  var K = 30;
-  if (league === 'Mundial_2026') K = 35;
-  if (league === 'Libertadores' || league === 'Sudamericana') K = 32;
-  if (league === 'MLS') K = 33;
-  if (league === 'BrasileiroSerieB') K = 28;
-  return K;
-}
 function calculateTempoAdjustment(league, team) {
   var leagueTempo = { 'EPL':0.97, 'La_liga':1.02, 'Serie_A':1.00, 'Bundesliga':0.98, 'Ligue_1':0.99, 'Eredivisie':0.97, 'MLS':0.94, 'Brasileirao':0.96, 'BrasileiroSerieB':0.95, 'Libertadores':0.98, 'Sudamericana':0.97, 'Mundial_2026':1.00, 'Championship':0.96 };
   var teamTempo = {
@@ -836,37 +818,20 @@ function calculateTempoAdjustment(league, team) {
   var eloAdj = 1.0 + (elo - 1500) / 10000;
   return Math.max(0.90, Math.min(1.12, base * eloAdj));
 }
-function calculatePredictionConfidence(apiStats, h, a, lh, la) {
-  var confidence = 0.5;
-  if (!apiStats || !apiStats.home || !apiStats.away) return { overall: 0.6, range: 12 };
-  var hPlayed = apiStats.home.played || 0;
-  var aPlayed = apiStats.away.played || 0;
-  var avgPlayed = (hPlayed + aPlayed) / 2;
-  if (avgPlayed >= 20) confidence = 0.78;
-  else if (avgPlayed >= 15) confidence = 0.72;
-  else if (avgPlayed >= 10) confidence = 0.68;
-  else if (avgPlayed >= 5) confidence = 0.62;
-  if ((lh > 3.0 && la < 0.5) || (la > 3.0 && lh < 0.5)) confidence *= 0.90;
-  var gfVariance = Math.abs(apiStats.home.gfHome - apiStats.home.gaHome);
-  if (gfVariance > 1.5) confidence *= 0.95;
-  var range = 15 - (confidence * 8);
-  return { overall: Math.min(0.95, confidence), range: range };
-}
 
-// --- FUNCIONES DE CORRELACIÓN DE MERCADOS (MODIFICADA) ---
+// --- CORRELACIÓN DE MERCADOS (LÍMITES SUAVIZADOS) ---
 function applyMarketCorrelation(markets, lh, la, rho) {
   var baseGoals = lh + la;
   var goalDeviation = baseGoals - 2.5;
   var bttsAdjustment = 1.0 + (goalDeviation * 0.08);
   markets.btts = Math.max(10, Math.min(90, parseFloat(markets.btts) * bttsAdjustment));
   var cornerAdjustment = 1.0 + (goalDeviation * 0.06);
-  // Límites suavizados: 95% para O7.5, 90% para O8.5
   markets.c75 = Math.max(5, Math.min(95, parseFloat(markets.c75) * cornerAdjustment));
   markets.c85 = Math.max(3, Math.min(90, parseFloat(markets.c85) * cornerAdjustment));
   return markets;
 }
 
-// Funciones de distribución (sin cambios)
+// Funciones de distribución
 function dcTau(i,j,lh,la,rho){
   if(i===0&&j===0) return Math.max(0.001,1-lh*la*rho);
   if(i===1&&j===0) return Math.max(0.001,1+la*rho);
@@ -912,106 +877,198 @@ function computeMarkets(dist,home,away,leagueCode,cLam){
   };
 }
 
+// --- CALIBRACIÓN MÁS CONSERVADORA (15 apuestas, alpha bajo) ---
+function applyCalibration(probs) {
+  var total = probs.hw * calibrationBias.home + probs.dr * calibrationBias.draw + probs.aw * calibrationBias.away;
+  if (total === 0) total = 1;
+  return {
+    hw: probs.hw * calibrationBias.home / total * 100,
+    dr: probs.dr * calibrationBias.draw / total * 100,
+    aw: probs.aw * calibrationBias.away / total * 100
+  };
+}
+function updateCalibration(market, actualOutcome) {
+  var target = { home: 0, draw: 0, away: 0 };
+  if (actualOutcome === 'home') target.home = 1;
+  else if (actualOutcome === 'draw') target.draw = 1;
+  else if (actualOutcome === 'away') target.away = 1;
+  var settled1X2 = betHistory.filter(function(b) { return b.status === 'settled' && (b.market === 'Victoria Local' || b.market === 'Empate' || b.market === 'Victoria Visitante'); });
+  if (settled1X2.length < 15) return;
+  var alpha = Math.max(0.03, 0.10 - settled1X2.length * 0.001);
+  calibrationBias.home = calibrationBias.home * (1 - alpha) + target.home * alpha;
+  calibrationBias.draw = calibrationBias.draw * (1 - alpha) + target.draw * alpha;
+  calibrationBias.away = calibrationBias.away * (1 - alpha) + target.away * alpha;
+  var totalBias = calibrationBias.home + calibrationBias.draw + calibrationBias.away;
+  if (totalBias > 0 && totalBias !== 3) { calibrationBias.home *= 3/totalBias; calibrationBias.draw *= 3/totalBias; calibrationBias.away *= 3/totalBias; }
+  saveAll();
+}
+
+// --- CONFIANZA MEJORADA (DINÁMICA Y EXPLICATIVA) ---
+function calculatePredictionConfidence(apiStats, home, away, lh, la, leagueCode) {
+  var confidence = 0.50;
+  var factors = [];
+
+  if (apiStats && apiStats.home && apiStats.away) {
+    var hPlayed = apiStats.home.played || 0;
+    var aPlayed = apiStats.away.played || 0;
+    var avgPlayed = (hPlayed + aPlayed) / 2;
+
+    // Volumen de datos (satura en 15 PJ)
+    var volumeFactor = Math.min(1, avgPlayed / 15);
+    confidence = 0.50 + 0.35 * volumeFactor;
+    factors.push({ name: 'Volumen', value: volumeFactor });
+
+    // Actualidad (asumimos que los stats son de la temporada actual)
+    var recencyFactor = 0.90;
+    factors.push({ name: 'Actualidad', value: recencyFactor });
+
+    // Consistencia (varianza de goles)
+    var homeGF = apiStats.home.gfHome || 1;
+    var homeGA = apiStats.home.gaHome || 1;
+    var awayGF = apiStats.away.gfAway || 1;
+    var awayGA = apiStats.away.gaAway || 1;
+    var homeVar = Math.abs(homeGF - homeGA);
+    var awayVar = Math.abs(awayGF - awayGA);
+    var avgVar = (homeVar + awayVar) / 2;
+    var consistencyFactor = Math.max(0.80, 1 - avgVar * 0.10);
+    factors.push({ name: 'Consistencia', value: consistencyFactor });
+
+    // Diferencia de nivel (ELO)
+    var eloHome = getELO(leagueCode, home);
+    var eloAway = getELO(leagueCode, away);
+    var eloDiff = Math.abs(eloHome - eloAway);
+    var levelFactor = Math.min(1, 0.85 + eloDiff / 800);
+    factors.push({ name: 'Nivel (ELO)', value: levelFactor });
+
+    // Forma reciente
+    var homeForm = getFormFactor(leagueCode, home);
+    var awayForm = getFormFactor(leagueCode, away);
+    var formAvg = (homeForm + awayForm) / 2;
+    var formFactor = Math.min(1, Math.max(0.85, formAvg));
+    factors.push({ name: 'Forma', value: formFactor });
+
+    // Calidad de datos (API vs solo modelo)
+    var shortTournaments = ['Mundial_2026', 'Libertadores', 'Sudamericana'];
+    var usingAPI = apiStats && (apiStats.home.played + apiStats.away.played) >=
+      (shortTournaments.indexOf(leagueCode) >= 0 ? 2 : 10);
+    var dataQuality = usingAPI ? 1.0 : 0.70;
+    factors.push({ name: 'Calidad datos', value: dataQuality });
+
+  } else {
+    confidence = 0.45;
+    factors.push({ name: 'Sin API', value: 0.45 });
+  }
+
+  // Penalización por desbalance extremo
+  if ((lh > 3.0 && la < 0.5) || (la > 3.0 && lh < 0.5)) {
+    confidence *= 0.92;
+    factors.push({ name: 'Desbalance', value: 0.92 });
+  }
+
+  confidence = Math.min(0.95, Math.max(0.30, confidence));
+  var range = Math.round(18 - confidence * 14);
+  var detail = factors.map(function(f){ return f.name + ': ' + Math.round(f.value*100) + '%'; }).join(' · ');
+
+  return { overall: confidence, range: range, detail: detail };
+}
+
 // -------------------------------------------------------------
-// PREDICT MATCH – CORREGIDO EL CÁLCULO DE CORNERS
+// PREDICT MATCH – VERSIÓN FINAL CORREGIDA (LAMBDAS 0.3-4.0, CORNERS /2)
 // -------------------------------------------------------------
-function predictMatch(leagueCode,home,away,apiStats){
-  var cfg=LEAGUES_CFG[leagueCode];
-  if(!cfg) cfg={goals:2.5,corners:10,hfa:1.05,htRatio:0.40,rho:-0.1};
-  var gAvg=cfg.goals,cAvg=cfg.corners;
+function predictMatch(leagueCode, home, away, apiStats) {
+  var cfg = LEAGUES_CFG[leagueCode];
+  if (!cfg) cfg = { goals: 2.5, corners: 10, hfa: 1.05, htRatio: 0.40, rho: -0.1 };
+  var gAvg = cfg.goals;
+  var cAvg = cfg.corners;
 
   var hfa = calculateDynamicHFA(leagueCode, home, away, apiStats);
   var contextFactor = calculateContextFactor(leagueCode, home, away);
   var h2hBoost = calculateH2HBoost(leagueCode, home, away);
   var homeTempoAdj = calculateTempoAdjustment(leagueCode, home);
   var awayTempoAdj = calculateTempoAdjustment(leagueCode, away);
+  var rho = getRho(leagueCode, home, away);
+  var lh, la, cLam;
+  var weightUsed = 0;
 
-  var rho=getRho(leagueCode,home,away);
-  var lh,la,cLam;
-  var weightUsed=0;
-
-  if(apiStats&&apiStats.home&&apiStats.away){
-    var h=apiStats.home,a=apiStats.away;
-    var totalPlayed=h.played+a.played;
-    var dataQuality=Math.min(totalPlayed/30,1.0);
+  if (apiStats && apiStats.home && apiStats.away) {
+    var h = apiStats.home, a = apiStats.away;
+    var totalPlayed = h.played + a.played;
+    var dataQuality = Math.min(totalPlayed / 30, 1.0);
     var weight = Math.min(dataQuality, 0.70);
-    if(totalPlayed>=20) weight=0.80;
-    if(totalPlayed>=25) weight=0.85;
-    weightUsed=weight;
-    var shortTournament=['Mundial_2026','Libertadores','Sudamericana'].indexOf(leagueCode)>=0;
+    if (totalPlayed >= 20) weight = 0.80;
+    if (totalPlayed >= 25) weight = 0.85;
+    weightUsed = weight;
+    var shortTournament = ['Mundial_2026', 'Libertadores', 'Sudamericana'].indexOf(leagueCode) >= 0;
     var minForAPI = shortTournament ? 2 : 10;
-    if(totalPlayed>=minForAPI){
+    if (totalPlayed >= minForAPI) {
       var homeVolHome = calculateVolatility(leagueCode, home, 'home');
       var awayVolAway = calculateVolatility(leagueCode, away, 'away');
       var homeVolTrend = homeVolHome.trend || 0;
       var awayVolTrend = awayVolAway.trend || 0;
-      var ha=(typeof h.gfHome==='number'&&h.gfHome>0)?h.gfHome/(gAvg/2):1;
-      var hd=(typeof h.gaHome==='number'&&h.gaHome>0)?h.gaHome/(gAvg/2):1;
-      var aa=(typeof a.gfAway==='number'&&a.gfAway>0)?a.gfAway/(gAvg/2):1;
-      var ad=(typeof a.gaAway==='number'&&a.gaAway>0)?a.gaAway/(gAvg/2):1;
+      var ha = (typeof h.gfHome === 'number' && h.gfHome > 0) ? h.gfHome / (gAvg / 2) : 1;
+      var hd = (typeof h.gaHome === 'number' && h.gaHome > 0) ? h.gaHome / (gAvg / 2) : 1;
+      var aa = (typeof a.gfAway === 'number' && a.gfAway > 0) ? a.gfAway / (gAvg / 2) : 1;
+      var ad = (typeof a.gaAway === 'number' && a.gaAway > 0) ? a.gaAway / (gAvg / 2) : 1;
       ha *= homeVolHome.current * (1 + homeVolTrend * 0.05);
       ad *= awayVolAway.current * (1 + awayVolTrend * 0.05);
       var stabilityPenalty = Math.min(homeVolHome.stability, awayVolAway.stability);
       weight *= stabilityPenalty;
-      var apiLh=Math.max(0.3,(gAvg/2)*ha*ad*hfa);
-      var apiLa=Math.max(0.3,(gAvg/2)*aa*hd*(1/hfa));
-      var hBase=getStr(leagueCode,home),aBase=getStr(leagueCode,away);
-      var baseLh=Math.max(0.3,(gAvg/2)*hBase.atk*aBase.def*hfa);
-      var baseLa=Math.max(0.3,(gAvg/2)*aBase.atk*hBase.def*(1/hfa));
-      if(isNaN(apiLh)||isNaN(apiLa)){ apiLh=baseLh; apiLa=baseLa; weight=0; }
-      if(isNaN(baseLh)||isNaN(baseLa)){ baseLh=baseLa=1; }
-      lh=baseLh*(1-weight)+apiLh*weight;
-      la=baseLa*(1-weight)+apiLa*weight;
-    }else{
-      var hs=getStr(leagueCode,home),as2=getStr(leagueCode,away);
-      lh=Math.max(0.3,(gAvg/2)*hs.atk*as2.def*hfa);
-      la=Math.max(0.3,(gAvg/2)*as2.atk*hs.def*(1/hfa));
+      var apiLh = Math.max(0.3, (gAvg / 2) * ha * ad * hfa);
+      var apiLa = Math.max(0.3, (gAvg / 2) * aa * hd * (1 / hfa));
+      var hBase = getStr(leagueCode, home), aBase = getStr(leagueCode, away);
+      var baseLh = Math.max(0.3, (gAvg / 2) * hBase.atk * aBase.def * hfa);
+      var baseLa = Math.max(0.3, (gAvg / 2) * aBase.atk * hBase.def * (1 / hfa));
+      if (isNaN(apiLh) || isNaN(apiLa)) { apiLh = baseLh; apiLa = baseLa; weight = 0; }
+      if (isNaN(baseLh) || isNaN(baseLa)) { baseLh = baseLa = 1; }
+      lh = baseLh * (1 - weight) + apiLh * weight;
+      la = baseLa * (1 - weight) + apiLa * weight;
+    } else {
+      var hs = getStr(leagueCode, home), as2 = getStr(leagueCode, away);
+      lh = Math.max(0.3, (gAvg / 2) * hs.atk * as2.def * hfa);
+      la = Math.max(0.3, (gAvg / 2) * as2.atk * hs.def * (1 / hfa));
     }
-  }else{
-    var hs=getStr(leagueCode,home),as2=getStr(leagueCode,away);
-    lh=Math.max(0.3,(gAvg/2)*hs.atk*as2.def*hfa);
-    la=Math.max(0.3,(gAvg/2)*as2.atk*hs.def*(1/hfa));
+  } else {
+    var hs = getStr(leagueCode, home), as2 = getStr(leagueCode, away);
+    lh = Math.max(0.3, (gAvg / 2) * hs.atk * as2.def * hfa);
+    la = Math.max(0.3, (gAvg / 2) * as2.atk * hs.def * (1 / hfa));
   }
 
-  if(isNaN(lh)||lh<=0||lh>8) lh=gAvg/2;
-  if(isNaN(la)||la<=0||la>8) la=gAvg/2;
-
+  // Aplicar factores contextuales
   lh = lh * contextFactor * h2hBoost * homeTempoAdj;
   la = la * contextFactor * h2hBoost * awayTempoAdj;
-  lh = Math.max(0.25, Math.min(7.0, lh));
-  la = Math.max(0.25, Math.min(7.0, la));
 
-  // ----- CORRECCIÓN DE CORNERS: DIVIDIR POR 2 -----
-  var hcs=getCornerStr(leagueCode,home),acs=getCornerStr(leagueCode,away);
+  // LIMITAR LAMBDAS a rango realista (0.3 – 4.0)
+  lh = Math.max(0.3, Math.min(4.0, lh));
+  la = Math.max(0.3, Math.min(4.0, la));
+
+  // CÁLCULO DE CORNERS CORREGIDO (división por 2)
+  var hcs = getCornerStr(leagueCode, home), acs = getCornerStr(leagueCode, away);
   var cornerHome = (cAvg / 2) * hcs.atk * acs.def * hfa;
   var cornerAway = (cAvg / 2) * acs.atk * hcs.def * (1 / hfa);
   cLam = cornerHome + cornerAway;
-  // Si por algún motivo cLam es 0 o NaN, usar cAvg como fallback
   if (isNaN(cLam) || cLam <= 0) cLam = cAvg;
 
-  var dist=bivariateDist(lh,la,rho);
-  var markets=computeMarkets(dist,{lambda:lh},{lambda:la},leagueCode,cLam);
-
-  // Aplicar correlación con límites suavizados
+  var dist = bivariateDist(lh, la, rho);
+  var markets = computeMarkets(dist, { lambda: lh }, { lambda: la }, leagueCode, cLam);
   markets = applyMarketCorrelation(markets, lh, la, rho);
 
-  var confidence = calculatePredictionConfidence(apiStats, home, away, lh, la);
+  // CONFIANZA MEJORADA
+  var confidence = calculatePredictionConfidence(apiStats, home, away, lh, la, leagueCode);
 
   return {
-    home:home,away:away,leagueName:cfg.name||leagueCode,
-    lh:lh.toFixed(3),la:la.toFixed(3),
-    hw:markets.hw,dr:markets.dr,aw:markets.aw,
-    btts:markets.btts,o15:markets.o15,o25:markets.o25,
-    ht05:markets.ht05,c75:markets.c75,c85:markets.c85,
-    cLam:cLam.toFixed(2),
-    usingAPI:!!(apiStats&&apiStats.home&&apiStats.away&&(apiStats.home.played+apiStats.away.played)>=((['Mundial_2026','Libertadores','Sudamericana'].indexOf(leagueCode)>=0)?2:10)),
-    confidence:confidence,
-    weightUsed:weightUsed
+    home: home, away: away, leagueName: cfg.name || leagueCode,
+    lh: lh.toFixed(3), la: la.toFixed(3),
+    hw: markets.hw, dr: markets.dr, aw: markets.aw,
+    btts: markets.btts, o15: markets.o15, o25: markets.o25,
+    ht05: markets.ht05, c75: markets.c75, c85: markets.c85,
+    cLam: cLam.toFixed(2),
+    usingAPI: !!(apiStats && apiStats.home && apiStats.away && (apiStats.home.played + apiStats.away.played) >= (['Mundial_2026', 'Libertadores', 'Sudamericana'].indexOf(leagueCode) >= 0 ? 2 : 10)),
+    confidence: confidence,
+    weightUsed: weightUsed
   };
 }
 
-// --- RESTO DE FUNCIONES (EV, KELLY, API, UI, etc.) ---
-// (Mantener exactamente igual que en el código original)
+// --- EV, FAIR, KELLY (SIN CAMBIOS) ---
 function calcEV(prob,odds){if(!odds||odds<=1)return null;return(prob/100*odds-1)*100;}
 function calcFair(oH,oD,oA){ if(!oH||!oD||!oA||oH<=1||oD<=1||oA<=1)return null; var s=1/oH+1/oD+1/oA; return{home:(1/oH)/s,draw:(1/oD)/s,away:(1/oA)/s,vig:(s-1)*100}; }
 function kellyStake(prob,odds){
@@ -1026,7 +1083,7 @@ function kellyStake(prob,odds){
   return Math.min(stake,bankroll);
 }
 
-// API Bzzoiro (sin cambios)
+// --- API BZZOIRO (SIN CAMBIOS) ---
 function apiBase(){return(config.apiBaseUrl||'https://sports.bzzoiro.com').replace(/\/+$/,'');}
 function apiHdrs(key){return{'Authorization':'Token '+(key||config.apiKey),'Accept':'application/json'};}
 async function apiFetch(path){ if(!config.apiKey) throw new Error('Sin Token configurado'); var r=await fetch(apiBase()+'/api/v2'+path,{headers:apiHdrs()}); if(!r.ok){var t=await r.text().catch(function(){return'';});throw new Error('HTTP '+r.status+': '+t.substring(0,100));} return r.json(); }
@@ -1035,49 +1092,17 @@ async function debugAPI(){ var keyEl=document.getElementById('cfg-apikey'),baseE
 async function getSeasonId(leagueId){
   var ck='s_'+leagueId;
   if(seasonIdCache[ck]) return seasonIdCache[ck];
-  try{
-    var d=await apiFetch('/seasons/?league_id='+leagueId+'&ordering=-year&limit=1');
-    var rs=d.results||d;
-    var sid=Array.isArray(rs)&&rs.length>0?rs[0].id:null;
-    if(!sid){
-      var d2=await apiFetch('/seasons/?league_id='+leagueId+'&limit=5');
-      var rs2=d2.results||d2;
-      if(Array.isArray(rs2)&&rs2.length>0){
-        rs2.sort(function(a,b){return (b.year||b.start_date||'').toString().localeCompare((a.year||a.start_date||'').toString());});
-        sid=rs2[0].id;
-      }
-    }
-    if(sid){seasonIdCache[ck]=sid;saveAll();}
-    return sid;
-  }catch(e){ console.error('getSeasonId error:',e.message); return null; }
-}
+  try{ var d=await apiFetch('/seasons/?league_id='+leagueId+'&ordering=-year&limit=1'); var rs=d.results||d; var sid=Array.isArray(rs)&&rs.length>0?rs[0].id:null; if(!sid){ var d2=await apiFetch('/seasons/?league_id='+leagueId+'&limit=5'); var rs2=d2.results||d2; if(Array.isArray(rs2)&&rs2.length>0){ rs2.sort(function(a,b){return (b.year||b.start_date||'').toString().localeCompare((a.year||a.start_date||'').toString());}); sid=rs2[0].id; } } if(sid){seasonIdCache[ck]=sid;saveAll();} return sid; }catch(e){ console.error('getSeasonId error:',e.message); return null; } }
 async function findTeamId(name, leagueId, leagueCode) {
   var ck = name + '_' + leagueId;
   if (teamIdCache[ck]) return teamIdCache[ck];
   var aliases = [];
-  if (leagueCode && API_TEAM_NAME_MAP[leagueCode] && API_TEAM_NAME_MAP[leagueCode][name]) {
-    aliases = API_TEAM_NAME_MAP[leagueCode][name].concat([name]);
-  } else { aliases = [name]; }
+  if (leagueCode && API_TEAM_NAME_MAP[leagueCode] && API_TEAM_NAME_MAP[leagueCode][name]) { aliases = API_TEAM_NAME_MAP[leagueCode][name].concat([name]); } else { aliases = [name]; }
   for (var a = 0; a < aliases.length; a++) {
     var apiName = aliases[a];
-    var endpoints = [
-      '/teams/?search='+encodeURIComponent(apiName)+'&league_id='+leagueId+'&limit=10',
-      '/teams/?search='+encodeURIComponent(apiName)+'&limit=10',
-      '/teams/?name='+encodeURIComponent(apiName)+'&league_id='+leagueId+'&limit=10',
-      '/teams/?name='+encodeURIComponent(apiName)+'&limit=10',
-    ];
+    var endpoints = [ '/teams/?search='+encodeURIComponent(apiName)+'&league_id='+leagueId+'&limit=10', '/teams/?search='+encodeURIComponent(apiName)+'&limit=10', '/teams/?name='+encodeURIComponent(apiName)+'&league_id='+leagueId+'&limit=10', '/teams/?name='+encodeURIComponent(apiName)+'&limit=10' ];
     for (var ep of endpoints) {
-      try {
-        var d = await apiFetch(ep);
-        var rs = (d.results || d);
-        if (Array.isArray(rs) && rs.length > 0) {
-          var exact = rs.find(function(t){ return t.name && t.name.toLowerCase() === apiName.toLowerCase(); });
-          var match = exact || rs[0];
-          teamIdCache[ck] = match.id;
-          saveAll();
-          return match.id;
-        }
-      } catch (e) {}
+      try { var d = await apiFetch(ep); var rs = (d.results || d); if (Array.isArray(rs) && rs.length > 0) { var exact = rs.find(function(t){ return t.name && t.name.toLowerCase() === apiName.toLowerCase(); }); var match = exact || rs[0]; teamIdCache[ck] = match.id; saveAll(); return match.id; } } catch (e) {}
     }
   }
   return null;
@@ -1085,19 +1110,8 @@ async function findTeamId(name, leagueId, leagueCode) {
 async function fetchTeamStats(teamId, seasonId) {
   try {
     var ms = [];
-    var endpoints = [
-      '/matches/?team_id='+teamId+'&season_id='+seasonId+'&status=finished&limit=50',
-      '/fixtures/?team_id='+teamId+'&season_id='+seasonId+'&status=finished&limit=50',
-      '/events/?team_id='+teamId+'&season_id='+seasonId+'&status=finished&limit=50',
-      '/matches/?team_id='+teamId+'&season='+seasonId+'&limit=50',
-    ];
-    for (var ep of endpoints) {
-      try {
-        var d = await apiFetch(ep);
-        var rs = d.results || d;
-        if (Array.isArray(rs) && rs.length > 0) { ms = rs; break; }
-      } catch(e) {}
-    }
+    var endpoints = [ '/matches/?team_id='+teamId+'&season_id='+seasonId+'&status=finished&limit=50', '/fixtures/?team_id='+teamId+'&season_id='+seasonId+'&status=finished&limit=50', '/events/?team_id='+teamId+'&season_id='+seasonId+'&status=finished&limit=50', '/matches/?team_id='+teamId+'&season='+seasonId+'&limit=50' ];
+    for (var ep of endpoints) { try { var d = await apiFetch(ep); var rs = d.results || d; if (Array.isArray(rs) && rs.length > 0) { ms = rs; break; } } catch(e) {} }
     var hGF=0,hGA=0,hN=0,aGF=0,aGA=0,aN=0;
     var hCorners=0,aCorners=0,hCN=0,aCN=0;
     var hShots=0,aShots=0,hSN=0,aSN=0;
@@ -1106,8 +1120,7 @@ async function fetchTeamStats(teamId, seasonId) {
     for (var m of ms) {
       var homeId = m.home_team_id || (m.home_team && m.home_team.id) || m.home_id;
       var awayId = m.away_team_id || (m.away_team && m.away_team.id) || m.away_id;
-      var isHome = (homeId == teamId);
-      var isAway = (awayId == teamId);
+      var isHome = (homeId == teamId); var isAway = (awayId == teamId);
       if (!isHome && !isAway) continue;
       var homeGoals = m.home_score ?? m.home_goals ?? m.score?.home ?? null;
       var awayGoals = m.away_score ?? m.away_goals ?? m.score?.away ?? null;
@@ -1116,10 +1129,7 @@ async function fetchTeamStats(teamId, seasonId) {
       var stats = m.stats || m.statistics || {};
       var hStats = stats.home || stats.Home || {};
       var aStats = stats.away || stats.Away || {};
-      function getStat(obj, keys) {
-        for (var k of keys) { if (obj[k] != null) return parseFloat(obj[k]); }
-        return null;
-      }
+      function getStat(obj, keys) { for (var k of keys) { if (obj[k] != null) return parseFloat(obj[k]); } return null; }
       var hCornerVal = getStat(hStats, ['corner_kicks','corners','corner']);
       var aCornerVal = getStat(aStats, ['corner_kicks','corners','corner']);
       var hShotsVal  = getStat(hStats, ['shots','shots_total','total_shots']);
@@ -1128,41 +1138,15 @@ async function fetchTeamStats(teamId, seasonId) {
       var aPossVal   = getStat(aStats, ['possession','ball_possession']);
       var hXGVal     = getStat(hStats, ['expected_goals','xg','xG']) || m.home_xg || null;
       var aXGVal     = getStat(aStats, ['expected_goals','xg','xG']) || m.away_xg || null;
-      if (isHome) {
-        hGF += homeGoals; hGA += awayGoals; hN++;
-        if (hCornerVal !== null) { hCorners += hCornerVal; hCN++; }
-        if (hShotsVal  !== null) { hShots  += hShotsVal;  hSN++; }
-        if (hPossVal   !== null) { hPoss   += hPossVal;   hPN++; }
-        if (hXGVal     !== null) { hXG     += hXGVal;    hXGN++; }
-      } else {
-        aGF += awayGoals; aGA += homeGoals; aN++;
-        if (aCornerVal !== null) { aCorners += aCornerVal; aCN++; }
-        if (aShotsVal  !== null) { aShots  += aShotsVal;  aSN++; }
-        if (aPossVal   !== null) { aPoss   += aPossVal;   aPN++; }
-        if (aXGVal     !== null) { aXG     += aXGVal;    aXGN++; }
-      }
+      if (isHome) { hGF += homeGoals; hGA += awayGoals; hN++; if (hCornerVal !== null) { hCorners += hCornerVal; hCN++; } if (hShotsVal  !== null) { hShots  += hShotsVal;  hSN++; } if (hPossVal   !== null) { hPoss   += hPossVal;   hPN++; } if (hXGVal     !== null) { hXG     += hXGVal;    hXGN++; } }
+      else { aGF += awayGoals; aGA += homeGoals; aN++; if (aCornerVal !== null) { aCorners += aCornerVal; aCN++; } if (aShotsVal  !== null) { aShots  += aShotsVal;  aSN++; } if (aPossVal   !== null) { aPoss   += aPossVal;   aPN++; } if (aXGVal     !== null) { aXG     += aXGVal;    aXGN++; } }
     }
     var played = hN + aN;
-    return {
-      played: played,
-      gfHome:  hN > 0 ? hGF / hN : 1,
-      gaHome:  hN > 0 ? hGA / hN : 1,
-      gfAway:  aN > 0 ? aGF / aN : 1,
-      gaAway:  aN > 0 ? aGA / aN : 1,
-      corners: (hCN+aCN) > 0 ? (hCorners+aCorners)/(hCN+aCN) : null,
-      shots:   (hSN+aSN) > 0 ? (hShots+aShots)/(hSN+aSN)     : null,
-      possession: (hPN+aPN) > 0 ? (hPoss+aPoss)/(hPN+aPN)    : null,
-      xG:      (hXGN+aXGN) > 0 ? (hXG+aXG)/(hXGN+aXGN)      : null,
-      avgGoalsScored:   played > 0 ? (hGF+aGF)/played : 1,
-      avgGoalsConceded: played > 0 ? (hGA+aGA)/played : 1,
-    };
-  } catch(e) {
-    console.error('fetchTeamStats error:', e.message);
-    return { played:0,gfHome:1,gaHome:1,gfAway:1,gaAway:1,corners:null,shots:null,possession:null,xG:null,avgGoalsScored:1,avgGoalsConceded:1 };
-  }
+    return { played: played, gfHome: hN > 0 ? hGF / hN : 1, gaHome: hN > 0 ? hGA / hN : 1, gfAway: aN > 0 ? aGF / aN : 1, gaAway: aN > 0 ? aGA / aN : 1, corners: (hCN+aCN) > 0 ? (hCorners+aCorners)/(hCN+aCN) : null, shots: (hSN+aSN) > 0 ? (hShots+aShots)/(hSN+aSN) : null, possession: (hPN+aPN) > 0 ? (hPoss+aPoss)/(hPN+aPN) : null, xG: (hXGN+aXGN) > 0 ? (hXG+aXG)/(hXGN+aXGN) : null, avgGoalsScored: played > 0 ? (hGF+aGF)/played : 1, avgGoalsConceded: played > 0 ? (hGA+aGA)/played : 1 };
+  } catch(e) { console.error('fetchTeamStats error:', e.message); return { played:0,gfHome:1,gaHome:1,gfAway:1,gaAway:1,corners:null,shots:null,possession:null,xG:null,avgGoalsScored:1,avgGoalsConceded:1 }; }
 }
 
-// --- INTERFAZ Y EVENTOS (sin cambios) ---
+// --- INTERFAZ Y EVENTOS (SIN CAMBIOS ESTRUCTURALES) ---
 document.getElementById('league').addEventListener('change',function(){
   var c=this.value;
   var hSel=document.getElementById('home'),aSel=document.getElementById('away');
@@ -1186,29 +1170,7 @@ function checkBtns(){
   document.getElementById('api-btn').disabled=!(h&&a&&h!==a&&l&&API_LEAGUE_IDS[l]);
 }
 
-// Calibración (sin cambios)
-function applyCalibration(probs){
-  var total=probs.hw*calibrationBias.home + probs.dr*calibrationBias.draw + probs.aw*calibrationBias.away;
-  if(total===0) total=1;
-  return { hw:probs.hw*calibrationBias.home/total*100, dr:probs.dr*calibrationBias.draw/total*100, aw:probs.aw*calibrationBias.away/total*100 };
-}
-function updateCalibration(market, actualOutcome) {
-  var target = {home:0, draw:0, away:0};
-  if (actualOutcome === 'home') target.home = 1;
-  else if (actualOutcome === 'draw') target.draw = 1;
-  else if (actualOutcome === 'away') target.away = 1;
-  var settled1X2 = betHistory.filter(function(b) { return b.status === 'settled' && (b.market === 'Victoria Local' || b.market === 'Empate' || b.market === 'Victoria Visitante'); });
-  if (settled1X2.length < 10) return;
-  var alpha = Math.max(0.05, 0.20 - settled1X2.length * 0.002);
-  calibrationBias.home = calibrationBias.home * (1 - alpha) + target.home * alpha;
-  calibrationBias.draw = calibrationBias.draw * (1 - alpha) + target.draw * alpha;
-  calibrationBias.away = calibrationBias.away * (1 - alpha) + target.away * alpha;
-  var totalBias = calibrationBias.home + calibrationBias.draw + calibrationBias.away;
-  if (totalBias > 0 && totalBias !== 3) { calibrationBias.home *= 3/totalBias; calibrationBias.draw *= 3/totalBias; calibrationBias.away *= 3/totalBias; }
-  saveAll();
-}
-
-// runAnalysis (sin cambios)
+// --- runAnalysis (con renderizado que muestra el detalle de confianza) ---
 function runAnalysis(){
   var l=document.getElementById('league').value;
   var h=document.getElementById('home').value;
@@ -1266,6 +1228,7 @@ function confirmBet(id){
   delete _pendingBets[id];
 }
 
+// --- renderResults (muestra el detalle de confianza) ---
 function renderResults(pred,markets,fair){
   document.getElementById('main-screen').classList.add('hidden');
   document.getElementById('result-screen').classList.remove('hidden');
@@ -1288,9 +1251,7 @@ function renderResults(pred,markets,fair){
     var barC=isValue?'var(--green)':(m.ev>0?'var(--yellow)':'var(--accent)');
     var cls=isValue?'green':(m.ev>0?'yellow':(iv?'red':''));
     var vigH='';
-    if(m.fairProb!=null && fair){
-      vigH='<div class="small-note" style="margin-top:6px">Prob. mercado: '+m.fairProb.toFixed(1)+'% &nbsp;/&nbsp; Vig: '+fair.vig.toFixed(1)+'%</div>';
-    }
+    if(m.fairProb!=null && fair){ vigH='<div class="small-note" style="margin-top:6px">Prob. mercado: '+m.fairProb.toFixed(1)+'% &nbsp;/&nbsp; Vig: '+fair.vig.toFixed(1)+'%</div>'; }
     var stakeH='';
     if(isValue&&m.odds>1){
       var stake=kellyStake(m.prob/100,m.odds);
@@ -1338,14 +1299,15 @@ function renderResults(pred,markets,fair){
     +'</div>'
     +'<div style="text-align:center;margin-top:10px;font-size:0.6rem;color:var(--text3);font-family:var(--mono)">'
     +pred.leagueName
-    +(pred.confidence?' &nbsp;|&nbsp; <span style="color:var(--blue2)">'+Math.round((pred.confidence.overall||0.6)*100)+'% confianza</span>':'')
+    +(pred.confidence ? ' &nbsp;|&nbsp; <span style="color:var(--blue2)">'+Math.round((pred.confidence.overall||0.6)*100)+'% confianza</span>' : '')
+    +(pred.confidence && pred.confidence.detail ? '<div style="font-size:0.5rem;color:var(--text3);margin-top:4px;max-width:100%;white-space:normal;word-break:break-word;">' + pred.confidence.detail + '</div>' : '')
     +'</div>'
     +'</div>'
     +(hasVal?'<div class="success-box" style="margin-bottom:10px">MERCADOS CON VALOR ENCONTRADOS</div>':'')
     +(!hasVal?'<div class="warn-box" style="margin-bottom:10px">Sin apuestas que superen todos los filtros.</div>':'')
     +marketsHtml
     +'<div class="model-pill" style="margin-top:14px">'
-    +'<strong>ELO + forma reciente + rho dinámico + calibración automática &nbsp;|&nbsp; v4.4 CORNERS FIXED</strong><br>'
+    +'<strong>ELO + forma reciente + rho dinámico + calibración automática &nbsp;|&nbsp; v4.5 REAL</strong><br>'
     +'<span style="font-size:0.62rem;color:var(--text3)">Volatilidad hist. · HFA dinámico · H2H · Correlación mercados · Tempo · Confianza</span>'
     +(pred.confidence?'<span style="display:block;margin-top:4px;font-size:0.62rem;color:var(--text3)">Confianza del modelo: <strong style="color:var(--blue2)">'+Math.round((pred.confidence.overall||0.6)*100)+'%</strong> &nbsp;|&nbsp; Margen de error: ±'+Math.round(pred.confidence.range||10)+'pts</span>':'')
     +'</div>';
@@ -1355,7 +1317,8 @@ function renderResults(pred,markets,fair){
   document.getElementById('result-screen').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-// placeBet, updateBetResult, deleteBet, etc. (idénticos)
+// --- RESTO DE FUNCIONES (placeBet, updateBetResult, deleteBet, export, import, switchTab, etc.) ---
+// (Se mantienen exactamente igual que en el código original para no perder nada)
 function placeBet(market,prob,odds,stake,match){
   bankroll-=parseFloat(stake);
   betHistory.push({date:new Date().toISOString(),match:match,market:market,prob:prob,odds:odds,stake:parseFloat(stake),status:'pending',result:null});
@@ -1494,7 +1457,7 @@ function updateStats(){
   var modelBets=settled.filter(function(b){return b.market==='Victoria Local'||b.market==='Empate'||b.market==='Victoria Visitante';});
   var correct=0; modelBets.forEach(function(b){if(b.result==='win') correct++;});
   var acc=modelBets.length?Math.round(correct/modelBets.length*100):'--';
-  document.getElementById('model-accuracy-box').innerHTML='<strong>Precision modelo 1X2:</strong> '+acc+'% ('+correct+'/'+modelBets.length+' aciertos) &nbsp;|&nbsp; <strong>Calibracion:</strong> activa &nbsp;|&nbsp; <strong>Versión:</strong> v4.4 CORNERS FIXED';
+  document.getElementById('model-accuracy-box').innerHTML='<strong>Precision modelo 1X2:</strong> '+acc+'% ('+correct+'/'+modelBets.length+' aciertos) &nbsp;|&nbsp; <strong>Calibracion:</strong> activa &nbsp;|&nbsp; <strong>Versión:</strong> v4.5 REAL';
   drawChart();
 }
 function drawChart(){
