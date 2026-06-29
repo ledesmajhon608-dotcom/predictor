@@ -406,7 +406,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
 
 <script>
 /* ============================================================================
-   CONFIGURACIÓN GLOBAL Y ALMACENAMIENTO
+   CONFIGURACIÓN GLOBAL Y ALMACENAMIENTO (BLINDAJE CONTRA CORRUPCIÓN)
    ============================================================================ */
 const DEFAULT_CONFIG = {
   initialBankroll: 20000,
@@ -420,25 +420,51 @@ const DEFAULT_CONFIG = {
   marketWeight: 50
 };
 
-let config = JSON.parse(localStorage.getItem('betConfig') || 'null') || Object.assign({}, DEFAULT_CONFIG);
-let bankroll = parseFloat(localStorage.getItem('bankroll')) || config.initialBankroll;
-let betHistory = JSON.parse(localStorage.getItem('betHistory') || '[]');
-let teamIdCache = JSON.parse(localStorage.getItem('teamIdCache') || '{}');
-let seasonIdCache = JSON.parse(localStorage.getItem('seasonIdCache') || '{}');
+// --- Carga segura de configuración (sin romper si localStorage está corrupto) ---
+function safeJSONParse(key, fallback) {
+  try {
+    const raw = localStorage.getItem(key);
+    if (raw === null || raw === 'null' || raw === 'undefined') return fallback;
+    const parsed = JSON.parse(raw);
+    // Si es un array y esperamos array, o un objeto y esperamos objeto, ok; si no, devolvemos fallback
+    if (Array.isArray(fallback) && !Array.isArray(parsed)) return fallback;
+    if (typeof fallback === 'object' && !Array.isArray(fallback) && (typeof parsed !== 'object' || Array.isArray(parsed))) return fallback;
+    return parsed;
+  } catch (e) {
+    console.warn('Error al leer ' + key + ' de localStorage, usando valor por defecto:', e.message);
+    return fallback;
+  }
+}
+
+let config = safeJSONParse('betConfig', null) || Object.assign({}, DEFAULT_CONFIG);
+// Fusionamos con DEFAULT_CONFIG para asegurar que todas las propiedades existan
+config = Object.assign({}, DEFAULT_CONFIG, config);
+
+let bankroll = parseFloat(localStorage.getItem('bankroll'));
+if (isNaN(bankroll) || bankroll <= 0) bankroll = config.initialBankroll;
+
+let betHistory = safeJSONParse('betHistory', []);
+let teamIdCache = safeJSONParse('teamIdCache', {});
+let seasonIdCache = safeJSONParse('seasonIdCache', {});
 let currentAPIData = null;
-let eloRatings = JSON.parse(localStorage.getItem('eloRatings') || '{}');
-let teamForm = JSON.parse(localStorage.getItem('teamForm') || '{}');
-let calibrationBias = JSON.parse(localStorage.getItem('calibrationBias') || '{"home":1,"draw":1,"away":1}');
+let eloRatings = safeJSONParse('eloRatings', {});
+let teamForm = safeJSONParse('teamForm', {});
+let calibrationBias = safeJSONParse('calibrationBias', {home:1, draw:1, away:1});
 
 function saveAll() {
-  localStorage.setItem('bankroll', String(bankroll));
-  localStorage.setItem('betHistory', JSON.stringify(betHistory));
-  localStorage.setItem('betConfig', JSON.stringify(config));
-  localStorage.setItem('teamIdCache', JSON.stringify(teamIdCache));
-  localStorage.setItem('seasonIdCache', JSON.stringify(seasonIdCache));
-  localStorage.setItem('eloRatings', JSON.stringify(eloRatings));
-  localStorage.setItem('teamForm', JSON.stringify(teamForm));
-  localStorage.setItem('calibrationBias', JSON.stringify(calibrationBias));
+  try {
+    localStorage.setItem('bankroll', String(bankroll));
+    localStorage.setItem('betHistory', JSON.stringify(betHistory));
+    localStorage.setItem('betConfig', JSON.stringify(config));
+    localStorage.setItem('teamIdCache', JSON.stringify(teamIdCache));
+    localStorage.setItem('seasonIdCache', JSON.stringify(seasonIdCache));
+    localStorage.setItem('eloRatings', JSON.stringify(eloRatings));
+    localStorage.setItem('teamForm', JSON.stringify(teamForm));
+    localStorage.setItem('calibrationBias', JSON.stringify(calibrationBias));
+  } catch (e) {
+    showToast('Error al guardar datos', 'error');
+    console.error(e);
+  }
 }
 
 /* ============================================================================
@@ -569,9 +595,6 @@ const STRENGTH = {
   Championship:{'Leeds United':[1.15,0.89],'Leicester City':[1.14,0.90],'Southampton':[1.12,0.92],'Norwich City':[1.08,0.96],'West Bromwich Albion':[1.06,0.98],'Middlesbrough':[1.07,0.97],'Coventry City':[1.05,0.99],'Sunderland':[1.04,1.00],'Blackburn Rovers':[1.03,1.01],'Millwall':[1.00,1.04],'Watford':[1.02,1.02],'Bristol City':[1.01,1.03],'Hull City':[1.00,1.04],'Preston North End':[0.99,1.05],'Swansea City':[0.98,1.06],'Cardiff City':[0.97,1.07],'Stoke City':[0.96,1.08],'Sheffield Wednesday':[0.95,1.09],'QPR':[0.94,1.10],'Plymouth Argyle':[0.93,1.11],'Portsmouth':[0.92,1.12],'Luton Town':[0.95,1.09],'Derby County':[0.94,1.10],'Oxford United':[0.90,1.14],'Burnley':[1.13,0.91]}
 };
 
-/* ============================================================================
-   CORNER STRENGTH – DATOS REALISTAS PARA MUNDIAL Y OTRAS LIGAS
-   ============================================================================ */
 const CORNER_STRENGTH = {
   EPL:{'Manchester City':[1.15,0.90],'Liverpool':[1.10,0.95],'Arsenal':[1.10,0.95]},
   La_liga:{'Real Madrid':[1.12,0.93],'Barcelona':[1.10,0.95]},
@@ -913,16 +936,13 @@ function calculatePredictionConfidence(apiStats, home, away, lh, la, leagueCode)
     var aPlayed = apiStats.away.played || 0;
     var avgPlayed = (hPlayed + aPlayed) / 2;
 
-    // Volumen de datos (satura en 15 PJ)
     var volumeFactor = Math.min(1, avgPlayed / 15);
     confidence = 0.50 + 0.35 * volumeFactor;
     factors.push({ name: 'Volumen', value: volumeFactor });
 
-    // Actualidad (asumimos que los stats son de la temporada actual)
     var recencyFactor = 0.90;
     factors.push({ name: 'Actualidad', value: recencyFactor });
 
-    // Consistencia (varianza de goles)
     var homeGF = apiStats.home.gfHome || 1;
     var homeGA = apiStats.home.gaHome || 1;
     var awayGF = apiStats.away.gfAway || 1;
@@ -933,21 +953,18 @@ function calculatePredictionConfidence(apiStats, home, away, lh, la, leagueCode)
     var consistencyFactor = Math.max(0.80, 1 - avgVar * 0.10);
     factors.push({ name: 'Consistencia', value: consistencyFactor });
 
-    // Diferencia de nivel (ELO)
     var eloHome = getELO(leagueCode, home);
     var eloAway = getELO(leagueCode, away);
     var eloDiff = Math.abs(eloHome - eloAway);
     var levelFactor = Math.min(1, 0.85 + eloDiff / 800);
     factors.push({ name: 'Nivel (ELO)', value: levelFactor });
 
-    // Forma reciente
     var homeForm = getFormFactor(leagueCode, home);
     var awayForm = getFormFactor(leagueCode, away);
     var formAvg = (homeForm + awayForm) / 2;
     var formFactor = Math.min(1, Math.max(0.85, formAvg));
     factors.push({ name: 'Forma', value: formFactor });
 
-    // Calidad de datos (API vs solo modelo)
     var shortTournaments = ['Mundial_2026', 'Libertadores', 'Sudamericana'];
     var usingAPI = apiStats && (apiStats.home.played + apiStats.away.played) >=
       (shortTournaments.indexOf(leagueCode) >= 0 ? 2 : 10);
@@ -959,7 +976,6 @@ function calculatePredictionConfidence(apiStats, home, away, lh, la, leagueCode)
     factors.push({ name: 'Sin API', value: 0.45 });
   }
 
-  // Penalización por desbalance extremo
   if ((lh > 3.0 && la < 0.5) || (la > 3.0 && lh < 0.5)) {
     confidence *= 0.92;
     factors.push({ name: 'Desbalance', value: 0.92 });
@@ -1033,15 +1049,12 @@ function predictMatch(leagueCode, home, away, apiStats) {
     la = Math.max(0.3, (gAvg / 2) * as2.atk * hs.def * (1 / hfa));
   }
 
-  // Aplicar factores contextuales
   lh = lh * contextFactor * h2hBoost * homeTempoAdj;
   la = la * contextFactor * h2hBoost * awayTempoAdj;
 
-  // LIMITAR LAMBDAS a rango realista (0.3 – 4.0)
   lh = Math.max(0.3, Math.min(4.0, lh));
   la = Math.max(0.3, Math.min(4.0, la));
 
-  // CÁLCULO DE CORNERS CORREGIDO (división por 2)
   var hcs = getCornerStr(leagueCode, home), acs = getCornerStr(leagueCode, away);
   var cornerHome = (cAvg / 2) * hcs.atk * acs.def * hfa;
   var cornerAway = (cAvg / 2) * acs.atk * hcs.def * (1 / hfa);
@@ -1052,7 +1065,6 @@ function predictMatch(leagueCode, home, away, apiStats) {
   var markets = computeMarkets(dist, { lambda: lh }, { lambda: la }, leagueCode, cLam);
   markets = applyMarketCorrelation(markets, lh, la, rho);
 
-  // CONFIANZA MEJORADA
   var confidence = calculatePredictionConfidence(apiStats, home, away, lh, la, leagueCode);
 
   return {
@@ -1146,7 +1158,7 @@ async function fetchTeamStats(teamId, seasonId) {
   } catch(e) { console.error('fetchTeamStats error:', e.message); return { played:0,gfHome:1,gaHome:1,gfAway:1,gaAway:1,corners:null,shots:null,possession:null,xG:null,avgGoalsScored:1,avgGoalsConceded:1 }; }
 }
 
-// --- INTERFAZ Y EVENTOS (SIN CAMBIOS ESTRUCTURALES) ---
+// --- INTERFAZ Y EVENTOS (ASEGURANDO REGISTRO DE LISTENERS) ---
 document.getElementById('league').addEventListener('change',function(){
   var c=this.value;
   var hSel=document.getElementById('home'),aSel=document.getElementById('away');
@@ -1318,7 +1330,6 @@ function renderResults(pred,markets,fair){
 }
 
 // --- RESTO DE FUNCIONES (placeBet, updateBetResult, deleteBet, export, import, switchTab, etc.) ---
-// (Se mantienen exactamente igual que en el código original para no perder nada)
 function placeBet(market,prob,odds,stake,match){
   bankroll-=parseFloat(stake);
   betHistory.push({date:new Date().toISOString(),match:match,market:market,prob:prob,odds:odds,stake:parseFloat(stake),status:'pending',result:null});
@@ -1395,7 +1406,7 @@ function importJSON(input){
     try{
       var d=JSON.parse(e.target.result);
       if(d.bankroll!==undefined) bankroll=d.bankroll;
-      if(d.config) config=Object.assign({},DEFAULT_CONFIG,d.config);
+      if(d.config) config=Object.assign({}, DEFAULT_CONFIG, d.config);
       if(d.betHistory) betHistory=d.betHistory;
       if(d.eloRatings) eloRatings=d.eloRatings;
       if(d.teamForm) teamForm=d.teamForm;
@@ -1578,7 +1589,7 @@ function showToast(msg,type){
   setTimeout(function(){if(t.parentNode)t.parentNode.removeChild(t);},2700);
 }
 
-// Inicialización
+// Inicialización segura
 updateBankrollDisplay();
 updateHistoryDisplay();
 updateDataModeBanner();
