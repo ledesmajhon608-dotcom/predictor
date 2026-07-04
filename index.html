@@ -1052,7 +1052,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
   // ============================================
   // API BZZOIRO
   // ============================================
-  function apiBase() { return (config.apiBaseUrl || 'https://sports.bzzoiro.com/api').replace(/\/+$/, ''); }
+  function apiBase() { return (config.apiBaseUrl || 'https://sports.bzzoiro.com/api/events').replace(/\/+$/, ''); }
   function apiHdrs(key) { return {'Authorization': 'Token ' + (key || config.apiKey), 'Accept': 'application/json'}; }
   
   async function apiFetch(path) {
