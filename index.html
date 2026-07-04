@@ -552,34 +552,23 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     setTimeout(function() { if (t.parentNode) t.parentNode.removeChild(t); }, 2700);
   }
 
-  function normalizarNombreMundial(name) {
-    if (!name) return '';
-    return name;
-  }
-
   // ============================================
   // FÓRMULA DE KELLY
   // ============================================
   function kellyStake(prob, odds) {
     if (odds <= 1 || prob <= 0 || prob >= 100 || bankroll <= 0) return 0;
-    
     var p = prob / 100;
     var b = odds - 1;
     var q = 1 - p;
-    
     var k = (p * b - q) / b;
     k = Math.max(0, k);
-    
     var fullKelly = k * config.kellyFraction * bankroll;
     var maxByPct = bankroll * config.maxStakePct;
     var stake = Math.min(fullKelly, maxByPct);
-    
     var minAbs = config.minStake || 500;
     var maxAbs = config.maxStake || 1000;
-    
     if (stake > 0 && stake < minAbs) stake = Math.min(minAbs, maxAbs);
     if (stake > maxAbs) stake = maxAbs;
-    
     return Math.min(stake, bankroll);
   }
 
@@ -668,21 +657,16 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
   function updateELO(league, home, away, result) {
     var kBase = 26;
     if (['Mundial_2026', 'Libertadores'].indexOf(league) >= 0) kBase = 32;
-    
     var homeELO = getELO(league, home);
     var awayELO = getELO(league, away);
     var expHome = 1 / (1 + Math.pow(10, (awayELO - homeELO) / 400));
     var expAway = 1 - expHome;
-    
     var actHome = result === 'home' ? 1 : (result === 'draw' ? 0.5 : 0);
     var actAway = result === 'away' ? 1 : (result === 'draw' ? 0.5 : 0);
-    
     var k = kBase;
     if (Math.abs(homeELO - awayELO) > 200) k = kBase * 0.6;
-    
     var newHomeELO = homeELO + k * (actHome - expHome);
     var newAwayELO = awayELO + k * (actAway - expAway);
-    
     eloRatings[league + '_' + home] = newHomeELO;
     eloRatings[league + '_' + away] = newAwayELO;
   }
@@ -697,12 +681,10 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
   function updateForm(league, home, away, result) {
     var homeForm = getForm(league, home);
     var awayForm = getForm(league, away);
-    
     var w = 0.30;
     if (result === 'home') homeForm.rating = homeForm.rating * (1 + w) + 0.5 * w;
     else if (result === 'draw') { homeForm.rating = homeForm.rating * (1 + w * 0.3); awayForm.rating = awayForm.rating * (1 + w * 0.3); }
     else if (result === 'away') awayForm.rating = awayForm.rating * (1 + w) + 0.5 * w;
-    
     homeForm.rating = Math.min(1.35, Math.max(0.75, homeForm.rating));
     awayForm.rating = Math.min(1.35, Math.max(0.75, awayForm.rating));
   }
@@ -712,18 +694,15 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     var ch = b.home || 1;
     var cd = b.draw || 1;
     var ca = b.away || 1;
-    
     var hw = raw.hw * ch;
     var dr = raw.dr * cd;
     var aw = raw.aw * ca;
-    
     var total = hw + dr + aw;
     if (total > 0) {
       hw = hw / total * 100;
       dr = dr / total * 100;
       aw = aw / total * 100;
     }
-    
     return { hw: hw, dr: dr, aw: aw };
   }
 
@@ -736,29 +715,21 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
 
   function predictMatch(league, home, away, apiData) {
     var lg = LEAGUES_CFG[league] || LEAGUES_CFG.Mundial_2026;
-    
     var baseHome = getTeamStrength(league, home);
     var baseAway = getTeamStrength(league, away);
-    
     var eloHome = getELO(league, home);
     var eloAway = getELO(league, away);
     var eloAdj = (eloHome - eloAway) / 800;
-    
     var formHome = getForm(league, home);
     var formAway = getForm(league, away);
     var formAdj = (formHome.rating - formAway.rating) * 0.12;
-    
     var hfa = lg.hfa || 1.05;
-    
     var homeAdv = baseHome[0] * baseAway[1] * hfa * (1 + eloAdj) * (1 + formAdj);
     var awayAdv = baseAway[0] * baseHome[1] * (1 - eloAdj) * (1 - formAdj);
-    
     var homeLambdaRaw = homeAdv * lg.goals;
     var awayLambdaRaw = awayAdv * lg.goals;
-    
     var rho = DixonColesRho(homeLambdaRaw, awayLambdaRaw, lg.rho || -0.08);
     var jointProbs = DixonColesJointProb(homeLambdaRaw, awayLambdaRaw, rho);
-    
     var hw = 0, dr = 0, aw = 0;
     for (var key in jointProbs) {
       var parts = key.split('|');
@@ -769,7 +740,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       else if (h === a) dr += p;
       else aw += p;
     }
-    
     var h2h = getH2H(home, away);
     if (h2h) {
       var h2hWeight = 0.18;
@@ -777,41 +747,29 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       dr = dr * (1 - h2hWeight) + (h2h.dr / 100) * h2hWeight;
       aw = aw * (1 - h2hWeight) + (h2h.aw / 100) * h2hWeight;
     }
-    
     var total = hw + dr + aw;
     hw = hw / total * 100;
     dr = dr / total * 100;
     aw = aw / total * 100;
-    
     var lambdaHome = homeLambdaRaw;
     var lambdaAway = awayLambdaRaw;
-    
     var avgGoals = lambdaHome + lambdaAway;
     var over15 = 1 - poissonCDF(1, avgGoals);
     var over25 = 1 - poissonCDF(2, avgGoals);
-    
     var probBTTS = (1 - poisson(0, lambdaHome)) * (1 - poisson(0, lambdaAway));
-    
     var htLambdaHome = lambdaHome * (lg.htRatio || 0.40);
     var htLambdaAway = lambdaAway * (lg.htRatio || 0.40);
     var htOver05 = 1 - poisson(0, htLambdaHome + htLambdaAway);
-    
     var cSHome = getCornerStrength(league, home);
     var cSAway = getCornerStrength(league, away);
     var cAvg = lg.corners || 9.5;
     var cLambda = (cSHome[0] * cSAway[1] + cSAway[0] * cSHome[1]) / 2 * cAvg;
     var cOver75 = 1 - poissonCDF(7, cLambda);
     var cOver85 = 1 - poissonCDF(8, cLambda);
-    
-    var confidence = {
-      overall: 0.62,
-      range: 9
-    };
-    
+    var confidence = { overall: 0.62, range: 9 };
     var h2hFactor = h2h ? 1.12 : 1.00;
     var formFactor = Math.abs(formHome.rating - formAway.rating) > 0.12 ? 1.08 : 1.00;
     confidence.overall = confidence.overall * (0.70 + 0.15 * h2hFactor + 0.15 * formFactor);
-    
     return {
       hw: hw.toFixed(1),
       dr: dr.toFixed(1),
@@ -835,22 +793,25 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
   }
 
   // ============================================
-  // BZZOIRO API - INTEGRACIÓN
+  // BZZOIRO API - INTEGRACIÓN CORREGIDA
   // ============================================
   function fetchPredictionsFromBzzoiro(leagueCode, callback) {
+    // MUNDIAL 2026 - USAR DATOS LOCALES
     if (leagueCode === 'Mundial_2026') {
       var teams = STRENGTH[leagueCode] ? Object.keys(STRENGTH[leagueCode]) : [];
       callback({ isLocal: true, teams: teams, matches: [] });
       return;
     }
     
+    // SIN API KEY - USAR DATOS LOCALES
     if (!BZZOIRO_API_KEY) {
+      console.log('Bzzoiro: Sin API Key, usando datos locales');
       var teams = STRENGTH[leagueCode] ? Object.keys(STRENGTH[leagueCode]) : [];
       callback({ isLocal: true, teams: teams, matches: [] });
       return;
     }
     
-    console.log('Bzzoiro: Solicitando predicciones para liga:', leagueCode);
+    console.log('Bzzoiro: Solicitando predicciones para:', leagueCode);
     
     fetch(BZZOIRO_BASE_URL + '/api/v2/predictions/?limit=200&status=notstarted', {
       method: 'GET',
@@ -860,7 +821,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       }
     })
     .then(function(res) {
-      console.log('Bzzoiro: Status', res.status);
+      console.log('Bzzoiro Status:', res.status);
       if (!res.ok) {
         if (res.status === 401) throw new Error('API Key inválida');
         if (res.status === 403) throw new Error('Sin permiso');
@@ -869,7 +830,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       return res.json();
     })
     .then(function(data) {
-      console.log('Bzzoiro: Respuesta recibida', data);
+      console.log('Bzzoiro Respuesta:', data);
       
       var matches = [];
       var teams = [];
@@ -893,8 +854,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         });
       }
       
-      console.log('Bzzoiro: Equipos encontrados:', teams.length, 'Partidos:', matches.length);
-      
+      console.log('Bzzoiro Equipos:', teams.length, 'Partidos:', matches.length);
       callback({ isLocal: false, teams: teams, matches: matches });
     })
     .catch(function(err) {
@@ -910,15 +870,17 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     });
   }
 
-  function testBzzoiroConnection() {
+  window.testBzzoiroConnection = function() {
     var btn = document.getElementById('btn-test-api');
     if (btn) {
       btn.disabled = true;
       btn.innerHTML = '<span class="spin"></span> Probando...';
     }
     
-    if (!BZZOIRO_API_KEY) {
-      showToast('Ingresa API Key primero', 'error');
+    var apiKey = document.getElementById('cfg-bzzoiro-key').value.trim();
+    
+    if (!apiKey) {
+      showToast('Ingresa API Key en Configuración primero', 'error');
       if (btn) {
         btn.disabled = false;
         btn.innerHTML = '📡 Probar Bzzoiro API';
@@ -926,23 +888,30 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       return;
     }
     
-    console.log('Probando conexión con Bzzoiro...');
+    BZZOIRO_API_KEY = apiKey;
+    config.bzzoiroKey = apiKey;
+    localStorage.setItem('betConfig', JSON.stringify(config));
+    
+    console.log('=== TEST BZZOIRO ===');
+    console.log('API Key:', apiKey.substring(0, 8) + '...');
     
     fetch(BZZOIRO_BASE_URL + '/api/v2/predictions/?limit=5&status=notstarted', {
       method: 'GET',
       headers: {
-        'Authorization': 'Bearer ' + BZZOIRO_API_KEY,
+        'Authorization': 'Bearer ' + apiKey,
         'Accept': 'application/json'
       }
     })
     .then(function(res) {
-      console.log('Test: Status', res.status);
-      if (!res.ok) throw new Error('Error ' + res.status);
+      console.log('Status:', res.status);
+      if (!res.ok) throw new Error('Error HTTP ' + res.status);
       return res.json();
     })
     .then(function(data) {
+      console.log('Respuesta:', data);
       var count = data && data.results ? data.results.length : 0;
       if (count > 0) {
+        console.log('PRIMER PARTIDO:', data.results[0]);
         showToast('✓ API conectada: ' + count + ' predicciones', 'success');
       } else {
         showToast('API conectada pero sin datos', 'info');
@@ -958,7 +927,7 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         btn.innerHTML = '📡 Probar Bzzoiro API';
       }
     });
-  }
+  };
 
   window.loadMatchesFromAPI = function() {
     var leagueCode = document.getElementById('league').value;
@@ -973,35 +942,56 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       btn.innerHTML = '<span class="spin"></span> Cargando...';
     }
     
+    console.log('=== CARGAR PARTIDOS ===');
+    console.log('Liga:', leagueCode);
+    console.log('API Key:', BZZOIRO_API_KEY ? 'Configurada (' + BZZOIRO_API_KEY.substring(0, 8) + '...)' : 'NO CONFIGURADA');
+    
     fetchPredictionsFromBzzoiro(leagueCode, function(data) {
-      if (!data.teams || data.teams.length === 0) {
-        showToast('No hay partidos disponibles', 'error');
-        if (btn) {
-          btn.disabled = false;
-          btn.innerHTML = '📡 Cargar Partidos de Bzzoiro';
-        }
-        return;
-      }
+      console.log('=== RESPUESTA ===');
+      console.log('Es local:', data.isLocal);
+      console.log('Equipos:', data.teams ? data.teams.length : 0);
+      console.log('Partidos:', data.matches ? data.matches.length : 0);
       
       var homeSel = document.getElementById('home');
       var awaySel = document.getElementById('away');
       homeSel.innerHTML = '<option value="">-- Selecciona --</option>';
       awaySel.innerHTML = '<option value="">-- Selecciona --</option>';
       
-      data.matches.forEach(function(match) {
-        if (match.home_team && match.away_team) {
-          homeSel.innerHTML += '<option value="' + match.home_team + '" data-away="' + match.away_team + '">' + match.home_team + '</option>';
-          awaySel.innerHTML += '<option value="' + match.away_team + '">' + match.away_team + '</option>';
+      if (data.matches && data.matches.length > 0) {
+        data.matches.forEach(function(match) {
+          if (match.home_team && match.away_team) {
+            homeSel.innerHTML += '<option value="' + match.home_team + '">' + match.home_team + '</option>';
+            awaySel.innerHTML += '<option value="' + match.away_team + '">' + match.away_team + '</option>';
+          }
+        });
+        homeSel.disabled = false;
+        awaySel.disabled = false;
+        showToast('Partidos cargados: ' + data.matches.length, 'success');
+      } else {
+        var localTeams = STRENGTH[leagueCode] ? Object.keys(STRENGTH[leagueCode]) : [];
+        console.log('Fallback a datos locales:', localTeams.length, 'equipos');
+        
+        if (localTeams.length > 0) {
+          localTeams.forEach(function(t) {
+            homeSel.innerHTML += '<option value="' + t + '">' + t + '</option>';
+            awaySel.innerHTML += '<option value="' + t + '">' + t + '</option>';
+          });
+          homeSel.disabled = false;
+          awaySel.disabled = false;
+          showToast('Datos locales cargados: ' + localTeams.length, 'info');
+        } else {
+          homeSel.innerHTML = '<option value="">-- Sin equipos --</option>';
+          awaySel.innerHTML = '<option value="">-- Sin equipos --</option>';
+          showToast('No hay equipos disponibles', 'error');
         }
-      });
-      
-      homeSel.disabled = false;
-      awaySel.disabled = false;
+      }
       
       if (btn) {
-        btn.innerHTML = '✓ ' + data.matches.length + ' Partidos';
+        btn.disabled = false;
+        btn.innerHTML = '📡 Cargar Partidos de Bzzoiro';
       }
-      showToast('Partidos cargados: ' + data.matches.length, 'success');
+      
+      checkBtns();
     });
   };
 
@@ -1056,7 +1046,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
           });
           homeSel.disabled = false;
           awaySel.disabled = false;
-          
           if (BZZOIRO_API_KEY) {
             showToast('Bzzoiro: ' + teams.length + ' equipos', 'success');
           }
@@ -1080,14 +1069,8 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       });
     });
     
-    homeSel.addEventListener('change', function() {
-      checkBtns();
-    });
-    
-    awaySel.addEventListener('change', function() {
-      checkBtns();
-    });
-    
+    homeSel.addEventListener('change', function() { checkBtns(); });
+    awaySel.addEventListener('change', function() { checkBtns(); });
     document.querySelectorAll('input[type="number"]').forEach(function(i) {
       i.addEventListener('input', checkBtns);
     });
@@ -1097,21 +1080,18 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     var h = document.getElementById('home').value;
     var a = document.getElementById('away').value;
     var l = document.getElementById('league').value;
-    
     var ids = ['odds-home', 'odds-draw', 'odds-away', 'odds-over15', 'odds-over25', 'odds-btts'];
     var anyOdd = ids.some(function(id) {
       var el = document.getElementById(id);
       return el && parseFloat(el.value) > 1;
     });
-    
     var analyzeBtn = document.getElementById('analyze-btn');
     if (analyzeBtn) {
       analyzeBtn.disabled = !(h && a && h !== a && l && anyOdd);
     }
-    
     var apiBtn = document.getElementById('api-btn');
     if (apiBtn) {
-      apiBtn.disabled = true;
+      apiBtn.disabled = false;
     }
   }
 
@@ -1136,25 +1116,18 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     var l = document.getElementById('league').value;
     var h = document.getElementById('home').value;
     var a = document.getElementById('away').value;
-    
     var pred = predictMatch(l, h, a, null);
-    
     var oH = parseFloat(document.getElementById('odds-home').value) || 0;
     var oD = parseFloat(document.getElementById('odds-draw').value) || 0;
     var oA = parseFloat(document.getElementById('odds-away').value) || 0;
-    
     var fair = calcFairOdds(oH, oD, oA);
     var modelProb = { hw: parseFloat(pred.hw), dr: parseFloat(pred.dr), aw: parseFloat(pred.aw) };
-    
     var combinedProb = modelProb;
-    
     var raw1x2 = { hw: combinedProb.hw, dr: combinedProb.dr, aw: combinedProb.aw };
     var cal1x2 = applyCalibration(raw1x2);
-    
     pred.hw = cal1x2.hw.toFixed(1);
     pred.dr = cal1x2.dr.toFixed(1);
     pred.aw = cal1x2.aw.toFixed(1);
-    
     var mkts = [
       { name: 'Victoria Local', prob: parseFloat(pred.hw), oid: 'odds-home', fairProb: fair ? fair.home * 100 : null },
       { name: 'Empate', prob: parseFloat(pred.dr), oid: 'odds-draw', fairProb: fair ? fair.draw * 100 : null },
@@ -1163,7 +1136,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       { name: 'Over 2.5 Goles', prob: pred.o25, oid: 'odds-over25' },
       { name: 'BTTS - Ambos Marcan', prob: pred.btts, oid: 'odds-btts' }
     ];
-    
     var markets = mkts.map(function(m) {
       var el = document.getElementById(m.oid);
       var odds = el ? parseFloat(el.value) : 0;
@@ -1173,7 +1145,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       var meetsEV = ev !== null && ev >= config.minEV;
       return Object.assign({}, m, { odds: hasOdds ? odds : 0, ev: ev, hasValue: hasOdds && meetsEV && meetsMarket });
     });
-    
     renderResults(pred, markets, fair);
   };
 
@@ -1186,16 +1157,13 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
   function renderResults(pred, markets, fair) {
     document.getElementById('main-screen').classList.add('hidden');
     document.getElementById('result-screen').classList.remove('hidden');
-    
     var minEV = config.minEV || 8;
     markets.forEach(function(m) {
       m.meetsEV = m.ev !== null && m.ev >= minEV;
     });
     var hasVal = markets.some(function(m) { return m.meetsEV && m.hasValue; });
-    
     var hw = parseFloat(pred.hw), dr = parseFloat(pred.dr), aw = parseFloat(pred.aw);
     var bestIdx = hw >= dr && hw >= aw ? 0 : (dr >= hw && dr >= aw ? 1 : 2);
-    
     var marketsHtml = '';
     markets.forEach(function(m) {
       var iv = m.odds > 1;
@@ -1203,10 +1171,8 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       var badge2 = isValue
         ? '<span class="badge badge-ev">+EV</span>'
         : (m.ev > 0 ? '<span class="badge badge-info">EV bajo</span>' : (iv ? '<span class="badge badge-no">SIN VALOR</span>' : '<span class="badge badge-info">PROB</span>'));
-      
       var barC = isValue ? 'var(--green)' : (m.ev > 0 ? 'var(--yellow)' : 'var(--accent)');
       var cls = isValue ? 'green' : (m.ev > 0 ? 'yellow' : (iv ? 'red' : ''));
-      
       var stakeH = '';
       if (isValue && m.odds > 1) {
         var stake = kellyStake(m.prob, m.odds);
@@ -1222,7 +1188,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
             '<button class="btn btn-primary mt8" onclick="confirmBet(' + pid + ')" style="font-size:.72rem;padding:10px 20px">Registrar Apuesta</button></div>';
         }
       }
-      
       var mktCls = 'market ' + (isValue ? 'has-value' : (iv && !isValue && m.ev > 0 ? '' : (iv ? 'no-value' : '')));
       marketsHtml += '<div class="' + mktCls + '">' +
         '<div class="market-name"><span>' + m.name + '</span>' + badge2 + '</div>' +
@@ -1237,10 +1202,8 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
           '</div>' : '') +
         stakeH + '</div>';
     });
-    
     var bestCls = ['best', '', ''];
     bestCls[bestIdx] = 'best';
-    
     document.getElementById('result-card').innerHTML =
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">' +
       '<button class="btn btn-ghost btn-sm" onclick="goBack()">Volver</button>' +
@@ -1268,7 +1231,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       '<strong>ELO + forma reciente + Dixon-Coles + Calibración + Bzzoiro API</strong><br>' +
       '<span style="font-size:0.62rem;color:var(--text3)">v4.6 BZZOIRO - API integrada</span>' +
       '</div>';
-    
     setTimeout(function() {
       document.querySelectorAll('.bar-fill[data-w]').forEach(function(b) {
         b.style.width = b.dataset.w + '%';
@@ -1297,12 +1259,9 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
   window.updateBetResult = function(idx, won) {
     var b = betHistory[idx];
     if (!b || b.status !== 'pending') return;
-    
     b.status = 'settled';
     b.result = won ? 'win' : 'loss';
-    
     if (won) bankroll += b.stake * b.odds;
-    
     if (b.market === 'Victoria Local' || b.market === 'Empate' || b.market === 'Victoria Visitante') {
       var parts = b.match.split(' vs ');
       if (parts.length === 2) {
@@ -1319,7 +1278,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         }
       }
     }
-    
     saveAll();
     updateBankrollDisplay();
     updateHistoryDisplay();
@@ -1347,12 +1305,10 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
   window.updateHistoryDisplay = function() {
     var log = document.getElementById('bet-log');
     if (!log) return;
-    
     if (!betHistory.length) {
       log.innerHTML = '<div style="color:var(--text3);text-align:center;padding:36px 20px">Sin apuestas registradas</div>';
       return;
     }
-    
     var h = '';
     for (var i = betHistory.length - 1; i >= 0; i--) {
       var b = betHistory[i];
@@ -1360,7 +1316,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       var sc = b.status === 'pending' ? 'log-pending' : (b.result === 'win' ? 'log-win' : 'log-loss');
       var profit = b.status === 'settled' ? (b.result === 'win' ? '+$' + (b.stake * b.odds - b.stake).toFixed(2) : '-$' + b.stake.toFixed(2)) : 'Pendiente';
       var pc = b.status === 'settled' ? (b.result === 'win' ? 'pos' : 'neg') : 'pend';
-      
       h += '<div class="log-item ' + sc + '">' +
         '<div class="log-stripe"></div>' +
         '<div class="log-body">' +
@@ -1426,7 +1381,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       if (tabEl) tabEl.classList.toggle('hidden', t !== tab);
       if (btnEl) btnEl.classList.toggle('active', t === tab);
     });
-    
     if (tab === 'history') updateHistoryDisplay();
     if (tab === 'stats') updateStats();
     if (tab === 'config') loadConfig();
@@ -1439,10 +1393,8 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     var el = document.getElementById('pnl-display');
     el.innerHTML = (pnl >= 0 ? '+ ' : '- ') + '$' + Math.abs(pnl).toFixed(2) + ' (' + Math.abs(parseFloat(pct)).toFixed(1) + '%)';
     el.className = 'br-pnl ' + (pnl >= 0 ? 'profit' : 'loss');
-    
     var settled = betHistory.filter(function(b) { return b.status === 'settled'; });
     var wins = settled.filter(function(b) { return b.result === 'win'; }).length;
-    
     document.getElementById('br-bets').textContent = betHistory.length;
     document.getElementById('br-wr').textContent = settled.length ? (Math.round(wins / settled.length * 100) + '%') : '--';
   };
@@ -1451,16 +1403,13 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     var settled = betHistory.filter(function(b) { return b.status === 'settled'; });
     var wins = settled.filter(function(b) { return b.result === 'win'; }).length;
     var wr = settled.length ? ((wins / settled.length) * 100).toFixed(1) : '0.0';
-    
     var staked = 0, profit = 0;
     settled.forEach(function(b) {
       staked += b.stake;
       profit += b.result === 'win' ? (b.stake * b.odds - b.stake) : -b.stake;
     });
-    
     var yld = staked ? ((profit / staked) * 100).toFixed(1) : '0.0';
     var roi = ((profit / config.initialBankroll) * 100).toFixed(1);
-    
     var streak = 0, streakDir = 0;
     for (var i = betHistory.length - 1; i >= 0; i--) {
       var b = betHistory[i];
@@ -1475,7 +1424,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
         break;
       }
     }
-    
     document.getElementById('stat-total').textContent = betHistory.length;
     document.getElementById('stat-winrate').textContent = wr + '%';
     document.getElementById('stat-yield').textContent = yld + '%';
@@ -1484,60 +1432,47 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     document.getElementById('stat-profit').className = 'stat-val ' + (profit >= 0 ? 'green' : 'red');
     document.getElementById('stat-streak').textContent = streakDir === 1 ? 'W' + streak : (streakDir === -1 ? 'L' + streak : '--');
     document.getElementById('stat-streak').className = 'stat-val ' + (streakDir === 1 ? 'green' : (streakDir === -1 ? 'red' : ''));
-    
     var modelBets = settled.filter(function(b) {
       return b.market === 'Victoria Local' || b.market === 'Empate' || b.market === 'Victoria Visitante';
     });
     var correct = 0;
     modelBets.forEach(function(b) { if (b.result === 'win') correct++; });
     var acc = modelBets.length ? Math.round(correct / modelBets.length * 100) : '--';
-    
     document.getElementById('model-accuracy-box').innerHTML = 
       '<strong>Precisión modelo 1X2:</strong> ' + acc + '% (' + correct + '/' + modelBets.length + ') · ' +
       '<strong>Calibración:</strong> activa · <strong>Versión:</strong> v4.6 BZZOIRO';
-    
     drawChart();
   };
 
   window.drawChart = function() {
     var svg = document.getElementById('bankroll-chart');
     if (!svg) return;
-    
     var w = svg.clientWidth || svg.parentElement.offsetWidth || 460;
     var h = 110;
     var pad = 18;
-    
     var pts = [config.initialBankroll];
     var cur = config.initialBankroll;
-    
     betHistory.forEach(function(b) {
       if (b.status !== 'settled') return;
       cur += b.result === 'win' ? (b.stake * b.odds - b.stake) : -b.stake;
       pts.push(cur);
     });
-    
     if (pts.length < 2) {
       svg.innerHTML = '<text x="' + (w / 2) + '" y="' + (h / 2) + '" text-anchor="middle" fill="#3d5268" font-size="12">Sin datos aún</text>';
       return;
     }
-    
     var minY = Math.min.apply(null, pts);
     var maxY = Math.max.apply(null, pts);
     minY = Math.min(minY, config.initialBankroll * 0.9);
     maxY = Math.max(maxY, config.initialBankroll * 1.1);
     var rng = maxY - minY || 1;
-    
     var tx = function(i) { return pad + (i / (pts.length - 1)) * (w - pad * 2); };
     var ty = function(v) { return h - pad - ((v - minY) / rng) * (h - pad * 2); };
-    
     var color = pts[pts.length - 1] >= config.initialBankroll ? '#34d399' : '#fb7185';
     var colorDim = pts[pts.length - 1] >= config.initialBankroll ? 'rgba(52,211,153,0.08)' : 'rgba(251,113,133,0.06)';
-    
     var d = 'M ' + tx(0) + ' ' + ty(pts[0]);
     pts.forEach(function(p, i) { if (i > 0) d += ' L ' + tx(i) + ' ' + ty(p); });
-    
     var areaD = d + ' L ' + tx(pts.length - 1) + ' ' + (h - pad) + ' L ' + tx(0) + ' ' + (h - pad) + ' Z';
-    
     var circles = '';
     if (pts.length <= 20) {
       pts.forEach(function(p, i) {
@@ -1546,7 +1481,6 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
     } else {
       circles = '<circle cx="' + tx(pts.length - 1) + '" cy="' + ty(pts[pts.length - 1]) + '" r="3.5" fill="' + color + '"/>';
     }
-    
     var baseY = ty(config.initialBankroll);
     svg.innerHTML = '<line x1="' + pad + '" y1="' + baseY + '" x2="' + (w - pad) + '" y2="' + baseY + '" stroke="rgba(255,255,255,0.06)" stroke-dasharray="3 3" stroke-width="1"/>' +
       '<path d="' + areaD + '" fill="' + colorDim + '"/>' +
@@ -1582,10 +1516,20 @@ textarea{width:100%;padding:10px 12px;border-radius:var(--r-sm);background:rgba(
       config.bzzoiroKey = bzzKey;
       BZZOIRO_API_KEY = bzzKey;
       console.log('API Key guardada:', bzzKey.substring(0, 8) + '...');
+    } else {
+      config.bzzoiroKey = '';
+      BZZOIRO_API_KEY = '';
     }
     
     localStorage.setItem('betConfig', JSON.stringify(config));
     updateBankrollDisplay();
+    
+    var leagueSel = document.getElementById('league');
+    if (leagueSel && leagueSel.value && bzzKey) {
+      console.log('Recargando equipos con nueva API Key...');
+      leagueSel.dispatchEvent(new Event('change'));
+    }
+    
     showToast('Configuración guardada ✓', 'success');
   };
 
