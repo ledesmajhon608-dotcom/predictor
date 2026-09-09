@@ -68,10 +68,31 @@ export async function resolveLeagueId(leagueKey, leagueDisplayName) {
   const target = cleanName(leagueDisplayName);
   const targetTokens = tokens(leagueDisplayName);
 
-  const match = results.find(l => cleanName(l.name) === target)
-    || results.find(l => cleanName(l.name).includes(target) || target.includes(cleanName(l.name)))
-    || results.find(l => todasLasPalabrasEstan(targetTokens, tokens(l.name)))
-    || results.find(l => todasLasPalabrasEstan(tokens(l.name), targetTokens));
+  // Match exacto: no hay ambigüedad posible, listo.
+  const exacto = results.find(l => cleanName(l.name) === target);
+
+  // Si no hay exacto, junto TODAS las candidatas que calzan por substring o
+  // por subconjunto de palabras (en cualquier dirección), y me quedo con la
+  // que tenga MENOS palabras de más — la más parecida a lo que buscamos, no
+  // la primera que aparezca. Esto evita que "Liga Portugal" matchee con una
+  // liga de reservas/juveniles que también contenga esas dos palabras.
+  let match = exacto;
+  if (!match) {
+    const candidatas = [];
+    for (const l of results) {
+      const lTokens = tokens(l.name);
+      const esSubstring = cleanName(l.name).includes(target) || target.includes(cleanName(l.name));
+      const esSubconjunto = todasLasPalabrasEstan(targetTokens, lTokens) || todasLasPalabrasEstan(lTokens, targetTokens);
+      if (esSubstring || esSubconjunto) {
+        const extra = Math.abs(lTokens.length - targetTokens.length);
+        candidatas.push({ liga: l, extra });
+      }
+    }
+    if (candidatas.length) {
+      candidatas.sort((a, b) => a.extra - b.extra);
+      match = candidatas[0].liga;
+    }
+  }
 
   if (!match) {
     const candidatas = results.slice(0, 8).map(l => l.name).join(', ') || '(ninguna)';
