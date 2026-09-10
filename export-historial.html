@@ -54,7 +54,7 @@
   </div>
 
 <script type="module">
-import { LIGAS } from './leagues.js';
+import { LIGAS, BZZOIRO_COUNTRY } from './leagues.js';
 import { resolveLeagueId } from './api.js';
 
 const ligaSelect = document.getElementById('liga');
@@ -112,6 +112,12 @@ btn.addEventListener('click', async () => {
     const maxPartidos = Math.min(200, Math.max(1, +cantidadInput.value || 60));
 
     log(`Resolviendo id de Bzzoiro para ${liga.name}...`);
+    const pais = BZZOIRO_COUNTRY[leagueKey];
+    if (pais) {
+      const listado = await fetchAPI(`/leagues/?country=${encodeURIComponent(pais)}`);
+      const candidatas = (listado.results || listado || []).map(l => `${l.name} (id ${l.id})`).join(' | ');
+      log(`🔎 Ligas que Bzzoiro tiene para ${pais}: ${candidatas || '(ninguna)'}`);
+    }
     const bzzoiroId = await resolveLeagueId(leagueKey, liga.name);
     if (bzzoiroId === null) {
       log('❌ Esta competición no tiene un país único en Bzzoiro (torneo continental) — no se puede exportar.');
