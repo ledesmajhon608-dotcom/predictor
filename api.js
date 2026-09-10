@@ -76,6 +76,18 @@ export async function resolveLeagueId(leagueKey, leagueDisplayName) {
   // que tenga MENOS palabras de más — la más parecida a lo que buscamos, no
   // la primera que aparezca. Esto evita que "Liga Portugal" matchee con una
   // liga de reservas/juveniles que también contenga esas dos palabras.
+  //
+  // Desempate cuando dos candidatas quedan con la misma cantidad de palabras
+  // de más (ej. "Liga Portugal 2" vs "Liga Portugal Betclic", ambas con 1
+  // palabra extra): si esa palabra de más es un número o indica una
+  // categoría inferior/reservas/juveniles (2, 3, ii, b, u21...), se
+  // descarta a favor de la otra candidata.
+  const PALABRA_CATEGORIA_INFERIOR = /^(\d+|ii|iii|iv|b|u1[6-9]|u2[0-3]|sub\d*|reserva|reservas|reserve|youth|juvenil|femenino|women|ladies)$/i;
+  function tienePalabraDeCategoriaInferior(lTokens, tTokens) {
+    const targetSet = new Set(tTokens);
+    return lTokens.some(t => !targetSet.has(t) && PALABRA_CATEGORIA_INFERIOR.test(t));
+  }
+
   let match = exacto;
   if (!match) {
     const candidatas = [];
@@ -85,11 +97,12 @@ export async function resolveLeagueId(leagueKey, leagueDisplayName) {
       const esSubconjunto = todasLasPalabrasEstan(targetTokens, lTokens) || todasLasPalabrasEstan(lTokens, targetTokens);
       if (esSubstring || esSubconjunto) {
         const extra = Math.abs(lTokens.length - targetTokens.length);
-        candidatas.push({ liga: l, extra });
+        const categoriaInferior = tienePalabraDeCategoriaInferior(lTokens, targetTokens);
+        candidatas.push({ liga: l, extra, categoriaInferior });
       }
     }
     if (candidatas.length) {
-      candidatas.sort((a, b) => a.extra - b.extra);
+      candidatas.sort((a, b) => a.extra - b.extra || (a.categoriaInferior === b.categoriaInferior ? 0 : a.categoriaInferior ? 1 : -1));
       match = candidatas[0].liga;
     }
   }
