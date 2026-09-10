@@ -226,6 +226,7 @@ export const CORNER_HOME_BIAS = 1.12;
 export const CORNER_HOME_BIAS_LEAGUE = {
   SA: 1.31,
   BSA: 1.66,
+  BL1: 1.35,
 };
 
 // Bzzoiro identifica las ligas con un id numérico propio, no con estos códigos
