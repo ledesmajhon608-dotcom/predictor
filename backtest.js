@@ -54,11 +54,13 @@ class MarketStats {
     this.n = 0;
     this.hits = 0;
     this.brierSum = 0;
+    this.sumaReal = 0; // para la tasa base real (cuánto pasó de verdad)
     this.buckets = { '0-20': [0, 0], '20-40': [0, 0], '40-60': [0, 0], '60-80': [0, 0], '80-100': [0, 0] };
   }
   add(predictedPct, actualBool) {
     if (predictedPct == null || !Number.isFinite(predictedPct)) return;
     this.n++;
+    this.sumaReal += actualBool ? 1 : 0;
     const predictedYes = predictedPct >= 50;
     if (predictedYes === actualBool) this.hits++;
     const p = predictedPct / 100;
@@ -68,13 +70,18 @@ class MarketStats {
     this.buckets[b][1] += 1;
   }
   summary() {
-    return {
-      name: this.name,
-      n: this.n,
-      hitRate: this.n ? (this.hits / this.n * 100) : null,
-      brier: this.n ? (this.brierSum / this.n) : null,
-      buckets: this.buckets,
-    };
+    const hitRate = this.n ? (this.hits / this.n * 100) : null;
+    const brier = this.n ? (this.brierSum / this.n) : null;
+    // Tasa base real: cuánto pasó de verdad esto en la muestra. El Brier de
+    // "adivinar siempre esa tasa, sin mirar el partido" es baseRate*(1-baseRate) —
+    // la vara justa para saber si el modelo aporta algo, no un 50/50 fijo que
+    // no tiene sentido en mercados donde lo normal es que no pase casi nunca
+    // (o que pase casi siempre).
+    const baseRate = this.n ? (this.sumaReal / this.n) : null;
+    const brierBase = baseRate != null ? baseRate * (1 - baseRate) : null;
+    const mejoraVsBase = (brier != null && brierBase != null && brierBase > 0.0001)
+      ? ((brierBase - brier) / brierBase * 100) : null;
+    return { name: this.name, n: this.n, hitRate, brier, baseRate, brierBase, mejoraVsBase, buckets: this.buckets };
   }
 }
 
@@ -148,16 +155,19 @@ runBtn.addEventListener('click', async () => {
   runBtn.disabled = false;
 });
 
-function brierColor(b) {
-  if (b < 0.20) return 'var(--green)';
-  if (b < 0.25) return 'var(--yellow)';
+function vsBaseColor(m) {
+  if (m == null) return 'var(--chalk-dim)';
+  if (m >= 10) return 'var(--green)';
+  if (m >= 0) return 'var(--yellow)';
   return 'var(--red)';
 }
 
-function brierNote(b) {
-  if (b < 0.20) return 'mejor que el azar, con margen';
-  if (b < 0.25) return 'apenas mejor que tirar una moneda';
-  return 'peor que tirar una moneda en este mercado';
+function vsBaseNote(m, baseRate) {
+  if (m == null) return '';
+  const signo = m >= 0 ? '+' : '';
+  if (m >= 10) return `${signo}${fmt(m)}% mejor que solo saber que esto pasa ${fmt(baseRate)}% de las veces en esta liga — hay ventaja real`;
+  if (m >= 0) return `${signo}${fmt(m)}% mejor que adivinar el ${fmt(baseRate)}% de siempre — casi no aporta mirar el partido puntual`;
+  return `${fmt(m)}% peor que adivinar el ${fmt(baseRate)}% de siempre, sin mirar nada del partido`;
 }
 
 function bucketRows(buckets) {
@@ -181,7 +191,7 @@ function renderResults(summaries) {
   }
 
   resultsContent.innerHTML = conDatos.map(s => {
-    const bColor = brierColor(s.brier);
+    const vColor = vsBaseColor(s.mejoraVsBase);
     const rows = bucketRows(s.buckets);
     return `
       <div class="card">
@@ -192,9 +202,9 @@ function renderResults(summaries) {
         </div>
         <div class="prob-row-top" style="margin-top:10px;">
           <span>Brier score</span>
-          <span class="prob" style="color:${bColor}">${s.brier.toFixed(3)}</span>
+          <span class="prob">${s.brier.toFixed(3)}</span>
         </div>
-        <p style="margin:4px 0 0; font-size:0.8rem; color:${bColor}">${brierNote(s.brier)}</p>
+        <p style="margin:4px 0 0; font-size:0.8rem; color:${vColor}">${vsBaseNote(s.mejoraVsBase, s.baseRate)}</p>
         ${rows ? `
         <h3 class="corner-team-title">Calibración: predicho vs. pasó de verdad</h3>
         <div class="compare-row compare-head"><span>Rango</span><span></span><span></span></div>
