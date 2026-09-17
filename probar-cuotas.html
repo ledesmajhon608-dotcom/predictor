@@ -54,7 +54,7 @@ async function probar(url) {
   try {
     const res = await fetch(url, { headers: { 'Authorization': `Token ${token}` } });
     const texto = await res.text();
-    return { status: res.status, texto: texto.slice(0, 300) };
+    return { status: res.status, texto };
   } catch (e) {
     return { status: 'error de red', texto: e.message };
   }
@@ -84,9 +84,7 @@ btn.addEventListener('click', async () => {
     log(`✅ Partido de prueba: ${ev.home_team} vs ${ev.away_team} (id ${ev.id})\n`);
 
     const intentos = [
-      { nombre: 'Odds comparison por evento', url: `https://sports.bzzoiro.com/api/v2/odds/comparison/?event_id=${ev.id}` },
-      { nombre: 'Odds anidado en el evento', url: `https://sports.bzzoiro.com/api/v2/events/${ev.id}/odds/` },
-      { nombre: 'Odds detail por evento', url: `https://sports.bzzoiro.com/api/v2/odds/?event_id=${ev.id}` },
+      { nombre: 'Odds del evento (confirmado que funciona)', url: `https://sports.bzzoiro.com/api/v2/events/${ev.id}/odds/` },
     ];
 
     for (const intento of intentos) {
@@ -94,7 +92,9 @@ btn.addEventListener('click', async () => {
       log(`GET ${intento.url}`);
       const r = await probar(intento.url);
       log(`Status: ${r.status}`);
-      log(`Respuesta: ${r.texto}\n`);
+      let mostrar = r.texto;
+      try { mostrar = JSON.stringify(JSON.parse(r.texto), null, 2); } catch (e) { /* no era JSON, se muestra tal cual */ }
+      log(`Respuesta:\n${mostrar}\n`);
     }
   } catch (e) {
     log('❌ Error: ' + e.message);
