@@ -1,6 +1,20 @@
 import { LIGAS } from './leagues.js';
 import { simulateMatch } from './model.js';
 
+// Las cuotas de la casa siempre suman más de 100% de probabilidad implícita
+// (ahí está su margen/ganancia). Esto lo saca, dejando la probabilidad "justa".
+function devigar2(oddsA, oddsB) {
+  if (!oddsA || !oddsB) return null;
+  const pA = 1 / oddsA, pB = 1 / oddsB;
+  return (pA / (pA + pB)) * 100;
+}
+function devigar3(oddsA, oddsB, oddsC) {
+  if (!oddsA || !oddsB || !oddsC) return null;
+  const pA = 1 / oddsA, pB = 1 / oddsB, pC = 1 / oddsC;
+  const s = pA + pB + pC;
+  return [(pA / s) * 100, (pB / s) * 100, (pC / s) * 100];
+}
+
 const fileInput = document.getElementById('historial-file');
 const fileInfo = document.getElementById('file-info');
 const runBtn = document.getElementById('run-btn');
@@ -108,6 +122,30 @@ runBtn.addEventListener('click', async () => {
     cornersLocal35: new MarketStats('Córners local Over 3.5'),
     cornersVisit35: new MarketStats('Córners visitante Over 3.5'),
   };
+  // Mismos mercados, pero puntuando la cuota real de la casa (sin margen) en
+  // vez de la predicción del modelo — para saber si le ganamos al mercado,
+  // no solo a "adivinar a ciegas".
+  const mercado = {
+    local: new MarketStats('Local gana'),
+    empate: new MarketStats('Empate'),
+    visitante: new MarketStats('Visitante gana'),
+    over15: new MarketStats('Over 1.5 goles'),
+    over25: new MarketStats('Over 2.5 goles'),
+    over35: new MarketStats('Over 3.5 goles'),
+    btts: new MarketStats('Ambos marcan'),
+  };
+  // El modelo, pero acumulado SOLO en los partidos donde también hay cuota
+  // real — para comparar Brier vs Brier en el mismo conjunto exacto de
+  // partidos, no en muestras distintas.
+  const modeloVsMercado = {
+    local: new MarketStats('Local gana'),
+    empate: new MarketStats('Empate'),
+    visitante: new MarketStats('Visitante gana'),
+    over15: new MarketStats('Over 1.5 goles'),
+    over25: new MarketStats('Over 2.5 goles'),
+    over35: new MarketStats('Over 3.5 goles'),
+    btts: new MarketStats('Ambos marcan'),
+  };
 
   let evaluados = 0, saltados = 0;
   log(`Evaluando ${partidos.length} partidos de ${historial.liga || leagueKey} (solo con datos estáticos, sin usar standings actuales)...`);
@@ -137,6 +175,26 @@ runBtn.addEventListener('click', async () => {
     markets.over35.add(pred.over35, totalGoles > 3.5);
     markets.btts.add(pred.btts, p.goles_local > 0 && p.goles_visitante > 0);
 
+    if (p.odds_local != null && p.odds_empate != null && p.odds_visitante != null) {
+      const [fL, fE, fV] = devigar3(p.odds_local, p.odds_empate, p.odds_visitante) || [];
+      if (fL != null) {
+        mercado.local.add(fL, resultado === 'local');
+        mercado.empate.add(fE, resultado === 'empate');
+        mercado.visitante.add(fV, resultado === 'visitante');
+        modeloVsMercado.local.add(pred.resultProbs.local, resultado === 'local');
+        modeloVsMercado.empate.add(pred.resultProbs.empate, resultado === 'empate');
+        modeloVsMercado.visitante.add(pred.resultProbs.visitante, resultado === 'visitante');
+      }
+    }
+    const fOver15 = devigar2(p.odds_over15, p.odds_under15);
+    if (fOver15 != null) { mercado.over15.add(fOver15, totalGoles > 1.5); modeloVsMercado.over15.add(pred.over15, totalGoles > 1.5); }
+    const fOver25 = devigar2(p.odds_over25, p.odds_under25);
+    if (fOver25 != null) { mercado.over25.add(fOver25, totalGoles > 2.5); modeloVsMercado.over25.add(pred.over25, totalGoles > 2.5); }
+    const fOver35 = devigar2(p.odds_over35, p.odds_under35);
+    if (fOver35 != null) { mercado.over35.add(fOver35, totalGoles > 3.5); modeloVsMercado.over35.add(pred.over35, totalGoles > 3.5); }
+    const fBtts = devigar2(p.odds_btts_si, p.odds_btts_no);
+    if (fBtts != null) { mercado.btts.add(fBtts, p.goles_local > 0 && p.goles_visitante > 0); modeloVsMercado.btts.add(pred.btts, p.goles_local > 0 && p.goles_visitante > 0); }
+
     if (p.corners_local != null && p.corners_visitante != null && pred.cornerProbs) {
       const totalCorners = p.corners_local + p.corners_visitante;
       markets.corners75.add(pred.cornerProbs.over7, totalCorners > 7.5);
@@ -151,7 +209,16 @@ runBtn.addEventListener('click', async () => {
   }
 
   log(`\n✅ Listo. ${evaluados} partidos evaluados, ${saltados} salteados (sin resultado real completo).`);
-  renderResults(Object.values(markets).map(m => m.summary()));
+  const mercadoResumen = {};
+  for (const [k, m] of Object.entries(mercado)) mercadoResumen[k] = m.summary();
+  const modeloVsMercadoResumen = {};
+  for (const [k, m] of Object.entries(modeloVsMercado)) modeloVsMercadoResumen[k] = m.summary();
+
+  renderResults(
+    Object.entries(markets).map(([k, m]) => ({ key: k, ...m.summary() })),
+    mercadoResumen,
+    modeloVsMercadoResumen
+  );
   runBtn.disabled = false;
 });
 
@@ -182,7 +249,25 @@ function bucketRows(buckets) {
     .join('');
 }
 
-function renderResults(summaries) {
+function vsMercadoColor(m) {
+  if (m == null) return 'var(--chalk-dim)';
+  if (m > 2) return 'var(--green)';
+  if (m >= -2) return 'var(--yellow)';
+  return 'var(--red)';
+}
+
+function vsMercadoNote(modeloSum, mercadoSum) {
+  if (!mercadoSum || mercadoSum.n < 20) return null;
+  const mejora = ((mercadoSum.brier - modeloSum.brier) / mercadoSum.brier) * 100;
+  const signo = mejora >= 0 ? '+' : '';
+  let texto;
+  if (mejora > 2) texto = `${signo}${fmt(mejora)}% mejor que la cuota real de la casa (ya sin su margen) — esto sí es contra lo que hay que ganar, no contra adivinar a ciegas`;
+  else if (mejora >= -2) texto = `${signo}${fmt(mejora)}% — prácticamente empatado con la cuota real. El mercado ya sabe lo mismo que el modelo`;
+  else texto = `${fmt(mejora)}% peor que la cuota real — el mercado está más afilado que el modelo acá`;
+  return { texto, mejora, n: mercadoSum.n };
+}
+
+function renderResults(summaries, mercadoResumen = {}, modeloVsMercadoResumen = {}) {
   const conDatos = summaries.filter(s => s.n > 0);
   if (conDatos.length === 0) {
     resultsContent.innerHTML = `<div class="card"><h3>Sin datos suficientes</h3><p style="color:var(--chalk-dim)">Ningún partido tenía resultado completo para evaluar.</p></div>`;
@@ -193,6 +278,7 @@ function renderResults(summaries) {
   resultsContent.innerHTML = conDatos.map(s => {
     const vColor = vsBaseColor(s.mejoraVsBase);
     const rows = bucketRows(s.buckets);
+    const mComp = s.key ? vsMercadoNote(modeloVsMercadoResumen[s.key], mercadoResumen[s.key]) : null;
     return `
       <div class="card">
         <h3>${s.name} <small>(${s.n} partidos)</small></h3>
@@ -205,6 +291,10 @@ function renderResults(summaries) {
           <span class="prob">${s.brier.toFixed(3)}</span>
         </div>
         <p style="margin:4px 0 0; font-size:0.8rem; color:${vColor}">${vsBaseNote(s.mejoraVsBase, s.baseRate)}</p>
+        ${mComp ? `
+        <p style="margin:8px 0 0; padding-top:8px; border-top:1px dashed var(--line); font-size:0.8rem; color:${vsMercadoColor(mComp.mejora)}">
+          <strong>vs. cuota real (${mComp.n} partidos con cuota):</strong> ${mComp.texto}
+        </p>` : ''}
         ${rows ? `
         <h3 class="corner-team-title">Calibración: predicho vs. pasó de verdad</h3>
         <div class="compare-row compare-head"><span>Rango</span><span></span><span></span></div>
