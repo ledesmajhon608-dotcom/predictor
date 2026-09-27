@@ -7,7 +7,13 @@ import { BZZOIRO_COUNTRY } from './leagues.js';
 const BASE_URL = 'https://sports.bzzoiro.com/api/v2';
 
 function getToken() {
-  return localStorage.getItem('bzzoiro_token');
+  if (typeof process !== 'undefined' && process.env.BZZOIRO_TOKEN) {
+    return process.env.BZZOIRO_TOKEN;
+  }
+  if (typeof window !== 'undefined' && window.localStorage) {
+    return localStorage.getItem('bzzoiro_token');
+  }
+  return null;
 }
 
 async function fetchFromAPI(endpoint) {
@@ -25,10 +31,9 @@ async function fetchFromAPI(endpoint) {
   return await res.json();
 }
 
-// Quita el emoji de bandera / trofeo del nombre para comparar solo el texto
 function cleanName(name) {
   return name
-    .normalize('NFD').replace(/[\u0300-\u036f]/g, '') // saca tildes/acentos
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
     .replace(/[^\p{L}\p{N}\s]/gu, '')
     .trim().toLowerCase();
 }
@@ -37,18 +42,11 @@ function tokens(name) {
   return cleanName(name).split(/\s+/).filter(Boolean);
 }
 
-// ¿todas las palabras de "chicas" aparecen en "grandes"? (en cualquier orden,
-// sin importar palabras de más en el medio — resuelve casos como
-// "Brasileirão A" vs "Brasileirão Serie A")
 function todasLasPalabrasEstan(chicas, grandes) {
   const set = new Set(grandes);
   return chicas.length > 0 && chicas.every(t => set.has(t));
 }
 
-// ---------- Resolución de IDs reales de Bzzoiro ----------
-// Bzzoiro usa sus propios ids numéricos (no nuestros códigos PL/MXL/etc).
-// Hay que resolverlos buscando por país y nombre, una sola vez, y cachear
-// el resultado en memoria para no repetir la búsqueda en cada simulación.
 const leagueIdCache = new Map();
 const seasonIdCache = new Map();
 
@@ -57,31 +55,17 @@ export async function resolveLeagueId(leagueKey, leagueDisplayName) {
 
   const country = BZZOIRO_COUNTRY[leagueKey];
   if (!country) {
-    // Competición continental (Champions, Europa League, Libertadores):
-    // no se puede resolver por país. Se usa siempre el dato estático.
     leagueIdCache.set(leagueKey, null);
     return null;
   }
 
-  const data = await fetchFromAPI(`/leagues/?country=${encodeURIComponent(country)}`);
+  const data = await fetchFromAPI(`/leagues/?country=${encodeURIComponent(country)}&limit=300`);
   const results = data.results || data || [];
   const target = cleanName(leagueDisplayName);
   const targetTokens = tokens(leagueDisplayName);
 
-  // Match exacto: no hay ambigüedad posible, listo.
   const exacto = results.find(l => cleanName(l.name) === target);
 
-  // Si no hay exacto, junto TODAS las candidatas que calzan por substring o
-  // por subconjunto de palabras (en cualquier dirección), y me quedo con la
-  // que tenga MENOS palabras de más — la más parecida a lo que buscamos, no
-  // la primera que aparezca. Esto evita que "Liga Portugal" matchee con una
-  // liga de reservas/juveniles que también contenga esas dos palabras.
-  //
-  // Desempate cuando dos candidatas quedan con la misma cantidad de palabras
-  // de más (ej. "Liga Portugal 2" vs "Liga Portugal Betclic", ambas con 1
-  // palabra extra): si esa palabra de más es un número o indica una
-  // categoría inferior/reservas/juveniles (2, 3, ii, b, u21...), se
-  // descarta a favor de la otra candidata.
   const PALABRA_CATEGORIA_INFERIOR = /^(\d+|ii|iii|iv|b|u1[6-9]|u2[0-3]|sub\d*|reserva|reservas|reserve|youth|juvenil|femenino|women|ladies)$/i;
   function tienePalabraDeCategoriaInferior(lTokens, tTokens) {
     const targetSet = new Set(tTokens);
@@ -132,7 +116,6 @@ async function resolveCurrentSeason(bzzoiroLeagueId) {
   }
 }
 
-// Las copas devuelven { groups: [{ rows: [...] }, ...] } en vez de rows plano
 function extractRows(standingsResponse) {
   const table = standingsResponse.standings?.[0];
   if (!table) return [];
@@ -168,14 +151,12 @@ export async function fetchLeagueDynamicData(leagueKey, leagueDisplayName) {
     totalPlayed += played;
   }
 
-  // Promedio de goles por partido de la liga, a partir de partidos REALMENTE jugados
-  // (antes se asumía round-robin completo, lo que rompía el promedio a mitad de temporada)
   const goalsAvg = totalPlayed > 0 ? (totalGF / totalPlayed) * 2 : null;
   if (!goalsAvg) throw new Error('Datos insuficientes (0 partidos jugados)');
 
   const teamRatings = {};
   for (const [name, s] of Object.entries(teamStats)) {
-    if (s.played < 3) continue; // muestra muy chica, mejor dejar el fallback estático para ese equipo
+    if (s.played < 3) continue; 
     const gfPerMatch = s.gf / s.played;
     const gaPerMatch = s.ga / s.played;
     teamRatings[name] = {
@@ -188,9 +169,6 @@ export async function fetchLeagueDynamicData(leagueKey, leagueDisplayName) {
   return { goalsAvg, cornAvg: null, teamRatings, bzzoiroLeagueId };
 }
 
-// ---------- Predicción propia de Bzzoiro (modelo ML / CatBoost) ----------
-// Se usa solo como comparación/mezcla con nuestro modelo Poisson+Dixon-Coles;
-// si no se encuentra el partido, simplemente no se muestra (no rompe nada).
 export async function fetchMatchPrediction(bzzoiroLeagueId, homeTeam, awayTeam) {
   if (!bzzoiroLeagueId) return null;
 
@@ -203,14 +181,18 @@ export async function fetchMatchPrediction(bzzoiroLeagueId, homeTeam, awayTeam) 
       `/predictions/?league_id=${bzzoiroLeagueId}&date_from=${fmt(today)}&date_to=${fmt(in21)}&limit=100`
     );
     const results = data.results || data || [];
-    const h = cleanName(homeTeam);
-    const a = cleanName(awayTeam);
+    
+    const hTokens = tokens(homeTeam);
+    const aTokens = tokens(awayTeam);
 
     const found = results.find(p => {
-      const eh = cleanName(p.event?.home_team || '');
-      const ea = cleanName(p.event?.away_team || '');
-      return (eh === h || eh.includes(h) || h.includes(eh))
-          && (ea === a || ea.includes(a) || a.includes(ea));
+      const ehTokens = tokens(p.event?.home_team || '');
+      const eaTokens = tokens(p.event?.away_team || '');
+      
+      const matchHome = todasLasPalabrasEstan(hTokens, ehTokens) || todasLasPalabrasEstan(ehTokens, hTokens);
+      const matchAway = todasLasPalabrasEstan(aTokens, eaTokens) || todasLasPalabrasEstan(eaTokens, aTokens);
+      
+      return matchHome && matchAway;
     });
 
     if (!found) return null;
