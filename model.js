@@ -1,13 +1,24 @@
-import { LIGAS, TEAM_STRENGTH_DB, HOME_ADVANTAGE, CORNER_HOME_BIAS, CORNER_HOME_BIAS_LEAGUE } from './leagues.js';
-import * as stats from './stats.js';
-import { fetchLeagueDynamicData, fetchMatchPrediction } from './api.js';
+// model.js
+// MEJORA: normalizarML ahora normaliza cada campo por separado (antes decidía
+// con la suma y rompía si venían mezclados porcentaje y fracción).
 
-const CACHE_TTL_MS = 60 * 60 * 1000; // 1 hora de vigencia
+import {
+  LIGAS, TEAM_STRENGTH_DB, HOME_ADVANTAGE, CORNER_HOME_BIAS, CORNER_HOME_BIAS_LEAGUE,
+  DEFAULT_HOME_ADV, HA_MIN, HA_MAX,
+  RATING_SHRINK, RATING_MIN, RATING_MAX,
+  LIVE_PRIOR_GAMES, GOALS_AVG_PRIOR_MATCHES, ML_MAX_WEIGHT,
+} from './leagues.js';
+import * as stats from './stats.js';
+import { fetchLeagueDynamicData, fetchMatchPrediction, buscarEquipoEn } from './api.js';
+
+const CACHE_TTL_MS = 60 * 60 * 1000;
 const dynamicCache = {};
+const LAMBDA_MIN = 0.12, LAMBDA_MAX = 4.2;
+
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 async function getDynamicData(leagueKey, leagueDisplayName) {
   const now = Date.now();
-  // Verifica si existe el caché y si no ha expirado
   if (dynamicCache[leagueKey] && (now - dynamicCache[leagueKey].timestamp < CACHE_TTL_MS)) {
     return dynamicCache[leagueKey].data;
   }
@@ -17,82 +28,150 @@ async function getDynamicData(leagueKey, leagueDisplayName) {
     return data;
   } catch (e) {
     console.warn('Fallback a datos estáticos:', e.message);
-    // Si la API falla, intenta devolver el caché viejo si existe
-    return dynamicCache[leagueKey]?.data || null; 
+    return dynamicCache[leagueKey]?.data || null;
   }
 }
 
-// Fusiona equipos de sub-ligas si la liga es "compuesta" (ej. Copa del Rey = PD + SD2)
+const normCache = {};
+
+function normalizarSubLiga(subKey) {
+  if (normCache[subKey]) return normCache[subKey];
+  const raw = TEAM_STRENGTH_DB[subKey] || {};
+  const nombres = Object.keys(raw);
+  const out = {};
+  if (nombres.length > 0) {
+    const mAtk = nombres.reduce((s, n) => s + raw[n].atk, 0) / nombres.length;
+    const mDef = nombres.reduce((s, n) => s + raw[n].def, 0) / nombres.length;
+    const ajustar = (r) => clamp(1 + RATING_SHRINK * (r - 1), RATING_MIN, RATING_MAX);
+    for (const n of nombres) {
+      out[n] = { atk: +ajustar(raw[n].atk / mAtk).toFixed(4), def: +ajustar(raw[n].def / mDef).toFixed(4) };
+    }
+  }
+  normCache[subKey] = out;
+  return out;
+}
+
 export function getTeamsForLeague(leagueKey) {
   const liga = LIGAS[leagueKey];
   if (liga?.compositeOf) {
     return liga.compositeOf.reduce(
-      (acc, subKey) => ({ ...acc, ...(TEAM_STRENGTH_DB[subKey] || {}) }),
+      (acc, subKey) => ({ ...acc, ...normalizarSubLiga(subKey) }),
       {}
     );
   }
-  return TEAM_STRENGTH_DB[leagueKey] || {};
+  return normalizarSubLiga(leagueKey);
+}
+
+export function getStaticRating(leagueKey, teamName) {
+  const teams = getTeamsForLeague(leagueKey);
+  return teams[teamName] || buscarEquipoEn(teams, teamName) || null;
 }
 
 function getTeamRating(leagueKey, teamName, dynamicRatings) {
-  if (dynamicRatings?.[teamName]) return dynamicRatings[teamName];
-  
-  const rating = getTeamsForLeague(leagueKey)[teamName];
-  if (!rating) {
-      console.warn(`⚠️ ALERTA: Equipo "${teamName}" no encontrado. Usando rating por defecto 1.0`);
+  const estatico = getStaticRating(leagueKey, teamName);
+  const vivo = buscarEquipoEn(dynamicRatings, teamName);
+
+  if (!estatico && !vivo) {
+    console.warn(`⚠️ ALERTA: Equipo "${teamName}" no encontrado. Usando rating por defecto 1.0`);
+    return { atk: 1.0, def: 1.0 };
   }
-  return rating || { atk: 1.0, def: 1.0 };
+  const prior = estatico || { atk: 1.0, def: 1.0 };
+  if (!vivo) return prior;
+
+  const w = vivo.played / (vivo.played + LIVE_PRIOR_GAMES);
+  return {
+    atk: clamp(w * vivo.atk + (1 - w) * prior.atk, RATING_MIN, RATING_MAX),
+    def: clamp(w * vivo.def + (1 - w) * prior.def, RATING_MIN, RATING_MAX),
+  };
 }
 
-// Promedia nuestro modelo con el de Bzzoiro, pesando según la confianza que
-// Bzzoiro declara en su propia predicción (si no la manda, usa 50/50 llano)
+function resolverGoalsAvg(liga, dynamic, calibracion) {
+  const prior = Number.isFinite(calibracion?.goalsAvg) ? calibracion.goalsAvg : liga.goalsAvg;
+  if (!dynamic?.goalsAvg || !dynamic.totalPlayed) return prior;
+  const partidosVivo = dynamic.totalPlayed / 2;
+  return (partidosVivo * dynamic.goalsAvg + GOALS_AVG_PRIOR_MATCHES * prior) / (partidosVivo + GOALS_AVG_PRIOR_MATCHES);
+}
+
+export function calcLambdas(goalsAvg, hRating, aRating, homeAdv) {
+  const avgPerTeam = goalsAvg / 2;
+  const ha = clamp(homeAdv, HA_MIN, HA_MAX);
+  const sq = Math.sqrt(ha);
+  return {
+    lambdaHome: clamp(avgPerTeam * hRating.atk * aRating.def * sq, LAMBDA_MIN, LAMBDA_MAX),
+    lambdaAway: clamp(avgPerTeam * aRating.atk * hRating.def / sq, LAMBDA_MIN, LAMBDA_MAX),
+  };
+}
+
+// MEJORA: normalizar cada campo por separado. Antes se usaba la suma de
+// resultProbs para decidir si todo venía en fracción o en porcentaje, y eso
+// rompía si la API mezclaba (ej. 1X2 en % pero over/btts en fracción).
+function normalizarML(ml) {
+  const rp = ml.resultProbs || {};
+
+  const toPct = (v) => {
+    if (typeof v !== 'number' || !Number.isFinite(v)) return null;
+    return v <= 1.5 ? +(v * 100).toFixed(1) : +v.toFixed(1);
+  };
+
+  let conf = ml.confidence;
+  if (typeof conf === 'number' && conf > 1) conf = conf / 100;
+
+  return {
+    resultProbs: {
+      local: toPct(rp.local),
+      empate: toPct(rp.empate),
+      visitante: toPct(rp.visitante),
+    },
+    over15: toPct(ml.over15),
+    over25: toPct(ml.over25),
+    over35: toPct(ml.over35),
+    btts: toPct(ml.btts),
+    confidence: typeof conf === 'number' && Number.isFinite(conf) ? conf : null,
+  };
+}
+
 function blend(own, ml) {
-  const w = typeof ml.confidence === 'number' ? Math.min(1, Math.max(0, ml.confidence)) : 0.5;
+  const confianza = typeof ml.confidence === 'number' ? ml.confidence : 0.5;
+  const w = clamp(confianza, 0, ML_MAX_WEIGHT);
   const mix = (ownVal, mlVal) => {
-    // Si Bzzoiro no manda el dato o manda NaN, usamos 100% nuestro cálculo
     if (typeof mlVal !== 'number' || isNaN(mlVal)) return ownVal;
     return +((ownVal * (1 - w) + mlVal * w)).toFixed(1);
   };
-  
+  let L = mix(own.resultProbs.local, ml.resultProbs.local);
+  let E = mix(own.resultProbs.empate, ml.resultProbs.empate);
+  let V = mix(own.resultProbs.visitante, ml.resultProbs.visitante);
+  const s = L + E + V;
+  if (s > 0) { L = +(L / s * 100).toFixed(1); E = +(E / s * 100).toFixed(1); V = +(V / s * 100).toFixed(1); }
   return {
-    resultProbs: {
-      local: mix(own.resultProbs.local, ml.resultProbs.local),
-      empate: mix(own.resultProbs.empate, ml.resultProbs.empate),
-      visitante: mix(own.resultProbs.visitante, ml.resultProbs.visitante),
-    },
+    resultProbs: { local: L, empate: E, visitante: V },
     over15: mix(own.over15, ml.over15),
     over25: mix(own.over25, ml.over25),
+    over35: mix(own.over35, ml.over35),
     btts: mix(own.btts, ml.btts),
+    pesoML: w,
   };
 }
 
-export async function simulateMatch(leagueKey, homeTeam, awayTeam, { staticOnly = false } = {}) {
+export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
+  staticOnly = false,
+  calibracion = null,
+} = {}) {
   const liga = LIGAS[leagueKey];
   if (!liga) throw new Error('Liga no encontrada');
 
   const dynamic = staticOnly ? null : await getDynamicData(leagueKey, liga.name);
-  const goalsAvg = dynamic?.goalsAvg ?? liga.goalsAvg;
+  const goalsAvg = resolverGoalsAvg(liga, dynamic, calibracion);
   const cornAvg = dynamic?.cornAvg ?? liga.cornAvg;
 
   const hRating = getTeamRating(leagueKey, homeTeam, dynamic?.teamRatings);
   const aRating = getTeamRating(leagueKey, awayTeam, dynamic?.teamRatings);
 
-  // goalsAvg guardado en leagues.js es el promedio TOTAL de goles del
-  // partido (ambos equipos combinados) — por eso se reparte /2 entre cada
-  // equipo antes de aplicar su rating de ataque/defensa. Usar goalsAvg
-  // completo para cada equipo duplicaba los goles esperados del partido.
-  const homeAdv = HOME_ADVANTAGE[leagueKey] || 1.0;
-  const avgPerTeam = goalsAvg / 2;
-  const lambdaHome = avgPerTeam * hRating.atk * aRating.def * homeAdv;
-  const lambdaAway = avgPerTeam * aRating.atk * hRating.def;
+  const homeAdv = calibracion?.homeAdvantage ?? HOME_ADVANTAGE[leagueKey] ?? DEFAULT_HOME_ADV;
+  const rho = calibracion?.rho;
 
-  const resultProbs = stats.calcResultProbs(lambdaHome, lambdaAway, leagueKey);
+  const { lambdaHome, lambdaAway } = calcLambdas(goalsAvg, hRating, aRating, homeAdv);
 
-  const over15 = stats.over15DC(lambdaHome, lambdaAway, leagueKey);
-  const over25 = stats.poissonOver(lambdaHome + lambdaAway, 2.5);
-  const over35 = stats.poissonOver(lambdaHome + lambdaAway, 3.5);
-
-  const btts = stats.calcBTTS(lambdaHome, lambdaAway, leagueKey);
+  const mk = stats.calcGoalMarkets(lambdaHome, lambdaAway, leagueKey, rho);
 
   let cornerProbs = null;
   if (cornAvg && cornAvg > 0) {
@@ -102,32 +181,29 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, { staticOnly 
     );
     const totalCorners = lCornerHome + lCornerAway;
     const r = liga.cornR || 20;
+    const pc = (v) => stats.plattCalibrate(v, 'corners');
     cornerProbs = {
-      over7: stats.negBinOver(totalCorners, 7.5, r),
-      over8: stats.negBinOver(totalCorners, 8.5, r),
-      over9: stats.negBinOver(totalCorners, 9.5, r),
+      over7: pc(stats.negBinOver(totalCorners, 7.5, r)),
+      over8: pc(stats.negBinOver(totalCorners, 8.5, r)),
+      over9: pc(stats.negBinOver(totalCorners, 9.5, r)),
       porEquipo: {
         local: {
           esperado: lCornerHome,
-          // Usa el mismo "r" de la liga aplicado a la porción de cada equipo
-          // (aproximación: no hay un dato real de dispersión por equipo)
-          over3: stats.negBinOver(lCornerHome, 3.5, r),
-          over4: stats.negBinOver(lCornerHome, 4.5, r),
+          over3: pc(stats.negBinOver(lCornerHome, 3.5, r)),
+          over4: pc(stats.negBinOver(lCornerHome, 4.5, r)),
         },
         visitante: {
           esperado: lCornerAway,
-          over3: stats.negBinOver(lCornerAway, 3.5, r),
-          over4: stats.negBinOver(lCornerAway, 4.5, r),
+          over3: pc(stats.negBinOver(lCornerAway, 3.5, r)),
+          over4: pc(stats.negBinOver(lCornerAway, 4.5, r)),
         }
       }
     };
   }
 
-  const calLocal = stats.plattCalibrate(resultProbs.home, 'resultado');
-  const calEmpate = stats.plattCalibrate(resultProbs.draw, 'resultado');
-  const calVisitante = stats.plattCalibrate(resultProbs.away, 'resultado');
-  // Cada probabilidad se calibra por separado, así que ya no suman
-  // exactamente 100 — se renormaliza manteniendo las proporciones.
+  const calLocal = stats.plattCalibrate(mk.resultProbs.home, 'resultado');
+  const calEmpate = stats.plattCalibrate(mk.resultProbs.draw, 'resultado');
+  const calVisitante = stats.plattCalibrate(mk.resultProbs.away, 'resultado');
   const sumaCal = calLocal + calEmpate + calVisitante;
 
   const ownResult = {
@@ -139,21 +215,19 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, { staticOnly 
       empate: +(calEmpate * 100 / sumaCal).toFixed(1),
       visitante: +(calVisitante * 100 / sumaCal).toFixed(1),
     },
-    over15: stats.plattCalibrate(over15, 'goals15'),
-    over25: stats.plattCalibrate(over25, 'goals25'),
-    over35,
-    btts: stats.plattCalibrate(btts, 'btts'),
-    cornerProbs
+    over15: stats.plattCalibrate(mk.over15, 'goals15'),
+    over25: stats.plattCalibrate(mk.over25, 'goals25'),
+    over35: stats.plattCalibrate(mk.over35, 'goals35'),
+    btts: stats.plattCalibrate(mk.btts, 'btts'),
+    cornerProbs,
+    lambdas: { local: +lambdaHome.toFixed(3), visitante: +lambdaAway.toFixed(3) },
   };
 
-  // Intento traer la predicción ML de Bzzoiro para el mismo partido, si hay
-  // token y la liga se pudo resolver. Es 100% opcional: si falla o no
-  // encuentra el partido, se devuelve el resultado propio sin cambios.
   let bzzoiroML = null;
   if (dynamic?.bzzoiroLeagueId) {
     const pred = await fetchMatchPrediction(dynamic.bzzoiroLeagueId, homeTeam, awayTeam);
     if (pred?.markets) {
-      bzzoiroML = {
+      bzzoiroML = normalizarML({
         resultProbs: {
           local: pred.markets.match_result?.prob_home,
           empate: pred.markets.match_result?.prob_draw,
@@ -164,13 +238,13 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, { staticOnly 
         over35: pred.markets.over_under?.prob_over_35,
         btts: pred.markets.btts?.prob_yes,
         confidence: pred.model?.confidence ?? null,
-      };
+      });
     }
   }
 
   const hasFullML = bzzoiroML
     && [bzzoiroML.resultProbs.local, bzzoiroML.resultProbs.empate, bzzoiroML.resultProbs.visitante, bzzoiroML.over15, bzzoiroML.over25, bzzoiroML.btts]
-      .every(v => typeof v === 'number');
+      .every(v => typeof v === 'number' && Number.isFinite(v));
 
   return {
     ...ownResult,

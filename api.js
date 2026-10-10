@@ -1,13 +1,16 @@
 // ============================================================
-// api.js – llamadas a la API externa de Bzzoiro (standings, temporada
-// y predicciones ML en vivo)
+// api.js – llamadas a la API externa de Bzzoiro
+// Mejoras: timeout + reintentos con backoff, no cachear null transitorio,
+// filtro defensivo de fecha en la predicción ML.
 // ============================================================
 import { BZZOIRO_COUNTRY } from './leagues.js';
 
 const BASE_URL = 'https://sports.bzzoiro.com/api/v2';
+const DEFAULT_TIMEOUT_MS = 12000;
+const DEFAULT_RETRIES = 2;
 
 function getToken() {
-  if (typeof process !== 'undefined' && process.env.BZZOIRO_TOKEN) {
+  if (typeof process !== 'undefined' && process.env?.BZZOIRO_TOKEN) {
     return process.env.BZZOIRO_TOKEN;
   }
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -16,19 +19,47 @@ function getToken() {
   return null;
 }
 
-async function fetchFromAPI(endpoint) {
+function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
+
+async function fetchFromAPI(endpoint, {
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  retries = DEFAULT_RETRIES,
+} = {}) {
   const token = getToken();
   if (!token) throw new Error('Token no configurado. Ingresa tu API key de Bzzoiro.');
 
-  const res = await fetch(`${BASE_URL}${endpoint}`, {
-    headers: { 'Authorization': `Token ${token}` }
-  });
+  let ultimoError = null;
 
-  if (!res.ok) {
-    const errorText = await res.text();
-    throw new Error(`Error ${res.status}: ${errorText}`);
+  for (let intento = 0; intento <= retries; intento++) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), timeoutMs);
+    try {
+      const res = await fetch(`${BASE_URL}${endpoint}`, {
+        headers: { 'Authorization': `Token ${token}` },
+        signal: ctrl.signal,
+      });
+      clearTimeout(timer);
+
+      if (res.ok) return await res.json();
+
+      const errorText = await res.text();
+      const err = new Error(`Error ${res.status}: ${errorText}`);
+      err.status = res.status;
+
+      if (res.status >= 400 && res.status < 500 && res.status !== 429) throw err;
+      ultimoError = err;
+    } catch (e) {
+      clearTimeout(timer);
+      if (e.status && e.status >= 400 && e.status < 500 && e.status !== 429) throw e;
+      ultimoError = e.name === 'AbortError'
+        ? new Error(`Timeout tras ${timeoutMs}ms en ${endpoint}`)
+        : e;
+    }
+
+    if (intento < retries) await sleep(400 * (2 ** intento));
   }
-  return await res.json();
+
+  throw ultimoError || new Error(`Fallo desconocido en ${endpoint}`);
 }
 
 function cleanName(name) {
@@ -45,6 +76,28 @@ function tokens(name) {
 function todasLasPalabrasEstan(chicas, grandes) {
   const set = new Set(grandes);
   return chicas.length > 0 && chicas.every(t => set.has(t));
+}
+
+export function buscarEquipoEn(mapa, nombre) {
+  if (!mapa || !nombre) return null;
+  if (mapa[nombre]) return mapa[nombre];
+  const limpio = cleanName(nombre);
+  const nombres = Object.keys(mapa);
+  const igual = nombres.find(n => cleanName(n) === limpio);
+  if (igual) return mapa[igual];
+  const tk = tokens(nombre);
+  const candidatos = nombres.filter(n => {
+    const t = tokens(n);
+    return todasLasPalabrasEstan(tk, t) || todasLasPalabrasEstan(t, tk);
+  });
+  if (candidatos.length === 1) return mapa[candidatos[0]];
+  if (candidatos.length > 1) {
+    candidatos.sort((a, b) => Math.abs(tokens(a).length - tk.length) - Math.abs(tokens(b).length - tk.length));
+    const mejor = Math.abs(tokens(candidatos[0]).length - tk.length);
+    const segundo = Math.abs(tokens(candidatos[1]).length - tk.length);
+    if (mejor < segundo) return mapa[candidatos[0]];
+  }
+  return null;
 }
 
 const leagueIdCache = new Map();
@@ -110,8 +163,13 @@ async function resolveCurrentSeason(bzzoiroLeagueId) {
     seasonIdCache.set(bzzoiroLeagueId, season.id);
     return season.id;
   } catch (e) {
-    console.warn('⚠️ Error resolviendo temporada actual:', e.message);
-    seasonIdCache.set(bzzoiroLeagueId, null);
+    // MEJORA: solo cachear null si es 404 (definitivo). Un timeout o 5xx no
+    // debe matar la temporada por toda la sesión.
+    if (e.status === 404) {
+      seasonIdCache.set(bzzoiroLeagueId, null);
+      return null;
+    }
+    console.warn('⚠️ Error resolviendo temporada actual (se reintentará más tarde):', e.message);
     return null;
   }
 }
@@ -156,17 +214,18 @@ export async function fetchLeagueDynamicData(leagueKey, leagueDisplayName) {
 
   const teamRatings = {};
   for (const [name, s] of Object.entries(teamStats)) {
-    if (s.played < 3) continue; 
+    if (s.played < 2) continue;
     const gfPerMatch = s.gf / s.played;
     const gaPerMatch = s.ga / s.played;
     teamRatings[name] = {
       atk: +(gfPerMatch / (goalsAvg / 2)).toFixed(3),
-      def: +(gaPerMatch / (goalsAvg / 2)).toFixed(3)
+      def: +(gaPerMatch / (goalsAvg / 2)).toFixed(3),
+      played: s.played
     };
   }
 
   console.log(`✅ Standings OK. Equipos con datos en vivo: ${Object.keys(teamRatings).length}/${rows.length}`);
-  return { goalsAvg, cornAvg: null, teamRatings, bzzoiroLeagueId };
+  return { goalsAvg, totalPlayed, cornAvg: null, teamRatings, bzzoiroLeagueId };
 }
 
 export async function fetchMatchPrediction(bzzoiroLeagueId, homeTeam, awayTeam) {
@@ -181,18 +240,30 @@ export async function fetchMatchPrediction(bzzoiroLeagueId, homeTeam, awayTeam) 
       `/predictions/?league_id=${bzzoiroLeagueId}&date_from=${fmt(today)}&date_to=${fmt(in21)}&limit=100`
     );
     const results = data.results || data || [];
-    
+
     const hTokens = tokens(homeTeam);
     const aTokens = tokens(awayTeam);
 
     const found = results.find(p => {
       const ehTokens = tokens(p.event?.home_team || '');
       const eaTokens = tokens(p.event?.away_team || '');
-      
+
       const matchHome = todasLasPalabrasEstan(hTokens, ehTokens) || todasLasPalabrasEstan(ehTokens, hTokens);
       const matchAway = todasLasPalabrasEstan(aTokens, eaTokens) || todasLasPalabrasEstan(eaTokens, aTokens);
-      
-      return matchHome && matchAway;
+
+      if (!(matchHome && matchAway)) return false;
+
+      // MEJORA: filtro defensivo de fecha, para no mezclar con otra temporada.
+      const fechaStr = p.event?.event_date || p.event?.date || p.event_date || p.date;
+      if (fechaStr) {
+        const fechaEv = new Date(fechaStr).getTime();
+        if (Number.isFinite(fechaEv)) {
+          const diffDias = (fechaEv - today.getTime()) / (1000 * 60 * 60 * 24);
+          if (diffDias < -2 || diffDias > 23) return false;
+        }
+      }
+
+      return true;
     });
 
     if (!found) return null;
