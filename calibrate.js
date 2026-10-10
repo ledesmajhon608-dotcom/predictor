@@ -5,9 +5,11 @@
 import {
   LIGAS, HOME_ADVANTAGE, DIXON_COLES_RHO, DEFAULT_HOME_ADV, DEFAULT_RHO,
   HA_MIN, HA_MAX, RHO_MIN, RHO_MAX, GOALS_AVG_PRIOR_MATCHES,
+  RATING_MIN, RATING_MAX, RATINGS_PRIOR_JUEGOS, RATINGS_HALFLIFE_DIAS, CORNER_PRIOR_MATCHES,
 } from './leagues.js';
 import { simulateMatch, getStaticRating, calcLambdas } from './model.js';
 import { logLikMarcador } from './stats.js';
+import { recalcularRatings, ratingsWalkForward, equiposAMapa, fechaMs } from './ratings.js';
 
 export function calcularTasasBase(partidos) {
   let n = 0, loc = 0, emp = 0, vis = 0;
@@ -26,12 +28,30 @@ export function calcularTasasBase(partidos) {
   }
   return {
     n,
+    nCorners,
     homeRate: n ? loc / n : 0.45,
     drawRate: n ? emp / n : 0.27,
     awayRate: n ? vis / n : 0.28,
     goalsAvg: n ? sumaGoles / n : 2.5,
     cornAvg: nCorners ? sumaCorners / nCorners : 10,
   };
+}
+
+export function sanearRatings(r) {
+  if (!r || typeof r !== 'object') return null;
+  const out = {};
+  let k = 0;
+  for (const [team, v] of Object.entries(r)) {
+    if (!v || !Number.isFinite(v.atk) || !Number.isFinite(v.def)) continue;
+    const e = {
+      atk: Math.min(RATING_MAX, Math.max(RATING_MIN, v.atk)),
+      def: Math.min(RATING_MAX, Math.max(RATING_MIN, v.def)),
+    };
+    if (Number.isFinite(v.partidos)) e.partidos = v.partidos;
+    out[team] = e;
+    if (++k >= 80) break;
+  }
+  return k ? out : null;
 }
 
 export function sanearParams(p) {
@@ -41,6 +61,9 @@ export function sanearParams(p) {
     rho: Math.min(RHO_MAX, Math.max(RHO_MIN, p.rho)),
   };
   if (Number.isFinite(p.goalsAvg) && p.goalsAvg >= 1.2 && p.goalsAvg <= 4.5) out.goalsAvg = p.goalsAvg;
+  if (Number.isFinite(p.cornAvg) && p.cornAvg >= 5 && p.cornAvg <= 16) out.cornAvg = p.cornAvg;
+  const ratings = sanearRatings(p.ratings);
+  if (ratings) out.ratings = ratings;
   return out;
 }
 
@@ -86,6 +109,15 @@ function ajustarGrilla(matches, goalsAvg, haPrior, rhoPrior) {
   return { ha: +mejor.ha.toFixed(3), rho: +mejor.rho.toFixed(3) };
 }
 
+function pruebaPareada(vA, vB) {
+  // diferencia media de log-verosimilitud (A - B) y su error estándar
+  const n = vA.length;
+  const d = vA.map((v, i) => v - vB[i]);
+  const media = d.reduce((x, y) => x + y, 0) / n;
+  const varianza = d.reduce((x, y) => x + (y - media) ** 2, 0) / Math.max(1, n - 1);
+  return { media, se: Math.sqrt(varianza / n) };
+}
+
 export async function calibrarLigaMLE(leagueKey, partidosIn, { onLog = null, minPartidos = 20 } = {}) {
   const log = (m) => { if (onLog) onLog(m); };
   const liga = LIGAS[leagueKey];
@@ -93,40 +125,64 @@ export async function calibrarLigaMLE(leagueKey, partidosIn, { onLog = null, min
     .filter(p => p.goles_local != null && p.goles_visitante != null && p.local && p.visitante)
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const tasas = calcularTasasBase(todos);
+  const haPrior = HOME_ADVANTAGE[leagueKey] ?? DEFAULT_HOME_ADV;
+  const rhoPrior = DIXON_COLES_RHO[leagueKey] ?? DIXON_COLES_RHO.default ?? DEFAULT_RHO;
+  const priorFn = (team) => getStaticRating(leagueKey, team);
+
+  // Ratings aprendidos SOLO con lo que se sabía antes de cada partido (sin mirar adelante),
+  // encogidos hacia el rating estático del equipo.
+  const walk = ratingsWalkForward(todos, { homeAdv: haPrior, prior: priorFn });
 
   const matches = [];
-  for (const p of todos) {
-    const h = getStaticRating(leagueKey, p.local);
-    const a = getStaticRating(leagueKey, p.visitante);
-    if (h && a) matches.push({ h, a, gl: p.goles_local, gv: p.goles_visitante, p });
+  for (let i = 0; i < todos.length; i++) {
+    const p = todos[i];
+    const hS = getStaticRating(leagueKey, p.local);
+    const aS = getStaticRating(leagueKey, p.visitante);
+    const hW = walk[i]?.[p.local] || null;
+    const aW = walk[i]?.[p.visitante] || null;
+    const h = hW || hS, a = aW || aS;
+    if (h && a) matches.push({ h, a, hS: hS || h, aS: aS || a, gl: p.goles_local, gv: p.goles_visitante, p });
   }
   const n = matches.length;
   const sinRating = todos.length - n;
-  if (sinRating > 0) log(`   ℹ️ ${sinRating} partidos sin rating estático para algún equipo (no se usan para ajustar).`);
+  if (sinRating > 0) log(`   ℹ️ ${sinRating} partidos sin rating para algún equipo (no se usan para ajustar).`);
   if (n < minPartidos) {
     return { calibracion: null, razon: `Solo ${n} partidos utilizables`, tasas, historial: [], leagueKey };
   }
 
   const obsAvg = matches.reduce((s, m) => s + m.gl + m.gv, 0) / n;
   const goalsAvg = (n * obsAvg + GOALS_AVG_PRIOR_MATCHES * liga.goalsAvg) / (n + GOALS_AVG_PRIOR_MATCHES);
-  const haPrior = HOME_ADVANTAGE[leagueKey] ?? DEFAULT_HOME_ADV;
-  const rhoPrior = DIXON_COLES_RHO[leagueKey] ?? DIXON_COLES_RHO.default ?? DEFAULT_RHO;
-
   log(`   Goles/partido: real ${obsAvg.toFixed(2)} · liga (estático) ${liga.goalsAvg.toFixed(2)} · usado ${goalsAvg.toFixed(2)}`);
 
+  const comoEstatico = (m) => ({ ...m, h: m.hS, a: m.aS });
+  const nTest = Math.max(8, Math.round(n * HOLDOUT_FRAC));
+
+  // 1) ¿Los ratings aprendidos del historial predicen mejor que los estáticos? (hold-out reciente)
+  let usarRatings = false;
+  let holdRatings = null;
+  if (n >= HOLDOUT_MIN_N) {
+    const test = matches.slice(n - nTest);
+    const vW = logLikPorPartido(test, goalsAvg, haPrior, rhoPrior);
+    const vS = logLikPorPartido(test.map(comoEstatico), goalsAvg, haPrior, rhoPrior);
+    const { media, se } = pruebaPareada(vW, vS);
+    usarRatings = media > 0;
+    holdRatings = { nTest, mejora: +media.toFixed(4), se: +se.toFixed(4), usados: usarRatings };
+    log(`   Ratings del historial vs estáticos (${nTest} partidos recientes): dif log-verosim. ${media.toFixed(4)} ± ${se.toFixed(4)} → ${usarRatings ? '✓ se usan' : '✗ no mejoran, se mantienen los estáticos'}`);
+  } else {
+    log(`   ⚠️ ${n} partidos: muestra chica, no se activan ratings del historial.`);
+  }
+  const base = usarRatings ? matches : matches.map(comoEstatico);
+
+  // 2) HA y rho: máxima verosimilitud con prior + hold-out
   let aceptado = true;
   let holdout = null;
   if (n >= HOLDOUT_MIN_N) {
-    const nTest = Math.max(8, Math.round(n * HOLDOUT_FRAC));
-    const train = matches.slice(0, n - nTest);
-    const test = matches.slice(n - nTest);
+    const train = base.slice(0, n - nTest);
+    const test = base.slice(n - nTest);
     const fitTrain = ajustarGrilla(train, goalsAvg, haPrior, rhoPrior);
     const vFit = logLikPorPartido(test, goalsAvg, fitTrain.ha, fitTrain.rho);
     const vPrior = logLikPorPartido(test, goalsAvg, haPrior, rhoPrior);
-    const d = vFit.map((v, i) => v - vPrior[i]);
-    const media = d.reduce((x, y) => x + y, 0) / nTest;
-    const varianza = d.reduce((x, y) => x + (y - media) ** 2, 0) / Math.max(1, nTest - 1);
-    const se = Math.sqrt(varianza / nTest);
+    const { media, se } = pruebaPareada(vFit, vPrior);
     const llFit = vFit.reduce((x, y) => x + y, 0) / nTest;
     const llPrior = vPrior.reduce((x, y) => x + y, 0) / nTest;
     aceptado = media >= -Z_RECHAZO * se;
@@ -136,9 +192,31 @@ export async function calibrarLigaMLE(leagueKey, partidosIn, { onLog = null, min
     log(`   ⚠️ ${n} partidos: muestra chica, sin hold-out (prior fuerte hacia valores base).`);
   }
 
-  const final = aceptado ? ajustarGrilla(matches, goalsAvg, haPrior, rhoPrior) : { ha: haPrior, rho: rhoPrior };
+  const final = aceptado ? ajustarGrilla(base, goalsAvg, haPrior, rhoPrior) : { ha: haPrior, rho: rhoPrior };
   const calibracion = { homeAdvantage: final.ha, rho: final.rho, goalsAvg: +goalsAvg.toFixed(3) };
   log(`   HA=${final.ha.toFixed(3)} · rho=${final.rho.toFixed(3)} (base ${haPrior.toFixed(3)} / ${rhoPrior.toFixed(3)})`);
+
+  // 3) Córners: promedio real encogido hacia el estático (antes se medía y se tiraba)
+  if (tasas.nCorners >= 10) {
+    const cornAvg = (tasas.nCorners * tasas.cornAvg + CORNER_PRIOR_MATCHES * liga.cornAvg) / (tasas.nCorners + CORNER_PRIOR_MATCHES);
+    calibracion.cornAvg = +cornAvg.toFixed(2);
+    log(`   Córners/partido: real ${tasas.cornAvg.toFixed(2)} (${tasas.nCorners}p) · liga (estático) ${liga.cornAvg.toFixed(2)} · usado ${calibracion.cornAvg.toFixed(2)}`);
+  }
+
+  // 4) Ratings finales (con todos los partidos) para producción
+  if (usarRatings) {
+    const ultima = fechaMs(todos[todos.length - 1].fecha);
+    const { equipos } = recalcularRatings(todos, {
+      halflifeDias: RATINGS_HALFLIFE_DIAS, minMatches: 2, homeAdv: final.ha,
+      priorJuegos: RATINGS_PRIOR_JUEGOS, prior: priorFn,
+      ahoraMs: (ultima ?? Date.now()) + 24 * 60 * 60 * 1000,
+    });
+    const ratings = sanearRatings(equiposAMapa(equipos));
+    if (ratings) {
+      calibracion.ratings = ratings;
+      log(`   Ratings del historial guardados para ${Object.keys(ratings).length} equipos.`);
+    }
+  }
 
   const paso = Math.max(1, Math.floor(n / 80));
   let sL = 0, sE = 0, sV = 0, k = 0;
@@ -154,7 +232,7 @@ export async function calibrarLigaMLE(leagueKey, partidosIn, { onLog = null, min
   const historial = [{ iter: 1, homeAdv: final.ha, rho: final.rho, predHome, predDraw, predAway, err }];
   log(`   Modelo medio L:${(predHome * 100).toFixed(1)}% E:${(predDraw * 100).toFixed(1)}% V:${(predAway * 100).toFixed(1)}% · real L:${(tasas.homeRate * 100).toFixed(1)}% E:${(tasas.drawRate * 100).toFixed(1)}% V:${(tasas.awayRate * 100).toFixed(1)}% (err ${(err * 100).toFixed(1)}%)`);
 
-  return { calibracion, tasas, historial, error: err, diagnostico: { n, sinRating, holdout, aceptado }, leagueKey };
+  return { calibracion, tasas, historial, error: err, diagnostico: { n, sinRating, holdout, holdRatings, aceptado }, leagueKey };
 }
 
 export function shrinkHaciaBase(resultProbs, tasas, alpha = 0.15) {

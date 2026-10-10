@@ -17,6 +17,11 @@
   --text-dim: #8b95a5;
   --text-faint: #5a6474;
 
+  /* Alias: las páginas usan var(--chalk)/var(--chalk-dim), que no existían
+     (el texto atenuado no se atenuaba). */
+  --chalk: var(--text);
+  --chalk-dim: var(--text-dim);
+
   /* Acentos */
   --green: #00d97e;
   --green-soft: rgba(0, 217, 126, 0.12);
@@ -188,6 +193,8 @@ body {
 
 input[type="password"],
 input[type="text"],
+input[type="number"],
+input[type="date"],
 input[type="file"],
 select {
   width: 100%;
@@ -597,4 +604,31 @@ button:disabled,
   .card.pick-card {
     animation: none;
   }
+}
+
+
+/* ============================================================================
+   Cuota de la casa por pick (EV)
+   ========================================================================== */
+
+.odds-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+  font-size: 0.72rem;
+  color: var(--text-dim);
+}
+
+.odds-line input.odds-input {
+  width: 110px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  font-family: 'IBM Plex Mono', monospace;
+}
+
+.odds-line .ev-out {
+  font-family: 'IBM Plex Mono', monospace;
+  font-weight: 600;
 }

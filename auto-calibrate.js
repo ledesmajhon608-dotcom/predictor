@@ -67,21 +67,30 @@ export const AutoCalibrate = {
     }
   },
 
+  // Gana la calibración MÁS NUEVA entre la local y la del repo (antes la local
+  // ganaba siempre, así que un params.json nuevo subido al repo nunca se veía
+  // en un dispositivo que ya hubiera calibrado alguna vez).
   async getParamsActivos(ligaKey) {
+    const candidatos = [];
     const estado = this.getEstado(ligaKey);
     const local = sanearParams(estado.params);
     if (local) {
-      return { ...local, fuente: 'local', tasas: sanearTasas(estado.tasas) };
+      candidatos.push({ params: local, fuente: 'local', tasas: sanearTasas(estado.tasas), ultima: estado.ultima || null, ts: Date.parse(estado.ultima) || 0 });
     }
 
     const paramsJSON = await this.cargarParamsJSON();
     const entrada = paramsJSON[ligaKey];
     if (entrada?.params && entrada.v === MODEL_VERSION) {
       const repo = sanearParams(entrada.params);
-      if (repo) return { ...repo, fuente: 'repo', tasas: sanearTasas(entrada.tasas) };
+      if (repo) {
+        candidatos.push({ params: repo, fuente: 'repo', tasas: sanearTasas(entrada.tasas), ultima: entrada.ultima || null, ts: Date.parse(entrada.ultima) || 0 });
+      }
     }
 
-    return null;
+    if (candidatos.length === 0) return null;
+    candidatos.sort((x, y) => y.ts - x.ts); // estable: en empate queda primero la local
+    const mejor = candidatos[0];
+    return { ...mejor.params, fuente: mejor.fuente, tasas: mejor.tasas, ultima: mejor.ultima };
   },
 
   getParamsActivosSync(ligaKey) {
@@ -180,7 +189,7 @@ export const AutoCalibrate = {
     };
     this.setEstado(ligaKey, nuevoEstado);
 
-    log(`✅ ${ligaKey}: HA=${resultado.calibracion.homeAdvantage.toFixed(3)}, rho=${resultado.calibracion.rho.toFixed(3)}, goles/partido=${resultado.calibracion.goalsAvg}, err L/E/V=${(resultado.error * 100).toFixed(1)}%`);
+    log(`✅ ${ligaKey}: HA=${resultado.calibracion.homeAdvantage.toFixed(3)}, rho=${resultado.calibracion.rho.toFixed(3)}, goles/partido=${resultado.calibracion.goalsAvg}${resultado.calibracion.cornAvg ? `, córners/partido=${resultado.calibracion.cornAvg}` : ''}${resultado.calibracion.ratings ? `, ratings historial=${Object.keys(resultado.calibracion.ratings).length} equipos` : ''}, err L/E/V=${(resultado.error * 100).toFixed(1)}%`);
     log(`💾 Parámetros guardados en localStorage (${partidos.length} partidos calibrados)`);
 
     return {

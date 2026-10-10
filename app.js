@@ -2,7 +2,8 @@
 import { LIGAS } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
 import { AutoCalibrate } from './auto-calibrate.js';
-import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales } from './picks.js';
+import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales, stakeSugerido, calcEV, cuotaMinima } from './picks.js';
+import { FILTRO_EV } from './leagues.js';
 
 const ESTADO_KEY = 'vv_estado_seleccion';
 let ligaKeyGlobal = 'CPA';
@@ -71,19 +72,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = getBettingConfig(ligaKey);
 
     let html = `<div style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; line-height:1.5;">`;
-    html += `<div>📊 HA=${params.homeAdvantage.toFixed(3)} rho=${params.rho.toFixed(3)}${params.goalsAvg ? ` goles=${params.goalsAvg.toFixed(2)}` : ''}${fuente}</div>`;
+    html += `<div>📊 HA=${params.homeAdvantage.toFixed(3)} rho=${params.rho.toFixed(3)}${params.goalsAvg ? ` goles=${params.goalsAvg.toFixed(2)}` : ''}${params.cornAvg ? ` córn=${params.cornAvg.toFixed(1)}` : ''}${fuente}</div>`;
+    if (params.ratings) html += `<div style="font-size:0.72rem;">📈 Ratings del historial: ${Object.keys(params.ratings).length} equipos</div>`;
+    if (params.ultima) html += `<div style="font-size:0.7rem; color:var(--chalk-dim);">Calibrado: ${String(params.ultima).slice(0, 10)}</div>`;
 
     if (config.status === 'green') {
       el.style.color = 'var(--green)';
       html += `<div style="color:var(--green); font-weight:600; margin-top:4px;">✅ LIGA APTA PARA APOSTAR</div>`;
       if (config.mercados) html += `<div style="font-size:0.72rem; margin-top:2px;">Mercados: ${config.mercados.join(' · ')}</div>`;
-      html += `<div style="font-size:0.72rem;">Stake sugerido: 1% de la banca</div>`;
+      html += `<div style="font-size:0.72rem;">Stake sugerido: ${stakeSugerido(ligaKey)}% de la banca</div>`;
       if (config.nota) html += `<div style="font-size:0.7rem; color:var(--chalk-dim); margin-top:2px;">${config.nota}</div>`;
     } else if (config.status === 'yellow') {
       el.style.color = 'var(--yellow)';
       html += `<div style="color:var(--yellow); font-weight:600; margin-top:4px;">⚠️ LIGA PROMETEDORA (stake bajo)</div>`;
       if (config.mercados) html += `<div style="font-size:0.72rem; margin-top:2px;">Mercados: ${config.mercados.join(' · ')}</div>`;
-      html += `<div style="font-size:0.72rem;">Stake sugerido: 0.5% de la banca</div>`;
+      html += `<div style="font-size:0.72rem;">Stake sugerido: ${stakeSugerido(ligaKey)}% de la banca</div>`;
       if (config.nota) html += `<div style="font-size:0.7rem; color:var(--chalk-dim); margin-top:2px;">${config.nota}</div>`;
     } else if (config.status === 'red') {
       el.style.color = 'var(--red)';
@@ -223,13 +226,33 @@ document.addEventListener('DOMContentLoaded', () => {
       return `<div class="card" style="border:2px solid var(--red);"><h3 style="color:var(--red);">❌ NO APOSTAR EN ESTA LIGA</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Esta liga pierde contra cuota. Usala solo para análisis.</p></div>`;
     }
 
+    if (data.sinRating && data.sinRating.length > 0) {
+      return `<div class="card" style="border:2px solid var(--yellow);"><h3 style="color:var(--yellow);">⚠️ Sin picks: equipo sin rating</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">No hay datos de ${data.sinRating.join(' y ')}; el modelo lo trató como equipo promedio, así que no se recomienda nada. Corré "Verificar equipos" o recalculá ratings.</p></div>`;
+    }
+
     if (picks.length === 0) {
       return `<div class="card" style="border:2px solid var(--line); opacity:0.8;"><h3>🎯 Mejores picks para este partido</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Sin picks. Ningún mercado con edge supera los umbrales.</p><p style="color:var(--chalk-dim); margin:6px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
     }
 
-    const filas = picks.map(p => `<div class="prob-row"><div class="prob-row-top"><span>✅ ${p.label}</span><span class="prob" style="color:${getColor(p.prob)}">${fmt(p.prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${p.prob}%;background:${getColor(p.prob)}"></div></div></div>`).join('');
+    const filas = picks.map(p => {
+      const cMin = cuotaMinima(p.prob);
+      return `<div class="prob-row"><div class="prob-row-top"><span>✅ ${p.label}</span><span class="prob" style="color:${getColor(p.prob)}">${fmt(p.prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${p.prob}%;background:${getColor(p.prob)}"></div></div><div class="odds-line"><span>Cuota mín. con valor: <strong>${cMin ? cMin.toFixed(2) : '—'}</strong></span><input type="number" class="odds-input" step="0.01" min="1" inputmode="decimal" placeholder="cuota casa" data-prob="${p.prob}"><span class="ev-out"></span></div></div>`;
+    }).join('');
 
-    return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
+    return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">Solo apostá si la cuota de tu casa es ≥ la mínima (EV ≥ ${FILTRO_EV}). Es el mismo filtro con el que se midió el backtest.</p><p style="color:var(--chalk-dim); margin:6px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
+  }
+
+  function enlazarCuotas() {
+    predictionsContent.querySelectorAll('.odds-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const out = inp.parentElement.querySelector('.ev-out');
+        const ev = calcEV(parseFloat(inp.dataset.prob), parseFloat(inp.value));
+        if (ev == null) { out.textContent = ''; return; }
+        const ok = ev >= FILTRO_EV;
+        out.style.color = ok ? 'var(--green)' : 'var(--red)';
+        out.textContent = ok ? `EV ${ev.toFixed(2)} ✅ VALOR` : `EV ${ev.toFixed(2)} ❌ sin valor`;
+      });
+    });
   }
 
   function displayResults(data, ligaKey) {
@@ -247,6 +270,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ${data.cornerProbs ? `<div class="card"><h3>Córneres</h3>${fila('Over 7.5', data.cornerProbs.over7)}${fila('Over 8.5', data.cornerProbs.over8)}${fila('Over 9.5', data.cornerProbs.over9)}</div>` : ''}
       ${comparisonCard}
     `;
+    enlazarCuotas();
     resultsDiv.style.display = 'block';
   }
 

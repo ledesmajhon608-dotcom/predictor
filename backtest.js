@@ -5,9 +5,14 @@
 // - Sin córners por equipo (solo totales, umbral 75).
 // - try/catch en renderPicks y renderResults.
 // - Todas las secciones visibles al final.
+// NUEVO:
+// - Ratings de equipo WALK-FORWARD (cada partido solo usa lo que se sabía antes).
+// - Métricas 1X2 globales (log-loss, RPS, acierto) vs frecuencia base y vs cuota.
+// - Córners respetan LIGAS[x].markets.corn (igual que la app).
 
 import { LIGAS, HOME_ADVANTAGE, DIXON_COLES_RHO, FILTRO_EV, SHRINK_ALPHA, getUmbrales } from './leagues.js';
-import { simulateMatch } from './model.js';
+import { simulateMatch, getStaticRating } from './model.js';
+import { ratingsWalkForward } from './ratings.js';
 import { calcularTasasBase, shrinkHaciaBase } from './calibrate.js';
 import { AutoCalibrate } from './auto-calibrate.js';
 
@@ -105,6 +110,28 @@ class MarketStats {
   }
 }
 
+// Métrica global 1X2 (una sola cifra por modelo, no una por resultado).
+// RPS respeta el orden Local < Empate < Visitante. Menor = mejor.
+class Multi1X2 {
+  constructor(name) { this.name = name; this.n = 0; this.ll = 0; this.rps = 0; this.hits = 0; }
+  add(pL, pE, pV, resultado) {
+    if (![pL, pE, pV].every(Number.isFinite)) return;
+    let p = [pL, pE, pV].map(v => Math.min(0.999, Math.max(0.001, v / 100)));
+    const s = p[0] + p[1] + p[2];
+    p = p.map(v => v / s);
+    const idx = resultado === 'local' ? 0 : resultado === 'empate' ? 1 : 2;
+    const o = [0, 0, 0]; o[idx] = 1;
+    this.n++;
+    this.ll += -Math.log(p[idx]);
+    const c1 = p[0] - o[0], c2 = p[0] + p[1] - o[0] - o[1];
+    this.rps += (c1 * c1 + c2 * c2) / 2;
+    if (p.indexOf(Math.max(...p)) === idx) this.hits++;
+  }
+  summary() {
+    return { name: this.name, n: this.n, logloss: this.n ? this.ll / this.n : null, rps: this.n ? this.rps / this.n : null, acierto: this.n ? this.hits / this.n * 100 : null };
+  }
+}
+
 async function calibrarLiga(leagueKey, partidos) {
   partidos = [...partidos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const tasasFull = calcularTasasBase(partidos);
@@ -168,6 +195,8 @@ function renderCalibracion(resultado) {
       <p style="margin:10px 0 0; font-size:0.8rem; color:var(--chalk-dim)">
         Error total L/E/V: ${fmt(ultimo.err * 100)}% · goles/partido usados: ${calibracion.goalsAvg?.toFixed(2) ?? '—'}.
         ${hold ? `Hold-out (${hold.nTest} partidos): ${hold.aceptado ? 'ajuste aceptado' : 'el ajuste no mejoraba → se mantuvo el valor base'} (dif ${hold.mejora} ± ${hold.se}).` : 'Muestra chica: sin hold-out.'}
+        ${resultado.diagnostico?.holdRatings ? `Ratings del historial: ${resultado.diagnostico.holdRatings.usados ? 'ACTIVOS' : 'no mejoraron → se usan los estáticos'} (dif ${resultado.diagnostico.holdRatings.mejora} ± ${resultado.diagnostico.holdRatings.se}).` : 'Ratings del historial: no activados (muestra chica).'}
+        ${calibracion.cornAvg ? `Córners/partido usados: ${calibracion.cornAvg.toFixed(2)}.` : ''}
         Shrinkage activo (α=${SHRINK_ALPHA}).
       </p>
     </div>`;
@@ -240,7 +269,7 @@ function calcularRecomendacion(p, pred, resultProbsFinal, leagueKey) {
     }
   }
 
-  if (pred.cornerProbs) {
+  if (pred.cornerProbs && LIGAS[leagueKey]?.markets?.corn !== false) {
     const lineasC = [
       { code: 'c_over95', label: 'Over 9.5 córners', prob: pred.cornerProbs.over9, umbral: 9.5 },
       { code: 'c_over85', label: 'Over 8.5 córners', prob: pred.cornerProbs.over8, umbral: 8.5 },
@@ -398,14 +427,31 @@ runBtn.addEventListener('click', async () => {
     over15: new MarketStats('Over 1.5 goles'), over25: new MarketStats('Over 2.5 goles'), over35: new MarketStats('Over 3.5 goles'), btts: new MarketStats('Ambos marcan'),
   };
 
+  const global1x2 = {
+    modelo: new Multi1X2('Modelo'), base: new Multi1X2('Frecuencia base'),
+    modeloCuota: new Multi1X2('Modelo (partidos con cuota)'), mercado: new Multi1X2('Cuota real (sin margen)'),
+  };
+
   const picksStats = new PicksStats(umbrales);
   const todasLasRecs = [];
-  let evaluados = 0, saltados = 0, conSinEV = 0;
+  let evaluados = 0, conSinEV = 0;
 
-  for (const p of partidos) {
-    if (p.goles_local == null || p.goles_visitante == null || !p.local || !p.visitante) { saltados++; continue; }
+  // Ordenado por fecha para poder usar ratings walk-forward: cada partido solo
+  // "conoce" los resultados anteriores a él.
+  const ordenados = [...partidos]
+    .filter(p => p.goles_local != null && p.goles_visitante != null && p.local && p.visitante)
+    .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+  let saltados = partidos.length - ordenados.length;
+  const walk = calibracion?.ratings
+    ? ratingsWalkForward(ordenados, { homeAdv: calibracion.homeAdvantage, prior: (t) => getStaticRating(leagueKey, t) })
+    : null;
+  log(walk ? '   Ratings del historial: walk-forward (sin mirar el futuro).' : '   Ratings: estáticos.');
+
+  for (let idx = 0; idx < ordenados.length; idx++) {
+    const p = ordenados[idx];
+    const calPartido = calibracion ? { ...calibracion, ratings: walk?.[idx] || undefined } : calibracion;
     let pred;
-    try { pred = await simulateMatch(leagueKey, p.local, p.visitante, { staticOnly: true, calibracion }); }
+    try { pred = await simulateMatch(leagueKey, p.local, p.visitante, { staticOnly: true, calibracion: calPartido }); }
     catch (e) { saltados++; continue; }
 
     const resultProbsFinal = SHRINK_ALPHA > 0 && tasas ? shrinkHaciaBase(pred.resultProbs, tasas, SHRINK_ALPHA) : pred.resultProbs;
@@ -416,6 +462,9 @@ runBtn.addEventListener('click', async () => {
 
     const totalGoles = p.goles_local + p.goles_visitante;
     const resultado = p.goles_local > p.goles_visitante ? 'local' : p.goles_local < p.goles_visitante ? 'visitante' : 'empate';
+
+    global1x2.modelo.add(resultProbsFinal.local, resultProbsFinal.empate, resultProbsFinal.visitante, resultado);
+    if (tasas) global1x2.base.add(tasas.homeRate * 100, tasas.drawRate * 100, tasas.awayRate * 100, resultado);
 
     markets.local.add(resultProbsFinal.local, resultado === 'local');
     markets.empate.add(resultProbsFinal.empate, resultado === 'empate');
@@ -434,6 +483,8 @@ runBtn.addEventListener('click', async () => {
         modeloVsMercado.local.add(resultProbsFinal.local, resultado === 'local');
         modeloVsMercado.empate.add(resultProbsFinal.empate, resultado === 'empate');
         modeloVsMercado.visitante.add(resultProbsFinal.visitante, resultado === 'visitante');
+        global1x2.modeloCuota.add(resultProbsFinal.local, resultProbsFinal.empate, resultProbsFinal.visitante, resultado);
+        global1x2.mercado.add(fL, fE, fV, resultado);
       }
     }
     const fOver15 = devigar2(p.odds_over15, p.odds_under15);
@@ -477,7 +528,7 @@ runBtn.addEventListener('click', async () => {
     });
 
     evaluados++;
-    if (evaluados % 20 === 0) log(`  ${evaluados}/${partidos.length}...`);
+    if (evaluados % 20 === 0) log(`  ${evaluados}/${ordenados.length}...`);
   }
 
   log(`\n✅ Listo. ${evaluados} evaluados, ${saltados} salteados.`);
@@ -500,7 +551,8 @@ runBtn.addEventListener('click', async () => {
     renderResults(
       Object.entries(markets).map(([k, m]) => ({ key: k, ...m.summary() })),
       mercadoResumen,
-      modeloVsMercadoResumen
+      modeloVsMercadoResumen,
+      Object.fromEntries(Object.entries(global1x2).map(([k, m]) => [k, m.summary()]))
     );
   } catch (err) {
     console.error('❌ Error en renderResults:', err);
@@ -538,14 +590,30 @@ function vsMercadoNote(modeloSum, mercadoSum) {
   else texto = `${fmt(mejora)}% peor que la cuota real`;
   return { texto, mejora, n: mercadoSum.n };
 }
-function renderResults(summaries, mercadoResumen = {}, modeloVsMercadoResumen = {}) {
+function renderGlobal1X2(g) {
+  if (!g || !g.modelo || g.modelo.n === 0) return '';
+  const f3 = (v) => v == null ? '—' : v.toFixed(3);
+  const row = (s) => `<div class="compare-row"><span>${s.name} <small style="color:var(--chalk-dim)">(${s.n})</small></span><span class="grid-plain">${f3(s.logloss)}</span><span class="grid-plain">${f3(s.rps)}</span><span class="grid-plain">${s.acierto == null ? '—' : fmt(s.acierto) + '%'}</span></div>`;
+  const mejora = (a, b) => (a != null && b != null && b > 0) ? ((b - a) / b * 100) : null;
+  const vsBase = mejora(g.modelo.rps, g.base.rps);
+  const vsMerc = g.mercado.n >= 20 ? mejora(g.modeloCuota.rps, g.mercado.rps) : null;
+  const col = (m, ok, mid) => m == null ? 'var(--chalk-dim)' : m > ok ? 'var(--green)' : m >= mid ? 'var(--yellow)' : 'var(--red)';
+  const txt = (m, a, b) => m == null ? '' : `${m >= 0 ? '+' : ''}${fmt(m)}% ${a} ${b}`;
+  return `<div class="card" style="border:2px solid var(--accent);"><h3>1X2 global <small>(menor = mejor)</small></h3>
+    <div class="compare-row compare-head"><span></span><span>Log-loss</span><span>RPS</span><span>Acierto fav.</span></div>
+    ${row(g.modelo)}${row(g.base)}${g.mercado.n ? row(g.modeloCuota) + row(g.mercado) : ''}
+    ${vsBase != null ? `<p style="margin:8px 0 0; font-size:0.8rem; color:${col(vsBase, 3, 0)}">${txt(vsBase, 'RPS', 'vs. frecuencia base')}</p>` : ''}
+    ${vsMerc != null ? `<p style="margin:4px 0 0; font-size:0.8rem; color:${col(vsMerc, 1, -1)}"><strong>${txt(vsMerc, 'RPS', 'vs. cuota real')}</strong></p>` : ''}
+  </div>`;
+}
+function renderResults(summaries, mercadoResumen = {}, modeloVsMercadoResumen = {}, global1x2 = null) {
   const conDatos = summaries.filter(s => s.n > 0);
   if (conDatos.length === 0) {
     resultsContent.innerHTML = `<div class="card"><h3>Sin datos suficientes</h3></div>`;
     resultsSection.style.display = 'block';
     return;
   }
-  resultsContent.innerHTML = conDatos.map(s => {
+  resultsContent.innerHTML = renderGlobal1X2(global1x2) + conDatos.map(s => {
     const vColor = vsBaseColor(s.mejoraVsBase);
     const rows = bucketRows(s.buckets);
     const mComp = s.key ? vsMercadoNote(modeloVsMercadoResumen[s.key], mercadoResumen[s.key]) : null;

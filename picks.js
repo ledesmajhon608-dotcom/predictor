@@ -2,7 +2,7 @@
 // MEJORA: se quitaron los córners por equipo (local Over 3.5 y visitante
 // Over 3.5). Quedan solo los córners totales (Over 7.5 / 8.5 / 9.5).
 
-import { LIGAS, getUmbrales, SHRINK_ALPHA } from './leagues.js';
+import { LIGAS, getUmbrales, SHRINK_ALPHA, FILTRO_EV } from './leagues.js';
 import { shrinkHaciaBase } from './calibrate.js';
 
 export function getBettingConfig(ligaKey) {
@@ -23,10 +23,28 @@ export function aplicarShrink(resultProbs, tasas, alpha = SHRINK_ALPHA) {
   return shrinkHaciaBase(resultProbs, tasas, alpha);
 }
 
+export function stakeSugerido(ligaKey) {
+  const c = getBettingConfig(ligaKey);
+  if (Number.isFinite(c.stake)) return c.stake;
+  return c.status === 'green' ? 1 : c.status === 'yellow' ? 0.5 : 0;
+}
+
+// EV = prob × cuota. Con valor si EV >= FILTRO_EV (el mismo filtro del backtest).
+export function calcEV(probPct, cuota) {
+  if (!Number.isFinite(probPct) || !Number.isFinite(cuota) || cuota <= 1) return null;
+  return (probPct / 100) * cuota;
+}
+export function cuotaMinima(probPct) {
+  if (!Number.isFinite(probPct) || probPct <= 0) return null;
+  return FILTRO_EV / (probPct / 100);
+}
+
 export function generarPicks(data, ligaKey) {
   const picks = [];
   const config = getBettingConfig(ligaKey);
   if (config.status === 'red') return [];
+  // Equipo sin rating = el modelo asumió "equipo promedio": no se recomienda nada.
+  if (data.sinRating && data.sinRating.length > 0) return [];
   const U = getUmbrales(ligaKey);
 
   const rp = data.resultProbs;
@@ -54,8 +72,8 @@ export function generarPicks(data, ligaKey) {
     picks.push({ label: 'Ambos marcan (Sí)', prob: data.btts });
   }
 
-  // Córners TOTALES solamente.
-  if (data.cornerProbs) {
+  // Córners TOTALES solamente, y solo en ligas donde los córners están habilitados.
+  if (data.cornerProbs && LIGAS[ligaKey]?.markets?.corn !== false) {
     const lineasCorners = [
       { label: 'Over 9.5 córners', prob: data.cornerProbs.over9 },
       { label: 'Over 8.5 córners', prob: data.cornerProbs.over8 },

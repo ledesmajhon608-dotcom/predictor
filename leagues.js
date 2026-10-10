@@ -5,14 +5,14 @@
 
 export const LIGAS = {
   // === VERDES (con edge medido) ===
-  "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "mercados": ["1X2", "BTTS"], "nota": "Local +1.7% vs cuota. Stake 1%." } },
-  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "mercados": ["1X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Visitante +5.9% vs cuota. 4 mercados con edge. Stake 1%." } },
-  "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "mercados": ["1X2", "Over 1.5"], "nota": "Over 1.5 +2.5%, Visitante +2.4% (muestra chica). Stake 0.5%." } },
-  "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "mercados": ["Over 1.5", "Over 3.5"], "nota": "Over 1.5 +3.7% vs cuota (10 picks). Stake 2%." } },
-  "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "green", "mercados": ["Over 1.5", "Over 3.5"], "nota": "Over 1.5 +1.1% (17 picks), Over 3.5 +2.6%. Stake 1%." } },
+  "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "BTTS"], "nota": "Local +1.7% vs cuota." } },
+  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Visitante +5.9% vs cuota. 4 mercados con edge." } },
+  "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 0.5, "mercados": ["1X2", "Over 1.5"], "nota": "Over 1.5 +2.5%, Visitante +2.4% (muestra chica)." } },
+  "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["Over 1.5", "Over 3.5"], "nota": "Over 1.5 +3.7% vs cuota (solo 10 picks: muestra chica, stake bajado de 2% a 1%)." } },
+  "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["Over 1.5", "Over 3.5"], "nota": "Over 1.5 +1.1% (17 picks), Over 3.5 +2.6%." } },
 
   // === AMARILLAS (poca muestra o dudosas) ===
-  "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": false }, "betting": { "status": "yellow", "mercados": ["Over 2.5", "BTTS"], "nota": "⚠️ err 11.7%. Solo Over 2.5 y BTTS." } },
+  "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": false }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["Over 2.5", "BTTS"], "nota": "⚠️ err 11.7%. Solo Over 2.5 y BTTS." } },
 
   // === ROJAS (no apostar) ===
   "PL": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "goalsAvg": 2.85, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
@@ -227,6 +227,13 @@ export const LIVE_PRIOR_GAMES = 6;
 export const GOALS_AVG_PRIOR_MATCHES = 20;
 
 export const ML_MAX_WEIGHT = 0.6;
+
+// Ratings de equipo aprendidos del historial (ver ratings.js / calibrate.js):
+// priorJuegos = cuántos "partidos virtuales" pesa el rating estático al mezclar.
+export const RATINGS_PRIOR_JUEGOS = 6;
+export const RATINGS_HALFLIFE_DIAS = 60;
+// Córners: cuántos partidos pesa el promedio estático de la liga vs el observado.
+export const CORNER_PRIOR_MATCHES = 20;
 
 export const FILTRO_EV = 1.05;
 export const SHRINK_ALPHA = 0.15;
