@@ -1,6 +1,6 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
-// - 13 ligas calibradas (sin las 8 nuevas a explorar)
+// - 12 ligas calibradas (sin Eredivisie)
 // ============================================================================
 
 export const LIGAS = {
@@ -13,7 +13,6 @@ export const LIGAS = {
 
   // === AMARILLAS (poca muestra o dudosas) ===
   "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": false }, "betting": { "status": "yellow", "mercados": ["Over 2.5", "BTTS"], "nota": "⚠️ err 11.7%. Solo Over 2.5 y BTTS." } },
-  "DED": { "name": "🇳🇱 Eredivisie (Países bajos)", "goalsAvg": 3.10, "cornAvg": 10.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["BTTS"], "nota": "⚠️ BTTS +14.5% ROI en 51 picks, pero err 14.5%." } },
 
   // === ROJAS (no apostar) ===
   "PL": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "goalsAvg": 2.85, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
@@ -82,17 +81,6 @@ export const TEAM_STRENGTH_DB = {
     "RC Lens": { "atk": 1.08, "def": 0.99 }, "RC Strasbourg": { "atk": 0.92, "def": 1.10 },
     "Stade Brestois": { "atk": 0.98, "def": 1.06 }, "Stade Rennais": { "atk": 1.01, "def": 1.04 },
     "Toulouse": { "atk": 0.86, "def": 1.14 }, "Troyes": { "atk": 0.75, "def": 1.20 }
-  },
-  "DED": {
-    "ADO Den Haag": { "atk": 0.78, "def": 1.18 }, "AFC Ajax": { "atk": 1.28, "def": 0.88 },
-    "AZ Alkmaar": { "atk": 1.18, "def": 0.92 }, "Excelsior": { "atk": 0.85, "def": 1.14 },
-    "FC Groningen": { "atk": 0.96, "def": 1.08 }, "FC Twente": { "atk": 1.10, "def": 0.98 },
-    "FC Utrecht": { "atk": 1.12, "def": 0.96 }, "Feyenoord": { "atk": 1.22, "def": 0.90 },
-    "Fortuna Sittard": { "atk": 0.80, "def": 1.19 }, "Go Ahead Eagles": { "atk": 0.83, "def": 1.17 },
-    "NEC Nijmegen": { "atk": 0.92, "def": 1.11 }, "PEC Zwolle": { "atk": 1.02, "def": 1.04 },
-    "PSV Eindhoven": { "atk": 1.30, "def": 0.86 }, "SC Cambuur": { "atk": 0.76, "def": 1.20 },
-    "SC Heerenveen": { "atk": 1.06, "def": 1.01 }, "SC Telstar": { "atk": 0.72, "def": 1.22 },
-    "Sparta Rotterdam": { "atk": 0.75, "def": 1.21 }, "Willem II Tilburg": { "atk": 0.77, "def": 1.20 }
   },
   "BSA": {
     "Athletico": { "atk": 1.02, "def": 0.98 }, "Atlético Mineiro": { "atk": 1.15, "def": 1.04 },
@@ -192,14 +180,14 @@ export const TEAM_STRENGTH_DB = {
 
 export const HOME_ADVANTAGE = {
   "PL": 1.078, "BL1": 1.185, "SA": 1.087, "PD": 1.419, "FL1": 1.203,
-  "DED": 1.113, "BSA": 1.317, "ELC": 1.142, "MXL": 1.281,
-  "MLS": 1.303, "PPT": 1.373, "CPA": 1.263, "ARG": 1.196
+  "BSA": 1.317, "ELC": 1.142, "MXL": 1.281, "MLS": 1.303, "PPT": 1.373,
+  "CPA": 1.263, "ARG": 1.196
 };
 
 export const DIXON_COLES_RHO = {
   "PL": -0.065, "BL1": -0.085, "SA": -0.130, "PD": -0.098, "FL1": -0.105,
-  "DED": -0.072, "BSA": -0.090, "ELC": -0.078, "MXL": -0.095,
-  "MLS": -0.070, "PPT": -0.080, "CPA": -0.095, "ARG": -0.070,
+  "BSA": -0.090, "ELC": -0.078, "MXL": -0.095, "MLS": -0.070, "PPT": -0.080,
+  "CPA": -0.095, "ARG": -0.070,
   "default": -0.100
 };
 
@@ -214,7 +202,6 @@ export const BZZOIRO_COUNTRY = {
   SA: 'Italy',
   PD: 'Spain',
   FL1: 'France',
-  DED: 'Netherlands',
   BSA: 'Brazil',
   MXL: 'Mexico',
   MLS: 'USA',
@@ -251,7 +238,6 @@ export const UMBRALES_POR_LIGA = {
   BL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
   FL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
   ELC: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
-  DED: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
   PPT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
   BSA: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, cornersVisitante: true },
   ARG: { umbral1x2: 55, umbralGoles: 65, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
