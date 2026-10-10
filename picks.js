@@ -36,7 +36,8 @@ export function calcEV(probPct, cuota) {
 }
 export function cuotaMinima(probPct) {
   if (!Number.isFinite(probPct) || probPct <= 0) return null;
-  return FILTRO_EV / (probPct / 100);
+  // Se redondea HACIA ARRIBA a 2 decimales: con la cuota mínima que se muestra, el EV siempre da >= FILTRO_EV.
+  return Math.ceil((FILTRO_EV / (probPct / 100)) * 100 - 1e-9) / 100;
 }
 
 export function generarPicks(data, ligaKey) {

@@ -248,9 +248,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const out = inp.parentElement.querySelector('.ev-out');
         const ev = calcEV(parseFloat(inp.dataset.prob), parseFloat(inp.value));
         if (ev == null) { out.textContent = ''; return; }
-        const ok = ev >= FILTRO_EV;
+        const ok = ev >= FILTRO_EV - 1e-9;
         out.style.color = ok ? 'var(--green)' : 'var(--red)';
-        out.textContent = ok ? `EV ${ev.toFixed(2)} ✅ VALOR` : `EV ${ev.toFixed(2)} ❌ sin valor`;
+        out.textContent = ok ? `EV ${ev.toFixed(3)} ✅ VALOR` : `EV ${ev.toFixed(3)} ❌ sin valor`;
       });
     });
   }
