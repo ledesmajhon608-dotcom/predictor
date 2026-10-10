@@ -1,9 +1,12 @@
 // ============================================================================
-// CONFIGURACIÓN / DATOS DE LIGAS — SOLO 14 LIGAS
+// CONFIGURACIÓN / DATOS DE LIGAS
+// - 14 ligas originales + 8 nuevas a explorar
+// - UCL sin país (evita error 429)
+// - Umbrales de córners a 75
 // ============================================================================
 
 export const LIGAS = {
-  // === VERDES (con edge real medido) ===
+  // === VERDES (con edge medido) ===
   "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "mercados": ["1X2", "BTTS"], "nota": "Local +1.7% vs cuota. Stake 1%." } },
   "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "mercados": ["1X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Visitante +5.9% vs cuota. 4 mercados con edge. Stake 1%." } },
   "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "mercados": ["1X2", "Over 1.5"], "nota": "Over 1.5 +2.5%, Visitante +2.4% (muestra chica). Stake 0.5%." } },
@@ -12,16 +15,26 @@ export const LIGAS = {
 
   // === AMARILLAS (poca muestra o dudosas) ===
   "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": false }, "betting": { "status": "yellow", "mercados": ["Over 2.5", "BTTS"], "nota": "⚠️ err 11.7%. Solo Over 2.5 y BTTS." } },
-  "DED": { "name": "🇳🇱 Eredivisie (Países bajos)", "goalsAvg": 3.10, "cornAvg": 10.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["BTTS"], "nota": "⚠️ sin calibrar todavía." } },
+  "DED": { "name": "🇳🇱 Eredivisie (Países bajos)", "goalsAvg": 3.10, "cornAvg": 10.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["BTTS"], "nota": "⚠️ BTTS +14.5% ROI en 51 picks, pero err 14.5%." } },
 
   // === ROJAS (no apostar) ===
   "PL": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "goalsAvg": 2.85, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "PD": { "name": "🇪🇸 La Liga", "goalsAvg": 2.55, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "SA": { "name": "🇮🇹 Serie A", "goalsAvg": 2.65, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red" } },
   "BL1": { "name": "🇩🇪 Bundesliga", "goalsAvg": 3.00, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
-  "UCL": { "name": "⭐ Champions League", "goalsAvg": 2.75, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "ELC": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship (Inglaterra)", "goalsAvg": 2.65, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
-  "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } }
+  "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
+  "UCL": { "name": "⭐ Champions League", "goalsAvg": 2.75, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Torneo continental. Solo análisis, sin historial exportable." } },
+
+  // === NUEVAS A EXPLORAR (sin calibrar, status amarillo) ===
+  "DNS": { "name": "🇩🇰 Danish Superliga", "goalsAvg": 3.05, "cornAvg": 9.8, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["Over 2.5", "BTTS"], "nota": "⚠️ sin calibrar todavía." } },
+  "BL2": { "name": "🇩🇪 2. Bundesliga", "goalsAvg": 2.95, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["Over 1.5", "BTTS"], "nota": "⚠️ sin calibrar todavía." } },
+  "TUR": { "name": "🇹🇷 Trendyol Super Lig", "goalsAvg": 2.90, "cornAvg": 9.7, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["1X2", "Over 2.5"], "nota": "⚠️ sin calibrar todavía." } },
+  "GRE": { "name": "🇬🇷 Stoiximan Super League", "goalsAvg": 2.40, "cornAvg": 9.3, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["1X2", "BTTS"], "nota": "⚠️ sin calibrar todavía." } },
+  "KOR": { "name": "🇰🇷 K League 1", "goalsAvg": 2.60, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["Over 1.5", "Córners"], "nota": "⚠️ sin calibrar todavía." } },
+  "ROM": { "name": "🇷🇴 Superliga (Rumania)", "goalsAvg": 2.55, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["Córners", "Over 1.5"], "nota": "⚠️ sin calibrar todavía." } },
+  "JPN": { "name": "🇯🇵 J1 League", "goalsAvg": 2.65, "cornAvg": 10.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["Over 1.5"], "nota": "⚠️ sin calibrar todavía." } },
+  "BUL": { "name": "🇧🇬 Parva Liga", "goalsAvg": 2.50, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["1X2", "Over 1.5"], "nota": "⚠️ sin calibrar todavía." } }
 };
 
 export const TEAM_STRENGTH_DB = {
@@ -216,15 +229,17 @@ export const TEAM_STRENGTH_DB = {
 export const HOME_ADVANTAGE = {
   "PL": 1.078, "BL1": 1.185, "SA": 1.087, "PD": 1.419, "FL1": 1.203,
   "DED": 1.113, "BSA": 1.317, "ELC": 1.142, "MXL": 1.281,
-  "MLS": 1.303, "PPT": 1.373, "CPA": 1.263,
-  "UCL": 1.2, "ARG": 1.196
+  "MLS": 1.303, "PPT": 1.373, "CPA": 1.263, "UCL": 1.2, "ARG": 1.196,
+  "DNS": 1.15, "BL2": 1.20, "TUR": 1.25, "GRE": 1.20,
+  "KOR": 1.15, "ROM": 1.20, "JPN": 1.20, "BUL": 1.20
 };
 
 export const DIXON_COLES_RHO = {
   "PL": -0.065, "BL1": -0.085, "SA": -0.130, "PD": -0.098, "FL1": -0.105,
   "DED": -0.072, "BSA": -0.090, "ELC": -0.078, "MXL": -0.095,
-  "MLS": -0.070, "PPT": -0.080, "CPA": -0.095,
-  "UCL": -0.070, "ARG": -0.070,
+  "MLS": -0.070, "PPT": -0.080, "CPA": -0.095, "UCL": -0.070, "ARG": -0.070,
+  "DNS": -0.090, "BL2": -0.090, "TUR": -0.085, "GRE": -0.090,
+  "KOR": -0.090, "ROM": -0.090, "JPN": -0.090, "BUL": -0.090,
   "default": -0.100
 };
 
@@ -235,7 +250,7 @@ export const CORNER_HOME_BIAS_LEAGUE = { BSA: 1.66 };
 
 export const BZZOIRO_COUNTRY = {
   PL: 'England', ELC: 'England',
-  BL1: 'Germany',
+  BL1: 'Germany', BL2: 'Germany',
   SA: 'Italy',
   PD: 'Spain',
   FL1: 'France',
@@ -244,9 +259,15 @@ export const BZZOIRO_COUNTRY = {
   MXL: 'Mexico',
   MLS: 'USA',
   PPT: 'Portugal',
-  UCL: 'Europe',
   ARG: 'Argentina',
-  CPA: 'Colombia'
+  CPA: 'Colombia',
+  DNS: 'Denmark',
+  TUR: 'Turkey',
+  GRE: 'Greece',
+  KOR: 'South Korea',
+  ROM: 'Romania',
+  JPN: 'Japan',
+  BUL: 'Bulgaria'
 };
 
 // ============================================================================
@@ -285,6 +306,14 @@ export const UMBRALES_POR_LIGA = {
   MXL: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, cornersVisitante: true },
   MLS: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, cornersVisitante: false },
   CPA: { umbral1x2: 50, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
+  DNS: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
+  BL2: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
+  TUR: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
+  GRE: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
+  KOR: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
+  ROM: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
+  JPN: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
+  BUL: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
   DEFAULT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: true },
 };
 
