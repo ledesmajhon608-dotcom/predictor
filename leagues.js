@@ -1,8 +1,6 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
-// - 14 ligas originales + 8 nuevas a explorar
-// - UCL sin país (evita error 429)
-// - Umbrales de córners a 75
+// - 13 ligas originales (sin Champions) + 8 nuevas a explorar = 21 total
 // ============================================================================
 
 export const LIGAS = {
@@ -24,7 +22,6 @@ export const LIGAS = {
   "BL1": { "name": "🇩🇪 Bundesliga", "goalsAvg": 3.00, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "ELC": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship (Inglaterra)", "goalsAvg": 2.65, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
-  "UCL": { "name": "⭐ Champions League", "goalsAvg": 2.75, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Torneo continental. Solo análisis, sin historial exportable." } },
 
   // === NUEVAS A EXPLORAR (sin calibrar, status amarillo) ===
   "DNS": { "name": "🇩🇰 Danish Superliga", "goalsAvg": 3.05, "cornAvg": 9.8, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "mercados": ["Over 2.5", "BTTS"], "nota": "⚠️ sin calibrar todavía." } },
@@ -172,29 +169,6 @@ export const TEAM_STRENGTH_DB = {
     "Santa Clara": { "atk": 1.151, "def": 0.726 }, "Sporting Braga": { "atk": 1.337, "def": 0.832 },
     "Sporting CP": { "atk": 2.064, "def": 0.72 }, "Vitória SC": { "atk": 0.681, "def": 1.018 }
   },
-  "UCL": {
-    "AGF": { "atk": 1.02, "def": 1.00 }, "Atert Bissen": { "atk": 0.82, "def": 1.14 },
-    "ETO FC Győr": { "atk": 0.90, "def": 1.08 }, "FC Ararat-Armenia": { "atk": 1.08, "def": 0.98 },
-    "FC Drita": { "atk": 1.00, "def": 1.02 }, "FC Iberia 1999": { "atk": 1.04, "def": 0.99 },
-    "FC Petrocub Hîncesti": { "atk": 0.96, "def": 1.05 }, "FC Thun": { "atk": 1.04, "def": 1.00 },
-    "Fenerbahçe": { "atk": 1.26, "def": 0.88 }, "FK Borac Banja Luka": { "atk": 1.02, "def": 1.00 },
-    "FK Crvena zvezda": { "atk": 1.28, "def": 0.86 }, "FK Kauno Žalgiris": { "atk": 0.94, "def": 1.06 },
-    "FK Sutjeska Nikšić": { "atk": 0.88, "def": 1.10 }, "FK Vardar Skopje": { "atk": 0.92, "def": 1.08 },
-    "Flora Tallinn": { "atk": 1.02, "def": 1.01 }, "Floriana FC": { "atk": 0.86, "def": 1.12 },
-    "GNK Dinamo Zagreb": { "atk": 1.24, "def": 0.90 }, "Górnik Zabrze": { "atk": 1.00, "def": 1.02 },
-    "Hapoel Be'er Sheva": { "atk": 1.08, "def": 0.98 }, "Heart of Midlothian": { "atk": 1.14, "def": 0.94 },
-    "Inter Club d'Escaldes": { "atk": 0.90, "def": 1.08 }, "Kairat Almaty": { "atk": 1.04, "def": 0.99 },
-    "KF Egnatia": { "atk": 0.94, "def": 1.04 }, "Klaksvíkar Ítróttarfelag": { "atk": 1.00, "def": 1.02 },
-    "Kuopion Palloseura": { "atk": 1.16, "def": 0.94 }, "Larne FC": { "atk": 0.92, "def": 1.08 },
-    "Lech Poznań": { "atk": 1.20, "def": 0.92 }, "Levski Sofia": { "atk": 1.04, "def": 0.98 },
-    "Lincoln Red Imps": { "atk": 0.88, "def": 1.12 }, "Mjällby AIF": { "atk": 1.02, "def": 0.99 },
-    "ML Vitebsk": { "atk": 0.96, "def": 1.04 }, "NK Celje": { "atk": 1.06, "def": 0.98 },
-    "Omonia Nicosia": { "atk": 1.10, "def": 0.96 }, "Riga FC": { "atk": 1.08, "def": 0.97 },
-    "Sabah FK": { "atk": 0.98, "def": 1.02 }, "Shamrock Rovers": { "atk": 1.06, "def": 0.98 },
-    "ŠK Slovan Bratislava": { "atk": 1.18, "def": 0.92 }, "SK Sturm Graz": { "atk": 1.20, "def": 0.91 },
-    "SP Tre Fiori": { "atk": 0.76, "def": 1.22 }, "The New Saints": { "atk": 1.10, "def": 0.96 },
-    "Universitatea Craiova": { "atk": 1.08, "def": 0.97 }, "Víkingur Reykjavík": { "atk": 1.02, "def": 1.00 }
-  },
   "ARG": {
     "Aldosivi": { "atk": 0.85, "def": 1.30 }, "Argentinos Juniors": { "atk": 1.05, "def": 0.95 },
     "Atlético Tucumán": { "atk": 1.00, "def": 1.05 }, "Banfield": { "atk": 0.90, "def": 1.10 },
@@ -229,7 +203,7 @@ export const TEAM_STRENGTH_DB = {
 export const HOME_ADVANTAGE = {
   "PL": 1.078, "BL1": 1.185, "SA": 1.087, "PD": 1.419, "FL1": 1.203,
   "DED": 1.113, "BSA": 1.317, "ELC": 1.142, "MXL": 1.281,
-  "MLS": 1.303, "PPT": 1.373, "CPA": 1.263, "UCL": 1.2, "ARG": 1.196,
+  "MLS": 1.303, "PPT": 1.373, "CPA": 1.263, "ARG": 1.196,
   "DNS": 1.15, "BL2": 1.20, "TUR": 1.25, "GRE": 1.20,
   "KOR": 1.15, "ROM": 1.20, "JPN": 1.20, "BUL": 1.20
 };
@@ -237,7 +211,7 @@ export const HOME_ADVANTAGE = {
 export const DIXON_COLES_RHO = {
   "PL": -0.065, "BL1": -0.085, "SA": -0.130, "PD": -0.098, "FL1": -0.105,
   "DED": -0.072, "BSA": -0.090, "ELC": -0.078, "MXL": -0.095,
-  "MLS": -0.070, "PPT": -0.080, "CPA": -0.095, "UCL": -0.070, "ARG": -0.070,
+  "MLS": -0.070, "PPT": -0.080, "CPA": -0.095, "ARG": -0.070,
   "DNS": -0.090, "BL2": -0.090, "TUR": -0.085, "GRE": -0.090,
   "KOR": -0.090, "ROM": -0.090, "JPN": -0.090, "BUL": -0.090,
   "default": -0.100
@@ -297,7 +271,6 @@ export const UMBRALES_POR_LIGA = {
   SA:  { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, cornersVisitante: false },
   BL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
   FL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
-  UCL: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
   ELC: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
   DED: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
   PPT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
