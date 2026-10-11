@@ -1,21 +1,32 @@
-// walkforward.js
+// walkforward.js (v2)
 // Backtest honesto (walk-forward): cada bloque de partidos se predice con
-// parámetros (HA, rho, goles/partido, tasas base) calibrados SOLO con partidos
-// anteriores. Nada de lo que se evalúa se usó para ajustar.
-// Compara contra la cuota real (sin margen) y mide el ROI de apostar cuando
-// EV >= FILTRO_EV, con error estándar para separar señal de suerte.
+// parámetros calibrados SOLO con partidos anteriores. Nada de lo que se evalúa
+// se usó para ajustar.
 //
-// Limitación: los ratings de equipos de leagues.js son fijos (no se recalculan
-// acá); si se armaron mirando partidos que caen en el test, hay algo de sesgo.
+// v2 agrega:
+//  1) Ratings fuera de muestra: en cada bloque se estiman ataque/defensa de
+//     cada equipo con los partidos anteriores (modo "fuera") y se comparan con
+//     los ratings fijos de leagues.js (modo "estático").
+//  2) Mezcla con la cuota: p = (1-w)·modelo + w·cuota sin margen, con
+//     w = 0, 25, 50, 75, 100%. Muestra qué peso da mejor Brier y qué ROI da
+//     apostar con la probabilidad mezclada.
 
-import { LIGAS, SHRINK_ALPHA, FILTRO_EV } from './leagues.js';
-import { simulateMatch } from './model.js';
+import {
+  LIGAS, SHRINK_ALPHA, FILTRO_EV, HOME_ADVANTAGE, DIXON_COLES_RHO, DEFAULT_HOME_ADV, DEFAULT_RHO,
+  HA_MIN, HA_MAX, RHO_MIN, RHO_MAX, RATING_MIN, RATING_MAX, GOALS_AVG_PRIOR_MATCHES,
+} from './leagues.js';
+import { simulateMatch, calcLambdas } from './model.js';
 import { calibrarLigaMLE, shrinkHaciaBase } from './calibrate.js';
+import { calcGoalMarkets, plattCalibrate, logLikMarcador } from './stats.js';
 
 const Z_SIGNIFICATIVO = 1.64;
 const ESCANEO_MIN_N = 30;
+const W_LIST = [0, 0.25, 0.5, 0.75, 1];
+const SIGMA_HA = 0.15;
+const SIGMA_RHO = 0.06;
 
 // ---------- utilidades ----------
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 function devigar2(a, b) {
   if (!a || !b) return null;
   const pa = 1 / a, pb = 1 / b;
@@ -39,7 +50,104 @@ function zMedia(arr) {
   if (sd == null || sd < 1e-12) return null;
   return mean / (sd / Math.sqrt(arr.length));
 }
+const media = (a) => meanSd(a).mean;
 const brier3 = (probsPct, idx) => probsPct.reduce((s, p, j) => s + (p / 100 - (j === idx ? 1 : 0)) ** 2, 0);
+
+// ---------- modelo "fuera de muestra" ----------
+
+// Misma tubería que simulateMatch (solo estático) pero con ratings dados.
+export function predecir(leagueKey, hR, aR, { goalsAvg, homeAdv, rho }) {
+  const { lambdaHome, lambdaAway } = calcLambdas(goalsAvg, hR, aR, homeAdv);
+  const mk = calcGoalMarkets(lambdaHome, lambdaAway, leagueKey, rho);
+  const calL = plattCalibrate(mk.resultProbs.home, 'resultado');
+  const calE = plattCalibrate(mk.resultProbs.draw, 'resultado');
+  const calV = plattCalibrate(mk.resultProbs.away, 'resultado');
+  const suma = calL + calE + calV;
+  return {
+    resultProbs: {
+      local: +(calL * 100 / suma).toFixed(1),
+      empate: +(calE * 100 / suma).toFixed(1),
+      visitante: +(calV * 100 / suma).toFixed(1),
+    },
+    over15: plattCalibrate(mk.over15, 'goals15'),
+    over25: plattCalibrate(mk.over25, 'goals25'),
+    over35: plattCalibrate(mk.over35, 'goals35'),
+    btts: plattCalibrate(mk.btts, 'btts'),
+  };
+}
+
+function pesoAntiguedad(fechaStr, halflifeDias, ahoraMs) {
+  if (!fechaStr) return 0.3;
+  const dias = (ahoraMs - new Date(fechaStr).getTime()) / 86400000;
+  if (!Number.isFinite(dias) || dias < 0) return 0.3;
+  return Math.pow(0.5, dias / halflifeDias);
+}
+
+// Ataque/defensa por equipo, ajustado por rival, con peso por antigüedad y
+// encogimiento hacia 1.0 (priorJuegos partidos virtuales). Devuelve un mapa.
+export function estimarRatings(partidos, {
+  halflifeDias = 60, minMatches = 3, ahoraMs = Date.now(),
+  homeAdv = 1.2, priorJuegos = 4, iteraciones = 30,
+} = {}) {
+  const validos = [], conteo = {};
+  let sumaPesoGoles = 0, sumaPeso = 0;
+  for (const p of partidos) {
+    if (p.goles_local == null || p.goles_visitante == null || !p.local || !p.visitante) continue;
+    const w = pesoAntiguedad(p.fecha, halflifeDias, ahoraMs);
+    validos.push({ h: p.local, a: p.visitante, gl: p.goles_local, gv: p.goles_visitante, w });
+    conteo[p.local] = (conteo[p.local] || 0) + 1;
+    conteo[p.visitante] = (conteo[p.visitante] || 0) + 1;
+    sumaPesoGoles += w * (p.goles_local + p.goles_visitante);
+    sumaPeso += w * 2;
+  }
+  const avg = sumaPeso > 0 ? sumaPesoGoles / sumaPeso : null;
+  if (!avg) return {};
+
+  const nombres = Object.keys(conteo);
+  const atk = {}, def = {};
+  for (const n of nombres) { atk[n] = 1; def[n] = 1; }
+  const sq = Math.sqrt(homeAdv);
+
+  for (let it = 0; it < iteraciones; it++) {
+    const numA = {}, denA = {}, numD = {}, denD = {};
+    for (const n of nombres) { numA[n] = priorJuegos * avg; denA[n] = priorJuegos * avg; numD[n] = priorJuegos * avg; denD[n] = priorJuegos * avg; }
+    for (const m of validos) {
+      numA[m.h] += m.w * m.gl;  denA[m.h] += m.w * avg * def[m.a] * sq;
+      numA[m.a] += m.w * m.gv;  denA[m.a] += m.w * avg * def[m.h] / sq;
+      numD[m.h] += m.w * m.gv;  denD[m.h] += m.w * avg * atk[m.a] / sq;
+      numD[m.a] += m.w * m.gl;  denD[m.a] += m.w * avg * atk[m.h] * sq;
+    }
+    let sA = 0, sD = 0;
+    for (const n of nombres) { atk[n] = numA[n] / denA[n]; def[n] = numD[n] / denD[n]; sA += atk[n]; sD += def[n]; }
+    const mA = sA / nombres.length, mD = sD / nombres.length;
+    for (const n of nombres) { atk[n] /= mA; def[n] /= mD; }
+  }
+
+  const mapa = {};
+  for (const n of nombres) {
+    if (conteo[n] < minMatches) continue;
+    mapa[n] = { atk: clamp(atk[n], RATING_MIN, RATING_MAX), def: clamp(def[n], RATING_MIN, RATING_MAX) };
+  }
+  return mapa;
+}
+
+// Máxima verosimilitud de HA y rho con prior suave (igual criterio que calibrate.js).
+function ajustarHaRho(matches, goalsAvg, haPrior, rhoPrior) {
+  let mejor = { ha: haPrior, rho: rhoPrior, obj: -Infinity };
+  for (let ha = HA_MIN; ha <= HA_MAX + 1e-9; ha += 0.01) {
+    const lam = matches.map(m => calcLambdas(goalsAvg, m.h, m.a, ha));
+    for (let rho = RHO_MIN; rho <= RHO_MAX + 1e-9; rho += 0.01) {
+      let ll = 0;
+      for (let i = 0; i < matches.length; i++) {
+        ll += logLikMarcador(matches[i].gl, matches[i].gv, lam[i].lambdaHome, lam[i].lambdaAway, rho);
+      }
+      const pen = 0.5 * (((ha - haPrior) / SIGMA_HA) ** 2 + ((rho - rhoPrior) / SIGMA_RHO) ** 2);
+      const obj = ll - pen;
+      if (obj > mejor.obj) mejor = { ha, rho, obj };
+    }
+  }
+  return { ha: +mejor.ha.toFixed(3), rho: +mejor.rho.toFixed(3) };
+}
 
 // ---------- acumuladores ----------
 class BrierVsMercado {
@@ -52,8 +160,8 @@ class BrierVsMercado {
   }
   summary() {
     const n = this.d.length;
-    const bModelo = n ? meanSd(this.bm).mean : null;
-    const bMercado = n ? meanSd(this.bk).mean : null;
+    const bModelo = n ? media(this.bm) : null;
+    const bMercado = n ? media(this.bk) : null;
     return {
       label: this.label, n, bModelo, bMercado,
       mejora: n && bMercado > 1e-9 ? (bMercado - bModelo) / bMercado * 100 : null,
@@ -88,6 +196,71 @@ class Escaneo {
   }
 }
 
+// Mezcla modelo/cuota: para cada peso w mide Brier 1X2, Brier de goles+BTTS y
+// el ROI de apostar (todos los lados con cuota) cuando EV mezclado >= FILTRO_EV.
+class MezclaAcc {
+  constructor() { this.cols = W_LIST.map(w => ({ w, b3: [], bg: [], rets: [] })); }
+  add({ p1x2, k1x2, idx, bin, lados }) {
+    for (const c of this.cols) {
+      if (k1x2) c.b3.push(brier3(p1x2.map((pm, j) => (1 - c.w) * pm + c.w * k1x2[j]), idx));
+      for (const b of bin) {
+        if (b.pk == null) continue;
+        const pb = (1 - c.w) * b.pm + c.w * b.pk;
+        c.bg.push((pb / 100 - (b.hit ? 1 : 0)) ** 2);
+      }
+      for (const l of lados) {
+        if (l.pk == null || !l.cuota) continue;
+        const pb = (1 - c.w) * l.pm + c.w * l.pk;
+        if ((pb / 100) * l.cuota > FILTRO_EV) c.rets.push(l.hit ? l.cuota - 1 : -1);
+      }
+    }
+  }
+  summary() {
+    const base = this.cols[0];
+    return this.cols.map(c => {
+      const { mean, sd } = meanSd(c.rets);
+      const se = sd != null ? sd / Math.sqrt(c.rets.length) : null;
+      return {
+        w: c.w,
+        n1x2: c.b3.length, brier1x2: media(c.b3),
+        z1x2: c.w === 0 ? null : zMedia(base.b3.map((v, i) => v - c.b3[i])),
+        nG: c.bg.length, brierG: media(c.bg),
+        zG: c.w === 0 ? null : zMedia(base.bg.map((v, i) => v - c.bg[i])),
+        apuestas: c.rets.length,
+        roi: mean != null ? mean * 100 : null,
+        se: se != null ? se * 100 : null,
+        z: se && se > 1e-12 ? mean / se : null,
+      };
+    });
+  }
+}
+
+function entradaMezcla(rp3, g, mk, p, idx, tg, bttsReal) {
+  const inv = (x) => (x == null ? null : 100 - x);
+  return {
+    p1x2: rp3, k1x2: mk.m3, idx,
+    bin: [
+      { pm: g.over15, pk: mk.f15, hit: tg > 1.5 },
+      { pm: g.over25, pk: mk.f25, hit: tg > 2.5 },
+      { pm: g.over35, pk: mk.f35, hit: tg > 3.5 },
+      { pm: g.btts, pk: mk.fb, hit: bttsReal },
+    ],
+    lados: [
+      { pm: rp3[0], pk: mk.m3 ? mk.m3[0] : null, cuota: p.odds_local, hit: idx === 0 },
+      { pm: rp3[1], pk: mk.m3 ? mk.m3[1] : null, cuota: p.odds_empate, hit: idx === 1 },
+      { pm: rp3[2], pk: mk.m3 ? mk.m3[2] : null, cuota: p.odds_visitante, hit: idx === 2 },
+      { pm: g.over15, pk: mk.f15, cuota: p.odds_over15, hit: tg > 1.5 },
+      { pm: 100 - g.over15, pk: inv(mk.f15), cuota: p.odds_under15, hit: tg < 1.5 },
+      { pm: g.over25, pk: mk.f25, cuota: p.odds_over25, hit: tg > 2.5 },
+      { pm: 100 - g.over25, pk: inv(mk.f25), cuota: p.odds_under25, hit: tg < 2.5 },
+      { pm: g.over35, pk: mk.f35, cuota: p.odds_over35, hit: tg > 3.5 },
+      { pm: 100 - g.over35, pk: inv(mk.f35), cuota: p.odds_under35, hit: tg < 3.5 },
+      { pm: g.btts, pk: mk.fb, cuota: p.odds_btts_si, hit: bttsReal },
+      { pm: 100 - g.btts, pk: inv(mk.fb), cuota: p.odds_btts_no, hit: !bttsReal },
+    ],
+  };
+}
+
 // ---------- motor ----------
 export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 20, ventana = 200, onLog = null } = {}) {
   const log = (m) => { if (onLog) onLog(m); };
@@ -95,36 +268,54 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
     .filter(p => p.goles_local != null && p.goles_visitante != null && p.local && p.visitante)
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const n = todos.length;
-  if (!LIGAS[leagueKey]) return { error: 'Liga no reconocida' };
+  const liga = LIGAS[leagueKey];
+  if (!liga) return { error: 'Liga no reconocida' };
   if (n < warmup + 10) return { error: `Solo ${n} partidos válidos: hacen falta al menos ${warmup + 10} (calentamiento ${warmup} + 10 de prueba).` };
 
   const b3Todos = { cal: [], base: [], dCalBase: [] };
-  const b3Cuota = { cal: [], base: [], mkt: [], dMkt: [], dCalBase: [] };
+  const b3Cuota = { cal: [], base: [], mkt: [], dMkt: [] };
+  const bEstAll = [], bFueraAll = [], dRatings = [];
   const mk = {
     local: new BrierVsMercado('Local gana'), empate: new BrierVsMercado('Empate'), visitante: new BrierVsMercado('Visitante gana'),
     over15: new BrierVsMercado('Over 1.5 goles'), over25: new BrierVsMercado('Over 2.5 goles'), over35: new BrierVsMercado('Over 3.5 goles'),
     btts: new BrierVsMercado('Ambos marcan (Sí)'),
   };
   const escaneo = new Escaneo();
+  const mezA = new MezclaAcc(), mezB = new MezclaAcc();
   const bloques = [];
   let evaluados = 0, saltados = 0;
+
+  const ha0 = HOME_ADVANTAGE[leagueKey] ?? DEFAULT_HOME_ADV;
+  const rho0 = DIXON_COLES_RHO[leagueKey] ?? DIXON_COLES_RHO.default ?? DEFAULT_RHO;
 
   for (let start = warmup; start < n; start += step) {
     const train = todos.slice(Math.max(0, start - ventana), start);
     const test = todos.slice(start, start + step);
 
+    // Modo estático: ratings de leagues.js + HA/rho calibrados con train.
     let cal = null, tasas = null;
     try {
       const r = await calibrarLigaMLE(leagueKey, train, { minPartidos: 20 });
       cal = r.calibracion; tasas = r.tasas;
     } catch (e) { log(`⚠️ Bloque en ${start}: calibración falló (${e.message}), se usan valores base.`); }
 
+    // Modo fuera de muestra: ratings estimados con train + HA/rho ajustados con esos ratings.
+    const ahoraMs = new Date(test[0].fecha).getTime();
+    const mapa = estimarRatings(train, { ahoraMs, homeAdv: ha0 });
+    const obsAvg = train.reduce((s, p) => s + p.goles_local + p.goles_visitante, 0) / train.length;
+    const goalsAvgB = (train.length * obsAvg + GOALS_AVG_PRIOR_MATCHES * liga.goalsAvg) / (train.length + GOALS_AVG_PRIOR_MATCHES);
+    const msB = train.filter(p => mapa[p.local] && mapa[p.visitante])
+      .map(p => ({ h: mapa[p.local], a: mapa[p.visitante], gl: p.goles_local, gv: p.goles_visitante }));
+    const parB = msB.length >= 20 ? ajustarHaRho(msB, goalsAvgB, ha0, rho0) : { ha: ha0, rho: rho0 };
+    const checksum = +Object.values(mapa).reduce((s, r) => s + r.atk + r.def, 0).toFixed(6);
+
     bloques.push({
       nTrain: train.length, nTest: test.length,
       trainHasta: train[train.length - 1].fecha, testDesde: test[0].fecha, testHasta: test[test.length - 1].fecha,
       ha: cal?.homeAdvantage ?? null, rho: cal?.rho ?? null, calibrado: !!cal,
+      haB: parB.ha, rhoB: parB.rho, equiposB: Object.keys(mapa).length, checksumRatings: checksum,
     });
-    log(`Bloque ${bloques.length}: entrena ${train.length} · prueba ${test.length}${cal ? ` · HA ${cal.homeAdvantage.toFixed(2)} rho ${cal.rho.toFixed(2)}` : ' · sin calibrar'}`);
+    log(`Bloque ${bloques.length}: entrena ${train.length} · prueba ${test.length}${cal ? ` · HA ${cal.homeAdvantage.toFixed(2)} rho ${cal.rho.toFixed(2)}` : ' · sin calibrar'} · fuera: ${Object.keys(mapa).length} equipos, HA ${parB.ha.toFixed(2)}`);
 
     for (const p of test) {
       let pc, pb;
@@ -135,6 +326,10 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
       evaluados++;
 
       const rp = SHRINK_ALPHA > 0 && tasas ? shrinkHaciaBase(pc.resultProbs, tasas, SHRINK_ALPHA) : pc.resultProbs;
+      const pF = predecir(leagueKey, mapa[p.local] || { atk: 1, def: 1 }, mapa[p.visitante] || { atk: 1, def: 1 },
+        { goalsAvg: goalsAvgB, homeAdv: parB.ha, rho: parB.rho });
+      const rpF = SHRINK_ALPHA > 0 && tasas ? shrinkHaciaBase(pF.resultProbs, tasas, SHRINK_ALPHA) : pF.resultProbs;
+
       const gl = p.goles_local, gv = p.goles_visitante, tg = gl + gv;
       const idx = gl > gv ? 0 : gl === gv ? 1 : 2;
       const resultado = ['local', 'empate', 'visitante'][idx];
@@ -142,22 +337,28 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
 
       const arrCal = [rp.local, rp.empate, rp.visitante];
       const arrBase = [pb.resultProbs.local, pb.resultProbs.empate, pb.resultProbs.visitante];
-      const bC = brier3(arrCal, idx), bB = brier3(arrBase, idx);
+      const arrF = [rpF.local, rpF.empate, rpF.visitante];
+      const bC = brier3(arrCal, idx), bB = brier3(arrBase, idx), bF = brier3(arrF, idx);
       b3Todos.cal.push(bC); b3Todos.base.push(bB); b3Todos.dCalBase.push(bB - bC);
+      bEstAll.push(bC); bFueraAll.push(bF); dRatings.push(bF - bC);
 
       const m3 = devigar3(p.odds_local, p.odds_empate, p.odds_visitante);
+      const f15 = devigar2(p.odds_over15, p.odds_under15);
+      const f25 = devigar2(p.odds_over25, p.odds_under25);
+      const f35 = devigar2(p.odds_over35, p.odds_under35);
+      const fb = devigar2(p.odds_btts_si, p.odds_btts_no);
+
       if (m3) {
         const bM = brier3(m3, idx);
-        b3Cuota.cal.push(bC); b3Cuota.base.push(bB); b3Cuota.mkt.push(bM);
-        b3Cuota.dMkt.push(bM - bC); b3Cuota.dCalBase.push(bB - bC);
+        b3Cuota.cal.push(bC); b3Cuota.base.push(bB); b3Cuota.mkt.push(bM); b3Cuota.dMkt.push(bM - bC);
         mk.local.add(rp.local, m3[0], idx === 0);
         mk.empate.add(rp.empate, m3[1], idx === 1);
         mk.visitante.add(rp.visitante, m3[2], idx === 2);
       }
-      const f15 = devigar2(p.odds_over15, p.odds_under15); if (f15 != null) mk.over15.add(pc.over15, f15, tg > 1.5);
-      const f25 = devigar2(p.odds_over25, p.odds_under25); if (f25 != null) mk.over25.add(pc.over25, f25, tg > 2.5);
-      const f35 = devigar2(p.odds_over35, p.odds_under35); if (f35 != null) mk.over35.add(pc.over35, f35, tg > 3.5);
-      const fb = devigar2(p.odds_btts_si, p.odds_btts_no); if (fb != null) mk.btts.add(pc.btts, fb, bttsReal);
+      if (f15 != null) mk.over15.add(pc.over15, f15, tg > 1.5);
+      if (f25 != null) mk.over25.add(pc.over25, f25, tg > 2.5);
+      if (f35 != null) mk.over35.add(pc.over35, f35, tg > 3.5);
+      if (fb != null) mk.btts.add(pc.btts, fb, bttsReal);
 
       const lados = [
         ['1', 'Local gana', rp.local, p.odds_local, resultado === 'local'],
@@ -173,11 +374,14 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
         ['bn', 'BTTS No', 100 - pc.btts, p.odds_btts_no, !bttsReal],
       ];
       for (const [k, label, prob, cuota, hit] of lados) escaneo.add(k, label, prob, cuota, hit);
+
+      const mkt = { m3, f15, f25, f35, fb };
+      mezA.add(entradaMezcla(arrCal, pc, mkt, p, idx, tg, bttsReal));
+      mezB.add(entradaMezcla(arrF, pF, mkt, p, idx, tg, bttsReal));
     }
     await new Promise(r => setTimeout(r, 0));
   }
 
-  const media = (a) => meanSd(a).mean;
   return {
     leagueKey, nTotal: n, evaluados, saltados, warmup, step, ventana, bloques,
     calibracionVsBase: {
@@ -188,12 +392,21 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
       zVsMkt: zMedia(b3Cuota.dMkt),
       mejoraVsMkt: b3Cuota.mkt.length ? (media(b3Cuota.mkt) - media(b3Cuota.cal)) / media(b3Cuota.mkt) * 100 : null,
     },
+    // z > 0: los ratings de leagues.js predicen mejor que los calculados con partidos anteriores.
+    ratings: { n: bEstAll.length, estatico: media(bEstAll), fuera: media(bFueraAll), z: zMedia(dRatings) },
+    mezcla: { estatico: mezA.summary(), fuera: mezB.summary() },
     mercados: Object.values(mk).map(m => m.summary()).filter(s => s.n > 0),
     escaneo: escaneo.summary(),
   };
 }
 
 // ---------- lectura en texto ----------
+function mejorMezcla(filas) {
+  const con = filas.filter(f => f.n1x2 > 0 && f.brier1x2 != null);
+  if (!con.length) return null;
+  return con.reduce((a, b) => (b.brier1x2 < a.brier1x2 ? b : a));
+}
+
 export function lecturaResultado(res) {
   const out = [];
   const c = res.calibracionVsBase;
@@ -207,8 +420,28 @@ export function lecturaResultado(res) {
   if (mejores.length) out.push(`Mejor que la cuota (significativo): ${mejores.join(', ')}.`);
   if (peores.length) out.push(`Peor que la cuota (significativo): ${peores.join(', ')}.`);
   if (!mejores.length && !peores.length) out.push('Ningún mercado se separa claramente de la cuota: el modelo y la casa están a la par.');
+
+  const r = res.ratings;
+  if (r && r.z != null) {
+    if (r.z > Z_SIGNIFICATIVO) out.push('Los ratings de leagues.js predicen MEJOR que los calculados con partidos anteriores. Puede ser información real (temporadas previas) o que se ajustaron mirando estos mismos partidos; este test no lo distingue. El modo "fuera de muestra" es el piso honesto.');
+    else if (r.z < -Z_SIGNIFICATIVO) out.push('Los ratings calculados con partidos anteriores predicen MEJOR que los de leagues.js: conviene actualizarlos con datos.');
+    else out.push('Los ratings de leagues.js y los calculados con partidos anteriores rinden parecido: los fijos no parecen tener una ventaja oculta.');
+  }
+
+  for (const [clave, nombre] of [['estatico', 'ratings leagues.js'], ['fuera', 'ratings fuera de muestra']]) {
+    const filas = res.mezcla?.[clave];
+    const mejor = filas ? mejorMezcla(filas) : null;
+    if (!mejor) continue;
+    const puro = filas[0];
+    if (mejor.w === 0) out.push(`Mezcla con la cuota (${nombre}): el modelo puro ya es lo mejor, mezclar no ayuda.`);
+    else {
+      const sig = mejor.z1x2 != null && mejor.z1x2 > Z_SIGNIFICATIVO ? 'mejora significativa' : 'mejora no significativa';
+      out.push(`Mezcla con la cuota (${nombre}): el mejor peso de cuota es ${Math.round(mejor.w * 100)}% (Brier 1X2 ${mejor.brier1x2.toFixed(3)} vs ${puro.brier1x2.toFixed(3)} sin mezclar, ${sig}).`);
+    }
+  }
+
   const roiOk = res.escaneo.filter(e => e.n >= ESCANEO_MIN_N && e.z != null && e.z > Z_SIGNIFICATIVO).map(e => e.label);
-  if (roiOk.length) out.push(`ROI positivo estadísticamente distinguible de la suerte: ${roiOk.join(', ')}.`);
+  if (roiOk.length) out.push(`ROI positivo que pasa el umbral de significancia: ${roiOk.join(', ')}. Ojo: se miran 11 mercados a la vez, así que 1 o 2 pasan por azar; confirmalo en otra liga o período antes de creerlo.`);
   else out.push('Ningún mercado muestra ROI positivo distinguible de la suerte (con n ≥ 30). No hay evidencia de ventaja todavía.');
   return out;
 }
@@ -248,21 +481,47 @@ if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
   const senal = (z) => z == null ? '—' : z > Z_SIGNIFICATIVO ? '✅ mejor' : z < -Z_SIGNIFICATIVO ? '❌ peor' : '≈ empate';
   const colSenal = (z) => z == null ? dim : z > Z_SIGNIFICATIVO ? 'var(--green)' : z < -Z_SIGNIFICATIVO ? 'var(--red)' : 'var(--yellow)';
 
+  function tablaMezcla(titulo, filas) {
+    const mejor = mejorMezcla(filas);
+    const rows = filas.map(f => {
+      const nombre = f.w === 0 ? '0% (modelo puro)' : f.w === 1 ? '100% (solo cuota)' : `${Math.round(f.w * 100)}% cuota`;
+      const esMejor = mejor && f.w === mejor.w;
+      const roiTxt = f.apuestas ? `${f.roi >= 0 ? '+' : ''}${f1(f.roi)}%${f.se != null ? ` ±${f1(f.se)}` : ''} (${f.apuestas})` : 'sin apuestas';
+      const colRoi = !f.apuestas ? dim : f.z != null && f.z > Z_SIGNIFICATIVO && f.apuestas >= ESCANEO_MIN_N ? 'var(--green)' : f.roi > 0 ? 'var(--yellow)' : 'var(--red)';
+      return `<div class="compare-row"><span>${esMejor ? '⭐ ' : ''}${nombre}</span><span class="grid-plain" style="color:${f.w === 0 ? 'inherit' : colSenal(f.z1x2)}">${f3(f.brier1x2)}</span><span class="grid-plain" style="color:${f.w === 0 ? 'inherit' : colSenal(f.zG)}">${f3(f.brierG)}</span><span class="grid-plain" style="color:${colRoi}">${roiTxt}</span></div>`;
+    }).join('');
+    return `
+      <div class="card">
+        <h3>${titulo} <small>(${filas[0].n1x2} partidos con cuotas)</small></h3>
+        <div class="compare-row compare-head"><span>Peso de la cuota</span><span>Brier 1X2</span><span>Brier goles</span><span>ROI EV≥${FILTRO_EV} (apuestas)</span></div>
+        ${rows}
+        <p style="margin:10px 0 0;font-size:.75rem;color:${dim};line-height:1.5;">Brier: menor = mejor. Verde/rojo = mejora/empeora de forma significativa respecto al modelo puro. ⭐ = mejor Brier 1X2. ROI = apostar todos los lados cuyo EV, con la probabilidad mezclada, supera ${FILTRO_EV}.</p>
+      </div>`;
+  }
+
   function render(res) {
-    const c = res.calibracionVsBase, m = res.modeloVsMercado1x2;
+    const c = res.calibracionVsBase, m = res.modeloVsMercado1x2, r = res.ratings;
     const lectura = lecturaResultado(res).map(t => `<p style="margin:0 0 6px;font-size:.85rem;">• ${t}</p>`).join('');
     const filasMk = res.mercados.map(s => `<div class="compare-row"><span>${s.label}</span><span class="grid-plain">${s.n}</span><span class="grid-plain">${f3(s.bModelo)} vs ${f3(s.bMercado)}</span><span class="grid-plain" style="color:${colSenal(s.z)}">${s.mejora >= 0 ? '+' : ''}${f1(s.mejora)}% ${senal(s.z)}</span></div>`).join('');
     const filasEs = res.escaneo.map(e => {
       const col = e.n >= ESCANEO_MIN_N && e.z != null && e.z > Z_SIGNIFICATIVO ? 'var(--green)' : e.roi > 0 ? 'var(--yellow)' : 'var(--red)';
       return `<div class="compare-row"><span>${e.label}${e.n < ESCANEO_MIN_N ? ' ⚠️' : ''}</span><span class="grid-plain">${e.n} · ${f1(e.rate)}%</span><span class="grid-plain">EV ${e.evMedio.toFixed(2)}</span><span class="grid-plain" style="color:${col}">${e.roi >= 0 ? '+' : ''}${f1(e.roi)}%${e.se != null ? ` ±${f1(e.se)}` : ''}</span></div>`;
     }).join('');
-    const filasBl = res.bloques.map((b, i) => `<div class="compare-row"><span>#${i + 1} · ${(b.testDesde || '').slice(0, 10)}</span><span class="grid-plain">train ${b.nTrain}</span><span class="grid-plain">test ${b.nTest}</span><span class="grid-plain">${b.ha != null ? `HA ${b.ha.toFixed(2)} / ${b.rho.toFixed(2)}` : 'base'}</span></div>`).join('');
+    const filasBl = res.bloques.map((b, i) => `<div class="compare-row"><span>#${i + 1} · ${(b.testDesde || '').slice(0, 10)}</span><span class="grid-plain">train ${b.nTrain} · test ${b.nTest}</span><span class="grid-plain">${b.ha != null ? `HA ${b.ha.toFixed(2)}` : 'base'}</span><span class="grid-plain">fuera ${b.equiposB}eq · HA ${b.haB.toFixed(2)}</span></div>`).join('');
+    const ratingTxt = r.z == null ? '—' : r.z > Z_SIGNIFICATIVO ? '✅ leagues.js mejor' : r.z < -Z_SIGNIFICATIVO ? '✅ fuera de muestra mejor' : '≈ empate';
 
     resultsContent.innerHTML = `
       <div class="card" style="border:2px solid var(--green);">
         <h3>🧭 Lectura <small>(${res.evaluados} partidos fuera de muestra)</small></h3>
         ${lectura}
       </div>
+      <div class="card">
+        <h3>Ratings: leagues.js vs calculados con partidos anteriores <small>(Brier 1X2, ${r.n} partidos)</small></h3>
+        <div class="compare-row"><span>Ratings de leagues.js</span><span class="grid-plain">${f3(r.estatico)}</span><span class="grid-plain"></span><span class="grid-plain"></span></div>
+        <div class="compare-row"><span>Ratings fuera de muestra</span><span class="grid-plain">${f3(r.fuera)}</span><span class="grid-plain"></span><span class="grid-plain" style="color:${dim}">${ratingTxt}</span></div>
+      </div>
+      ${tablaMezcla('Mezcla con la cuota · ratings de leagues.js', res.mezcla.estatico)}
+      ${tablaMezcla('Mezcla con la cuota · ratings fuera de muestra', res.mezcla.fuera)}
       <div class="card">
         <h3>Calibración vs valores base <small>(Brier 1X2, menor = mejor)</small></h3>
         <div class="compare-row"><span>Calibrado + shrink</span><span class="grid-plain">${f3(c.cal)}</span><span class="grid-plain"></span><span class="grid-plain">n ${c.n}</span></div>
@@ -279,16 +538,16 @@ if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
         ${filasMk || '<div class="compare-row"><span>Sin cuotas en el historial.</span></div>'}
       </div>
       <div class="card" style="border:2px solid var(--yellow);">
-        <h3>🔎 Apostar con EV ≥ ${FILTRO_EV} <small>(fuera de muestra)</small></h3>
+        <h3>🔎 Apostar con EV ≥ ${FILTRO_EV} <small>(modelo puro, fuera de muestra)</small></h3>
         <div class="compare-row compare-head"><span>Mercado</span><span>Apuestas · acierto</span><span>EV medio</span><span>ROI ± error</span></div>
         ${filasEs || '<div class="compare-row"><span>Ningún lado superó el filtro EV.</span></div>'}
         <p style="margin:10px 0 0;font-size:.78rem;color:${dim};line-height:1.5;">
           ROI ± error estándar. Si el ROI no supera ~1.64 veces el error, puede ser suerte. ⚠️ = menos de ${ESCANEO_MIN_N} apuestas.
-          Todo se predijo con parámetros calibrados solo con partidos anteriores. Los ratings de equipos de leagues.js son fijos.
+          Todo se predijo con parámetros calibrados solo con partidos anteriores.
         </p>
       </div>
       <div class="card">
-        <h3>Bloques <small>(calibración: entrena con lo anterior, prueba el bloque)</small></h3>
+        <h3>Bloques <small>(entrena con lo anterior, prueba el bloque)</small></h3>
         ${filasBl}
       </div>`;
     resultsSection.style.display = 'block';
