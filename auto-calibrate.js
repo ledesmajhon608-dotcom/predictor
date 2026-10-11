@@ -203,21 +203,34 @@ export const AutoCalibrate = {
     };
   },
 
-  exportarParamsJSON() {
+  // Arma el params.json a exportar PARTIENDO del que está en el repo y pisando
+  // solo las ligas calibradas en este dispositivo que sean más nuevas. Antes se
+  // exportaba solo lo que había en localStorage: si habías borrado la caché o
+  // calibrabas una sola liga, al subir el archivo se perdían todas las demás.
+  async construirParamsExport() {
+    const repo = await this.cargarParamsJSON();
     const params = {};
+    for (const [k, v] of Object.entries(repo || {})) params[k] = v;
     for (const key of Object.keys(LIGAS)) {
       const estado = this.getEstado(key);
-      if (estado.params) {
-        params[key] = {
-          v: MODEL_VERSION,
-          params: estado.params,
-          tasas: estado.tasas ? { homeRate: estado.tasas.homeRate, drawRate: estado.tasas.drawRate, awayRate: estado.tasas.awayRate } : undefined,
-          partidosCalibrados: estado.partidosCalibrados,
-          ultima: estado.ultima,
-          error: estado.error,
-        };
-      }
+      if (!estado.params) continue;
+      const tsLocal = Date.parse(estado.ultima) || 0;
+      const tsRepo = Date.parse(params[key]?.ultima) || 0;
+      if (params[key] && tsRepo > tsLocal) continue;
+      params[key] = {
+        v: MODEL_VERSION,
+        params: estado.params,
+        tasas: estado.tasas ? { homeRate: estado.tasas.homeRate, drawRate: estado.tasas.drawRate, awayRate: estado.tasas.awayRate } : undefined,
+        partidosCalibrados: estado.partidosCalibrados,
+        ultima: estado.ultima,
+        error: estado.error,
+      };
     }
+    return params;
+  },
+
+  async exportarParamsJSON() {
+    const params = await this.construirParamsExport();
     if (Object.keys(params).length === 0) {
       alert('No hay params guardados para exportar. Corré el backtest primero.');
       return;
@@ -232,7 +245,7 @@ export const AutoCalibrate = {
     a.click();
     a.remove();
     URL.revokeObjectURL(url);
-    console.log(`📥 params.json descargado (${Object.keys(params).length} ligas)`);
+    console.log(`📥 params.json descargado (${Object.keys(params).length} ligas, incluye las del repo)`);
   },
 
   reset(ligaKey) { localStorage.removeItem(`${STORAGE_PREFIX}${ligaKey}`); },
