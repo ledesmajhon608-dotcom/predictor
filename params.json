@@ -4,7 +4,8 @@
     "params": {
       "homeAdvantage": 1.25,
       "rho": -0.07,
-      "goalsAvg": 3.182
+      "goalsAvg": 3.182,
+      "cornAvg": 10.01
     },
     "tasas": {
       "homeRate": 0.445,
@@ -12,7 +13,7 @@
       "awayRate": 0.27
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-09T23:47:50.497Z",
+    "ultima": "2026-10-11T04:08:53.415Z",
     "error": 0.08804000000000012
   },
   "CPA": {
@@ -20,7 +21,8 @@
     "params": {
       "homeAdvantage": 1.36,
       "rho": -0.07,
-      "goalsAvg": 2.532
+      "goalsAvg": 2.532,
+      "cornAvg": 9.03
     },
     "tasas": {
       "homeRate": 0.44,
@@ -28,31 +30,287 @@
       "awayRate": 0.255
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T00:12:18.154Z",
+    "ultima": "2026-10-11T04:10:13.588Z",
     "error": 0.08518000000000009
   },
   "ELC": {
     "v": 2,
     "params": {
       "homeAdvantage": 1.18,
-      "rho": -0.09,
-      "goalsAvg": 2.84
+      "rho": -0.1,
+      "goalsAvg": 2.751,
+      "cornAvg": 10.55,
+      "ratings": {
+        "Birmingham City": {
+          "atk": 1.023,
+          "def": 0.883,
+          "partidos": 16
+        },
+        "Blackburn Rovers": {
+          "atk": 1.048,
+          "def": 1.014,
+          "partidos": 16
+        },
+        "Bolton Wanderers": {
+          "atk": 0.957,
+          "def": 1.196,
+          "partidos": 9
+        },
+        "Bristol City": {
+          "atk": 0.955,
+          "def": 1.03,
+          "partidos": 16
+        },
+        "Burnley": {
+          "atk": 1.161,
+          "def": 1.057,
+          "partidos": 9
+        },
+        "Cardiff City": {
+          "atk": 0.912,
+          "def": 1.11,
+          "partidos": 9
+        },
+        "Charlton Athletic": {
+          "atk": 0.758,
+          "def": 1.018,
+          "partidos": 16
+        },
+        "Coventry City": {
+          "atk": 1.106,
+          "def": 0.939,
+          "partidos": 8
+        },
+        "Derby County": {
+          "atk": 0.733,
+          "def": 1.127,
+          "partidos": 16
+        },
+        "Hull City": {
+          "atk": 0.967,
+          "def": 0.916,
+          "partidos": 10
+        },
+        "Ipswich Town": {
+          "atk": 1.04,
+          "def": 0.95,
+          "partidos": 8
+        },
+        "Leicester City": {
+          "atk": 0.949,
+          "def": 0.971,
+          "partidos": 8
+        },
+        "Lincoln City": {
+          "atk": 0.717,
+          "def": 0.959,
+          "partidos": 9
+        },
+        "Middlesbrough": {
+          "atk": 1.238,
+          "def": 0.903,
+          "partidos": 19
+        },
+        "Millwall": {
+          "atk": 0.991,
+          "def": 1.031,
+          "partidos": 18
+        },
+        "Norwich City": {
+          "atk": 1.345,
+          "def": 1.151,
+          "partidos": 16
+        },
+        "Oxford United": {
+          "atk": 0.97,
+          "def": 0.999,
+          "partidos": 8
+        },
+        "Portsmouth": {
+          "atk": 0.871,
+          "def": 1.097,
+          "partidos": 15
+        },
+        "Preston North End": {
+          "atk": 0.838,
+          "def": 1.19,
+          "partidos": 16
+        },
+        "Queens Park Rangers": {
+          "atk": 0.859,
+          "def": 0.877,
+          "partidos": 16
+        },
+        "Sheffield United": {
+          "atk": 1.133,
+          "def": 0.898,
+          "partidos": 17
+        },
+        "Sheffield Wednesday": {
+          "atk": 0.951,
+          "def": 1.007,
+          "partidos": 7
+        },
+        "Southampton": {
+          "atk": 1.321,
+          "def": 0.96,
+          "partidos": 18
+        },
+        "Stoke City": {
+          "atk": 1.024,
+          "def": 1.021,
+          "partidos": 16
+        },
+        "Swansea City": {
+          "atk": 1.062,
+          "def": 0.832,
+          "partidos": 17
+        },
+        "Watford": {
+          "atk": 0.658,
+          "def": 1.176,
+          "partidos": 17
+        },
+        "West Bromwich Albion": {
+          "atk": 0.89,
+          "def": 0.81,
+          "partidos": 16
+        },
+        "West Ham United": {
+          "atk": 1.493,
+          "def": 0.947,
+          "partidos": 9
+        },
+        "Wolverhampton": {
+          "atk": 1.167,
+          "def": 0.891,
+          "partidos": 8
+        },
+        "Wrexham": {
+          "atk": 0.863,
+          "def": 1.044,
+          "partidos": 17
+        }
+      }
     },
     "tasas": {
-      "homeRate": 0.395,
+      "homeRate": 0.385,
       "drawRate": 0.32,
-      "awayRate": 0.285
+      "awayRate": 0.295
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T00:20:58.206Z",
-    "error": 0.10510322580645165
+    "ultima": "2026-10-11T04:28:16.908Z",
+    "error": 0.09762886597938125
   },
   "BSA": {
     "v": 2,
     "params": {
       "homeAdvantage": 1.28,
       "rho": -0.11,
-      "goalsAvg": 2.636
+      "goalsAvg": 2.636,
+      "cornAvg": 10.41,
+      "ratings": {
+        "Athletico": {
+          "atk": 1.18,
+          "def": 1.033,
+          "partidos": 20
+        },
+        "Atlético Mineiro": {
+          "atk": 1.05,
+          "def": 0.893,
+          "partidos": 20
+        },
+        "Bahia": {
+          "atk": 1.068,
+          "def": 0.978,
+          "partidos": 21
+        },
+        "Botafogo": {
+          "atk": 0.931,
+          "def": 1.003,
+          "partidos": 21
+        },
+        "Chapecoense": {
+          "atk": 0.818,
+          "def": 1.354,
+          "partidos": 20
+        },
+        "Corinthians": {
+          "atk": 0.86,
+          "def": 1.031,
+          "partidos": 20
+        },
+        "Coritiba": {
+          "atk": 0.915,
+          "def": 1.391,
+          "partidos": 19
+        },
+        "Cruzeiro": {
+          "atk": 1.192,
+          "def": 0.854,
+          "partidos": 19
+        },
+        "Flamengo": {
+          "atk": 1.38,
+          "def": 0.755,
+          "partidos": 21
+        },
+        "Fluminense": {
+          "atk": 1.187,
+          "def": 0.978,
+          "partidos": 19
+        },
+        "Grêmio": {
+          "atk": 0.824,
+          "def": 1.054,
+          "partidos": 20
+        },
+        "Internacional": {
+          "atk": 0.942,
+          "def": 0.972,
+          "partidos": 20
+        },
+        "Mirassol": {
+          "atk": 0.933,
+          "def": 0.994,
+          "partidos": 21
+        },
+        "Palmeiras": {
+          "atk": 1.097,
+          "def": 0.62,
+          "partidos": 20
+        },
+        "Red Bull Bragantino": {
+          "atk": 0.847,
+          "def": 0.941,
+          "partidos": 20
+        },
+        "Remo": {
+          "atk": 0.805,
+          "def": 1.14,
+          "partidos": 20
+        },
+        "Santos": {
+          "atk": 1.207,
+          "def": 0.97,
+          "partidos": 20
+        },
+        "São Paulo": {
+          "atk": 0.824,
+          "def": 0.943,
+          "partidos": 19
+        },
+        "Vasco da Gama": {
+          "atk": 1.044,
+          "def": 1.018,
+          "partidos": 19
+        },
+        "Vitória": {
+          "atk": 0.896,
+          "def": 1.076,
+          "partidos": 21
+        }
+      }
     },
     "tasas": {
       "homeRate": 0.45,
@@ -60,15 +318,16 @@
       "awayRate": 0.265
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T00:33:12.796Z",
-    "error": 0.05175999999999992
+    "ultima": "2026-10-11T04:12:33.659Z",
+    "error": 0.051869999999999694
   },
   "PPT": {
     "v": 2,
     "params": {
-      "homeAdvantage": 1.24,
-      "rho": -0.05,
-      "goalsAvg": 2.672
+      "homeAdvantage": 1.26,
+      "rho": -0.07,
+      "goalsAvg": 2.644,
+      "cornAvg": 9.48
     },
     "tasas": {
       "homeRate": 0.41,
@@ -76,15 +335,16 @@
       "awayRate": 0.295
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T00:42:26.595Z",
-    "error": 0.1169294117647057
+    "ultima": "2026-10-11T04:13:21.103Z",
+    "error": 0.08824489795918367
   },
   "FL1": {
     "v": 2,
     "params": {
-      "homeAdvantage": 1.2,
-      "rho": -0.12,
-      "goalsAvg": 2.815
+      "homeAdvantage": 1.19,
+      "rho": -0.13,
+      "goalsAvg": 2.806,
+      "cornAvg": 9.63
     },
     "tasas": {
       "homeRate": 0.415,
@@ -92,15 +352,16 @@
       "awayRate": 0.305
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T00:54:41.330Z",
-    "error": 0.027719512195121976
+    "ultima": "2026-10-11T04:11:47.941Z",
+    "error": 0.02233673469387748
   },
   "MXL": {
     "v": 2,
     "params": {
-      "homeAdvantage": 1.33,
+      "homeAdvantage": 1.34,
       "rho": -0.08,
-      "goalsAvg": 2.948
+      "goalsAvg": 2.945,
+      "cornAvg": 9.93
     },
     "tasas": {
       "homeRate": 0.475,
@@ -108,8 +369,8 @@
       "awayRate": 0.28
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T01:03:01.888Z",
-    "error": 0.01572631578947359
+    "ultima": "2026-10-11T04:11:26.006Z",
+    "error": 0.05211000000000021
   },
   "JPL": {
     "v": 2,
@@ -130,9 +391,127 @@
   "PL": {
     "v": 2,
     "params": {
-      "homeAdvantage": 1.07,
-      "rho": -0.06,
-      "goalsAvg": 2.781
+      "homeAdvantage": 1.14,
+      "rho": -0.07,
+      "goalsAvg": 2.751,
+      "cornAvg": 10.06,
+      "ratings": {
+        "Arsenal": {
+          "atk": 1.148,
+          "def": 0.71,
+          "partidos": 20
+        },
+        "Aston Villa": {
+          "atk": 0.984,
+          "def": 1.099,
+          "partidos": 20
+        },
+        "Bournemouth": {
+          "atk": 0.954,
+          "def": 0.948,
+          "partidos": 20
+        },
+        "Brentford": {
+          "atk": 1.138,
+          "def": 0.854,
+          "partidos": 20
+        },
+        "Brighton & Hove Albion": {
+          "atk": 1.46,
+          "def": 0.864,
+          "partidos": 20
+        },
+        "Burnley": {
+          "atk": 0.913,
+          "def": 1.103,
+          "partidos": 15
+        },
+        "Chelsea": {
+          "atk": 1.205,
+          "def": 1.218,
+          "partidos": 20
+        },
+        "Coventry City": {
+          "atk": 0.578,
+          "def": 1.185,
+          "partidos": 5
+        },
+        "Crystal Palace": {
+          "atk": 0.918,
+          "def": 1.23,
+          "partidos": 20
+        },
+        "Everton": {
+          "atk": 0.876,
+          "def": 0.892,
+          "partidos": 20
+        },
+        "Fulham": {
+          "atk": 0.82,
+          "def": 0.979,
+          "partidos": 20
+        },
+        "Hull City": {
+          "atk": 0.782,
+          "def": 0.943,
+          "partidos": 5
+        },
+        "Ipswich Town": {
+          "atk": 0.914,
+          "def": 1.282,
+          "partidos": 5
+        },
+        "Leeds United": {
+          "atk": 0.922,
+          "def": 0.789,
+          "partidos": 20
+        },
+        "Liverpool FC": {
+          "atk": 1.115,
+          "def": 0.795,
+          "partidos": 20
+        },
+        "Manchester City": {
+          "atk": 1.454,
+          "def": 0.812,
+          "partidos": 20
+        },
+        "Manchester United": {
+          "atk": 1.169,
+          "def": 0.96,
+          "partidos": 20
+        },
+        "Newcastle United": {
+          "atk": 1.17,
+          "def": 1.146,
+          "partidos": 20
+        },
+        "Nottingham Forest": {
+          "atk": 0.85,
+          "def": 0.954,
+          "partidos": 20
+        },
+        "Sunderland": {
+          "atk": 0.945,
+          "def": 1.177,
+          "partidos": 20
+        },
+        "Tottenham Hotspur": {
+          "atk": 0.801,
+          "def": 1.018,
+          "partidos": 20
+        },
+        "West Ham United": {
+          "atk": 0.997,
+          "def": 0.979,
+          "partidos": 15
+        },
+        "Wolverhampton": {
+          "atk": 0.887,
+          "def": 1.06,
+          "partidos": 15
+        }
+      }
     },
     "tasas": {
       "homeRate": 0.385,
@@ -140,15 +519,16 @@
       "awayRate": 0.32
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T01:16:58.029Z",
-    "error": 0.05821518987341756
+    "ultima": "2026-10-11T04:14:05.405Z",
+    "error": 0.06328282828282827
   },
   "BL1": {
     "v": 2,
     "params": {
-      "homeAdvantage": 1.31,
-      "rho": -0.06,
-      "goalsAvg": 3.375
+      "homeAdvantage": 1.26,
+      "rho": -0.08,
+      "goalsAvg": 3.276,
+      "cornAvg": 10.14
     },
     "tasas": {
       "homeRate": 0.435,
@@ -156,15 +536,133 @@
       "awayRate": 0.305
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T01:23:49.921Z",
-    "error": 0.06599324324324343
+    "ultima": "2026-10-11T04:17:01.574Z",
+    "error": 0.03920202020202049
   },
   "SA": {
     "v": 2,
     "params": {
-      "homeAdvantage": 1.07,
-      "rho": -0.09,
-      "goalsAvg": 2.644
+      "homeAdvantage": 1.09,
+      "rho": -0.08,
+      "goalsAvg": 2.59,
+      "cornAvg": 9.1,
+      "ratings": {
+        "AC Milan": {
+          "atk": 1.223,
+          "def": 0.804,
+          "partidos": 20
+        },
+        "AS Roma": {
+          "atk": 1.486,
+          "def": 0.712,
+          "partidos": 20
+        },
+        "Atalanta": {
+          "atk": 0.979,
+          "def": 0.935,
+          "partidos": 20
+        },
+        "Bologna": {
+          "atk": 0.806,
+          "def": 0.925,
+          "partidos": 20
+        },
+        "Cagliari": {
+          "atk": 0.791,
+          "def": 0.781,
+          "partidos": 20
+        },
+        "Como": {
+          "atk": 1.122,
+          "def": 0.94,
+          "partidos": 20
+        },
+        "Cremonese": {
+          "atk": 0.914,
+          "def": 1.078,
+          "partidos": 15
+        },
+        "Fiorentina": {
+          "atk": 0.977,
+          "def": 1.113,
+          "partidos": 20
+        },
+        "Frosinone": {
+          "atk": 1.008,
+          "def": 0.913,
+          "partidos": 5
+        },
+        "Genoa": {
+          "atk": 0.71,
+          "def": 1.149,
+          "partidos": 20
+        },
+        "Hellas Verona": {
+          "atk": 0.828,
+          "def": 0.953,
+          "partidos": 15
+        },
+        "Inter": {
+          "atk": 1.726,
+          "def": 0.95,
+          "partidos": 20
+        },
+        "Juventus": {
+          "atk": 1.156,
+          "def": 0.763,
+          "partidos": 20
+        },
+        "Lazio": {
+          "atk": 1.092,
+          "def": 0.774,
+          "partidos": 20
+        },
+        "Lecce": {
+          "atk": 0.789,
+          "def": 1.171,
+          "partidos": 20
+        },
+        "Monza": {
+          "atk": 1.051,
+          "def": 1.253,
+          "partidos": 5
+        },
+        "Parma": {
+          "atk": 0.731,
+          "def": 1.011,
+          "partidos": 20
+        },
+        "Pisa": {
+          "atk": 0.837,
+          "def": 1.163,
+          "partidos": 15
+        },
+        "Sassuolo": {
+          "atk": 1.011,
+          "def": 1.166,
+          "partidos": 20
+        },
+        "SSC Napoli": {
+          "atk": 1.065,
+          "def": 0.856,
+          "partidos": 20
+        },
+        "Torino": {
+          "atk": 0.937,
+          "def": 1.032,
+          "partidos": 20
+        },
+        "Udinese": {
+          "atk": 1.031,
+          "def": 1.123,
+          "partidos": 20
+        },
+        "Venezia": {
+          "atk": 0.73,
+          "def": 1.435,
+          "partidos": 5
+        }
+      }
     },
     "tasas": {
       "homeRate": 0.41,
@@ -172,24 +670,142 @@
       "awayRate": 0.375
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T01:29:59.698Z",
-    "error": 0.12859872611464981
+    "ultima": "2026-10-11T04:15:10.670Z",
+    "error": 0.11752525252525234
   },
   "PD": {
     "v": 2,
     "params": {
-      "homeAdvantage": 1.37,
-      "rho": -0.05,
-      "goalsAvg": 2.929
+      "homeAdvantage": 1.4,
+      "rho": -0.04,
+      "goalsAvg": 2.828,
+      "cornAvg": 9.66,
+      "ratings": {
+        "Athletic Club": {
+          "atk": 0.94,
+          "def": 0.862,
+          "partidos": 18
+        },
+        "Atlético Madrid": {
+          "atk": 1.343,
+          "def": 0.836,
+          "partidos": 21
+        },
+        "Celta Vigo": {
+          "atk": 0.849,
+          "def": 0.929,
+          "partidos": 20
+        },
+        "Deportivo Alavés": {
+          "atk": 0.906,
+          "def": 0.964,
+          "partidos": 20
+        },
+        "Deportivo de A Coruña": {
+          "atk": 0.988,
+          "def": 0.968,
+          "partidos": 7
+        },
+        "Elche": {
+          "atk": 0.982,
+          "def": 1.225,
+          "partidos": 20
+        },
+        "Espanyol": {
+          "atk": 0.819,
+          "def": 1.027,
+          "partidos": 21
+        },
+        "FC Barcelona": {
+          "atk": 1.9,
+          "def": 0.755,
+          "partidos": 20
+        },
+        "Getafe": {
+          "atk": 0.644,
+          "def": 0.856,
+          "partidos": 21
+        },
+        "Girona FC": {
+          "atk": 0.921,
+          "def": 0.954,
+          "partidos": 13
+        },
+        "Levante UD": {
+          "atk": 0.972,
+          "def": 1.143,
+          "partidos": 18
+        },
+        "Málaga CF": {
+          "atk": 0.63,
+          "def": 1.093,
+          "partidos": 8
+        },
+        "Mallorca": {
+          "atk": 1.004,
+          "def": 0.989,
+          "partidos": 12
+        },
+        "Osasuna": {
+          "atk": 0.814,
+          "def": 1.166,
+          "partidos": 20
+        },
+        "Rayo Vallecano": {
+          "atk": 1.024,
+          "def": 1.095,
+          "partidos": 20
+        },
+        "Real Betis": {
+          "atk": 1.015,
+          "def": 0.839,
+          "partidos": 20
+        },
+        "Real Madrid": {
+          "atk": 1.393,
+          "def": 0.737,
+          "partidos": 21
+        },
+        "Real Oviedo": {
+          "atk": 0.88,
+          "def": 1.02,
+          "partidos": 14
+        },
+        "Real Racing Club": {
+          "atk": 1.007,
+          "def": 1.456,
+          "partidos": 7
+        },
+        "Real Sociedad": {
+          "atk": 1.088,
+          "def": 1.101,
+          "partidos": 19
+        },
+        "Sevilla": {
+          "atk": 0.921,
+          "def": 0.942,
+          "partidos": 20
+        },
+        "Valencia": {
+          "atk": 0.781,
+          "def": 1.087,
+          "partidos": 20
+        },
+        "Villarreal": {
+          "atk": 1.164,
+          "def": 0.955,
+          "partidos": 20
+        }
+      }
     },
     "tasas": {
-      "homeRate": 0.49,
-      "drawRate": 0.24,
+      "homeRate": 0.495,
+      "drawRate": 0.235,
       "awayRate": 0.27
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T01:36:16.248Z",
-    "error": 0.04187654320987649
+    "ultima": "2026-10-11T04:37:08.439Z",
+    "error": 0.08578571428571435
   },
   "BSB": {
     "v": 2,
@@ -258,17 +874,18 @@
   "ARG": {
     "v": 2,
     "params": {
-      "homeAdvantage": 1.18,
+      "homeAdvantage": 1.2,
       "rho": -0.04,
-      "goalsAvg": 2.273
+      "goalsAvg": 2.268,
+      "cornAvg": 9.12
     },
     "tasas": {
-      "homeRate": 0.425,
-      "drawRate": 0.28,
+      "homeRate": 0.43,
+      "drawRate": 0.275,
       "awayRate": 0.295
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-10T02:08:53.420Z",
-    "error": 0.05315999999999993
+    "ultima": "2026-10-11T04:18:21.650Z",
+    "error": 0.031840000000000035
   }
 }
