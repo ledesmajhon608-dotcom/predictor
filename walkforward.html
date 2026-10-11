@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Walk-forward — Suertudo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+
+    <header class="hero">
+      <svg class="corner-graphic" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M15 15 H85" />
+        <path d="M15 15 V85" />
+        <path d="M15 35 A20 20 0 0 1 35 15" />
+      </svg>
+      <h1>Walk-forward</h1>
+      <p class="tagline">Backtest sin trampa: cada partido se predice solo con lo que se sabía antes.</p>
+    </header>
+
+    <section class="panel">
+      <h2 class="panel-title">1. Cargar historial</h2>
+      <label for="historial-file">Archivo generado por "Exportar historial" (.json)</label>
+      <input type="file" id="historial-file" accept=".json">
+      <p id="file-info" style="margin-top:8px; font-size:0.85rem; color:var(--text-dim,#8b95a5);"></p>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">2. Ajustes</h2>
+      <div class="field-row">
+        <div class="field">
+          <label for="warmup">Partidos de calentamiento (mín. 20)</label>
+          <input type="text" id="warmup" inputmode="numeric" value="40">
+        </div>
+        <div class="field">
+          <label for="step">Tamaño de cada bloque de prueba</label>
+          <input type="text" id="step" inputmode="numeric" value="20">
+        </div>
+      </div>
+      <button id="wf-run" class="btn-primary" disabled>Ejecutar walk-forward</button>
+    </section>
+
+    <section id="log-section" class="panel" style="display:none;">
+      <h2 class="panel-title">Log</h2>
+      <pre id="log" style="background:var(--bg); padding:12px; border-radius:6px; font-family:'IBM Plex Mono',monospace; font-size:0.78rem; line-height:1.5; max-height:300px; overflow-y:auto; color:var(--text-dim,#8b95a5); white-space:pre-wrap;"></pre>
+    </section>
+
+    <section id="results-section" class="panel" style="display:none;">
+      <h2 class="panel-title">Resultados fuera de muestra</h2>
+      <div id="results-content"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Navegación</h2>
+      <div class="tools-list">
+        <a href="index.html">🏠 Volver al inicio</a>
+        <a href="backtest.html">🎯 Backtest clásico</a>
+      </div>
+    </section>
+
+  </div>
+
+  <script type="module" src="walkforward.js"></script>
+</body>
+</html>
