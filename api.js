@@ -2,6 +2,8 @@
 // api.js – llamadas a la API externa de Bzzoiro
 // Mejoras: timeout + reintentos con backoff, no cachear null transitorio,
 // filtro defensivo de fecha en la predicción ML.
+// NUEVO: cuotas reales automáticas (findUpcomingEvent, fetchEventOdds,
+// normalizarOddsBzzoiro con mapeo exacto del formato snake_case de Bzzoiro).
 // ============================================================
 import { BZZOIRO_COUNTRY } from './leagues.js';
 
@@ -301,10 +303,35 @@ export async function fetchEventOdds(eventId) {
 }
 
 // Convierte la respuesta cruda de /odds/ al formato de cuotas de la app.
-// Parser DEFENSIVO: recorre todo el JSON buscando pares (nombre, cuota) y los
-// mapea por palabras clave. Si Bzzoiro cambia el formato, seguirá encontrando
-// las cuotas mientras vengan como {algo: nombre, algo: numero > 1}.
+// FORMATO REAL de Bzzoiro: {"event_id":..., "odds": {"home_win":1.9, "draw":3.36, ...}}
+// Si el formato cambia, cae en el parser defensivo de abajo.
 export function normalizarOddsBzzoiro(raw) {
+  const out = {};
+  const flat = (raw && typeof raw === 'object' && raw.odds && typeof raw.odds === 'object') ? raw.odds : raw;
+
+  // 1) Mapeo exacto por clave snake_case
+  const MAPA = {
+    local: ['home_win', 'home'],
+    empate: ['draw', 'x'],
+    visitante: ['away_win', 'away'],
+    over15: ['over_15_goals'], under15: ['under_15_goals'],
+    over25: ['over_25_goals'], under25: ['under_25_goals'],
+    over35: ['over_35_goals'], under35: ['under_35_goals'],
+    over45: ['over_45_goals'], under45: ['under_45_goals'],
+    bttsSi: ['btts_yes', 'both_teams_to_score_yes'],
+    bttsNo: ['btts_no', 'both_teams_to_score_no'],
+    c_over75: ['over_75_corners'], c_over85: ['over_85_corners'], c_over95: ['over_95_corners'],
+    c_under95: ['under_95_corners'], c_under105: ['under_105_corners'],
+  };
+  for (const [target, keys] of Object.entries(MAPA)) {
+    for (const k of keys) {
+      const v = parseFloat(flat?.[k]);
+      if (Number.isFinite(v) && v > 1 && v < 1000) { out[target] = +v.toFixed(2); break; }
+    }
+  }
+  if (Object.keys(out).length) return out;
+
+  // 2) Fallback defensivo: recorre el JSON buscando pares (nombre, cuota)
   const pares = [];
   (function walk(node) {
     if (node == null) return;
@@ -326,7 +353,6 @@ export function normalizarOddsBzzoiro(raw) {
     }
   })(raw);
 
-  const out = {};
   const pick = (reMerc, reLabel) => {
     let mejor = null;
     for (const p of pares) {
@@ -340,12 +366,9 @@ export function normalizarOddsBzzoiro(raw) {
     const o = pick(reMerc, reLabel);
     if (o && !out[target]) out[target] = o;
   };
-
-  // 1X2
   asignar('local', /1x2|match|result|moneyline|winner|game|^$/, /^(1|home|local)$/);
   asignar('empate', /1x2|match|result|draw|^$/, /^(x|draw|empate)$/);
   asignar('visitante', /1x2|match|result|moneyline|winner|game|^$/, /^(2|away|visitante|visitor)$/);
-  // Goles Over/Under
   asignar('over15', /goal|goles|total|^$/, /^over 1\.5$/);
   asignar('under15', /goal|goles|total|^$/, /^under 1\.5$/);
   asignar('over25', /goal|goles|total|^$/, /^over 2\.5$/);
@@ -354,10 +377,8 @@ export function normalizarOddsBzzoiro(raw) {
   asignar('under35', /goal|goles|total|^$/, /^under 3\.5$/);
   asignar('over45', /goal|goles|total|^$/, /^over 4\.5$/);
   asignar('under45', /goal|goles|total|^$/, /^under 4\.5$/);
-  // BTTS
   asignar('bttsSi', /btts|both|ambos|team.*score|^$/, /^(yes|si|sí)$/);
   asignar('bttsNo', /btts|both|ambos|team.*score|^$/, /^(no)$/);
-  // Córners
   asignar('c_over75', /corner|córner/, /^over 7\.5$/);
   asignar('c_over85', /corner|córner/, /^over 8\.5$/);
   asignar('c_over95', /corner|córner/, /^over 9\.5$/);
