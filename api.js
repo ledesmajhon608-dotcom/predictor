@@ -23,6 +23,7 @@ function getToken() {
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
+// MEJORA: solo cachear null en 404 real. Errores transitorios se reintentan.
 async function fetchFromAPI(endpoint, {
   timeoutMs = DEFAULT_TIMEOUT_MS,
   retries = DEFAULT_RETRIES,
@@ -309,7 +310,7 @@ export function normalizarOddsBzzoiro(raw) {
   const out = {};
   const flat = (raw && typeof raw === 'object' && raw.odds && typeof raw.odds === 'object') ? raw.odds : raw;
 
-  // 1) Mapeo exacto por clave snake_case
+  // 1) Mapeo exacto por clave snake_case (con alias por si cambian los nombres)
   const MAPA = {
     local: ['home_win', 'home'],
     empate: ['draw', 'x'],
@@ -320,8 +321,11 @@ export function normalizarOddsBzzoiro(raw) {
     over45: ['over_45_goals'], under45: ['under_45_goals'],
     bttsSi: ['btts_yes', 'both_teams_to_score_yes'],
     bttsNo: ['btts_no', 'both_teams_to_score_no'],
-    c_over75: ['over_75_corners'], c_over85: ['over_85_corners'], c_over95: ['over_95_corners'],
-    c_under95: ['under_95_corners'], c_under105: ['under_105_corners'],
+    c_over75: ['over_75_corners', 'corners_over_75', 'over_7_5_corners', 'corner_over_75', 'total_corners_over_75', 'over_corners_75'],
+    c_over85: ['over_85_corners', 'corners_over_85', 'over_8_5_corners', 'total_corners_over_85'],
+    c_over95: ['over_95_corners', 'corners_over_95', 'over_9_5_corners', 'total_corners_over_95'],
+    c_under95: ['under_95_corners', 'corners_under_95', 'under_9_5_corners', 'total_corners_under_95', 'under_corners_95'],
+    c_under105: ['under_105_corners', 'corners_under_105', 'total_corners_under_105'],
   };
   for (const [target, keys] of Object.entries(MAPA)) {
     for (const k of keys) {
