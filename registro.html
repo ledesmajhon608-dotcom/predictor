@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Registro — Suertudo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+
+    <header class="hero">
+      <svg class="corner-graphic" viewBox="0 0 100 100" aria-hidden="true">
+        <path d="M15 15 H85" />
+        <path d="M15 15 V85" />
+        <path d="M15 35 A20 20 0 0 1 35 15" />
+      </svg>
+      <h1>Registro</h1>
+      <p class="tagline">Predicciones guardadas antes del partido. La única prueba limpia de si el modelo sirve.</p>
+    </header>
+
+    <section class="panel">
+      <h2 class="panel-title">Progreso</h2>
+      <div id="reg-resumen"></div>
+      <p style="margin:10px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5); line-height:1.5;">
+        Guardá cada predicción <strong>antes</strong> de que empiece el partido y escribí la cuota que ves en la casa. Si la guardás después, no vale.
+        Los datos quedan en este navegador: exportalos seguido para no perderlos.
+      </p>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Pendientes de resultado</h2>
+      <div id="reg-pendientes"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Evaluación</h2>
+      <div id="reg-eval"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Resueltas <small>(últimas 30)</small></h2>
+      <div id="reg-resueltas"></div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Respaldo</h2>
+      <button id="reg-export" class="btn-primary" style="margin-bottom:12px;">📥 Exportar registro (.json)</button>
+      <label for="reg-import" style="display:block; font-size:0.72rem; color:var(--text-dim,#8b95a5); margin-bottom:6px;">IMPORTAR (suma lo que falte, sin duplicar)</label>
+      <input type="file" id="reg-import" accept=".json,application/json">
+      <p id="reg-import-info" style="margin-top:8px; font-size:0.85rem; color:var(--text-dim,#8b95a5);"></p>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Navegación</h2>
+      <div class="tools-list">
+        <a href="index.html">🏠 Volver al inicio</a>
+        <a href="walkforward.html">🧭 Walk-forward</a>
+      </div>
+    </section>
+
+  </div>
+
+  <script type="module" src="registro.js"></script>
+</body>
+</html>

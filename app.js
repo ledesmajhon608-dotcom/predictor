@@ -1,9 +1,9 @@
 // app.js
-import { LIGAS } from './leagues.js';
+import { LIGAS, FILTRO_EV } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
 import { AutoCalibrate } from './auto-calibrate.js';
-import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales, stakeSugerido, calcEV, cuotaMinima } from './picks.js';
-import { FILTRO_EV } from './leagues.js';
+import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales } from './picks.js';
+import { agregarEntrada, entradaDesdeSimulacion } from './registro.js';
 
 const ESTADO_KEY = 'vv_estado_seleccion';
 let ligaKeyGlobal = 'CPA';
@@ -72,21 +72,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = getBettingConfig(ligaKey);
 
     let html = `<div style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; line-height:1.5;">`;
-    html += `<div>📊 HA=${params.homeAdvantage.toFixed(3)} rho=${params.rho.toFixed(3)}${params.goalsAvg ? ` goles=${params.goalsAvg.toFixed(2)}` : ''}${params.cornAvg ? ` córn=${params.cornAvg.toFixed(1)}` : ''}${fuente}</div>`;
-    if (params.ratings) html += `<div style="font-size:0.72rem;">📈 Ratings del historial: ${Object.keys(params.ratings).length} equipos</div>`;
-    if (params.ultima) html += `<div style="font-size:0.7rem; color:var(--chalk-dim);">Calibrado: ${String(params.ultima).slice(0, 10)}</div>`;
+    html += `<div>📊 HA=${params.homeAdvantage.toFixed(3)} rho=${params.rho.toFixed(3)}${params.goalsAvg ? ` goles=${params.goalsAvg.toFixed(2)}` : ''}${fuente}</div>`;
 
     if (config.status === 'green') {
       el.style.color = 'var(--green)';
       html += `<div style="color:var(--green); font-weight:600; margin-top:4px;">✅ LIGA APTA PARA APOSTAR</div>`;
       if (config.mercados) html += `<div style="font-size:0.72rem; margin-top:2px;">Mercados: ${config.mercados.join(' · ')}</div>`;
-      html += `<div style="font-size:0.72rem;">Stake sugerido: ${stakeSugerido(ligaKey)}% de la banca</div>`;
+      html += `<div style="font-size:0.72rem;">Stake sugerido: 1% de la banca</div>`;
       if (config.nota) html += `<div style="font-size:0.7rem; color:var(--chalk-dim); margin-top:2px;">${config.nota}</div>`;
     } else if (config.status === 'yellow') {
       el.style.color = 'var(--yellow)';
       html += `<div style="color:var(--yellow); font-weight:600; margin-top:4px;">⚠️ LIGA PROMETEDORA (stake bajo)</div>`;
       if (config.mercados) html += `<div style="font-size:0.72rem; margin-top:2px;">Mercados: ${config.mercados.join(' · ')}</div>`;
-      html += `<div style="font-size:0.72rem;">Stake sugerido: ${stakeSugerido(ligaKey)}% de la banca</div>`;
+      html += `<div style="font-size:0.72rem;">Stake sugerido: 0.5% de la banca</div>`;
       if (config.nota) html += `<div style="font-size:0.7rem; color:var(--chalk-dim); margin-top:2px;">${config.nota}</div>`;
     } else if (config.status === 'red') {
       el.style.color = 'var(--red)';
@@ -226,32 +224,100 @@ document.addEventListener('DOMContentLoaded', () => {
       return `<div class="card" style="border:2px solid var(--red);"><h3 style="color:var(--red);">❌ NO APOSTAR EN ESTA LIGA</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Esta liga pierde contra cuota. Usala solo para análisis.</p></div>`;
     }
 
-    if (data.sinRating && data.sinRating.length > 0) {
-      return `<div class="card" style="border:2px solid var(--yellow);"><h3 style="color:var(--yellow);">⚠️ Sin picks: equipo sin rating</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">No hay datos de ${data.sinRating.join(' y ')}; el modelo lo trató como equipo promedio, así que no se recomienda nada. Corré "Verificar equipos" o recalculá ratings.</p></div>`;
-    }
-
     if (picks.length === 0) {
       return `<div class="card" style="border:2px solid var(--line); opacity:0.8;"><h3>🎯 Mejores picks para este partido</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Sin picks. Ningún mercado con edge supera los umbrales.</p><p style="color:var(--chalk-dim); margin:6px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
     }
 
-    const filas = picks.map(p => {
-      const cMin = cuotaMinima(p.prob);
-      return `<div class="prob-row"><div class="prob-row-top"><span>✅ ${p.label}</span><span class="prob" style="color:${getColor(p.prob)}">${fmt(p.prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${p.prob}%;background:${getColor(p.prob)}"></div></div><div class="odds-line"><span>Cuota mín. con valor: <strong>${cMin ? cMin.toFixed(2) : '—'}</strong></span><input type="number" class="odds-input" step="0.01" min="1" inputmode="decimal" placeholder="cuota casa" data-prob="${p.prob}"><span class="ev-out"></span></div></div>`;
-    }).join('');
+    const filas = picks.map(p => `<div class="prob-row"><div class="prob-row-top"><span>✅ ${p.label}</span><span class="prob" style="color:${getColor(p.prob)}">${fmt(p.prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${p.prob}%;background:${getColor(p.prob)}"></div></div></div>`).join('');
 
-    return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">Solo apostá si la cuota de tu casa es ≥ la mínima (EV ≥ ${FILTRO_EV}). Es el mismo filtro con el que se midió el backtest.</p><p style="color:var(--chalk-dim); margin:6px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
+    return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
   }
 
-  function enlazarCuotas() {
-    predictionsContent.querySelectorAll('.odds-input').forEach(inp => {
+  // ---------- Calculadora de valor: escribís la cuota y te dice el EV ----------
+  let ultimaSim = null;
+
+  function parseCuota(txt) {
+    const v = parseFloat(String(txt).replace(',', '.'));
+    return Number.isFinite(v) && v > 1 ? v : null;
+  }
+
+  function filasValor(data) {
+    const rp = data.resultProbs;
+    const filas = [
+      ['local', 'Local gana', rp.local], ['empate', 'Empate', rp.empate], ['visitante', 'Visitante gana', rp.visitante],
+      ['over15', 'Over 1.5', data.over15], ['under15', 'Under 1.5', 100 - data.over15],
+      ['over25', 'Over 2.5', data.over25], ['under25', 'Under 2.5', 100 - data.over25],
+      ['over35', 'Over 3.5', data.over35], ['under35', 'Under 3.5', 100 - data.over35],
+      ['bttsSi', 'BTTS Sí', data.btts], ['bttsNo', 'BTTS No', 100 - data.btts],
+    ];
+    if (data.cornerProbs) {
+      const c = data.cornerProbs;
+      filas.push(['c_over75', 'Over 7.5 córners', c.over7], ['c_under75', 'Under 7.5 córners', 100 - c.over7],
+                 ['c_over85', 'Over 8.5 córners', c.over8], ['c_under85', 'Under 8.5 córners', 100 - c.over8],
+                 ['c_over95', 'Over 9.5 córners', c.over9], ['c_under95', 'Under 9.5 córners', 100 - c.over9]);
+    }
+    return filas.filter(([, , p]) => typeof p === 'number' && Number.isFinite(p) && p > 0);
+  }
+
+  function renderValueCard(data, ligaKey) {
+    const config = getBettingConfig(ligaKey);
+    const aviso = config.status === 'red'
+      ? `<p style="color:var(--red); margin:0 0 10px; font-size:0.78rem;">⚠️ Liga roja: históricamente el modelo no le gana a la cuota acá. Usalo con mucha cautela.</p>` : '';
+    const filas = filasValor(data).map(([key, label, prob], i) => {
+      const minima = FILTRO_EV / (prob / 100);
+      return `<div class="compare-row" style="grid-template-columns:1.3fr 0.8fr 1fr 1.5fr;"><span>${label}</span><span class="grid-plain">${fmt(prob)}%</span><input type="text" inputmode="decimal" class="cuota-input" data-key="${key}" data-prob="${prob}" data-out="valor-out-${i}" placeholder="cuota" style="padding:6px 8px; text-align:center; font-size:0.8rem;"><span class="grid-plain" id="valor-out-${i}" style="font-size:0.75rem;">mín ${minima.toFixed(2)}</span></div>`;
+    }).join('');
+    return `<div class="card"><h3>💰 ¿Hay valor? <small>(escribí la cuota de la casa)</small></h3>${aviso}<div class="compare-row compare-head" style="grid-template-columns:1.3fr 0.8fr 1fr 1.5fr;"><span>Mercado</span><span>Modelo</span><span>Cuota</span><span>Valor</span></div>${filas}<p style="color:var(--text-dim,#8b95a5); margin:10px 0 0; font-size:0.72rem; line-height:1.5;">"mín" = cuota mínima para tener EV ${FILTRO_EV} (5% de margen). Si el EV sale muy alto (más de 1.20), sospechá del modelo antes que de la casa: revisá lesiones y alineaciones.</p><button id="guardar-registro" style="width:100%; margin-top:12px;">📝 Guardar predicción en el registro</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardala antes de que empiece el partido, con las cuotas que escribiste. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
+  }
+
+  function wireValueCard() {
+    document.querySelectorAll('.cuota-input').forEach(inp => {
       inp.addEventListener('input', () => {
-        const out = inp.parentElement.querySelector('.ev-out');
-        const ev = calcEV(parseFloat(inp.dataset.prob), parseFloat(inp.value));
-        if (ev == null) { out.textContent = ''; return; }
-        const ok = ev >= FILTRO_EV - 1e-9;
-        out.style.color = ok ? 'var(--green)' : 'var(--red)';
-        out.textContent = ok ? `EV ${ev.toFixed(3)} ✅ VALOR` : `EV ${ev.toFixed(3)} ❌ sin valor`;
+        const out = document.getElementById(inp.dataset.out);
+        if (!out) return;
+        const prob = parseFloat(inp.dataset.prob);
+        const cuota = parseCuota(inp.value);
+        if (cuota == null) {
+          out.textContent = `mín ${(FILTRO_EV / (prob / 100)).toFixed(2)}`;
+          out.style.color = '';
+          return;
+        }
+        const ev = (prob / 100) * cuota;
+        if (ev >= FILTRO_EV) {
+          out.textContent = ev > 1.2 ? `✅ EV ${ev.toFixed(2)} ⚠️ revisá` : `✅ VALOR EV ${ev.toFixed(2)}`;
+          out.style.color = 'var(--green)';
+        } else if (ev >= 1) {
+          out.textContent = `≈ justo EV ${ev.toFixed(2)}`;
+          out.style.color = 'var(--yellow)';
+        } else {
+          out.textContent = `❌ EV ${ev.toFixed(2)}`;
+          out.style.color = 'var(--red)';
+        }
       });
+    });
+  }
+
+  function wireGuardar() {
+    const btn = document.getElementById('guardar-registro');
+    const st = document.getElementById('guardar-status');
+    if (!btn || !st) return;
+    btn.addEventListener('click', () => {
+      if (!ultimaSim) return;
+      const cuotas = {};
+      document.querySelectorAll('.cuota-input').forEach(inp => {
+        const c = parseCuota(inp.value);
+        if (c && inp.dataset.key) cuotas[inp.dataset.key] = c;
+      });
+      try {
+        const r = agregarEntrada(entradaDesdeSimulacion(ultimaSim.data, ultimaSim.ligaKey, cuotas));
+        st.textContent = r.reemplazada
+          ? `✅ Actualizada (ya había una pendiente de este partido). Total: ${r.total}.`
+          : `✅ Guardada en el registro. Total: ${r.total}.`;
+        st.style.color = 'var(--green)';
+      } catch (e) {
+        st.textContent = '❌ No se pudo guardar: ' + e.message;
+        st.style.color = 'var(--red)';
+      }
     });
   }
 
@@ -264,14 +330,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     predictionsContent.innerHTML = `
       ${picksCard}
+      ${renderValueCard(data, ligaKey)}
       <div class="card"><h3>Resultado 1X2</h3>${fila('Local', data.resultProbs.local)}${fila('Empate', data.resultProbs.empate)}${fila('Visitante', data.resultProbs.visitante)}</div>
       <div class="card"><h3>Goles</h3>${fila('Over 1.5', data.over15)}${fila('Over 2.5', data.over25)}${fila('Over 3.5', data.over35)}</div>
       <div class="card"><h3>Ambos marcan (BTTS)</h3>${fila('Sí', data.btts)}</div>
       ${data.cornerProbs ? `<div class="card"><h3>Córneres</h3>${fila('Over 7.5', data.cornerProbs.over7)}${fila('Over 8.5', data.cornerProbs.over8)}${fila('Over 9.5', data.cornerProbs.over9)}</div>` : ''}
       ${comparisonCard}
     `;
-    enlazarCuotas();
     resultsDiv.style.display = 'block';
+    ultimaSim = { data, ligaKey };
+    wireValueCard();
+    wireGuardar();
   }
 
   populateLeagues();
