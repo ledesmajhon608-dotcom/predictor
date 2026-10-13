@@ -6,7 +6,7 @@
 // Es la única prueba limpia: nada de lo evaluado pudo usarse para ajustar.
 
 import { FILTRO_EV } from './leagues.js';
-import { resumenCLV } from './clv.js';
+import { resumenCLV, clvPct } from './clv.js';
 
 const KEY = 'suertudo_registro_v1';
 const Z = 1.64;
@@ -391,14 +391,45 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
     if (t?.dataset?.accion === 'reabrir' && id) { borrarResultado(id); render(); }
   });
 
+  // CSV: una fila por (partido resuelto × mercado con cuota). Listo para Excel/Sheets.
+  function exportarCSV(arr) {
+    const resu = arr.filter(e => e.resultado && e.cuotas);
+    const enc = ['fecha','liga','partido','mercado','prob_modelo','cuota','ev','cierre','clv','acierto','retorno_u'];
+    const escap = (v) => { const t = String(v ?? ''); return /[",\n;]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
+    const fnum = (v, d = 2) => (v == null || !Number.isFinite(v)) ? '' : Number(v).toFixed(d);
+    const lineas = [enc.join(';')];
+    for (const e of resu) {
+      const r = e.resultado;
+      const partido = `${e.local} vs ${e.visitante}`;
+      const fecha = (e.creado || '').slice(0, 10);
+      for (const m of MERCADOS) {
+        const cuota = e.cuotas[m.key];
+        if (!Number.isFinite(cuota)) continue;
+        const prob = m.p(e);
+        if (!Number.isFinite(prob)) continue;
+        const hit = m.hit(r);
+        const ev = (prob / 100) * cuota;
+        const clv = (Number.isFinite(e.cierre) && e.cierre > 1) ? clvPct(cuota, e.cierre) : null;
+        lineas.push([fecha, e.liga, partido, m.label, fnum(prob, 1), fnum(cuota), fnum(ev), fnum(e.cierre), clv == null ? '' : fnum(clv, 2), hit ? 1 : 0, fnum(hit ? cuota - 1 : -1)].map(escap).join(';'));
+      }
+    }
+    return '﻿' + lineas.join('\n');   // BOM para que Excel abra las tildes
+  }
+
+  function descargar(contenido, nombre, tipo) {
+    const blob = new Blob([contenido], { type: tipo });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = nombre;
+    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+  }
+
   $('reg-export').addEventListener('click', () => {
     const arr = leerRegistro();
     if (!arr.length) { alert('No hay nada para exportar.'); return; }
-    const blob = new Blob([JSON.stringify({ version: 1, exportado: new Date().toISOString(), entradas: arr }, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = `registro_suertudo_${new Date().toISOString().slice(0, 10)}.json`;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    const hoy = new Date().toISOString().slice(0, 10);
+    descargar(JSON.stringify({ version: 1, exportado: new Date().toISOString(), entradas: arr }, null, 2), `registro_suertudo_${hoy}.json`, 'application/json');
+    descargar(exportarCSV(arr), `picks_suertudo_${hoy}.csv`, 'text/csv;charset=utf-8;');
   });
 
   $('reg-import').addEventListener('change', async (e) => {
