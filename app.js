@@ -353,7 +353,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Trae las cuotas reales del partido y pre-carga la calculadora de valor.
-  // Si no hay add-on Odds o no encuentra el partido, queda la carga manual.
+  // Si no reconoce el formato, MUESTRA la respuesta cruda para diagnosticar.
   async function cargarCuotasAutomaticas(data, ligaKey) {
     const stEl = document.getElementById('cuotas-auto-status');
     const setStatus = (txt, color) => { if (stEl) { stEl.textContent = txt; if (color) stEl.style.color = color; } };
@@ -367,7 +367,12 @@ document.addEventListener('DOMContentLoaded', () => {
       const raw = await fetchEventOdds(ev.id);
       const cuotas = normalizarOddsBzzoiro(raw);
       const n = Object.keys(cuotas).length;
-      if (!n) { setStatus('⚠️ La API no devolvió cuotas reconocibles. ¿Tenés activo el add-on Odds? ($5/mes en Bzzoiro). Podés escribirlas a mano.', 'var(--yellow)'); return; }
+      if (!n) {
+        const muestra = JSON.stringify(raw).slice(0, 500);
+        console.log('ODDS RAW:', raw);
+        setStatus('⚠️ Sin cuotas reconocibles. Respuesta cruda: ' + muestra, 'var(--yellow)');
+        return;
+      }
       let cargadas = 0;
       document.querySelectorAll('.cuota-input').forEach(inp => {
         const c = cuotas[inp.dataset.key];
