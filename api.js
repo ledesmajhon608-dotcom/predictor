@@ -1,252 +1,384 @@
-// api.js
-// Cliente para Bzzoiro Sports API v2
-// Documentación: https://dashboard.bzzoiro.com
+// app.js
+import { LIGAS, FILTRO_EV } from './leagues.js';
+import { simulateMatch, getTeamsForLeague } from './model.js';
+import { AutoCalibrate } from './auto-calibrate.js';
+import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales } from './picks.js';
+import { agregarEntrada, entradaDesdeSimulacion } from './registro.js';
+import { leerBanca, stakeParaPick } from './bankroll.js';
+import { resolveLeagueId, findUpcomingEvent, fetchEventOdds, normalizarOddsBzzoiro } from './api.js';
 
-const API_BASE = 'https://api.bzzoiro.com';
-const API_TIMEOUT = 15000;
-const TOKEN_KEY = 'bzzoiro_token';
+const ESTADO_KEY = 'vv_estado_seleccion';
+let ligaKeyGlobal = 'CPA';
 
-function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
-
-function token() {
-  const t = localStorage.getItem(TOKEN_KEY);
-  if (!t) throw new Error('API key no configurada. Ingresala arriba y guardala.');
-  return t;
+function guardarEstado(leagueKey, homeTeam, awayTeam) {
+  try {
+    localStorage.setItem(ESTADO_KEY, JSON.stringify({ liga: leagueKey, local: homeTeam, visitante: awayTeam }));
+  } catch (e) {}
 }
 
-function esErrorTransitorio(err) {
-  if (err.name === 'AbortError') return true;
-  const m = String(err.message || '');
-  return /fetch|Failed|NetworkError|Load failed|timed? ?out/i.test(m);
+function leerEstado() {
+  try {
+    const raw = localStorage.getItem(ESTADO_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
 }
 
-async function fetchFromAPI(endpoint, { params = {}, intentos = 3 } = {}) {
-  let lastErr;
-  for (let i = 1; i <= intentos; i++) {
-    const url = new URL(API_BASE + endpoint);
-    Object.entries(params).forEach(([k, v]) => url.searchParams.set(k, v));
-    const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), API_TIMEOUT);
-    try {
-      const res = await fetch(url, {
-        signal: ctrl.signal,
-        headers: { 'Authorization': 'Bearer ' + token(), 'Accept': 'application/json' },
-      });
-      clearTimeout(t);
-      if (res.status === 401 || res.status === 403) {
-        const txt = await res.text().catch(() => '');
-        throw new Error(`API ${res.status}: ${res.statusText} — ${txt.slice(0, 200)}`);
-      }
-      if (res.status === 429) {
-        await delay(1200 * i);
-        lastErr = new Error('API 429: rate limit');
-        continue;
-      }
-      if (!res.ok) {
-        const txt = await res.text().catch(() => '');
-        throw new Error(`API ${res.status}: ${res.statusText} — ${txt.slice(0, 200)}`);
-      }
-      return await res.json();
-    } catch (err) {
-      clearTimeout(t);
-      if (i < intentos && esErrorTransitorio(err)) { await delay(600 * i); lastErr = err; continue; }
-      throw err;
+document.addEventListener('DOMContentLoaded', () => {
+  const apiKeyInput = document.getElementById('api-key');
+  const saveApiKeyBtn = document.getElementById('save-api-key');
+  const apiStatus = document.getElementById('api-status');
+  const leagueSelect = document.getElementById('league-select');
+  const homeSelect = document.getElementById('home-team-select');
+  const awaySelect = document.getElementById('away-team-select');
+  const simulateBtn = document.getElementById('simulate-btn');
+  const resultsDiv = document.getElementById('results');
+  const predictionsContent = document.getElementById('predictions-content');
+
+  function updateTokenStatus() {
+    const token = localStorage.getItem('bzzoiro_token');
+    if (token) {
+      apiKeyInput.value = token;
+      apiStatus.textContent = '✅ Token guardado';
+      apiStatus.style.color = 'var(--green)';
+    } else {
+      apiStatus.textContent = '⚠️ No hay token';
+      apiStatus.style.color = 'var(--yellow)';
     }
   }
-  throw lastErr || new Error('API: fallaron todos los reintentos');
-}
 
-// ---------- utilidades ----------
-const norm = (s) => String(s ?? '')
-  .toLowerCase()
-  .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
-  .replace(/^(fc|cf|ac|cd|sc|ud|rc)\s+/i, '')
-  .replace(/[^a-z0-9\s]/g, ' ')
-  .replace(/\s+/g, ' ')
-  .trim();
-
-const tokens = (s) => norm(s).split(' ').filter(Boolean);
-
-function todasLasPalabrasEstan(tokensBuscados, tokensObjetivo) {
-  const t = new Set(tokensObjetivo);
-  return tokensBuscados.every(x => t.has(x));
-}
-
-// ---------- descubrimiento de liga ----------
-const leagueIdCache = new Map();
-
-export async function resolveLeagueId(leagueKey, leagueDisplayName) {
-  if (leagueIdCache.has(leagueKey)) return leagueIdCache.get(leagueKey);
-  const displayTokens = tokens(leagueDisplayName);
-  const shortTokens = displayTokens.filter(w => w.length >= 3);
-  for (const tk of shortTokens) {
-    try {
-      const data = await fetchFromAPI('/leagues/', { params: { search: tk, limit: 100 } });
-      const results = data.results || data || [];
-      const found = results.find(l => {
-        const nombre = [l.name, l.short_name, l.country?.name].filter(Boolean).join(' ');
-        const lt = tokens(nombre);
-        return displayTokens.every(w => lt.includes(w));
-      });
-      if (found) { leagueIdCache.set(leagueKey, found.id); return found.id; }
-    } catch (e) { /* probamos con la siguiente palabra */ }
-  }
-  leagueIdCache.set(leagueKey, null);
-  return null;
-}
-
-// ---------- proximos partidos (calendario) ----------
-export async function fetchUpcomingMatches(bzzoiroLeagueId, daysAhead = 14) {
-  const hoy = new Date();
-  const desde = hoy.toISOString().slice(0, 10);
-  const hasta = new Date(hoy.getTime() + daysAhead * 86400000).toISOString().slice(0, 10);
-  const data = await fetchFromAPI('/events/', { params: { league_id: bzzoiroLeagueId, date_from: desde, date_to: hasta, limit: 100 } });
-  return data.results || data || [];
-}
-
-// ---------- temporada actual ----------
-export async function fetchCurrentSeason(bzzoiroLeagueId) {
-  const data = await fetchFromAPI('/seasons/', { params: { league_id: bzzoiroLeagueId } });
-  const results = data.results || data || [];
-  const now = new Date();
-  const actual = results.find(s => {
-    if (!s.start_date || !s.end_date) return false;
-    return new Date(s.start_date) <= now && now <= new Date(s.end_date);
+  saveApiKeyBtn.addEventListener('click', () => {
+    const token = apiKeyInput.value.trim();
+    if (token) {
+      localStorage.setItem('bzzoiro_token', token);
+      updateTokenStatus();
+    } else {
+      apiStatus.textContent = '❌ Ingresa un token válido';
+      apiStatus.style.color = 'var(--red)';
+    }
   });
-  if (actual) return actual;
-  results.sort((a, b) => new Date(b.start_date || 0) - new Date(a.start_date || 0));
-  return results[0] || null;
-}
 
-// ---------- tabla de posiciones ----------
-export async function fetchStandings(bzzoiroLeagueId, seasonId) {
-  const data = await fetchFromAPI('/standings/', { params: { league_id: bzzoiroLeagueId, season_id: seasonId } });
-  return data.results || data || [];
-}
+  updateTokenStatus();
 
-// ---------- equipo por nombre (para escudo) ----------
-export async function fetchTeamByName(nombre) {
-  const tk = tokens(nombre).filter(w => w.length >= 3);
-  for (const t of tk) {
-    try {
-      const data = await fetchFromAPI('/teams/', { params: { search: t, limit: 20 } });
-      const results = data.results || data || [];
-      const nt = tokens(nombre);
-      const found = results.find(eq => {
-        const et = tokens([eq.name, eq.short_name].filter(Boolean).join(' '));
-        return todasLasPalabrasEstan(nt, et) || todasLasPalabrasEstan(et, nt);
-      });
-      if (found) return found;
-    } catch (e) { /* siguiente */ }
+  async function mostrarParamsActivos(ligaKey) {
+    const params = await AutoCalibrate.getParamsActivos(ligaKey);
+    const el = document.getElementById('params-status');
+    if (!el) return;
+
+    if (!params) {
+      el.innerHTML = '⚠️ Sin calibración guardada: se usan valores base de la liga (corré el backtest para calibrar)';
+      el.style.color = 'var(--yellow)';
+      return;
+    }
+
+    const fuente = params.fuente === 'repo' ? ' (del repo)' : ' (local)';
+    const config = getBettingConfig(ligaKey);
+
+    let html = `<div style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; line-height:1.5;">`;
+    html += `<div>📊 HA=${params.homeAdvantage.toFixed(3)} rho=${params.rho.toFixed(3)}${params.goalsAvg ? ` goles=${params.goalsAvg.toFixed(2)}` : ''}${fuente}</div>`;
+
+    if (config.status === 'green') {
+      el.style.color = 'var(--green)';
+      html += `<div style="color:var(--green); font-weight:600; margin-top:4px;">✅ LIGA APTA PARA APOSTAR</div>`;
+      if (config.mercados) html += `<div style="font-size:0.72rem; margin-top:2px;">Mercados: ${config.mercados.join(' · ')}</div>`;
+      html += `<div style="font-size:0.72rem;">Stake sugerido: 1% de la banca</div>`;
+      if (config.nota) html += `<div style="font-size:0.7rem; color:var(--chalk-dim); margin-top:2px;">${config.nota}</div>`;
+    } else if (config.status === 'yellow') {
+      el.style.color = 'var(--yellow)';
+      html += `<div style="color:var(--yellow); font-weight:600; margin-top:4px;">⚠️ LIGA PROMETEDORA (stake bajo)</div>`;
+      if (config.mercados) html += `<div style="font-size:0.72rem; margin-top:2px;">Mercados: ${config.mercados.join(' · ')}</div>`;
+      html += `<div style="font-size:0.72rem;">Stake sugerido: 0.5% de la banca</div>`;
+      if (config.nota) html += `<div style="font-size:0.7rem; color:var(--chalk-dim); margin-top:2px;">${config.nota}</div>`;
+    } else if (config.status === 'red') {
+      el.style.color = 'var(--red)';
+      html += `<div style="color:var(--red); font-weight:600; margin-top:4px;">❌ NO APOSTAR EN ESTA LIGA</div>`;
+      html += `<div style="font-size:0.72rem;">Esta liga pierde contra cuota. Solo para análisis.</div>`;
+    } else {
+      el.style.color = 'var(--chalk-dim)';
+      html += `<div style="font-size:0.72rem;">Liga sin clasificar.</div>`;
+    }
+
+    html += `</div>`;
+    el.innerHTML = html;
   }
-  return null;
-}
 
-// ---------- eventos recientes ----------
-export async function fetchRecentEvents(bzzoiroLeagueId, daysBack = 21) {
-  const hasta = new Date().toISOString().slice(0, 10);
-  const desde = new Date(Date.now() - daysBack * 86400000).toISOString().slice(0, 10);
-  const data = await fetchFromAPI('/events/', { params: { league_id: bzzoiroLeagueId, date_from: desde, date_to: hasta, limit: 100 } });
-  return data.results || data || [];
-}
+  function populateLeagues() {
+    for (const [key, liga] of Object.entries(LIGAS)) {
+      const option = document.createElement('option');
+      option.value = key;
+      option.textContent = liga.name;
+      leagueSelect.appendChild(option);
+    }
+  }
 
-// ---------- probabilidades ML del partido ----------
-export async function fetchMatchPrediction(eventId) {
-  const data = await fetchFromAPI(`/predictions/${eventId}/`);
-  return data?.predictions?.winner || data?.prediction || data || null;
-}
+  function populateTeams(leagueKey, { keepSelection = false } = {}) {
+    const prevHome = keepSelection ? homeSelect.value : null;
+    const prevAway = keepSelection ? awaySelect.value : null;
+    homeSelect.innerHTML = '';
+    awaySelect.innerHTML = '';
+    const teams = getTeamsForLeague(leagueKey);
+    const teamNames = Object.keys(teams);
+    if (teamNames.length === 0) return;
+    for (const name of teamNames) {
+      homeSelect.appendChild(new Option(name, name));
+      awaySelect.appendChild(new Option(name, name));
+    }
+    let homeIndex = 0;
+    let awayIndex = Math.min(1, teamNames.length - 1);
+    if (prevHome && teamNames.includes(prevHome)) homeIndex = teamNames.indexOf(prevHome);
+    if (prevAway && teamNames.includes(prevAway) && prevAway !== teamNames[homeIndex]) {
+      awayIndex = teamNames.indexOf(prevAway);
+    } else if (teamNames[homeIndex] === teamNames[awayIndex]) {
+      awayIndex = (homeIndex + 1) % teamNames.length;
+    }
+    homeSelect.selectedIndex = homeIndex;
+    awaySelect.selectedIndex = awayIndex;
+  }
 
-// ============================================================
-// CUOTAS REALES (Odds API — add-on de Bzzoiro)
-// Busca el evento próximo del partido y trae sus cuotas.
-// ============================================================
-
-// Encuentra el evento próximo (próximos 14 días) que coincide con local/visitante.
-export async function findUpcomingEvent(bzzoiroLeagueId, homeTeam, awayTeam) {
-  if (!bzzoiroLeagueId) return null;
-  const hoy = new Date();
-  const en14 = new Date(hoy.getTime() + 14 * 24 * 60 * 60 * 1000);
-  const fmt = d => d.toISOString().slice(0, 10);
-  const data = await fetchFromAPI(`/events/?league_id=${bzzoiroLeagueId}&date_from=${fmt(hoy)}&date_to=${fmt(en14)}&limit=100`);
-  const results = data.results || data || [];
-  const hTk = tokens(homeTeam), aTk = tokens(awayTeam);
-  return results.find(ev => {
-    const eh = tokens(ev.home_team || ev.event?.home_team || '');
-    const ea = tokens(ev.away_team || ev.event?.away_team || '');
-    const okH = todasLasPalabrasEstan(hTk, eh) || todasLasPalabrasEstan(eh, hTk);
-    const okA = todasLasPalabrasEstan(aTk, ea) || todasLasPalabrasEstan(ea, aTk);
-    return okH && okA;
-  }) || null;
-}
-
-// Cuotas de un evento. Lanza error si el token no tiene el add-on Odds (403).
-export async function fetchEventOdds(eventId) {
-  return await fetchFromAPI(`/events/${eventId}/odds/`);
-}
-
-// Convierte la respuesta cruda de /odds/ al formato de cuotas de la app.
-// Parser DEFENSIVO: recorre todo el JSON buscando pares (nombre, cuota) y los
-// mapea por palabras clave. Si Bzzoiro cambia el formato, seguirá encontrando
-// las cuotas mientras vengan como {algo: nombre, algo: numero > 1}.
-export function normalizarOddsBzzoiro(raw) {
-  const pares = [];
-  (function walk(node) {
-    if (node == null) return;
-    if (Array.isArray(node)) { node.forEach(walk); return; }
-    if (typeof node === 'object') {
-      const nombre = node.name ?? node.label ?? node.outcome ?? node.selection
-        ?? node.team?.name ?? (typeof node.value === 'string' ? node.value : null);
-      const odd = node.odd ?? node.price ?? node.odds ?? (typeof node.value === 'number' ? node.value : null)
-        ?? node.coefficient ?? node.rate;
-      const cuota = parseFloat(odd);
-      if (typeof nombre === 'string' && Number.isFinite(cuota) && cuota > 1 && cuota < 1000) {
-        pares.push({
-          label: nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
-          mercado: String(node.market?.name ?? node.market ?? node.group ?? node.category ?? '').toLowerCase(),
-          odd: +cuota.toFixed(2),
-        });
+  async function restaurarEstado() {
+    const estado = leerEstado();
+    if (estado?.liga && LIGAS[estado.liga]) {
+      leagueSelect.value = estado.liga;
+      populateTeams(estado.liga);
+      const teamNames = Object.keys(getTeamsForLeague(estado.liga));
+      if (estado.local && teamNames.includes(estado.local)) homeSelect.value = estado.local;
+      if (estado.visitante && teamNames.includes(estado.visitante) && estado.visitante !== homeSelect.value) {
+        awaySelect.value = estado.visitante;
       }
-      Object.values(node).forEach(walk);
+    } else {
+      const firstLeague = Object.keys(LIGAS)[0];
+      if (firstLeague) {
+        leagueSelect.value = firstLeague;
+        populateTeams(firstLeague);
+      }
     }
-  })(raw);
+    ligaKeyGlobal = leagueSelect.value;
+    await mostrarParamsActivos(leagueSelect.value);
+  }
 
-  const out = {};
-  const pick = (reMerc, reLabel) => {
-    let mejor = null;
-    for (const p of pares) {
-      if (reMerc && !reMerc.test(p.mercado)) continue;
-      if (!reLabel.test(p.label)) continue;
-      if (!mejor || p.odd > mejor.odd) mejor = p;
+  leagueSelect.addEventListener('change', async (e) => {
+    populateTeams(e.target.value);
+    guardarEstado(e.target.value, homeSelect.value, awaySelect.value);
+    ligaKeyGlobal = e.target.value;
+    await mostrarParamsActivos(e.target.value);
+  });
+
+  homeSelect.addEventListener('change', () => {
+    guardarEstado(leagueSelect.value, homeSelect.value, awaySelect.value);
+  });
+
+  awaySelect.addEventListener('change', () => {
+    guardarEstado(leagueSelect.value, homeSelect.value, awaySelect.value);
+  });
+
+  simulateBtn.addEventListener('click', async () => {
+    const leagueKey = leagueSelect.value;
+    const homeTeam = homeSelect.value;
+    const awayTeam = awaySelect.value;
+    if (!leagueKey || !homeTeam || !awayTeam || homeTeam === awayTeam) {
+      alert('Selecciona liga y dos equipos distintos');
+      return;
     }
-    return mejor ? mejor.odd : null;
-  };
-  const asignar = (target, reMerc, reLabel) => {
-    const o = pick(reMerc, reLabel);
-    if (o && !out[target]) out[target] = o;
-  };
+    guardarEstado(leagueKey, homeTeam, awayTeam);
+    simulateBtn.disabled = true;
+    simulateBtn.textContent = 'Calculando...';
+    try {
+      const paramsGuardados = await AutoCalibrate.getParamsActivos(leagueKey);
+      const results = await simulateMatch(leagueKey, homeTeam, awayTeam, {
+        calibracion: paramsGuardados || undefined,
+      });
+      results.resultProbs = aplicarShrink(results.resultProbs, paramsGuardados?.tasas);
+      displayResults(results, leagueKey);
+    } catch (err) {
+      alert('Error: ' + err.message);
+      console.error('❌ Error en simulación', err);
+    } finally {
+      simulateBtn.disabled = false;
+      simulateBtn.textContent = 'Simular partido';
+    }
+  });
 
-  // 1X2
-  asignar('local', /1x2|match|result|moneyline|winner|game|^$/, /^(1|home|local)$/);
-  asignar('empate', /1x2|match|result|draw|^$/, /^(x|draw|empate)$/);
-  asignar('visitante', /1x2|match|result|moneyline|winner|game|^$/, /^(2|away|visitante|visitor)$/);
-  // Goles Over/Under
-  asignar('over15', /goal|goles|total|^$/, /^over 1\.5$/);
-  asignar('under15', /goal|goles|total|^$/, /^under 1\.5$/);
-  asignar('over25', /goal|goles|total|^$/, /^over 2\.5$/);
-  asignar('under25', /goal|goles|total|^$/, /^under 2\.5$/);
-  asignar('over35', /goal|goles|total|^$/, /^over 3\.5$/);
-  asignar('under35', /goal|goles|total|^$/, /^under 3\.5$/);
-  asignar('over45', /goal|goles|total|^$/, /^over 4\.5$/);
-  asignar('under45', /goal|goles|total|^$/, /^under 4\.5$/);
-  // BTTS
-  asignar('bttsSi', /btts|both|ambos|team.*score|^$/, /^(yes|si|sí)$/);
-  asignar('bttsNo', /btts|both|ambos|team.*score|^$/, /^(no)$/);
-  // Córners
-  asignar('c_over75', /corner|córner/, /^over 7\.5$/);
-  asignar('c_over85', /corner|córner/, /^over 8\.5$/);
-  asignar('c_over95', /corner|córner/, /^over 9\.5$/);
-  asignar('c_under95', /corner|córner/, /^under 9\.5$/);
-  asignar('c_under105', /corner|córner/, /^under 10\.5$/);
+  function fmt(n) { return Number(n).toFixed(1); }
 
-  return out;
-}
+  function fila(label, prob) {
+    const color = getColor(prob);
+    const pct = Math.max(0, Math.min(100, prob));
+    return `<div class="prob-row"><div class="prob-row-top"><span>${label}</span><span class="prob" style="color:${color}">${fmt(prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${pct}%;background:${color}"></div></div></div>`;
+  }
+
+  function gridProb(val) {
+    const color = getColor(val);
+    const pct = Math.max(0, Math.min(100, val));
+    return `<span class="grid-prob"><span class="grid-prob-value" style="color:${color}">${fmt(val)}%</span><span class="grid-prob-bar"><span style="width:${pct}%;background:${color}"></span></span></span>`;
+  }
+
+  function getColor(prob) {
+    if (prob >= 65) return 'var(--green)';
+    if (prob >= 42) return 'var(--yellow)';
+    return 'var(--red)';
+  }
+
+  function renderPicksCard(data, ligaKey) {
+    const picks = generarPicks(data, ligaKey);
+    const config = getBettingConfig(ligaKey);
+    const umbrales = textoUmbrales(ligaKey);
+
+    if (config.status === 'red') {
+      return `<div class="card" style="border:2px solid var(--red);"><h3 style="color:var(--red);">❌ NO APOSTAR EN ESTA LIGA</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Esta liga pierde contra cuota. Usala solo para análisis.</p></div>`;
+    }
+
+    if (picks.length === 0) {
+      return `<div class="card" style="border:2px solid var(--line); opacity:0.8;"><h3>🎯 Mejores picks para este partido</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Sin picks. Ningún mercado con edge supera los umbrales.</p><p style="color:var(--chalk-dim); margin:6px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
+    }
+
+    const filas = picks.map(p => `<div class="prob-row"><div class="prob-row-top"><span>✅ ${p.label}</span><span class="prob" style="color:${getColor(p.prob)}">${fmt(p.prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${p.prob}%;background:${getColor(p.prob)}"></div></div></div>`).join('');
+
+    return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
+  }
+
+  // ---------- Calculadora de valor ----------
+  let ultimaSim = null;
+
+  function parseCuota(txt) {
+    const v = parseFloat(String(txt).replace(',', '.'));
+    return Number.isFinite(v) && v > 1 ? v : null;
+  }
+
+  function filasValor(data) {
+    const rp = data.resultProbs;
+    const filas = [
+      ['local', 'Local gana', rp.local], ['empate', 'Empate', rp.empate], ['visitante', 'Visitante gana', rp.visitante],
+      ['over15', 'Más de 1.5 goles', data.over15],
+      ['over25', 'Más de 2.5 goles', data.over25],
+      ['under35', 'Menos de 3.5 goles', 100 - data.over35],
+      ['under45', 'Menos de 4.5 goles', 100 - data.over45],
+      ['bttsSi', 'BTTS Sí', data.btts], ['bttsNo', 'BTTS No', 100 - data.btts],
+    ];
+    if (data.cornerProbs) {
+      const c = data.cornerProbs;
+      filas.push(['c_over75', 'Más de 7.5 córners', c.over7], ['c_over85', 'Más de 8.5 córners', c.over8],
+                 ['c_under95', 'Menos de 9.5 córners', 100 - c.over9], ['c_under105', 'Menos de 10.5 córners', 100 - c.over10]);
+    }
+    return filas.filter(([, , p]) => typeof p === 'number' && Number.isFinite(p) && p > 0);
+  }
+
+  function renderValueCard(data, ligaKey) {
+    const config = getBettingConfig(ligaKey);
+    const aviso = config.status === 'red'
+      ? `<p style="color:var(--red); margin:0 0 10px; font-size:0.78rem;">⚠️ Liga roja: históricamente el modelo no le gana a la cuota acá. Usalo con mucha cautela.</p>` : '';
+    const statusAuto = `<p id="cuotas-auto-status" style="margin:0 0 10px; font-size:0.75rem; color:var(--chalk-dim);">⏳ Buscando cuotas reales de Bzzoiro…</p>`;
+    const filas = filasValor(data).map(([key, label, prob], i) => {
+      const minima = FILTRO_EV / (prob / 100);
+      return `<div class="compare-row" style="grid-template-columns:1.3fr 0.8fr 1fr 1.5fr;"><span>${label}</span><span class="grid-plain">${fmt(prob)}%</span><input type="text" inputmode="decimal" class="cuota-input" data-key="${key}" data-prob="${prob}" data-out="valor-out-${i}" placeholder="cuota" style="padding:6px 8px; text-align:center; font-size:0.8rem;"><span class="grid-plain" id="valor-out-${i}" style="font-size:0.75rem;">mín ${minima.toFixed(2)}</span></div>`;
+    }).join('');
+    return `<div class="card"><h3>💰 ¿Hay valor? <small>(cuotas automáticas si hay acceso)</small></h3>${aviso}${statusAuto}<div class="compare-row compare-head" style="grid-template-columns:1.3fr 0.8fr 1fr 1.5fr;"><span>Mercado</span><span>Modelo</span><span>Cuota</span><span>Valor</span></div>${filas}<p style="color:var(--text-dim,#8b95a5); margin:10px 0 0; font-size:0.72rem; line-height:1.5;">"mín" = cuota mínima para tener EV ${FILTRO_EV} (5% de margen). Si el EV sale muy alto (más de 1.20), sospechá del modelo antes que de la casa: revisá lesiones y alineaciones.</p><button id="guardar-registro" style="width:100%; margin-top:12px;">📝 Guardar predicción en el registro</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardala antes de que empiece el partido, con las cuotas que escribiste. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
+  }
+
+  function wireValueCard() {
+    document.querySelectorAll('.cuota-input').forEach(inp => {
+      inp.addEventListener('input', () => {
+        const out = document.getElementById(inp.dataset.out);
+        if (!out) return;
+        const prob = parseFloat(inp.dataset.prob);
+        const cuota = parseCuota(inp.value);
+        if (cuota == null) {
+          out.textContent = `mín ${(FILTRO_EV / (prob / 100)).toFixed(2)}`;
+          out.style.color = '';
+          return;
+        }
+        const ev = (prob / 100) * cuota;
+        if (ev >= FILTRO_EV) {
+          out.textContent = ev > 1.2 ? `✅ EV ${ev.toFixed(2)} ⚠️ revisá` : `✅ VALOR EV ${ev.toFixed(2)}`;
+          out.style.color = 'var(--green)';
+          const bk = leerBanca();
+          const sk = stakeParaPick(bk, { prob, cuota, stakeBase: 1 });
+          out.textContent += sk.motivo
+            ? ` · ⛔ ${sk.motivo}`
+            : ` · stake ${sk.stake}% de la banca ($${(bk.banca * sk.stake / 100).toFixed(0)})`;
+        } else if (ev >= 1) {
+          out.textContent = `≈ justo EV ${ev.toFixed(2)}`;
+          out.style.color = 'var(--yellow)';
+        } else {
+          out.textContent = `❌ EV ${ev.toFixed(2)}`;
+          out.style.color = 'var(--red)';
+        }
+      });
+    });
+  }
+
+  function wireGuardar() {
+    const btn = document.getElementById('guardar-registro');
+    const st = document.getElementById('guardar-status');
+    if (!btn || !st) return;
+    btn.addEventListener('click', () => {
+      if (!ultimaSim) return;
+      const cuotas = {};
+      document.querySelectorAll('.cuota-input').forEach(inp => {
+        const c = parseCuota(inp.value);
+        if (c && inp.dataset.key) cuotas[inp.dataset.key] = c;
+      });
+      try {
+        const r = agregarEntrada(entradaDesdeSimulacion(ultimaSim.data, ultimaSim.ligaKey, cuotas));
+        st.textContent = r.reemplazada
+          ? `✅ Actualizada (ya había una pendiente de este partido). Total: ${r.total}.`
+          : `✅ Guardada en el registro. Total: ${r.total}.`;
+        st.style.color = 'var(--green)';
+      } catch (e) {
+        st.textContent = '❌ No se pudo guardar: ' + e.message;
+        st.style.color = 'var(--red)';
+      }
+    });
+  }
+
+  function displayResults(data, ligaKey) {
+    const compareRow = (label, own, ml, blended) => `<div class="compare-row"><span>${label}</span>${gridProb(own)}${gridProb(ml)}${gridProb(blended)}</div>`;
+
+    const comparisonCard = data.bzzoiroML ? `<div class="card"><h3>Tu modelo vs. Bzzoiro ML${data.bzzoiroML.confidence != null ? ` <small>(confianza ${(data.bzzoiroML.confidence * 100).toFixed(0)}%)</small>` : ''}</h3>${data.blended ? `<div class="compare-row compare-head"><span></span><span>Poisson</span><span>Bzzoiro ML</span><span>Promedio</span></div>${compareRow('Local', data.resultProbs.local, data.bzzoiroML.resultProbs.local, data.blended.resultProbs.local)}${compareRow('Empate', data.resultProbs.empate, data.bzzoiroML.resultProbs.empate, data.blended.resultProbs.empate)}${compareRow('Visitante', data.resultProbs.visitante, data.bzzoiroML.resultProbs.visitante, data.blended.resultProbs.visitante)}${compareRow('Over 1.5', data.over15, data.bzzoiroML.over15, data.blended.over15)}${compareRow('Over 2.5', data.over25, data.bzzoiroML.over25, data.blended.over25)}${compareRow('BTTS', data.btts, data.bzzoiroML.btts, data.blended.btts)}` : `<div class="compare-row"><span>Datos ML parciales.</span></div>`}</div>` : '';
+
+    const picksCard = renderPicksCard(data, ligaKey);
+
+    predictionsContent.innerHTML = `
+      ${picksCard}
+      ${renderValueCard(data, ligaKey)}
+      <div class="card"><h3>Resultado 1X2</h3>${fila('Local', data.resultProbs.local)}${fila('Empate', data.resultProbs.empate)}${fila('Visitante', data.resultProbs.visitante)}</div>
+      <div class="card"><h3>Goles</h3>${fila('Over 1.5', data.over15)}${fila('Over 2.5', data.over25)}${fila('Over 3.5', data.over35)}</div>
+      <div class="card"><h3>Ambos marcan (BTTS)</h3>${fila('Sí', data.btts)}</div>
+      ${data.cornerProbs ? `<div class="card"><h3>Córneres</h3>${fila('Over 7.5', data.cornerProbs.over7)}${fila('Over 8.5', data.cornerProbs.over8)}${fila('Over 9.5', data.cornerProbs.over9)}</div>` : ''}
+      ${comparisonCard}
+    `;
+    resultsDiv.style.display = 'block';
+    ultimaSim = { data, ligaKey };
+    wireValueCard();
+    wireGuardar();
+    cargarCuotasAutomaticas(data, ligaKey);
+  }
+
+  // Trae las cuotas reales del partido y pre-carga la calculadora de valor.
+  // Si no hay add-on Odds o no encuentra el partido, queda la carga manual.
+  async function cargarCuotasAutomaticas(data, ligaKey) {
+    const stEl = document.getElementById('cuotas-auto-status');
+    const setStatus = (txt, color) => { if (stEl) { stEl.textContent = txt; if (color) stEl.style.color = color; } };
+    try {
+      if (!localStorage.getItem('bzzoiro_token')) { setStatus('Sin token de Bzzoiro: escribí las cuotas a mano.'); return; }
+      const liga = LIGAS[ligaKey];
+      const leagueId = await resolveLeagueId(ligaKey, liga.name);
+      if (!leagueId) { setStatus('Liga no disponible en Bzzoiro: escribí las cuotas a mano.'); return; }
+      const ev = await findUpcomingEvent(leagueId, data.homeTeam, data.awayTeam);
+      if (!ev) { setStatus('Partido no encontrado en los próximos 14 días de Bzzoiro: escribí las cuotas a mano.'); return; }
+      const raw = await fetchEventOdds(ev.id);
+      const cuotas = normalizarOddsBzzoiro(raw);
+      const n = Object.keys(cuotas).length;
+      if (!n) { setStatus('⚠️ La API no devolvió cuotas reconocibles. ¿Tenés activo el add-on Odds? ($5/mes en Bzzoiro). Podés escribirlas a mano.', 'var(--yellow)'); return; }
+      let cargadas = 0;
+      document.querySelectorAll('.cuota-input').forEach(inp => {
+        const c = cuotas[inp.dataset.key];
+        if (c && !inp.value) { inp.value = c; cargadas++; inp.dispatchEvent(new Event('input', { bubbles: true })); }
+      });
+      setStatus(`✅ Cuotas automáticas de Bzzoiro (${cargadas} mercados cargados). Revisá el valor y guardá la predicción.`, 'var(--green)');
+    } catch (e) {
+      setStatus('⚠️ No se pudieron traer cuotas (' + e.message + '). Podés escribirlas a mano.', 'var(--yellow)');
+    }
+  }
+
+  populateLeagues();
+  restaurarEstado();
+});
