@@ -4,6 +4,7 @@ import { simulateMatch, getTeamsForLeague } from './model.js';
 import { AutoCalibrate } from './auto-calibrate.js';
 import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales } from './picks.js';
 import { agregarEntrada, entradaDesdeSimulacion } from './registro.js';
+import { leerBanca, stakeParaPick } from './bankroll.js';
 
 const ESTADO_KEY = 'vv_estado_seleccion';
 let ligaKeyGlobal = 'CPA';
@@ -286,6 +287,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (ev >= FILTRO_EV) {
           out.textContent = ev > 1.2 ? `✅ EV ${ev.toFixed(2)} ⚠️ revisá` : `✅ VALOR EV ${ev.toFixed(2)}`;
           out.style.color = 'var(--green)';
+          const bk = leerBanca();
+          const sk = stakeParaPick(bk, { prob, cuota, stakeBase: 1 });
+          out.textContent += sk.motivo
+            ? ` · ⛔ ${sk.motivo}`
+            : ` · stake ${sk.stake}% de la banca ($${(bk.banca * sk.stake / 100).toFixed(0)})`;
         } else if (ev >= 1) {
           out.textContent = `≈ justo EV ${ev.toFixed(2)}`;
           out.style.color = 'var(--yellow)';
