@@ -245,16 +245,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const rp = data.resultProbs;
     const filas = [
       ['local', 'Local gana', rp.local], ['empate', 'Empate', rp.empate], ['visitante', 'Visitante gana', rp.visitante],
-      ['over15', 'Over 1.5', data.over15], ['under15', 'Under 1.5', 100 - data.over15],
-      ['over25', 'Over 2.5', data.over25], ['under25', 'Under 2.5', 100 - data.over25],
-      ['over35', 'Over 3.5', data.over35], ['under35', 'Under 3.5', 100 - data.over35],
+      ['over15', 'Más de 1.5 goles', data.over15],
+      ['over25', 'Más de 2.5 goles', data.over25],
+      ['under35', 'Menos de 3.5 goles', 100 - data.over35],
+      ['under45', 'Menos de 4.5 goles', 100 - data.over45],
       ['bttsSi', 'BTTS Sí', data.btts], ['bttsNo', 'BTTS No', 100 - data.btts],
     ];
     if (data.cornerProbs) {
       const c = data.cornerProbs;
-      filas.push(['c_over75', 'Over 7.5 córners', c.over7], ['c_under75', 'Under 7.5 córners', 100 - c.over7],
-                 ['c_over85', 'Over 8.5 córners', c.over8], ['c_under85', 'Under 8.5 córners', 100 - c.over8],
-                 ['c_over95', 'Over 9.5 córners', c.over9], ['c_under95', 'Under 9.5 córners', 100 - c.over9]);
+      filas.push(['c_over75', 'Más de 7.5 córners', c.over7], ['c_over85', 'Más de 8.5 córners', c.over8],
+                 ['c_under95', 'Menos de 9.5 córners', 100 - c.over9], ['c_under105', 'Menos de 10.5 córners', 100 - c.over10]);
     }
     return filas.filter(([, , p]) => typeof p === 'number' && Number.isFinite(p) && p > 0);
   }

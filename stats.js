@@ -134,6 +134,7 @@ export function calcGoalMarkets(lH, lA, leagueKey, rhoOverride) {
         over15: overLinea(1.5),
         over25: overLinea(2.5),
         over35: overLinea(3.5),
+        over45: overLinea(4.5),
         btts: clampPct(btts),
     };
 }

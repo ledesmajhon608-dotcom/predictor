@@ -48,9 +48,9 @@ export function entradaDesdeSimulacion(data, ligaKey, cuotas = {}) {
     visitante: data.awayTeam,
     prob: {
       local: r2(rp.local), empate: r2(rp.empate), visitante: r2(rp.visitante),
-      over15: r2(data.over15), over25: r2(data.over25), over35: r2(data.over35), btts: r2(data.btts),
+      over15: r2(data.over15), over25: r2(data.over25), over35: r2(data.over35), over45: r2(data.over45), btts: r2(data.btts),
     },
-    corners: cp ? { over7: r2(cp.over7), over8: r2(cp.over8), over9: r2(cp.over9) } : null,
+    corners: cp ? { over7: r2(cp.over7), over8: r2(cp.over8), over9: r2(cp.over9), over10: r2(cp.over10) } : null,
     cuotas: limpias,
     resultado: null,
   };
@@ -163,61 +163,61 @@ class Apuestas {
   }
 }
 
+// Mercados que se siguen en el registro (los únicos que aparecen en la app y acá).
+// Los de una sola cara (Más de 1.5, Más de 2.5, Menos de 3.5, Menos de 4.5 y
+// los de córners) no tienen cuota contraria para quitar el margen, así que se
+// miden por calibración (predicho vs real) y ROI. 1X2 y BTTS sí se comparan
+// contra la cuota sin margen.
+export const MERCADOS = [
+  { key: 'local', label: 'Local gana', p: e => e.prob?.local, hit: r => r.gl > r.gv },
+  { key: 'empate', label: 'Empate', p: e => e.prob?.empate, hit: r => r.gl === r.gv },
+  { key: 'visitante', label: 'Visitante gana', p: e => e.prob?.visitante, hit: r => r.gl < r.gv },
+  { key: 'over15', label: 'Más de 1.5 goles', p: e => e.prob?.over15, hit: r => r.gl + r.gv > 1.5 },
+  { key: 'over25', label: 'Más de 2.5 goles', p: e => e.prob?.over25, hit: r => r.gl + r.gv > 2.5 },
+  { key: 'under35', label: 'Menos de 3.5 goles', p: e => 100 - e.prob?.over35, hit: r => r.gl + r.gv < 3.5 },
+  { key: 'under45', label: 'Menos de 4.5 goles', p: e => 100 - e.prob?.over45, hit: r => r.gl + r.gv < 4.5 },
+  { key: 'bttsSi', label: 'BTTS Sí', p: e => e.prob?.btts, hit: r => r.gl > 0 && r.gv > 0 },
+  { key: 'bttsNo', label: 'BTTS No', p: e => 100 - e.prob?.btts, hit: r => !(r.gl > 0 && r.gv > 0) },
+  { key: 'c_over75', label: 'Más de 7.5 córners', corners: true, p: e => e.corners?.over7, hit: r => r.corners > 7.5 },
+  { key: 'c_over85', label: 'Más de 8.5 córners', corners: true, p: e => e.corners?.over8, hit: r => r.corners > 8.5 },
+  { key: 'c_under95', label: 'Menos de 9.5 córners', corners: true, p: e => 100 - e.corners?.over9, hit: r => r.corners < 9.5 },
+  { key: 'c_under105', label: 'Menos de 10.5 córners', corners: true, p: e => 100 - e.corners?.over10, hit: r => r.corners < 10.5 },
+];
+const CLAVES_MERCADOS = new Set(MERCADOS.map(m => m.key));
+
 export function evaluar(entradas) {
   const res = entradas.filter(e => e.resultado && Number.isFinite(e.resultado.gl) && Number.isFinite(e.resultado.gv) && e.prob);
   const b3Modelo = [], b3ModC = [], b3Mkt = [], dMkt = [];
   const mk = {
     local: new BrierVs('Local gana'), empate: new BrierVs('Empate'), visitante: new BrierVs('Visitante gana'),
-    over15: new BrierVs('Over 1.5 goles'), over25: new BrierVs('Over 2.5 goles'), over35: new BrierVs('Over 3.5 goles'),
-    btts: new BrierVs('Ambos marcan (Sí)'),
+    bttsSi: new BrierVs('BTTS Sí'),
   };
   const ap = new Apuestas();
-  const cornerLineas = [
-    { pk: 'over7', u: 7.5, co: 'c_over75', cu: 'c_under75', label: '7.5' },
-    { pk: 'over8', u: 8.5, co: 'c_over85', cu: 'c_under85', label: '8.5' },
-    { pk: 'over9', u: 9.5, co: 'c_over95', cu: 'c_under95', label: '9.5' },
-  ];
-  const corn = Object.fromEntries(cornerLineas.map(l => [l.label, { n: 0, sumP: 0, hits: 0 }]));
+  const cal = Object.fromEntries(MERCADOS.map(m => [m.key, { n: 0, sumP: 0, hits: 0 }]));
   let conCuotas1x2 = 0;
 
   for (const e of res) {
-    const p = e.prob, o = e.cuotas || {}, { gl, gv } = e.resultado, tg = gl + gv;
+    const p = e.prob, o = e.cuotas || {}, r = e.resultado, { gl, gv } = r;
     const idx = gl > gv ? 0 : gl === gv ? 1 : 2, bttsReal = gl > 0 && gv > 0;
-    const arr = [p.local, p.empate, p.visitante];
-    const bModelo = brier3(arr, idx);
+    const bModelo = brier3([p.local, p.empate, p.visitante], idx);
     b3Modelo.push(bModelo);
 
     const m3 = devigar3(o.local, o.empate, o.visitante);
     if (m3) {
       conCuotas1x2++;
-      const bM = brier3(m3, idx);
-      b3ModC.push(bModelo); b3Mkt.push(bM); dMkt.push(bM - bModelo);
+      b3ModC.push(bModelo); b3Mkt.push(brier3(m3, idx)); dMkt.push(brier3(m3, idx) - bModelo);
       mk.local.add(p.local, m3[0], idx === 0); mk.empate.add(p.empate, m3[1], idx === 1); mk.visitante.add(p.visitante, m3[2], idx === 2);
     }
-    const f15 = devigar2(o.over15, o.under15), f25 = devigar2(o.over25, o.under25), f35 = devigar2(o.over35, o.under35), fb = devigar2(o.bttsSi, o.bttsNo);
-    if (f15 != null) mk.over15.add(p.over15, f15, tg > 1.5);
-    if (f25 != null) mk.over25.add(p.over25, f25, tg > 2.5);
-    if (f35 != null) mk.over35.add(p.over35, f35, tg > 3.5);
-    if (fb != null) mk.btts.add(p.btts, fb, bttsReal);
+    const fb = devigar2(o.bttsSi, o.bttsNo);
+    if (fb != null) mk.bttsSi.add(p.btts, fb, bttsReal);
 
-    const lados = [
-      ['local', 'Local gana', p.local, o.local, idx === 0], ['empate', 'Empate', p.empate, o.empate, idx === 1], ['visitante', 'Visitante gana', p.visitante, o.visitante, idx === 2],
-      ['over15', 'Over 1.5 goles', p.over15, o.over15, tg > 1.5], ['under15', 'Under 1.5 goles', 100 - p.over15, o.under15, tg < 1.5],
-      ['over25', 'Over 2.5 goles', p.over25, o.over25, tg > 2.5], ['under25', 'Under 2.5 goles', 100 - p.over25, o.under25, tg < 2.5],
-      ['over35', 'Over 3.5 goles', p.over35, o.over35, tg > 3.5], ['under35', 'Under 3.5 goles', 100 - p.over35, o.under35, tg < 3.5],
-      ['bttsSi', 'BTTS Sí', p.btts, o.bttsSi, bttsReal], ['bttsNo', 'BTTS No', 100 - p.btts, o.bttsNo, !bttsReal],
-    ];
-    for (const [k, label, prob, cuota, hit] of lados) ap.add(k, label, prob, cuota, hit);
-
-    const tc = e.resultado.corners;
-    if (e.corners && Number.isFinite(tc)) {
-      for (const l of cornerLineas) {
-        const po = e.corners[l.pk];
-        if (!Number.isFinite(po)) continue;
-        const c = corn[l.label]; c.n++; c.sumP += po; if (tc > l.u) c.hits++;
-        ap.add(l.co, `Over ${l.label} córners`, po, o[l.co], tc > l.u);
-        ap.add(l.cu, `Under ${l.label} córners`, 100 - po, o[l.cu], tc < l.u);
-      }
+    for (const m of MERCADOS) {
+      const prob = m.p(e);
+      if (!Number.isFinite(prob)) continue;
+      if (m.corners && !Number.isFinite(r.corners)) continue;
+      const hit = m.hit(r);
+      const c = cal[m.key]; c.n++; c.sumP += prob; if (hit) c.hits++;
+      ap.add(m.key, m.label, prob, o[m.key], hit);
     }
   }
 
@@ -229,10 +229,10 @@ export function evaluar(entradas) {
   };
   const escaneo = ap.summary();
   const pool = Apuestas.resumir(ap.pool);
-  const corners = cornerLineas.map(l => ({
-    label: `Over ${l.label} córners`, n: corn[l.label].n,
-    probMedia: corn[l.label].n ? corn[l.label].sumP / corn[l.label].n : null,
-    frecReal: corn[l.label].n ? corn[l.label].hits / corn[l.label].n * 100 : null,
+  const calibracion = MERCADOS.map(m => ({
+    key: m.key, label: m.label, n: cal[m.key].n,
+    probMedia: cal[m.key].n ? cal[m.key].sumP / cal[m.key].n : null,
+    frecReal: cal[m.key].n ? cal[m.key].hits / cal[m.key].n * 100 : null,
   })).filter(c => c.n > 0);
 
   const lectura = [];
@@ -248,12 +248,16 @@ export function evaluar(entradas) {
     const sig = pool.z != null && pool.z > Z ? ' y supera el umbral de significancia' : pool.z != null && pool.z < -Z ? ' y es significativamente negativo' : ' pero no se distingue de la suerte';
     lectura.push(`Apostando todo lo que el modelo ve con EV ≥ ${FILTRO_EV}: ROI ${pool.roi >= 0 ? '+' : ''}${pool.roi.toFixed(1)}% ±${pool.se.toFixed(1)} en ${pool.n} apuestas${sig}.`);
   }
-  if (n >= 30) lectura.push('Para confirmar un ROI real de pocos puntos hacen falta más de 1000 apuestas; el Brier contra la cuota se estabiliza antes.');
+  if (n >= 30) {
+    const malos = calibracion.filter(c => c.n >= 30 && Math.abs(c.probMedia - c.frecReal) >= 8).map(c => c.label);
+    if (malos.length) lectura.push(`Calibración floja (predicho y real difieren 8 puntos o más): ${malos.join(', ')}.`);
+    lectura.push('Para confirmar un ROI real de pocos puntos hacen falta más de 1000 apuestas; el Brier contra la cuota y la calibración se estabilizan antes.');
+  }
 
   return {
     n, pendientes: entradas.length - n, meta: META_PARTIDOS, conCuotas1x2,
     b1x2, mercados: Object.values(mk).map(m => m.summary()).filter(s => s.n > 0),
-    escaneo, pool, corners, lectura,
+    escaneo, pool, calibracion, lectura,
   };
 }
 
@@ -269,7 +273,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
   const fechaCorta = (iso) => (iso || '').slice(0, 10);
 
   function cuotasTxt(e) {
-    const n = Object.keys(e.cuotas || {}).length;
+    const n = Object.keys(e.cuotas || {}).filter(k => CLAVES_MERCADOS.has(k)).length;
     return n ? `${n} cuotas` : 'sin cuotas';
   }
 
@@ -315,7 +319,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       const c = e.n >= ESCANEO_MIN_N && e.z != null && e.z > Z ? 'var(--green)' : e.roi > 0 ? 'var(--yellow)' : 'var(--red)';
       return `<div class="compare-row"><span>${e.label}${e.n < ESCANEO_MIN_N ? ' ⚠️' : ''}</span><span class="grid-plain">${e.n} · ${f1(e.rate)}%</span><span class="grid-plain">EV ${e.evMedio.toFixed(2)}</span><span class="grid-plain" style="color:${c}">${e.roi >= 0 ? '+' : ''}${f1(e.roi)}%${e.se != null ? ` ±${f1(e.se)}` : ''}</span></div>`;
     }).join('');
-    const filasCo = ev.corners.map(c => `<div class="compare-row"><span>${c.label}</span><span class="grid-plain">${c.n}</span><span class="grid-plain">pred ${f1(c.probMedia)}%</span><span class="grid-plain">real ${f1(c.frecReal)}%</span></div>`).join('');
+    const filasCal = ev.calibracion.map(c => { const d = c.frecReal - c.probMedia; const cc = Math.abs(d) >= 8 ? 'var(--red)' : Math.abs(d) >= 4 ? 'var(--yellow)' : 'var(--green)'; return `<div class="compare-row"><span>${c.label}</span><span class="grid-plain">${c.n}</span><span class="grid-plain">pred ${f1(c.probMedia)}%</span><span class="grid-plain" style="color:${cc}">real ${f1(c.frecReal)}%</span></div>`; }).join('');
     const b = ev.b1x2;
 
     $('reg-eval').innerHTML = `
@@ -325,14 +329,17 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         <div class="compare-row"><span>Modelo (con cuotas)</span><span class="grid-plain">${f3(b.modeloCuota)}</span><span class="grid-plain">n ${b.nCuota}</span><span class="grid-plain"></span></div>
         <div class="compare-row"><span>Cuota (sin margen)</span><span class="grid-plain">${f3(b.mercado)}</span><span class="grid-plain"></span><span class="grid-plain" style="color:${col(b.z)}">${b.mejora == null ? '—' : (b.mejora >= 0 ? '+' : '') + f1(b.mejora) + '% ' + senal(b.z)}</span></div>
       </div>
-      <div class="card"><h3>Modelo vs cuota por mercado</h3>
+      <div class="card"><h3>Modelo vs cuota <small>(solo 1X2 y BTTS: tienen cuota contraria)</small></h3>
         <div class="compare-row compare-head"><span>Mercado</span><span>n</span><span>Modelo vs cuota</span><span>Mejora</span></div>
         ${filasMk || `<div class="compare-row"><span>Sin cuotas cargadas.</span></div>`}</div>
       <div class="card" style="border:2px solid var(--yellow);"><h3>🔎 Apostar con EV ≥ ${FILTRO_EV} <small>(${ev.pool.n} apuestas${ev.pool.roi != null ? `, ROI ${ev.pool.roi >= 0 ? '+' : ''}${f1(ev.pool.roi)}%${ev.pool.se != null ? ` ±${f1(ev.pool.se)}` : ''}` : ''})</small></h3>
         <div class="compare-row compare-head"><span>Mercado</span><span>Apuestas · acierto</span><span>EV medio</span><span>ROI ± error</span></div>
         ${filasEs || `<div class="compare-row"><span>Ningún lado superó el filtro EV con cuotas cargadas.</span></div>`}
         <p style="margin:10px 0 0;font-size:.78rem;color:${dim};line-height:1.5;">Simula apostar 1 unidad a todo lo que el modelo veía con valor. ⚠️ = menos de ${ESCANEO_MIN_N} apuestas.</p></div>
-      ${filasCo ? `<div class="card"><h3>Córners <small>(probabilidad predicha vs frecuencia real)</small></h3>${filasCo}</div>` : ''}`;
+      <div class="card"><h3>Calibración por mercado <small>(predicho vs real)</small></h3>
+        <div class="compare-row compare-head"><span>Mercado</span><span>n</span><span>Predicho</span><span>Real</span></div>
+        ${filasCal}
+        <p style="margin:10px 0 0;font-size:.78rem;color:${dim};line-height:1.5;">Si lo predicho y lo real se alejan 8 puntos o más (rojo), el modelo está mal calibrado en ese mercado. Los mercados de una sola cara no tienen cuota contraria, por eso se miden así y con el ROI.</p></div>`;
   }
 
   function entero(txt) {

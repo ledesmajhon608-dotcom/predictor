@@ -17,26 +17,17 @@ const LAMBDA_MIN = 0.12, LAMBDA_MAX = 4.2;
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
-const FAIL_TTL_MS = 2 * 60 * 1000;
-const failUntil = {};
-
 async function getDynamicData(leagueKey, leagueDisplayName) {
   const now = Date.now();
   if (dynamicCache[leagueKey] && (now - dynamicCache[leagueKey].timestamp < CACHE_TTL_MS)) {
     return dynamicCache[leagueKey].data;
   }
-  // Si la API falló hace poco, no volver a esperar timeouts en cada simulación.
-  if (failUntil[leagueKey] && now < failUntil[leagueKey]) {
-    return dynamicCache[leagueKey]?.data || null;
-  }
   try {
     const data = await fetchLeagueDynamicData(leagueKey, leagueDisplayName);
     dynamicCache[leagueKey] = { data, timestamp: now };
-    failUntil[leagueKey] = 0;
     return data;
   } catch (e) {
     console.warn('Fallback a datos estáticos:', e.message);
-    failUntil[leagueKey] = now + FAIL_TTL_MS;
     return dynamicCache[leagueKey]?.data || null;
   }
 }
@@ -76,25 +67,18 @@ export function getStaticRating(leagueKey, teamName) {
   return teams[teamName] || buscarEquipoEn(teams, teamName) || null;
 }
 
-// Prioridad: rating aprendido del historial (ya encogido hacia el estático) >
-// rating estático. Encima se mezcla la tabla en vivo (con menos peso si ya hay
-// ratings del historial, para no contar dos veces los mismos partidos).
-function getTeamRating(leagueKey, teamName, dynamicRatings, histRatings) {
+function getTeamRating(leagueKey, teamName, dynamicRatings) {
   const estatico = getStaticRating(leagueKey, teamName);
-  const hist = histRatings ? buscarEquipoEn(histRatings, teamName) : null;
   const vivo = buscarEquipoEn(dynamicRatings, teamName);
 
-  if (!estatico && !hist && !vivo) {
+  if (!estatico && !vivo) {
     console.warn(`⚠️ ALERTA: Equipo "${teamName}" no encontrado. Usando rating por defecto 1.0`);
-    return { atk: 1.0, def: 1.0, sinRating: true };
+    return { atk: 1.0, def: 1.0 };
   }
-  const prior = hist
-    ? { atk: clamp(hist.atk, RATING_MIN, RATING_MAX), def: clamp(hist.def, RATING_MIN, RATING_MAX) }
-    : (estatico || { atk: 1.0, def: 1.0 });
-  if (!vivo) return { atk: prior.atk, def: prior.def };
+  const prior = estatico || { atk: 1.0, def: 1.0 };
+  if (!vivo) return prior;
 
-  const k = hist ? LIVE_PRIOR_GAMES * 2 : LIVE_PRIOR_GAMES;
-  const w = vivo.played / (vivo.played + k);
+  const w = vivo.played / (vivo.played + LIVE_PRIOR_GAMES);
   return {
     atk: clamp(w * vivo.atk + (1 - w) * prior.atk, RATING_MIN, RATING_MAX),
     def: clamp(w * vivo.def + (1 - w) * prior.def, RATING_MIN, RATING_MAX),
@@ -177,13 +161,10 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
 
   const dynamic = staticOnly ? null : await getDynamicData(leagueKey, liga.name);
   const goalsAvg = resolverGoalsAvg(liga, dynamic, calibracion);
-  const cornAvg = dynamic?.cornAvg ?? calibracion?.cornAvg ?? liga.cornAvg;
+  const cornAvg = dynamic?.cornAvg ?? liga.cornAvg;
 
-  const hRating = getTeamRating(leagueKey, homeTeam, dynamic?.teamRatings, calibracion?.ratings);
-  const aRating = getTeamRating(leagueKey, awayTeam, dynamic?.teamRatings, calibracion?.ratings);
-  const sinRating = [];
-  if (hRating.sinRating) sinRating.push(homeTeam);
-  if (aRating.sinRating) sinRating.push(awayTeam);
+  const hRating = getTeamRating(leagueKey, homeTeam, dynamic?.teamRatings);
+  const aRating = getTeamRating(leagueKey, awayTeam, dynamic?.teamRatings);
 
   const homeAdv = calibracion?.homeAdvantage ?? HOME_ADVANTAGE[leagueKey] ?? DEFAULT_HOME_ADV;
   const rho = calibracion?.rho;
@@ -205,6 +186,7 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
       over7: pc(stats.negBinOver(totalCorners, 7.5, r)),
       over8: pc(stats.negBinOver(totalCorners, 8.5, r)),
       over9: pc(stats.negBinOver(totalCorners, 9.5, r)),
+      over10: pc(stats.negBinOver(totalCorners, 10.5, r)),
       porEquipo: {
         local: {
           esperado: lCornerHome,
@@ -237,11 +219,11 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
     over15: stats.plattCalibrate(mk.over15, 'goals15'),
     over25: stats.plattCalibrate(mk.over25, 'goals25'),
     over35: stats.plattCalibrate(mk.over35, 'goals35'),
+    // Over 4.5: sin parámetros Platt propios, se reutilizan los de 3.5.
+    over45: stats.plattCalibrate(mk.over45, 'goals35'),
     btts: stats.plattCalibrate(mk.btts, 'btts'),
     cornerProbs,
     lambdas: { local: +lambdaHome.toFixed(3), visitante: +lambdaAway.toFixed(3) },
-    sinRating,
-    ratingsHistorial: !!calibracion?.ratings,
   };
 
   let bzzoiroML = null;
