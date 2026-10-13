@@ -6,6 +6,7 @@
 // Es la única prueba limpia: nada de lo evaluado pudo usarse para ajustar.
 
 import { FILTRO_EV } from './leagues.js';
+import { resumenCLV } from './clv.js';
 
 const KEY = 'suertudo_registro_v1';
 const Z = 1.64;
@@ -52,6 +53,7 @@ export function entradaDesdeSimulacion(data, ligaKey, cuotas = {}) {
     },
     corners: cp ? { over7: r2(cp.over7), over8: r2(cp.over8), over9: r2(cp.over9), over10: r2(cp.over10) } : null,
     cuotas: limpias,
+    cierre: null,   // cuota de cierre (se completa al cargar el resultado)
     resultado: null,
   };
 }
@@ -67,13 +69,14 @@ export function agregarEntrada(entrada) {
   return { reemplazada, id: entrada.id, total: arr.length };
 }
 
-export function actualizarResultado(id, { gl, gv, corners = null }) {
+export function actualizarResultado(id, { gl, gv, corners = null, cierre = null }) {
   if (!Number.isInteger(gl) || !Number.isInteger(gv) || gl < 0 || gv < 0) throw new Error('Goles inválidos');
   const arr = leerRegistro();
   const e = arr.find(x => x.id === id);
   if (!e) throw new Error('No existe esa entrada');
   e.resultado = { gl, gv };
   if (Number.isInteger(corners) && corners >= 0) e.resultado.corners = corners;
+  if (Number.isFinite(cierre) && cierre > 1) e.cierre = +cierre.toFixed(2);
   e.resuelto = new Date().toISOString();
   guardarRegistro(arr);
   return e;
@@ -312,6 +315,17 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
     $('reg-resueltas').innerHTML = resu.length ? `<div class="card">${resu.slice(0, 30).map(cardResuelta).join('')}</div>` : `<p style="color:${dim};font-size:.85rem;">Todavía no cargaste resultados.</p>`;
 
     if (!ev.n) { $('reg-eval').innerHTML = `<p style="color:${dim};font-size:.85rem;">La evaluación aparece cuando cargues el primer resultado.</p>`; return; }
+
+    // ——— CLV: ¿le ganamos a la cuota de cierre? ———
+    const conCierre = resu.filter(e => e.cierre && e.cuotas && Object.keys(e.cuotas).length);
+    if (conCierre.length >= 5) {
+      const r = resumenCLV(conCierre.map(e => ({
+        cuota: Math.max(...Object.values(e.cuotas)),
+        cuotaCierre: e.cierre,
+      })));
+      const colorClv = r.media > 1 ? 'var(--green)' : r.media > -1 ? 'var(--yellow)' : 'var(--red)';
+      $('reg-resumen').innerHTML += `<div class="compare-row"><span>CLV (${r.n} con cierre)</span><span class="grid-plain" style="color:${colorClv}">${r.media >= 0 ? '+' : ''}${r.media}% media</span><span class="grid-plain">${r.pctPositivo}% positivo</span><span class="grid-plain" style="color:${colorClv}">${r.media > 0 ? 'vence al cierre ✅' : 'no vence al cierre ⚠️'}</span></div>`;
+    }
 
     const lectura = ev.lectura.map(t => `<p style="margin:0 0 6px;font-size:.85rem;">• ${esc(t)}</p>`).join('');
     const filasMk = ev.mercados.map(s => `<div class="compare-row"><span>${s.label}</span><span class="grid-plain">${s.n}</span><span class="grid-plain">${f3(s.bModelo)} vs ${f3(s.bMercado)}</span><span class="grid-plain" style="color:${col(s.z)}">${s.mejora >= 0 ? '+' : ''}${f1(s.mejora)}% ${senal(s.z)}</span></div>`).join('');
