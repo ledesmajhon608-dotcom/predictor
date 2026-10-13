@@ -290,6 +290,9 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         <input type="text" inputmode="numeric" id="gv-${esc(e.id)}" placeholder="goles visit." style="padding:8px;text-align:center;">
         <input type="text" inputmode="numeric" id="cc-${esc(e.id)}" placeholder="córners tot." style="padding:8px;text-align:center;">
       </div>
+      <div class="field-row" style="margin-bottom:8px;grid-template-columns:1fr;">
+        <input type="text" inputmode="decimal" id="ci-${esc(e.id)}" placeholder="cuota de cierre del pick (opcional)" style="padding:8px;text-align:center;">
+      </div>
       <button data-accion="resultado" data-id="${esc(e.id)}" style="margin-right:8px;">Guardar resultado</button>
       <button data-accion="borrar" data-id="${esc(e.id)}" style="background:var(--surface-2,#1c2530);color:var(--text,#f0f3f7);">🗑</button>
     </div>`;
@@ -326,6 +329,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       const colorClv = r.media > 1 ? 'var(--green)' : r.media > -1 ? 'var(--yellow)' : 'var(--red)';
       $('reg-resumen').innerHTML += `<div class="compare-row"><span>CLV (${r.n} con cierre)</span><span class="grid-plain" style="color:${colorClv}">${r.media >= 0 ? '+' : ''}${r.media}% media</span><span class="grid-plain">${r.pctPositivo}% positivo</span><span class="grid-plain" style="color:${colorClv}">${r.media > 0 ? 'vence al cierre ✅' : 'no vence al cierre ⚠️'}</span></div>`;
     }
+
 
     const lectura = ev.lectura.map(t => `<p style="margin:0 0 6px;font-size:.85rem;">• ${esc(t)}</p>`).join('');
     const filasMk = ev.mercados.map(s => `<div class="compare-row"><span>${s.label}</span><span class="grid-plain">${s.n}</span><span class="grid-plain">${f3(s.bModelo)} vs ${f3(s.bMercado)}</span><span class="grid-plain" style="color:${col(s.z)}">${s.mejora >= 0 ? '+' : ''}${f1(s.mejora)}% ${senal(s.z)}</span></div>`).join('');
@@ -371,7 +375,14 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       const cc = String(ccTxt ?? '').trim() === '' ? null : entero(ccTxt);
       if (gl == null || gv == null) { alert('Cargá los goles de los dos equipos (números enteros).'); return; }
       if (String(ccTxt ?? '').trim() !== '' && cc == null) { alert('Los córners tienen que ser un número entero (o dejalo vacío).'); return; }
-      try { actualizarResultado(id, { gl, gv, corners: cc }); render(); } catch (e) { alert('Error: ' + e.message); }
+      let cierre = null;
+      const ciTxt = String($('ci-' + id)?.value ?? '').trim().replace(',', '.');
+      if (ciTxt !== '') {
+        const ci = parseFloat(ciTxt);
+        if (!Number.isFinite(ci) || ci <= 1) { alert('La cuota de cierre tiene que ser un número mayor que 1 (o dejalo vacío).'); return; }
+        cierre = ci;
+      }
+      try { actualizarResultado(id, { gl, gv, corners: cc, cierre }); render(); } catch (e) { alert('Error: ' + e.message); }
     }
   });
 
