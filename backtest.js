@@ -15,6 +15,7 @@ import { simulateMatch, getStaticRating } from './model.js';
 import { ratingsWalkForward } from './ratings.js';
 import { calcularTasasBase, shrinkHaciaBase } from './calibrate.js';
 import { AutoCalibrate } from './auto-calibrate.js';
+import { roiBootstrap } from './roi-ci.js';
 
 const CAL_MIN_PARTIDOS = 20;
 
@@ -386,6 +387,23 @@ function renderPicks(recs, stats, leagueKey) {
   }).join('');
 
   picksContent.innerHTML = resumenHTML + `<h2 style="font-family:'Anton',sans-serif;font-size:1.15rem;letter-spacing:0.02em;color:var(--chalk);margin:20px 0 10px;">Detalle por partido (${ordenados.length}${ordenados.length > 50 ? ', mostrando 50' : ''})</h2>${cards || '<div class="card"><p style="color:var(--chalk-dim);">Sin partidos con picks.</p></div>'}`;
+  // ——— IC del ROI (bootstrap): ¿el edge es real o ruido? ———
+  try {
+    const todos = recs.flatMap(r => r.picks).filter(p => p.casaOdds && p.hit != null);
+    const b = roiBootstrap(todos.map(p => ({ cuota: p.casaOdds, hit: p.hit })));
+    if (b.roi != null) {
+      const fiable = b.ic[0] > 0;
+      const color = fiable ? 'var(--green)' : b.ic[1] < 0 ? 'var(--red)' : 'var(--yellow)';
+      picksContent.insertAdjacentHTML('beforeend', `<div class="card" style="border:2px solid ${color};">
+        <h3>📉 ROI con intervalo de confianza <small>(bootstrap, ${b.n} apuestas con cuota)</small></h3>
+        <p style="margin:0; font-size:0.9rem;">ROI: <strong style="color:${color};">${b.roi >= 0 ? '+' : ''}${b.roi}%</strong> · IC 95%: [${b.ic[0]}%, ${b.ic[1]}%]</p>
+        <p style="margin:6px 0 0; font-size:0.78rem; color:var(--chalk-dim);">${fiable ? '✅ Edge estadísticamente significativo (el IC no incluye 0).' : '⚠️ El IC incluye 0: con esta muestra no se distingue del azar. Acumulá más picks antes de subir stakes.'}</p>
+      </div>`);
+    } else if (b.aviso) {
+      picksContent.insertAdjacentHTML('beforeend', `<div class="card"><h3>📉 ROI</h3><p style="margin:0; font-size:0.85rem; color:var(--yellow);">⚠️ ${b.aviso}</p></div>`);
+    }
+  } catch (e) { console.warn('No se pudo calcular IC del ROI:', e); }
+
 }
 
 runBtn.addEventListener('click', async () => {
@@ -648,7 +666,7 @@ function exportarComparacionCSV(filas) {
     const fairBttsSi = devigar2(f.casa.odds_btts_si, f.casa.odds_btts_no);
     lineas.push([f.fecha, f.local, f.visitante, num(f.app.local), num(f.app.empate), num(f.app.visitante), num(f.app.over15), num(f.app.over25), num(f.app.over35), num(f.app.btts), num(f.app.corners_over75), num(f.app.corners_over85), num(f.app.corners_over95), f.real.goles_local, f.real.goles_visitante, f.real.total_goles, f.real.resultado, f.real.over15, f.real.over25, f.real.over35, f.real.btts, f.real.corners_local ?? '', f.real.corners_visitante ?? '', f.real.corners_total ?? '', f.casa.odds_local ?? '', f.casa.odds_empate ?? '', f.casa.odds_visitante ?? '', num(fairL), num(fairE), num(fairV), f.casa.odds_over15 ?? '', f.casa.odds_under15 ?? '', num(fairO15), f.casa.odds_over25 ?? '', f.casa.odds_under25 ?? '', num(fairO25), f.casa.odds_over35 ?? '', f.casa.odds_under35 ?? '', num(fairO35), f.casa.odds_btts_si ?? '', f.casa.odds_btts_no ?? '', num(fairBttsSi)].map(escapar).join(','));
   }
-  const csv = '\uFEFF' + lineas.join('\n');
+  const csv = '﻿' + lineas.join('\n');
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
