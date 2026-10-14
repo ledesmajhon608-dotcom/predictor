@@ -378,6 +378,15 @@ document.addEventListener('DOMContentLoaded', () => {
       });
       const claves = Object.keys((raw && raw.odds) || raw || {}).join(', ');
       setStatus(`✅ ${cargadas} mercados cargados. Claves de la API: ${claves}`, 'var(--green)');
+      // Si no vinieron córners, mostrar las claves EN LAS FILAS DE CÓRNERS (visibles sin scrollear)
+      if (!(cuotas.c_over75 || cuotas.c_under95)) {
+        document.querySelectorAll('.cuota-input').forEach(inp => {
+          if (String(inp.dataset.key).startsWith('c_')) {
+            const out = document.getElementById(inp.dataset.out);
+            if (out && !inp.value) out.textContent = 'API: ' + claves;
+          }
+        });
+      }
     } catch (e) {
       setStatus('⚠️ No se pudieron traer cuotas (' + e.message + '). Podés escribirlas a mano.', 'var(--yellow)');
     }
