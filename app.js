@@ -352,7 +352,6 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Trae las cuotas reales del partido y pre-carga la calculadora de valor.
-  // Si no reconoce el formato, MUESTRA la respuesta cruda para diagnosticar.
   async function cargarCuotasAutomaticas(data, ligaKey) {
     const stEl = document.getElementById('cuotas-auto-status');
     const setStatus = (txt, color) => { if (stEl) { stEl.textContent = txt; if (color) stEl.style.color = color; } };
@@ -377,8 +376,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const c = cuotas[inp.dataset.key];
         if (c && !inp.value) { inp.value = c; cargadas++; inp.dispatchEvent(new Event('input', { bubbles: true })); }
       });
-      const hayCorners = cuotas.c_over75 || cuotas.c_under95;
-      setStatus(`✅ Cuotas automáticas de Bzzoiro (${cargadas} mercados cargados${hayCorners ? '' : ' — sin córners: cargalos a mano si tu casa los ofrece'}). Revisá el valor y guardá la predicción.`, 'var(--green)');
+      const claves = Object.keys((raw && raw.odds) || raw || {}).join(', ');
+      setStatus(`✅ ${cargadas} mercados cargados. Claves de la API: ${claves}`, 'var(--green)');
     } catch (e) {
       setStatus('⚠️ No se pudieron traer cuotas (' + e.message + '). Podés escribirlas a mano.', 'var(--yellow)');
     }
