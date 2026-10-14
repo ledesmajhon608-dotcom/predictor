@@ -235,7 +235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
   }
 
-  // ---------- Calculadora de valor ----------
+  // ---------- Calculadora de valor: escribís la cuota y te dice el EV ----------
   let ultimaSim = null;
 
   function parseCuota(txt) {
@@ -352,8 +352,7 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Trae las cuotas reales del partido y pre-carga la calculadora de valor.
-  // Cómers: la API de Bzzoiro NO los ofrece (verificado: solo 1X2/goles/BTTS);
-  // quedan para carga manual.
+  // Si no hay add-on Odds o no encuentra el partido, queda la carga manual.
   async function cargarCuotasAutomaticas(data, ligaKey) {
     const stEl = document.getElementById('cuotas-auto-status');
     const setStatus = (txt, color) => { if (stEl) { stEl.textContent = txt; if (color) stEl.style.color = color; } };
@@ -378,8 +377,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const c = cuotas[inp.dataset.key];
         if (c && !inp.value) { inp.value = c; cargadas++; inp.dispatchEvent(new Event('input', { bubbles: true })); }
       });
-      const hayCorners = cuotas.c_over75 || cuotas.c_under95;
-      setStatus(`✅ ${cargadas} mercados cargados${hayCorners ? '' : ' — la API no ofrece cuotas de córners: cargalas a mano si tu casa las tiene'}. Revisá el valor y guardá la predicción.`, 'var(--green)');
+      setStatus(`✅ ${cargadas} mercados cargados. Revisá el valor y guardá la predicción.`, 'var(--green)');
     } catch (e) {
       setStatus('⚠️ No se pudieron traer cuotas (' + e.message + '). Podés escribirlas a mano.', 'var(--yellow)');
     }
