@@ -249,14 +249,13 @@ document.addEventListener('DOMContentLoaded', () => {
       ['local', 'Local gana', rp.local], ['empate', 'Empate', rp.empate], ['visitante', 'Visitante gana', rp.visitante],
       ['over15', 'Más de 1.5 goles', data.over15],
       ['over25', 'Más de 2.5 goles', data.over25],
+      ['under25', 'Menos de 2.5 goles', 100 - data.over25],
       ['under35', 'Menos de 3.5 goles', 100 - data.over35],
-      ['under45', 'Menos de 4.5 goles', 100 - data.over45],
       ['bttsSi', 'BTTS Sí', data.btts], ['bttsNo', 'BTTS No', 100 - data.btts],
     ];
     if (data.cornerProbs) {
       const c = data.cornerProbs;
-      filas.push(['c_over75', 'Más de 7.5 córners', c.over7], ['c_over85', 'Más de 8.5 córners', c.over8],
-                 ['c_under95', 'Menos de 9.5 córners', 100 - c.over9], ['c_under105', 'Menos de 10.5 córners', 100 - c.over10]);
+      filas.push(['c_over75', 'Más de 7.5 córners', c.over7], ['c_under95', 'Menos de 9.5 córners', 100 - c.over9]);
     }
     return filas.filter(([, , p]) => typeof p === 'number' && Number.isFinite(p) && p > 0);
   }
@@ -378,7 +377,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const c = cuotas[inp.dataset.key];
         if (c && !inp.value) { inp.value = c; cargadas++; inp.dispatchEvent(new Event('input', { bubbles: true })); }
       });
-      setStatus(`✅ Cuotas automáticas de Bzzoiro (${cargadas} mercados cargados). Revisá el valor y guardá la predicción.`, 'var(--green)');
+      const hayCorners = cuotas.c_over75 || cuotas.c_under95;
+      setStatus(`✅ Cuotas automáticas de Bzzoiro (${cargadas} mercados cargados${hayCorners ? '' : ' — sin córners: cargalos a mano si tu casa los ofrece'}). Revisá el valor y guardá la predicción.`, 'var(--green)');
     } catch (e) {
       setStatus('⚠️ No se pudieron traer cuotas (' + e.message + '). Podés escribirlas a mano.', 'var(--yellow)');
     }
