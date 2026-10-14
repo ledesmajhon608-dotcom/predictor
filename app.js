@@ -352,6 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Trae las cuotas reales del partido y pre-carga la calculadora de valor.
+  // Cómers: la API de Bzzoiro NO los ofrece (verificado: solo 1X2/goles/BTTS);
+  // quedan para carga manual.
   async function cargarCuotasAutomaticas(data, ligaKey) {
     const stEl = document.getElementById('cuotas-auto-status');
     const setStatus = (txt, color) => { if (stEl) { stEl.textContent = txt; if (color) stEl.style.color = color; } };
@@ -376,17 +378,8 @@ document.addEventListener('DOMContentLoaded', () => {
         const c = cuotas[inp.dataset.key];
         if (c && !inp.value) { inp.value = c; cargadas++; inp.dispatchEvent(new Event('input', { bubbles: true })); }
       });
-      const claves = Object.keys((raw && raw.odds) || raw || {}).join(', ');
-      setStatus(`✅ ${cargadas} mercados cargados. Claves de la API: ${claves}`, 'var(--green)');
-      // Si no vinieron córners, mostrar las claves EN LAS FILAS DE CÓRNERS (visibles sin scrollear)
-      if (!(cuotas.c_over75 || cuotas.c_under95)) {
-        document.querySelectorAll('.cuota-input').forEach(inp => {
-          if (String(inp.dataset.key).startsWith('c_')) {
-            const out = document.getElementById(inp.dataset.out);
-            if (out && !inp.value) out.textContent = 'API: ' + claves;
-          }
-        });
-      }
+      const hayCorners = cuotas.c_over75 || cuotas.c_under95;
+      setStatus(`✅ ${cargadas} mercados cargados${hayCorners ? '' : ' — la API no ofrece cuotas de córners: cargalas a mano si tu casa las tiene'}. Revisá el valor y guardá la predicción.`, 'var(--green)');
     } catch (e) {
       setStatus('⚠️ No se pudieron traer cuotas (' + e.message + '). Podés escribirlas a mano.', 'var(--yellow)');
     }
