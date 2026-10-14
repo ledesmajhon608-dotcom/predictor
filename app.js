@@ -3,6 +3,7 @@ import { LIGAS } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
 import { AutoCalibrate } from './auto-calibrate.js';
 import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales } from './picks.js';
+import { agregarEntrada, entradaDesdeSimulacion } from './registro.js';
 
 const ESTADO_KEY = 'vv_estado_seleccion';
 let ligaKeyGlobal = 'CPA';
@@ -227,9 +228,37 @@ document.addEventListener('DOMContentLoaded', () => {
       return `<div class="card" style="border:2px solid var(--line); opacity:0.8;"><h3>🎯 Mejores picks para este partido</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Sin picks. Ningún mercado con edge supera los umbrales.</p><p style="color:var(--chalk-dim); margin:6px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
     }
 
-    const filas = picks.map(p => `<div class="prob-row"><div class="prob-row-top"><span>✅ ${p.label}</span><span class="prob" style="color:${getColor(p.prob)}">${fmt(p.prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${p.prob}%;background:${getColor(p.prob)}"></div></div></div>`).join('');
+    const filas = picks.map(p => `
+      <label class="prob-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
+        <input type="checkbox" class="pick-check" data-key="${p.key}" checked style="width:18px;height:18px;flex-shrink:0;accent-color:#3ecf8e;">
+        <span style="flex:1;">
+          <span class="prob-row-top" style="display:flex;justify-content:space-between;"><span>✅ ${p.label}</span><span class="prob" style="color:${getColor(p.prob)}">${fmt(p.prob)}%</span></span>
+          <span class="semaforo-track" style="display:block;"><span class="semaforo-fill" style="display:block;width:${p.prob}%;background:${getColor(p.prob)}"></span></span>
+        </span>
+      </label>`).join('');
 
-    return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
+    return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p><p style="color:var(--chalk-dim); font-size:0.72rem; margin:6px 0 0;">☑️ Destildá los que NO vayas a apostar. Podés guardar varios picks del mismo partido.</p><button id="guardar-picks" style="width:100%; margin-top:12px;">📝 Guardar picks seleccionados</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardalos antes de que empiece el partido. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
+  }
+
+  // Guarda solo los picks tildados (puede haber varios del mismo partido).
+  function wirePicksGuardar(data, ligaKey) {
+    const btn = document.getElementById('guardar-picks');
+    const st = document.getElementById('guardar-status');
+    if (!btn || !st) return;
+    btn.addEventListener('click', () => {
+      const elegidos = [...document.querySelectorAll('.pick-check:checked')].map(c => c.dataset.key);
+      if (!elegidos.length) { st.textContent = '⚠️ Tildá al menos un pick para guardar.'; st.style.color = 'var(--yellow)'; return; }
+      try {
+        const r = agregarEntrada(entradaDesdeSimulacion(data, ligaKey, {}, elegidos));
+        st.textContent = r.reemplazada
+          ? `✅ Actualizada con ${elegidos.length} pick${elegidos.length > 1 ? 's' : ''}. Total: ${r.total}.`
+          : `✅ Guardada con ${elegidos.length} pick${elegidos.length > 1 ? 's' : ''}. Total: ${r.total}.`;
+        st.style.color = 'var(--green)';
+      } catch (e) {
+        st.textContent = '❌ No se pudo guardar: ' + e.message;
+        st.style.color = 'var(--red)';
+      }
+    });
   }
 
   function displayResults(data, ligaKey) {
@@ -248,6 +277,7 @@ document.addEventListener('DOMContentLoaded', () => {
       ${comparisonCard}
     `;
     resultsDiv.style.display = 'block';
+    wirePicksGuardar(data, ligaKey);
   }
 
   populateLeagues();
