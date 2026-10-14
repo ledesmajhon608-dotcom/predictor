@@ -1,10 +1,8 @@
 // app.js
-import { LIGAS, FILTRO_EV } from './leagues.js';
+import { LIGAS } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
 import { AutoCalibrate } from './auto-calibrate.js';
 import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales } from './picks.js';
-import { agregarEntrada, entradaDesdeSimulacion } from './registro.js';
-import { leerBanca, stakeParaPick } from './bankroll.js';
 
 const ESTADO_KEY = 'vv_estado_seleccion';
 let ligaKeyGlobal = 'CPA';
@@ -234,98 +232,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
   }
 
-  // ---------- Calculadora de valor: escribís la cuota y te dice el EV ----------
-  let ultimaSim = null;
-
-  function parseCuota(txt) {
-    const v = parseFloat(String(txt).replace(',', '.'));
-    return Number.isFinite(v) && v > 1 ? v : null;
-  }
-
-  function filasValor(data) {
-    const rp = data.resultProbs;
-    const filas = [
-      ['local', 'Local gana', rp.local], ['empate', 'Empate', rp.empate], ['visitante', 'Visitante gana', rp.visitante],
-      ['over15', 'Más de 1.5 goles', data.over15],
-      ['over25', 'Más de 2.5 goles', data.over25],
-      ['under25', 'Menos de 2.5 goles', 100 - data.over25],
-      ['under35', 'Menos de 3.5 goles', 100 - data.over35],
-      ['bttsSi', 'BTTS Sí', data.btts], ['bttsNo', 'BTTS No', 100 - data.btts],
-    ];
-    if (data.cornerProbs) {
-      const c = data.cornerProbs;
-      filas.push(['c_over75', 'Más de 7.5 córners', c.over7], ['c_under95', 'Menos de 9.5 córners', 100 - c.over9]);
-    }
-    return filas.filter(([, , p]) => typeof p === 'number' && Number.isFinite(p) && p > 0);
-  }
-
-  function renderValueCard(data, ligaKey) {
-    const config = getBettingConfig(ligaKey);
-    const aviso = config.status === 'red'
-      ? `<p style="color:var(--red); margin:0 0 10px; font-size:0.78rem;">⚠️ Liga roja: históricamente el modelo no le gana a la cuota acá. Usalo con mucha cautela.</p>` : '';
-    const filas = filasValor(data).map(([key, label, prob], i) => {
-      const minima = FILTRO_EV / (prob / 100);
-      return `<div class="compare-row" style="grid-template-columns:1.3fr 0.8fr 1fr 1.5fr;"><span>${label}</span><span class="grid-plain">${fmt(prob)}%</span><input type="text" inputmode="decimal" class="cuota-input" data-key="${key}" data-prob="${prob}" data-out="valor-out-${i}" placeholder="cuota" style="padding:6px 8px; text-align:center; font-size:0.8rem;"><span class="grid-plain" id="valor-out-${i}" style="font-size:0.75rem;">mín ${minima.toFixed(2)}</span></div>`;
-    }).join('');
-    return `<div class="card"><h3>💰 ¿Hay valor? <small>(escribí la cuota de la casa)</small></h3>${aviso}<div class="compare-row compare-head" style="grid-template-columns:1.3fr 0.8fr 1fr 1.5fr;"><span>Mercado</span><span>Modelo</span><span>Cuota</span><span>Valor</span></div>${filas}<p style="color:var(--text-dim,#8b95a5); margin:10px 0 0; font-size:0.72rem; line-height:1.5;">"mín" = cuota mínima para tener EV ${FILTRO_EV} (5% de margen). Si el EV sale muy alto (más de 1.20), sospechá del modelo antes que de la casa: revisá lesiones y alineaciones.</p><button id="guardar-registro" style="width:100%; margin-top:12px;">📝 Guardar predicción en el registro</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardala antes de que empiece el partido, con las cuotas que escribiste. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
-  }
-
-  function wireValueCard() {
-    document.querySelectorAll('.cuota-input').forEach(inp => {
-      inp.addEventListener('input', () => {
-        const out = document.getElementById(inp.dataset.out);
-        if (!out) return;
-        const prob = parseFloat(inp.dataset.prob);
-        const cuota = parseCuota(inp.value);
-        if (cuota == null) {
-          out.textContent = `mín ${(FILTRO_EV / (prob / 100)).toFixed(2)}`;
-          out.style.color = '';
-          return;
-        }
-        const ev = (prob / 100) * cuota;
-        if (ev >= FILTRO_EV) {
-          out.textContent = ev > 1.2 ? `✅ EV ${ev.toFixed(2)} ⚠️ revisá` : `✅ VALOR EV ${ev.toFixed(2)}`;
-          out.style.color = 'var(--green)';
-          const bk = leerBanca();
-          const sk = stakeParaPick(bk, { prob, cuota, stakeBase: 1 });
-          out.textContent += sk.motivo
-            ? ` · ⛔ ${sk.motivo}`
-            : ` · stake ${sk.stake}% de la banca ($${(bk.banca * sk.stake / 100).toFixed(0)})`;
-        } else if (ev >= 1) {
-          out.textContent = `≈ justo EV ${ev.toFixed(2)}`;
-          out.style.color = 'var(--yellow)';
-        } else {
-          out.textContent = `❌ EV ${ev.toFixed(2)}`;
-          out.style.color = 'var(--red)';
-        }
-      });
-    });
-  }
-
-  function wireGuardar() {
-    const btn = document.getElementById('guardar-registro');
-    const st = document.getElementById('guardar-status');
-    if (!btn || !st) return;
-    btn.addEventListener('click', () => {
-      if (!ultimaSim) return;
-      const cuotas = {};
-      document.querySelectorAll('.cuota-input').forEach(inp => {
-        const c = parseCuota(inp.value);
-        if (c && inp.dataset.key) cuotas[inp.dataset.key] = c;
-      });
-      try {
-        const r = agregarEntrada(entradaDesdeSimulacion(ultimaSim.data, ultimaSim.ligaKey, cuotas));
-        st.textContent = r.reemplazada
-          ? `✅ Actualizada (ya había una pendiente de este partido). Total: ${r.total}.`
-          : `✅ Guardada en el registro. Total: ${r.total}.`;
-        st.style.color = 'var(--green)';
-      } catch (e) {
-        st.textContent = '❌ No se pudo guardar: ' + e.message;
-        st.style.color = 'var(--red)';
-      }
-    });
-  }
-
   function displayResults(data, ligaKey) {
     const compareRow = (label, own, ml, blended) => `<div class="compare-row"><span>${label}</span>${gridProb(own)}${gridProb(ml)}${gridProb(blended)}</div>`;
 
@@ -335,7 +241,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     predictionsContent.innerHTML = `
       ${picksCard}
-      ${renderValueCard(data, ligaKey)}
       <div class="card"><h3>Resultado 1X2</h3>${fila('Local', data.resultProbs.local)}${fila('Empate', data.resultProbs.empate)}${fila('Visitante', data.resultProbs.visitante)}</div>
       <div class="card"><h3>Goles</h3>${fila('Over 1.5', data.over15)}${fila('Over 2.5', data.over25)}${fila('Over 3.5', data.over35)}</div>
       <div class="card"><h3>Ambos marcan (BTTS)</h3>${fila('Sí', data.btts)}</div>
@@ -343,9 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
       ${comparisonCard}
     `;
     resultsDiv.style.display = 'block';
-    ultimaSim = { data, ligaKey };
-    wireValueCard();
-    wireGuardar();
   }
 
   populateLeagues();
