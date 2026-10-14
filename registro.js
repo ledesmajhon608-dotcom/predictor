@@ -35,7 +35,8 @@ const r2 = (v) => (typeof v === 'number' && Number.isFinite(v) ? +v.toFixed(2) :
 
 // Arma la entrada a partir del resultado de simulateMatch (ya con shrink aplicado).
 // cuotas: { local, empate, visitante, over15, under15, ..., bttsSi, bttsNo, c_over75, c_under75, ... }
-export function entradaDesdeSimulacion(data, ligaKey, cuotas = {}) {
+// picks: claves de MERCADOS que el usuario eligió apostar (varios por partido).
+export function entradaDesdeSimulacion(data, ligaKey, cuotas = {}, picks = []) {
   const rp = data.resultProbs;
   const cp = data.cornerProbs;
   const limpias = {};
@@ -53,6 +54,7 @@ export function entradaDesdeSimulacion(data, ligaKey, cuotas = {}) {
     },
     corners: cp ? { over7: r2(cp.over7), over8: r2(cp.over8), over9: r2(cp.over9), over10: r2(cp.over10) } : null,
     cuotas: limpias,
+    picks: Array.isArray(picks) ? [...picks] : [],   // mercados elegidos para apostar
     cierre: null,   // cuota de cierre (se completa al cargar el resultado)
     resultado: null,
   };
@@ -285,6 +287,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
     return `<div class="card">
       <h3 style="font-size:.95rem;">${esc(e.local)} vs ${esc(e.visitante)}</h3>
       <p style="margin:0 0 8px;font-size:.75rem;color:${dim};">${esc(e.ligaNombre)} · guardada ${fechaCorta(e.creado)} · L ${f1(p.local)}% E ${f1(p.empate)}% V ${f1(p.visitante)}% · ${cuotasTxt(e)}</p>
+      ${(e.picks && e.picks.length) ? `<p style="margin:0 0 8px;font-size:.75rem;color:var(--green);">🎯 ${e.picks.map(k => esc(MERCADOS.find(m => m.key === k)?.label || k)).join(' · ')}</p>` : ''}
       <div class="field-row" style="margin-bottom:8px;grid-template-columns:1fr 1fr 1fr;">
         <input type="text" inputmode="numeric" id="gl-${esc(e.id)}" placeholder="goles local" style="padding:8px;text-align:center;">
         <input type="text" inputmode="numeric" id="gv-${esc(e.id)}" placeholder="goles visit." style="padding:8px;text-align:center;">
@@ -314,7 +317,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       <div class="compare-row"><span>Resueltas</span><span class="grid-plain">${ev.n} / ${ev.meta}</span><span class="grid-plain"></span><span class="grid-plain"></span></div>
       <div class="semaforo-track" style="margin-top:8px;"><div class="semaforo-fill" style="width:${Math.min(100, ev.n / ev.meta * 100)}%;background:var(--green)"></div></div>`;
 
-    $('reg-pendientes').innerHTML = pend.length ? pend.map(cardPendiente).join('') : `<p style="color:${dim};font-size:.85rem;">No hay predicciones pendientes. Simulá un partido en la app y tocá "Guardar predicción".</p>`;
+    $('reg-pendientes').innerHTML = pend.length ? pend.map(cardPendiente).join('') : `<p style="color:${dim};font-size:.85rem;">No hay predicciones pendientes. Simulá un partido en la app y tocá "Guardar picks seleccionados".</p>`;
     $('reg-resueltas').innerHTML = resu.length ? `<div class="card">${resu.slice(0, 30).map(cardResuelta).join('')}</div>` : `<p style="color:${dim};font-size:.85rem;">Todavía no cargaste resultados.</p>`;
 
     if (!ev.n) { $('reg-eval').innerHTML = `<p style="color:${dim};font-size:.85rem;">La evaluación aparece cuando cargues el primer resultado.</p>`; return; }
