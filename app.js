@@ -5,7 +5,6 @@ import { AutoCalibrate } from './auto-calibrate.js';
 import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales } from './picks.js';
 import { agregarEntrada, entradaDesdeSimulacion } from './registro.js';
 import { leerBanca, stakeParaPick } from './bankroll.js';
-import { resolveLeagueId, findUpcomingEvent, fetchEventOdds, normalizarOddsBzzoiro } from './api.js';
 
 const ESTADO_KEY = 'vv_estado_seleccion';
 let ligaKeyGlobal = 'CPA';
@@ -264,12 +263,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = getBettingConfig(ligaKey);
     const aviso = config.status === 'red'
       ? `<p style="color:var(--red); margin:0 0 10px; font-size:0.78rem;">⚠️ Liga roja: históricamente el modelo no le gana a la cuota acá. Usalo con mucha cautela.</p>` : '';
-    const statusAuto = `<p id="cuotas-auto-status" style="margin:0 0 10px; font-size:0.75rem; color:var(--chalk-dim);">⏳ Buscando cuotas reales de Bzzoiro…</p>`;
     const filas = filasValor(data).map(([key, label, prob], i) => {
       const minima = FILTRO_EV / (prob / 100);
       return `<div class="compare-row" style="grid-template-columns:1.3fr 0.8fr 1fr 1.5fr;"><span>${label}</span><span class="grid-plain">${fmt(prob)}%</span><input type="text" inputmode="decimal" class="cuota-input" data-key="${key}" data-prob="${prob}" data-out="valor-out-${i}" placeholder="cuota" style="padding:6px 8px; text-align:center; font-size:0.8rem;"><span class="grid-plain" id="valor-out-${i}" style="font-size:0.75rem;">mín ${minima.toFixed(2)}</span></div>`;
     }).join('');
-    return `<div class="card"><h3>💰 ¿Hay valor? <small>(cuotas automáticas si hay acceso)</small></h3>${aviso}${statusAuto}<div class="compare-row compare-head" style="grid-template-columns:1.3fr 0.8fr 1fr 1.5fr;"><span>Mercado</span><span>Modelo</span><span>Cuota</span><span>Valor</span></div>${filas}<p style="color:var(--text-dim,#8b95a5); margin:10px 0 0; font-size:0.72rem; line-height:1.5;">"mín" = cuota mínima para tener EV ${FILTRO_EV} (5% de margen). Si el EV sale muy alto (más de 1.20), sospechá del modelo antes que de la casa: revisá lesiones y alineaciones.</p><button id="guardar-registro" style="width:100%; margin-top:12px;">📝 Guardar predicción en el registro</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardala antes de que empiece el partido, con las cuotas que escribiste. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
+    return `<div class="card"><h3>💰 ¿Hay valor? <small>(escribí la cuota de la casa)</small></h3>${aviso}<div class="compare-row compare-head" style="grid-template-columns:1.3fr 0.8fr 1fr 1.5fr;"><span>Mercado</span><span>Modelo</span><span>Cuota</span><span>Valor</span></div>${filas}<p style="color:var(--text-dim,#8b95a5); margin:10px 0 0; font-size:0.72rem; line-height:1.5;">"mín" = cuota mínima para tener EV ${FILTRO_EV} (5% de margen). Si el EV sale muy alto (más de 1.20), sospechá del modelo antes que de la casa: revisá lesiones y alineaciones.</p><button id="guardar-registro" style="width:100%; margin-top:12px;">📝 Guardar predicción en el registro</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardala antes de que empiece el partido, con las cuotas que escribiste. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
   }
 
   function wireValueCard() {
@@ -348,39 +346,6 @@ document.addEventListener('DOMContentLoaded', () => {
     ultimaSim = { data, ligaKey };
     wireValueCard();
     wireGuardar();
-    cargarCuotasAutomaticas(data, ligaKey);
-  }
-
-  // Trae las cuotas reales del partido y pre-carga la calculadora de valor.
-  // Si no hay add-on Odds o no encuentra el partido, queda la carga manual.
-  async function cargarCuotasAutomaticas(data, ligaKey) {
-    const stEl = document.getElementById('cuotas-auto-status');
-    const setStatus = (txt, color) => { if (stEl) { stEl.textContent = txt; if (color) stEl.style.color = color; } };
-    try {
-      if (!localStorage.getItem('bzzoiro_token')) { setStatus('Sin token de Bzzoiro: escribí las cuotas a mano.'); return; }
-      const liga = LIGAS[ligaKey];
-      const leagueId = await resolveLeagueId(ligaKey, liga.name);
-      if (!leagueId) { setStatus('Liga no disponible en Bzzoiro: escribí las cuotas a mano.'); return; }
-      const ev = await findUpcomingEvent(leagueId, data.homeTeam, data.awayTeam);
-      if (!ev) { setStatus('Partido no encontrado en los próximos 14 días de Bzzoiro: escribí las cuotas a mano.'); return; }
-      const raw = await fetchEventOdds(ev.id);
-      const cuotas = normalizarOddsBzzoiro(raw);
-      const n = Object.keys(cuotas).length;
-      if (!n) {
-        const muestra = JSON.stringify(raw).slice(0, 500);
-        console.log('ODDS RAW:', raw);
-        setStatus('⚠️ Sin cuotas reconocibles. Respuesta cruda: ' + muestra, 'var(--yellow)');
-        return;
-      }
-      let cargadas = 0;
-      document.querySelectorAll('.cuota-input').forEach(inp => {
-        const c = cuotas[inp.dataset.key];
-        if (c && !inp.value) { inp.value = c; cargadas++; inp.dispatchEvent(new Event('input', { bubbles: true })); }
-      });
-      setStatus(`✅ ${cargadas} mercados cargados. Revisá el valor y guardá la predicción.`, 'var(--green)');
-    } catch (e) {
-      setStatus('⚠️ No se pudieron traer cuotas (' + e.message + '). Podés escribirlas a mano.', 'var(--yellow)');
-    }
   }
 
   populateLeagues();
