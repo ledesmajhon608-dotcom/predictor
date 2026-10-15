@@ -1,19 +1,15 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
-// v3:
-// - TEAM_ALIASES para nombres alternativos de equipos
-// - PLATT goals45
-// - KELLY_FRACTION + FILTRO_EV_POR_MERCADO
-// - LIVE_PRIOR_GAMES más bajo (ratings en vivo pesan más rápido)
+// v4: agrega umbralDC (doble oportunidad), filtros EV 1X/X2.
 // ============================================================================
 
 export const LIGAS = {
-  "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "BTTS"], "nota": "Local +1.7% vs cuota." } },
-  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Visitante +5.9% vs cuota. 4 mercados con edge." } },
-  "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 0.5, "mercados": ["1X2", "Over 1.5"], "nota": "Over 1.5 +2.5%, Visitante +2.4% (muestra chica)." } },
-  "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["Over 1.5", "Over 3.5"], "nota": "Over 1.5 +3.7% vs cuota (solo 10 picks: muestra chica, stake bajado de 2% a 1%)." } },
-  "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["Over 1.5", "Over 3.5"], "nota": "Over 1.5 +1.1% (17 picks), Over 3.5 +2.6%." } },
-  "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": false }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["Over 2.5", "BTTS"], "nota": "⚠️ err 11.7%. Solo Over 2.5 y BTTS." } },
+  "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "BTTS"], "nota": "Local +1.7% vs cuota." } },
+  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Visitante +5.9% vs cuota. 4 mercados con edge." } },
+  "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 0.5, "mercados": ["1X2", "1X", "X2", "Over 1.5"], "nota": "Over 1.5 +2.5%, Visitante +2.4% (muestra chica)." } },
+  "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X", "X2", "Over 1.5", "Over 3.5"], "nota": "Over 1.5 +3.7% vs cuota (solo 10 picks)." } },
+  "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X", "X2", "Over 1.5", "Over 3.5"], "nota": "Over 1.5 +1.1% (17 picks), Over 3.5 +2.6%." } },
+  "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": false }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X", "X2", "Over 2.5", "BTTS"], "nota": "⚠️ err 11.7%. Solo Over 2.5 y BTTS." } },
   "PL": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "goalsAvg": 2.85, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "PD": { "name": "🇪🇸 La Liga", "goalsAvg": 2.55, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "SA": { "name": "🇮🇹 Serie A", "goalsAvg": 2.65, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red" } },
@@ -177,78 +173,37 @@ export const TEAM_STRENGTH_DB = {
   }
 };
 
-// [NUEVO] Aliases de equipos: nombres alternativos que devuelve Bzzoiro
-// y que deben mapear al nombre canónico en TEAM_STRENGTH_DB.
+// [NUEVO] Aliases de equipos
 export const TEAM_ALIASES = {
-  // Premier League
-  'Barcelona': 'FC Barcelona',
-  'Real Madrid CF': 'Real Madrid',
-  'Man City': 'Manchester City',
-  'Man United': 'Manchester United',
-  'Manchester Utd': 'Manchester United',
-  'Spurs': 'Tottenham Hotspur',
-  'Tottenham': 'Tottenham Hotspur',
-  'Wolves': 'Wolverhampton',
-  'Newcastle': 'Newcastle United',
-  'Brighton': 'Brighton & Hove Albion',
+  'Barcelona': 'FC Barcelona', 'Real Madrid CF': 'Real Madrid',
+  'Man City': 'Manchester City', 'Man United': 'Manchester United',
+  'Manchester Utd': 'Manchester United', 'Spurs': 'Tottenham Hotspur',
+  'Tottenham': 'Tottenham Hotspur', 'Wolves': 'Wolverhampton',
+  'Newcastle': 'Newcastle United', 'Brighton': 'Brighton & Hove Albion',
   'Nottm Forest': 'Nottingham Forest',
-  // La Liga
-  'Atletico Madrid': 'Atlético Madrid',
-  'Atletico de Madrid': 'Atlético Madrid',
-  'Athletic Bilbao': 'Athletic Club',
-  'Betis': 'Real Betis',
-  'Real Betis Balompié': 'Real Betis',
-  'Alaves': 'Deportivo Alavés',
-  // Serie A
-  'Milan': 'AC Milan',
-  'Inter Milan': 'Inter',
-  'Internazionale': 'Inter',
-  'Napoli': 'SSC Napoli',
-  'Roma': 'AS Roma',
-  // Bundesliga
-  'Bayern Munich': 'FC Bayern München',
-  'Bayern München': 'FC Bayern München',
-  'Borussia Dortmund BVB': 'Borussia Dortmund',
-  'Leverkusen': 'Bayer 04 Leverkusen',
+  'Atletico Madrid': 'Atlético Madrid', 'Atletico de Madrid': 'Atlético Madrid',
+  'Athletic Bilbao': 'Athletic Club', 'Betis': 'Real Betis',
+  'Real Betis Balompié': 'Real Betis', 'Alaves': 'Deportivo Alavés',
+  'Milan': 'AC Milan', 'Inter Milan': 'Inter', 'Internazionale': 'Inter',
+  'Napoli': 'SSC Napoli', 'Roma': 'AS Roma',
+  'Bayern Munich': 'FC Bayern München', 'Bayern München': 'FC Bayern München',
+  'Borussia Dortmund BVB': 'Borussia Dortmund', 'Leverkusen': 'Bayer 04 Leverkusen',
   'RB Leipzig Leipzig': 'RB Leipzig',
-  // Ligue 1
-  'PSG': 'Paris Saint-Germain',
-  'Marseille': 'Olympique de Marseille',
+  'PSG': 'Paris Saint-Germain', 'Marseille': 'Olympique de Marseille',
   'Lyon': 'Olympique Lyonnais',
-  // Brasil
-  'Atletico Mineiro': 'Atlético Mineiro',
-  'Atletico MG': 'Atlético Mineiro',
+  'Atletico Mineiro': 'Atlético Mineiro', 'Atletico MG': 'Atlético Mineiro',
   'Bragantino': 'Red Bull Bragantino',
-  // Portugal
-  'Sporting Lisbon': 'Sporting CP',
-  'Porto': 'FC Porto',
-  'Benfica Lisbon': 'Benfica',
-  // Argentina
-  'Independiente': 'CA Independiente',
-  'Lanús': 'CA Lanús',
-  'Talleres': 'CA Talleres',
-  'River': 'River Plate',
-  'Boca': 'Boca Juniors',
-  'Vélez': 'Vélez Sarsfield',
-  // Colombia
-  'Atletico Nacional': 'Atlético Nacional',
-  'America de Cali': 'América de Cali',
-  'Santa Fe': 'Independiente Santa Fe',
-  'Medellin': 'Independiente Medellín',
+  'Sporting Lisbon': 'Sporting CP', 'Porto': 'FC Porto', 'Benfica Lisbon': 'Benfica',
+  'Independiente': 'CA Independiente', 'Lanús': 'CA Lanús', 'Talleres': 'CA Talleres',
+  'River': 'River Plate', 'Boca': 'Boca Juniors', 'Vélez': 'Vélez Sarsfield',
+  'Atletico Nacional': 'Atlético Nacional', 'America de Cali': 'América de Cali',
+  'Santa Fe': 'Independiente Santa Fe', 'Medellin': 'Independiente Medellín',
   'Junior': 'Junior Barranquilla',
-  // MLS
-  'Inter Miami': 'Inter Miami CF',
-  'LAFC': 'Los Angeles FC',
-  'LA Galaxy': 'LA Galaxy',
-  'NYCFC': 'New York City FC',
-  'NY Red Bulls': 'New York Red Bulls',
-  'Seattle Sounders': 'Seattle Sounders FC',
-  'Vancouver': 'Vancouver Whitecaps',
-  // Mexico
-  'America': 'Club América',
-  'Chivas': 'CD Guadalajara',
-  'Cruz Azul CDMX': 'Cruz Azul',
-  'Tigres': 'Tigres UANL',
+  'Inter Miami': 'Inter Miami CF', 'LAFC': 'Los Angeles FC', 'LA Galaxy': 'LA Galaxy',
+  'NYCFC': 'New York City FC', 'NY Red Bulls': 'New York Red Bulls',
+  'Seattle Sounders': 'Seattle Sounders FC', 'Vancouver': 'Vancouver Whitecaps',
+  'America': 'Club América', 'Chivas': 'CD Guadalajara',
+  'Cruz Azul CDMX': 'Cruz Azul', 'Tigres': 'Tigres UANL',
 };
 
 export const HOME_ADVANTAGE = {
@@ -264,7 +219,6 @@ export const DIXON_COLES_RHO = {
   "default": -0.100
 };
 
-// [MODIFICADO] se agregó goals45 con sus propios parámetros.
 export const PLATT_PARAMS = {
   goals15: { A: 0.951, B: -0.038 },
   goals25: { A: 0.933, B: -0.055 },
@@ -307,7 +261,6 @@ export const RHO_MIN = -0.20, RHO_MAX = 0.05;
 export const RATING_SHRINK = 0.85;
 export const RATING_MIN = 0.45, RATING_MAX = 1.90;
 
-// [MODIFICADO] 6 → 4: los ratings en vivo pesan más rápido.
 export const LIVE_PRIOR_GAMES = 4;
 export const GOALS_AVG_PRIOR_MATCHES = 20;
 
@@ -317,24 +270,21 @@ export const RATINGS_PRIOR_JUEGOS = 6;
 export const RATINGS_HALFLIFE_DIAS = 60;
 export const CORNER_PRIOR_MATCHES = 20;
 
-// [NUEVO] Ratings de córners aprendidos del historial.
 export const CORNER_RATINGS_PRIOR_JUEGOS = 8;
 export const CORNER_RATINGS_HALFLIFE_DIAS = 90;
 
-// [NUEVO] Calibración con peso por recencia.
 export const CALIB_HALFLIFE_DIAS = 90;
 
-// [NUEVO] Kelly fraccionado (0.25 = Kelly/4, conservador).
 export const KELLY_FRACTION = 0.25;
-// Tope de stake por pick, en % de la banca.
 export const STAKE_MAX_PCT = 3;
 
 export const FILTRO_EV = 1.05;
 
-// [NUEVO] Filtro EV adaptativo por mercado. Si el modelo es más débil en un
-// mercado, subimos el umbral para exigir más valor antes de recomendar.
+// [NUEVO] Filtro EV adaptativo por mercado, incluyendo 1X/X2.
 export const FILTRO_EV_POR_MERCADO = {
   '1X2': 1.07,
+  '1X': 1.04,
+  'X2': 1.04,
   'Over 1.5': 1.03,
   'Over 2.5': 1.05,
   'Over 3.5': 1.07,
@@ -354,21 +304,24 @@ export function getFiltroEV(mercado) {
 export const SHRINK_ALPHA = 0.15;
 
 export const UMBRALES_POR_LIGA = {
-  PL:  { umbral1x2: 50, umbralGoles: 75, umbralCorners: 75, umbralBtss: 70, cornersVisitante: false },
-  PD:  { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, cornersVisitante: false },
-  SA:  { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, cornersVisitante: false },
-  BL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
-  FL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
-  ELC: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
-  PPT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
-  BSA: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, cornersVisitante: true },
-  ARG: { umbral1x2: 55, umbralGoles: 65, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
-  MXL: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, cornersVisitante: true },
-  MLS: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, cornersVisitante: false },
-  CPA: { umbral1x2: 50, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: false },
-  DEFAULT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, cornersVisitante: true },
+  PL:  { umbral1x2: 50, umbralGoles: 75, umbralCorners: 75, umbralBtss: 70, umbralDC: 68, cornersVisitante: false },
+  PD:  { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: false },
+  SA:  { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: false },
+  BL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
+  FL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
+  ELC: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
+  PPT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
+  BSA: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: true },
+  ARG: { umbral1x2: 55, umbralGoles: 65, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
+  MXL: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: true },
+  MLS: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: false },
+  CPA: { umbral1x2: 50, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
+  DEFAULT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: true },
 };
 
+// [MODIFICADO] Merge con DEFAULT: así agregar umbralDC solo al DEFAULT alcanza
+// para todas las ligas, sin tener que repetirlo en cada una.
 export function getUmbrales(leagueKey) {
-  return UMBRALES_POR_LIGA[leagueKey] || UMBRALES_POR_LIGA.DEFAULT;
+  const liga = UMBRALES_POR_LIGA[leagueKey] || {};
+  return { ...UMBRALES_POR_LIGA.DEFAULT, ...liga };
 }
