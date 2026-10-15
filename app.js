@@ -1,5 +1,5 @@
 // app.js
-// v3: warning de sinRating, undres y BTTS No en UI, stake Kelly informativo.
+// v4: agrega tarjeta Doble oportunidad (1X / X2).
 
 import { LIGAS } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
@@ -213,18 +213,14 @@ document.addEventListener('DOMContentLoaded', () => {
       return `<div class="card" style="border:2px solid var(--line); opacity:0.8;"><h3>🎯 Mejores picks para este partido</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Sin picks. Ningún mercado con edge supera los umbrales.</p><p style="color:var(--chalk-dim); margin:6px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
     }
 
-    const filas = picks.map(p => {
-      // [NUEVO] sugerencia de stake Kelly informativa si hay cuota conocida en el registro
-      const stakeTxt = p.key ? '' : '';
-      return `
+    const filas = picks.map(p => `
       <label class="prob-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
         <input type="checkbox" class="pick-check" data-key="${p.key}" checked style="width:18px;height:18px;flex-shrink:0;accent-color:#3ecf8e;">
         <span style="flex:1;">
           <span class="prob-row-top" style="display:flex;justify-content:space-between;"><span>✅ ${p.label}</span><span class="prob" style="color:${getColor(p.prob)}">${fmt(p.prob)}%</span></span>
           <span class="semaforo-track" style="display:block;"><span class="semaforo-fill" style="display:block;width:${p.prob}%;background:${getColor(p.prob)}"></span></span>
         </span>
-      </label>`;
-    }).join('');
+      </label>`).join('');
 
     return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
   }
@@ -252,7 +248,10 @@ document.addEventListener('DOMContentLoaded', () => {
   function displayResults(data, ligaKey) {
     const saveCard = `<div class="card" style="border:2px solid var(--accent);"><h3>📝 ¿Qué apostás?</h3><p style="color:var(--chalk-dim); font-size:0.75rem; margin:0 0 10px; line-height:1.5;">Tildá todo lo que vayas a jugar: los picks de arriba (ya vienen tildados) y/o cualquier mercado de las tarjetas de abajo. Podés combinar varios del mismo partido.</p><button id="guardar-picks" style="width:100%;">💾 Guardar seleccionados</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardalo antes de que empiece el partido. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
 
-    const under15 = data.under15 ?? (data.over15 != null ? 100 - data.over15 : null);
+    // [NUEVO] Doble oportunidad
+    const dc1X = +(data.resultProbs.local + data.resultProbs.empate).toFixed(1);
+    const dcX2 = +(data.resultProbs.empate + data.resultProbs.visitante).toFixed(1);
+
     const under25 = data.under25 ?? (data.over25 != null ? 100 - data.over25 : null);
     const under35 = data.under35 ?? (data.over35 != null ? 100 - data.over35 : null);
     const bttsNo = data.bttsNo ?? (data.btts != null ? 100 - data.btts : null);
@@ -260,7 +259,17 @@ document.addEventListener('DOMContentLoaded', () => {
     predictionsContent.innerHTML = `
       ${renderPicksCard(data, ligaKey)}
       ${saveCard}
-      <div class="card"><h3>Resultado 1X2</h3>${fila('Local', data.resultProbs.local, 'local')}${fila('Empate', data.resultProbs.empate, 'empate')}${fila('Visitante', data.resultProbs.visitante, 'visitante')}</div>
+      <div class="card">
+        <h3>Resultado 1X2</h3>
+        ${fila('Local', data.resultProbs.local, 'local')}
+        ${fila('Empate', data.resultProbs.empate, 'empate')}
+        ${fila('Visitante', data.resultProbs.visitante, 'visitante')}
+      </div>
+      <div class="card">
+        <h3>Doble oportunidad <small>(menos varianza)</small></h3>
+        ${fila('1X — Local o Empate', dc1X, 'dc1X')}
+        ${fila('X2 — Empate o Visitante', dcX2, 'dcX2')}
+      </div>
       <div class="card"><h3>Goles</h3>${fila('Over 1.5', data.over15, 'over15')}${fila('Over 2.5', data.over25, 'over25')}${fila('Over 3.5', data.over35, 'over35')}${under25 != null ? fila('Under 2.5', under25, 'under25') : ''}${under35 != null ? fila('Under 3.5', under35, 'under35') : ''}</div>
       <div class="card"><h3>Ambos marcan (BTTS)</h3>${fila('Sí', data.btts, 'bttsSi')}${bttsNo != null ? fila('No', bttsNo, 'bttsNo') : ''}</div>
       ${data.cornerProbs ? `<div class="card"><h3>Córneres</h3>${fila('Over 7.5', data.cornerProbs.over7, 'c_over75')}${fila('Over 8.5', data.cornerProbs.over8, 'c_over85')}${fila('Over 9.5', data.cornerProbs.over9, 'c_over95')}</div>` : ''}
