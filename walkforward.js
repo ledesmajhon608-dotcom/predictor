@@ -1,5 +1,6 @@
 // walkforward.js
-// v4: agrega 1X y X2 a los lados escaneados.
+// v5: reescrito sin template literals anidados ni ?? dentro de strings.
+// Incluye 1X y X2 en el escaneo (walk-forward, sin cuota real).
 
 import {
   LIGAS, SHRINK_ALPHA, FILTRO_EV, HOME_ADVANTAGE, DIXON_COLES_RHO, DEFAULT_HOME_ADV, DEFAULT_RHO,
@@ -15,8 +16,14 @@ const W_LIST = [0, 0.25, 0.5, 0.75, 1];
 const SIGMA_HA = 0.15;
 const SIGMA_RHO = 0.06;
 
+// ---------- utilidades puras ----------
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-function devigar2(a, b) { if (!a || !b) return null; const pa = 1 / a, pb = 1 / b; return (pa / (pa + pb)) * 100; }
+
+function devigar2(a, b) {
+  if (!a || !b) return null;
+  const pa = 1 / a, pb = 1 / b;
+  return (pa / (pa + pb)) * 100;
+}
 function devigar3(a, b, c) {
   if (!a || !b || !c) return null;
   const pa = 1 / a, pb = 1 / b, pc = 1 / c, s = pa + pb + pc;
@@ -38,6 +45,7 @@ function zMedia(arr) {
 const media = (a) => meanSd(a).mean;
 const brier3 = (probsPct, idx) => probsPct.reduce((s, p, j) => s + (p / 100 - (j === idx ? 1 : 0)) ** 2, 0);
 
+// ---------- modelo fuera de muestra ----------
 export function predecir(leagueKey, hR, aR, { goalsAvg, homeAdv, rho }) {
   const { lambdaHome, lambdaAway } = calcLambdas(goalsAvg, hR, aR, homeAdv);
   const mk = calcGoalMarkets(lambdaHome, lambdaAway, leagueKey, rho);
@@ -90,7 +98,10 @@ export function estimarRatings(partidos, {
 
   for (let it = 0; it < iteraciones; it++) {
     const numA = {}, denA = {}, numD = {}, denD = {};
-    for (const n of nombres) { numA[n] = priorJuegos * avg; denA[n] = priorJuegos * avg; numD[n] = priorJuegos * avg; denD[n] = priorJuegos * avg; }
+    for (const n of nombres) {
+      numA[n] = priorJuegos * avg; denA[n] = priorJuegos * avg;
+      numD[n] = priorJuegos * avg; denD[n] = priorJuegos * avg;
+    }
     for (const m of validos) {
       numA[m.h] += m.w * m.gl;  denA[m.h] += m.w * avg * def[m.a] * sq;
       numA[m.a] += m.w * m.gv;  denA[m.a] += m.w * avg * def[m.h] / sq;
@@ -128,6 +139,7 @@ function ajustarHaRho(matches, goalsAvg, haPrior, rhoPrior) {
   return { ha: +mejor.ha.toFixed(3), rho: +mejor.rho.toFixed(3) };
 }
 
+// ---------- acumuladores ----------
 class BrierVsMercado {
   constructor(label) { this.label = label; this.bm = []; this.bk = []; this.d = []; }
   add(modeloPct, mercadoPct, hit) {
@@ -140,7 +152,11 @@ class BrierVsMercado {
     const n = this.d.length;
     const bModelo = n ? media(this.bm) : null;
     const bMercado = n ? media(this.bk) : null;
-    return { label: this.label, n, bModelo, bMercado, mejora: n && bMercado > 1e-9 ? (bMercado - bModelo) / bMercado * 100 : null, z: zMedia(this.d) };
+    return {
+      label: this.label, n, bModelo, bMercado,
+      mejora: n && bMercado > 1e-9 ? (bMercado - bModelo) / bMercado * 100 : null,
+      z: zMedia(this.d),
+    };
   }
 }
 
@@ -233,6 +249,7 @@ function entradaMezcla(rp3, g, mk, p, idx, tg, bttsReal) {
   };
 }
 
+// ---------- motor walk-forward ----------
 export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 20, ventana = 200, onLog = null } = {}) {
   const log = (m) => { if (onLog) onLog(m); };
   const todos = [...partidosIn]
@@ -241,14 +258,18 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
   const n = todos.length;
   const liga = LIGAS[leagueKey];
   if (!liga) return { error: 'Liga no reconocida' };
-  if (n < warmup + 10) return { error: `Solo ${n} partidos válidos: hacen falta al menos ${warmup + 10}.` };
+  if (n < warmup + 10) return { error: 'Solo ' + n + ' partidos válidos: hacen falta al menos ' + (warmup + 10) + '.' };
 
   const b3Todos = { cal: [], base: [], dCalBase: [] };
   const b3Cuota = { cal: [], base: [], mkt: [], dMkt: [] };
   const bEstAll = [], bFueraAll = [], dRatings = [];
   const mk = {
-    local: new BrierVsMercado('Local gana'), empate: new BrierVsMercado('Empate'), visitante: new BrierVsMercado('Visitante gana'),
-    over15: new BrierVsMercado('Over 1.5 goles'), over25: new BrierVsMercado('Over 2.5 goles'), over35: new BrierVsMercado('Over 3.5 goles'),
+    local: new BrierVsMercado('Local gana'),
+    empate: new BrierVsMercado('Empate'),
+    visitante: new BrierVsMercado('Visitante gana'),
+    over15: new BrierVsMercado('Over 1.5 goles'),
+    over25: new BrierVsMercado('Over 2.5 goles'),
+    over35: new BrierVsMercado('Over 3.5 goles'),
     btts: new BrierVsMercado('Ambos marcan (Sí)'),
   };
   const escaneo = new Escaneo();
@@ -256,35 +277,43 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
   const bloques = [];
   let evaluados = 0, saltados = 0;
 
-  const ha0 = HOME_ADVANTAGE[leagueKey] ?? DEFAULT_HOME_ADV;
-  const rho0 = DIXON_COLES_RHO[leagueKey] ?? DIXON_COLES_RHO.default ?? DEFAULT_RHO;
+  const ha0 = HOME_ADVANTAGE[leagueKey] != null ? HOME_ADVANTAGE[leagueKey] : DEFAULT_HOME_ADV;
+  const rho0 = DIXON_COLES_RHO[leagueKey] != null ? DIXON_COLES_RHO[leagueKey] : (DIXON_COLES_RHO.default != null ? DIXON_COLES_RHO.default : DEFAULT_RHO);
 
   for (let start = warmup; start < n; start += step) {
     const train = todos.slice(Math.max(0, start - ventana), start);
     const test = todos.slice(start, start + step);
 
+    // Modo estático (con calibración entrenada con train)
     let cal = null, tasas = null;
     try {
       const r = await calibrarLigaMLE(leagueKey, train, { minPartidos: 20 });
       cal = r.calibracion; tasas = r.tasas;
-    } catch (e) { log(`⚠️ Bloque en ${start}: calibración falló (${e.message}).`); }
+    } catch (e) {
+      log('⚠️ Bloque en ' + start + ': calibración falló (' + e.message + ').');
+    }
 
+    // Modo fuera de muestra
     const ahoraMs = new Date(test[0].fecha).getTime();
     const mapa = estimarRatings(train, { ahoraMs, homeAdv: ha0 });
     const obsAvg = train.reduce((s, p) => s + p.goles_local + p.goles_visitante, 0) / train.length;
     const goalsAvgB = (train.length * obsAvg + GOALS_AVG_PRIOR_MATCHES * liga.goalsAvg) / (train.length + GOALS_AVG_PRIOR_MATCHES);
-    const msB = train.filter(p => mapa[p.local] && mapa[p.visitante])
+    const msB = train
+      .filter(p => mapa[p.local] && mapa[p.visitante])
       .map(p => ({ h: mapa[p.local], a: mapa[p.visitante], gl: p.goles_local, gv: p.goles_visitante }));
     const parB = msB.length >= 20 ? ajustarHaRho(msB, goalsAvgB, ha0, rho0) : { ha: ha0, rho: rho0 };
     const checksum = +Object.values(mapa).reduce((s, r) => s + r.atk + r.def, 0).toFixed(6);
 
     bloques.push({
       nTrain: train.length, nTest: test.length,
-      trainHasta: train[train.length - 1].fecha, testDesde: test[0].fecha, testHasta: test[test.length - 1].fecha,
-      ha: cal?.homeAdvantage ?? null, rho: cal?.rho ?? null, calibrado: !!cal,
+      trainHasta: train[train.length - 1].fecha,
+      testDesde: test[0].fecha, testHasta: test[test.length - 1].fecha,
+      ha: cal ? cal.homeAdvantage : null, rho: cal ? cal.rho : null, calibrado: !!cal,
       haB: parB.ha, rhoB: parB.rho, equiposB: Object.keys(mapa).length, checksumRatings: checksum,
     });
-    log(`Bloque ${bloques.length}: entrena ${train.length} · prueba ${test.length}${cal ? ` · HA ${cal.homeAdvantage.toFixed(2)} rho ${cal.rho.toFixed(2)}` : ''} · fuera: ${Object.keys(mapa).length} equipos`);
+
+    const etiquetaCal = cal ? ' · HA ' + cal.homeAdvantage.toFixed(2) + ' rho ' + cal.rho.toFixed(2) : '';
+    log('Bloque ' + bloques.length + ': entrena ' + train.length + ' · prueba ' + test.length + etiquetaCal + ' · fuera: ' + Object.keys(mapa).length + ' equipos');
 
     for (const p of test) {
       let pc, pb;
@@ -295,8 +324,9 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
       evaluados++;
 
       const rp = SHRINK_ALPHA > 0 && tasas ? shrinkHaciaBase(pc.resultProbs, tasas, SHRINK_ALPHA) : pc.resultProbs;
-      const pF = predecir(leagueKey, mapa[p.local] || { atk: 1, def: 1 }, mapa[p.visitante] || { atk: 1, def: 1 },
-        { goalsAvg: goalsAvgB, homeAdv: parB.ha, rho: parB.rho });
+      const hF = mapa[p.local] || { atk: 1, def: 1 };
+      const aF = mapa[p.visitante] || { atk: 1, def: 1 };
+      const pF = predecir(leagueKey, hF, aF, { goalsAvg: goalsAvgB, homeAdv: parB.ha, rho: parB.rho });
       const rpF = SHRINK_ALPHA > 0 && tasas ? shrinkHaciaBase(pF.resultProbs, tasas, SHRINK_ALPHA) : pF.resultProbs;
 
       const gl = p.goles_local, gv = p.goles_visitante, tg = gl + gv;
@@ -329,23 +359,21 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
       if (f35 != null) mk.over35.add(pc.over35, f35, tg > 3.5);
       if (fb != null) mk.btts.add(pc.btts, fb, bttsReal);
 
-      // [MODIFICADO] se agregan 1X y X2.
+      // Escaneo: incluye 1X y X2 (sin cuota → el filtro los ignora, pero quedan listos)
+      const esLocalOEmpate = (resultado === 'local' || resultado === 'empate');
+      const esEmpateOVisitante = (resultado === 'empate' || resultado === 'visitante');
       const lados = [
-        // Doble oportunidad
-        ['1x', 'Local o Empate (1X)', rp.local + rp.empate, null, resultado === 'local' || resultado === 'empate'],
-        ['x2', 'Empate o Visitante (X2)', rp.empate + rp.visitante, null, resultado === 'empate' || resultado === 'visitante'],
-        // 1X2 individual
+        ['1x', 'Local o Empate (1X)', rp.local + rp.empate, null, esLocalOEmpate],
+        ['x2', 'Empate o Visitante (X2)', rp.empate + rp.visitante, null, esEmpateOVisitante],
         ['1', 'Local gana', rp.local, p.odds_local, resultado === 'local'],
         ['X', 'Empate', rp.empate, p.odds_empate, resultado === 'empate'],
         ['2', 'Visitante gana', rp.visitante, p.odds_visitante, resultado === 'visitante'],
-        // Goles
         ['o15', 'Over 1.5 goles', pc.over15, p.odds_over15, tg > 1.5],
         ['u15', 'Under 1.5 goles', 100 - pc.over15, p.odds_under15, tg < 1.5],
         ['o25', 'Over 2.5 goles', pc.over25, p.odds_over25, tg > 2.5],
         ['u25', 'Under 2.5 goles', 100 - pc.over25, p.odds_under25, tg < 2.5],
         ['o35', 'Over 3.5 goles', pc.over35, p.odds_over35, tg > 3.5],
         ['u35', 'Under 3.5 goles', 100 - pc.over35, p.odds_under35, tg < 3.5],
-        // BTTS
         ['bs', 'BTTS Sí', pc.btts, p.odds_btts_si, bttsReal],
         ['bn', 'BTTS No', 100 - pc.btts, p.odds_btts_no, !bttsReal],
       ];
@@ -360,19 +388,33 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
 
   return {
     leagueKey, nTotal: n, evaluados, saltados, warmup, step, ventana, bloques,
-    calibracionVsBase: { n: b3Todos.cal.length, cal: media(b3Todos.cal), base: media(b3Todos.base), z: zMedia(b3Todos.dCalBase) },
+    calibracionVsBase: {
+      n: b3Todos.cal.length,
+      cal: media(b3Todos.cal),
+      base: media(b3Todos.base),
+      z: zMedia(b3Todos.dCalBase),
+    },
     modeloVsMercado1x2: {
-      n: b3Cuota.cal.length, cal: media(b3Cuota.cal), base: media(b3Cuota.base), mkt: media(b3Cuota.mkt),
+      n: b3Cuota.cal.length,
+      cal: media(b3Cuota.cal),
+      base: media(b3Cuota.base),
+      mkt: media(b3Cuota.mkt),
       zVsMkt: zMedia(b3Cuota.dMkt),
       mejoraVsMkt: b3Cuota.mkt.length ? (media(b3Cuota.mkt) - media(b3Cuota.cal)) / media(b3Cuota.mkt) * 100 : null,
     },
-    ratings: { n: bEstAll.length, estatico: media(bEstAll), fuera: media(bFueraAll), z: zMedia(dRatings) },
+    ratings: {
+      n: bEstAll.length,
+      estatico: media(bEstAll),
+      fuera: media(bFueraAll),
+      z: zMedia(dRatings),
+    },
     mezcla: { estatico: mezA.summary(), fuera: mezB.summary() },
     mercados: Object.values(mk).map(m => m.summary()).filter(s => s.n > 0),
     escaneo: escaneo.summary(),
   };
 }
 
+// ---------- lectura en texto ----------
 function mejorMezcla(filas) {
   const con = filas.filter(f => f.n1x2 > 0 && f.brier1x2 != null);
   if (!con.length) return null;
@@ -387,10 +429,11 @@ export function lecturaResultado(res) {
     else if (c.z < -Z_SIGNIFICATIVO) out.push('La calibración EMPEORA el 1X2 fuera de muestra: conviene usar los valores base.');
     else out.push('La calibración no se distingue de los valores base fuera de muestra.');
   }
+
   const mejores = res.mercados.filter(m => m.z != null && m.z > Z_SIGNIFICATIVO).map(m => m.label);
   const peores = res.mercados.filter(m => m.z != null && m.z < -Z_SIGNIFICATIVO).map(m => m.label);
-  if (mejores.length) out.push(`Mejor que la cuota (significativo): ${mejores.join(', ')}.`);
-  if (peores.length) out.push(`Peor que la cuota (significativo): ${peores.join(', ')}.`);
+  if (mejores.length) out.push('Mejor que la cuota (significativo): ' + mejores.join(', ') + '.');
+  if (peores.length) out.push('Peor que la cuota (significativo): ' + peores.join(', ') + '.');
   if (!mejores.length && !peores.length) out.push('Ningún mercado se separa claramente de la cuota.');
 
   const r = res.ratings;
@@ -400,25 +443,29 @@ export function lecturaResultado(res) {
     else out.push('Los ratings de leagues.js y los calculados rinden parecido.');
   }
 
-  for (const [clave, nombre] of [['estatico', 'ratings leagues.js'], ['fuera', 'ratings fuera de muestra']]) {
-    const filas = res.mezcla?.[clave];
+  const pares = [['estatico', 'ratings leagues.js'], ['fuera', 'ratings fuera de muestra']];
+  for (const [clave, nombre] of pares) {
+    const filas = res.mezcla ? res.mezcla[clave] : null;
     const mejor = filas ? mejorMezcla(filas) : null;
     if (!mejor) continue;
     const puro = filas[0];
-    if (mejor.w === 0) out.push(`Mezcla con la cuota (${nombre}): el modelo puro ya es lo mejor.`);
-    else {
+    if (mejor.w === 0) {
+      out.push('Mezcla con la cuota (' + nombre + '): el modelo puro ya es lo mejor.');
+    } else {
       const sig = mejor.z1x2 != null && mejor.z1x2 > Z_SIGNIFICATIVO ? 'mejora significativa' : 'mejora no significativa';
-      out.push(`Mezcla con la cuota (${nombre}): mejor peso = ${Math.round(mejor.w * 100)}% (Brier ${mejor.brier1x2.toFixed(3)} vs ${puro.brier1x2.toFixed(3)}, ${sig}).`);
+      out.push('Mezcla con la cuota (' + nombre + '): mejor peso = ' + Math.round(mejor.w * 100) + '% (Brier ' + mejor.brier1x2.toFixed(3) + ' vs ' + puro.brier1x2.toFixed(3) + ', ' + sig + ').');
     }
   }
 
-  const roiOk = res.escaneo.filter(e => e.n >= ESCANEO_MIN_N && e.z != null && e.z > Z_SIGNIFICATIVO).map(e => e.label);
-  if (roiOk.length) out.push(`ROI positivo significativo: ${roiOk.join(', ')}.`);
+  const roiOk = res.escaneo
+    .filter(e => e.n >= ESCANEO_MIN_N && e.z != null && e.z > Z_SIGNIFICATIVO)
+    .map(e => e.label);
+  if (roiOk.length) out.push('ROI positivo significativo: ' + roiOk.join(', ') + '.');
   else out.push('Ningún mercado muestra ROI positivo distinguible de la suerte (con n ≥ 30).');
   return out;
 }
 
-// ---------- interfaz ----------
+// ---------- interfaz (solo navegador) ----------
 if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
   const fileInput = document.getElementById('historial-file');
   const fileInfo = document.getElementById('file-info');
@@ -431,7 +478,11 @@ if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
   const resultsContent = document.getElementById('results-content');
   let historial = null;
 
-  const log = (m) => { logSection.style.display = 'block'; logDiv.textContent += m + '\n'; logDiv.scrollTop = logDiv.scrollHeight; };
+  const log = (m) => {
+    logSection.style.display = 'block';
+    logDiv.textContent += m + '\n';
+    logDiv.scrollTop = logDiv.scrollHeight;
+  };
   const f1 = (x) => Number(x).toFixed(1);
   const f3 = (x) => x == null ? '—' : Number(x).toFixed(3);
   const dim = 'var(--text-dim,#8b95a5)';
@@ -442,12 +493,20 @@ if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
     if (!file) { fileInfo.textContent = ''; return; }
     try {
       const data = JSON.parse(await file.text());
-      if (!data.leagueKey || !LIGAS[data.leagueKey]) { fileInfo.textContent = '❌ El archivo no tiene una liga reconocida (leagueKey).'; return; }
-      if (!Array.isArray(data.partidos) || data.partidos.length === 0) { fileInfo.textContent = '❌ El archivo no tiene partidos.'; return; }
+      if (!data.leagueKey || !LIGAS[data.leagueKey]) {
+        fileInfo.textContent = '❌ El archivo no tiene una liga reconocida (leagueKey).';
+        return;
+      }
+      if (!Array.isArray(data.partidos) || data.partidos.length === 0) {
+        fileInfo.textContent = '❌ El archivo no tiene partidos.';
+        return;
+      }
       historial = data;
-      fileInfo.textContent = `✅ ${data.liga || data.leagueKey} — ${data.partidos.length} partidos cargados.`;
+      fileInfo.textContent = '✅ ' + (data.liga || data.leagueKey) + ' — ' + data.partidos.length + ' partidos cargados.';
       runBtn.disabled = false;
-    } catch (err) { fileInfo.textContent = '❌ No se pudo leer el archivo: ' + err.message; }
+    } catch (err) {
+      fileInfo.textContent = '❌ No se pudo leer el archivo: ' + err.message;
+    }
   });
 
   const senal = (z) => z == null ? '—' : z > Z_SIGNIFICATIVO ? '✅ mejor' : z < -Z_SIGNIFICATIVO ? '❌ peor' : '≈ empate';
@@ -456,88 +515,157 @@ if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
   function tablaMezcla(titulo, filas) {
     const mejor = mejorMezcla(filas);
     const rows = filas.map(f => {
-      const nombre = f.w === 0 ? '0% (modelo puro)' : f.w === 1 ? '100% (solo cuota)' : `${Math.round(f.w * 100)}% cuota`;
+      let nombre;
+      if (f.w === 0) nombre = '0% (modelo puro)';
+      else if (f.w === 1) nombre = '100% (solo cuota)';
+      else nombre = Math.round(f.w * 100) + '% cuota';
       const esMejor = mejor && f.w === mejor.w;
-      const roiTxt = f.apuestas ? `${f.roi >= 0 ? '+' : ''}${f1(f.roi)}%${f.se != null ? ` ±${f1(f.se)}` : ''} (${f.apuestas})` : 'sin apuestas';
-      const colRoi = !f.apuestas ? dim : f.z != null && f.z > Z_SIGNIFICATIVO && f.apuestas >= ESCANEO_MIN_N ? 'var(--green)' : f.roi > 0 ? 'var(--yellow)' : 'var(--red)';
-      return `<div class="compare-row"><span>${esMejor ? '⭐ ' : ''}${nombre}</span><span class="grid-plain" style="color:${f.w === 0 ? 'inherit' : colSenal(f.z1x2)}">${f3(f.brier1x2)}</span><span class="grid-plain" style="color:${f.w === 0 ? 'inherit' : colSenal(f.zG)}">${f3(f.brierG)}</span><span class="grid-plain" style="color:${colRoi}">${roiTxt}</span></div>`;
+      let roiTxt;
+      if (f.apuestas) {
+        const sep = f.se != null ? ' ±' + f1(f.se) : '';
+        roiTxt = (f.roi >= 0 ? '+' : '') + f1(f.roi) + '%' + sep + ' (' + f.apuestas + ')';
+      } else {
+        roiTxt = 'sin apuestas';
+      }
+      const colRoi = !f.apuestas ? dim
+        : f.z != null && f.z > Z_SIGNIFICATIVO && f.apuestas >= ESCANEO_MIN_N ? 'var(--green)'
+        : f.roi > 0 ? 'var(--yellow)' : 'var(--red)';
+      return '<div class="compare-row">' +
+        '<span>' + (esMejor ? '⭐ ' : '') + nombre + '</span>' +
+        '<span class="grid-plain" style="color:' + (f.w === 0 ? 'inherit' : colSenal(f.z1x2)) + '">' + f3(f.brier1x2) + '</span>' +
+        '<span class="grid-plain" style="color:' + (f.w === 0 ? 'inherit' : colSenal(f.zG)) + '">' + f3(f.brierG) + '</span>' +
+        '<span class="grid-plain" style="color:' + colRoi + '">' + roiTxt + '</span>' +
+      '</div>';
     }).join('');
-    return `
-      <div class="card">
-        <h3>${titulo} <small>(${filas[0].n1x2} partidos con cuotas)</small></h3>
-        <div class="compare-row compare-head"><span>Peso de la cuota</span><span>Brier 1X2</span><span>Brier goles</span><span>ROI EV≥${FILTRO_EV} (apuestas)</span></div>
-        ${rows}
-        <p style="margin:10px 0 0;font-size:.75rem;color:${dim};line-height:1.5;">Brier: menor = mejor. ⭐ = mejor Brier 1X2.</p>
-      </div>`;
+
+    return '<div class="card">' +
+      '<h3>' + titulo + ' <small>(' + filas[0].n1x2 + ' partidos con cuotas)</small></h3>' +
+      '<div class="compare-row compare-head"><span>Peso de la cuota</span><span>Brier 1X2</span><span>Brier goles</span><span>ROI EV≥' + FILTRO_EV + ' (apuestas)</span></div>' +
+      rows +
+      '<p style="margin:10px 0 0;font-size:.75rem;color:' + dim + ';line-height:1.5;">Brier: menor = mejor. ⭐ = mejor Brier 1X2.</p>' +
+    '</div>';
   }
 
   function render(res) {
-    const c = res.calibracionVsBase, m = res.modeloVsMercado1x2, r = res.ratings;
-    const lectura = lecturaResultado(res).map(t => `<p style="margin:0 0 6px;font-size:.85rem;">• ${t}</p>`).join('');
-    const filasMk = res.mercados.map(s => `<div class="compare-row"><span>${s.label}</span><span class="grid-plain">${s.n}</span><span class="grid-plain">${f3(s.bModelo)} vs ${f3(s.bMercado)}</span><span class="grid-plain" style="color:${colSenal(s.z)}">${s.mejora >= 0 ? '+' : ''}${f1(s.mejora)}% ${senal(s.z)}</span></div>`).join('');
-    const filasEs = res.escaneo.map(e => {
-      const col = e.n >= ESCANEO_MIN_N && e.z != null && e.z > Z_SIGNIFICATIVO ? 'var(--green)' : e.roi > 0 ? 'var(--yellow)' : 'var(--red)';
-      return `<div class="compare-row"><span>${e.label}${e.n < ESCANEO_MIN_N ? ' ⚠️' : ''}</span><span class="grid-plain">${e.n} · ${f1(e.rate)}%</span><span class="grid-plain">EV ${e.evMedio.toFixed(2)}</span><span class="grid-plain" style="color:${col}">${e.roi >= 0 ? '+' : ''}${f1(e.roi)}%${e.se != null ? ` ±${f1(e.se)}` : ''}</span></div>`;
-    }).join('');
-    const filasBl = res.bloques.map((b, i) => `<div class="compare-row"><span>#${i + 1} · ${(b.testDesde || '').slice(0, 10)}</span><span class="grid-plain">train ${b.nTrain} · test ${b.nTest}</span><span class="grid-plain">${b.ha != null ? `HA ${b.ha.toFixed(2)}` : 'base'}</span><span class="grid-plain">fuera ${b.equiposB}eq · HA ${b.haB.toFixed(2)}</span></div>`).join('');
-    const ratingTxt = r.z == null ? '—' : r.z > Z_SIGNIFICATIVO ? '✅ leagues.js mejor' : r.z < -Z_SIGNIFICATIVO ? '✅ fuera de muestra mejor' : '≈ empate';
+    const c = res.calibracionVsBase;
+    const m = res.modeloVsMercado1x2;
+    const r = res.ratings;
 
-    resultsContent.innerHTML = `
-      <div class="card" style="border:2px solid var(--green);">
-        <h3>🧭 Lectura <small>(${res.evaluados} partidos fuera de muestra)</small></h3>
-        ${lectura}
-      </div>
-      <div class="card">
-        <h3>Ratings: leagues.js vs calculados <small>(Brier 1X2, ${r.n} partidos)</small></h3>
-        <div class="compare-row"><span>Ratings de leagues.js</span><span class="grid-plain">${f3(r.estatico)}</span><span class="grid-plain"></span><span class="grid-plain"></span></div>
-        <div class="compare-row"><span>Ratings fuera de muestra</span><span class="grid-plain">${f3(r.fuera)}</span><span class="grid-plain"></span><span class="grid-plain" style="color:${dim}">${ratingTxt}</span></div>
-      </div>
-      ${tablaMezcla('Mezcla con la cuota · ratings de leagues.js', res.mezcla.estatico)}
-      ${tablaMezcla('Mezcla con la cuota · ratings fuera de muestra', res.mezcla.fuera)}
-      <div class="card">
-        <h3>Calibración vs valores base <small>(Brier 1X2, menor = mejor)</small></h3>
-        <div class="compare-row"><span>Calibrado + shrink</span><span class="grid-plain">${f3(c.cal)}</span><span class="grid-plain"></span><span class="grid-plain">n ${c.n}</span></div>
-        <div class="compare-row"><span>Valores base</span><span class="grid-plain">${f3(c.base)}</span><span class="grid-plain"></span><span class="grid-plain" style="color:${colSenal(c.z)}">${senal(c.z)}</span></div>
-      </div>
-      <div class="card">
-        <h3>1X2 vs cuota real <small>(${m.n} partidos con cuotas)</small></h3>
-        <div class="compare-row"><span>Modelo calibrado</span><span class="grid-plain">${f3(m.cal)}</span><span class="grid-plain"></span><span class="grid-plain"></span></div>
-        <div class="compare-row"><span>Cuota (sin margen)</span><span class="grid-plain">${f3(m.mkt)}</span><span class="grid-plain"></span><span class="grid-plain" style="color:${colSenal(m.zVsMkt)}">${m.mejoraVsMkt == null ? '—' : (m.mejoraVsMkt >= 0 ? '+' : '') + f1(m.mejoraVsMkt) + '% ' + senal(m.zVsMkt)}</span></div>
-      </div>
-      <div class="card">
-        <h3>Modelo vs cuota por mercado <small>(Brier, menor = mejor)</small></h3>
-        <div class="compare-row compare-head"><span>Mercado</span><span>n</span><span>Modelo vs cuota</span><span>Mejora</span></div>
-        ${filasMk || '<div class="compare-row"><span>Sin cuotas en el historial.</span></div>'}
-      </div>
-      <div class="card" style="border:2px solid var(--yellow);">
-        <h3>🔎 Apostar con EV ≥ ${FILTRO_EV} <small>(modelo puro, fuera de muestra)</small></h3>
-        <div class="compare-row compare-head"><span>Mercado</span><span>Apuestas · acierto</span><span>EV medio</span><span>ROI ± error</span></div>
-        ${filasEs || '<div class="compare-row"><span>Ningún lado superó el filtro EV.</span></div>'}
-        <p style="margin:10px 0 0;font-size:.78rem;color:${dim};line-height:1.5;">
-          ROI ± error estándar. Si el ROI no supera ~1.64 veces el error, puede ser suerte. ⚠️ = menos de ${ESCANEO_MIN_N} apuestas.
-        </p>
-      </div>
-      <div class="card">
-        <h3>Bloques <small>(entrena con lo anterior, prueba el bloque)</small></h3>
-        ${filasBl}
-      </div>`;
+    // Lectura
+    const lecturas = lecturaResultado(res).map(t => '<p style="margin:0 0 6px;font-size:.85rem;">• ' + t + '</p>').join('');
+
+    // Mercados
+    const filasMk = res.mercados.map(s => {
+      const mejoraTxt = s.mejora == null ? '—' : ((s.mejora >= 0 ? '+' : '') + f1(s.mejora) + '%');
+      return '<div class="compare-row">' +
+        '<span>' + s.label + '</span>' +
+        '<span class="grid-plain">' + s.n + '</span>' +
+        '<span class="grid-plain">' + f3(s.bModelo) + ' vs ' + f3(s.bMercado) + '</span>' +
+        '<span class="grid-plain" style="color:' + colSenal(s.z) + '">' + mejoraTxt + ' ' + senal(s.z) + '</span>' +
+      '</div>';
+    }).join('');
+
+    // Escaneo
+    const filasEs = res.escaneo.map(e => {
+      const col = e.n >= ESCANEO_MIN_N && e.z != null && e.z > Z_SIGNIFICATIVO ? 'var(--green)'
+        : e.roi > 0 ? 'var(--yellow)' : 'var(--red)';
+      const warn = e.n < ESCANEO_MIN_N ? ' ⚠️' : '';
+      const seTxt = e.se != null ? ' ±' + f1(e.se) : '';
+      return '<div class="compare-row">' +
+        '<span>' + e.label + warn + '</span>' +
+        '<span class="grid-plain">' + e.n + ' · ' + f1(e.rate) + '%</span>' +
+        '<span class="grid-plain">EV ' + e.evMedio.toFixed(2) + '</span>' +
+        '<span class="grid-plain" style="color:' + col + '">' + (e.roi >= 0 ? '+' : '') + f1(e.roi) + '%' + seTxt + '</span>' +
+      '</div>';
+    }).join('');
+
+    // Bloques
+    const filasBl = res.bloques.map((b, i) => {
+      const fechaDesde = (b.testDesde || '').slice(0, 10);
+      const haTxt = b.ha != null ? ('HA ' + b.ha.toFixed(2)) : 'base';
+      return '<div class="compare-row">' +
+        '<span>#' + (i + 1) + ' · ' + fechaDesde + '</span>' +
+        '<span class="grid-plain">train ' + b.nTrain + ' · test ' + b.nTest + '</span>' +
+        '<span class="grid-plain">' + haTxt + '</span>' +
+        '<span class="grid-plain">fuera ' + b.equiposB + 'eq · HA ' + b.haB.toFixed(2) + '</span>' +
+      '</div>';
+    }).join('');
+
+    let ratingTxt;
+    if (r.z == null) ratingTxt = '—';
+    else if (r.z > Z_SIGNIFICATIVO) ratingTxt = '✅ leagues.js mejor';
+    else if (r.z < -Z_SIGNIFICATIVO) ratingTxt = '✅ fuera de muestra mejor';
+    else ratingTxt = '≈ empate';
+
+    const mejoraMktTxt = m.mejoraVsMkt == null
+      ? '—'
+      : ((m.mejoraVsMkt >= 0 ? '+' : '') + f1(m.mejoraVsMkt) + '% ' + senal(m.zVsMkt));
+
+    resultsContent.innerHTML =
+      '<div class="card" style="border:2px solid var(--green);">' +
+        '<h3>🧭 Lectura <small>(' + res.evaluados + ' partidos fuera de muestra)</small></h3>' +
+        lecturas +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>Ratings: leagues.js vs calculados <small>(Brier 1X2, ' + r.n + ' partidos)</small></h3>' +
+        '<div class="compare-row"><span>Ratings de leagues.js</span><span class="grid-plain">' + f3(r.estatico) + '</span><span class="grid-plain"></span><span class="grid-plain"></span></div>' +
+        '<div class="compare-row"><span>Ratings fuera de muestra</span><span class="grid-plain">' + f3(r.fuera) + '</span><span class="grid-plain"></span><span class="grid-plain" style="color:' + dim + '">' + ratingTxt + '</span></div>' +
+      '</div>' +
+      tablaMezcla('Mezcla con la cuota · ratings de leagues.js', res.mezcla.estatico) +
+      tablaMezcla('Mezcla con la cuota · ratings fuera de muestra', res.mezcla.fuera) +
+      '<div class="card">' +
+        '<h3>Calibración vs valores base <small>(Brier 1X2, menor = mejor)</small></h3>' +
+        '<div class="compare-row"><span>Calibrado + shrink</span><span class="grid-plain">' + f3(c.cal) + '</span><span class="grid-plain"></span><span class="grid-plain">n ' + c.n + '</span></div>' +
+        '<div class="compare-row"><span>Valores base</span><span class="grid-plain">' + f3(c.base) + '</span><span class="grid-plain"></span><span class="grid-plain" style="color:' + colSenal(c.z) + '">' + senal(c.z) + '</span></div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>1X2 vs cuota real <small>(' + m.n + ' partidos con cuotas)</small></h3>' +
+        '<div class="compare-row"><span>Modelo calibrado</span><span class="grid-plain">' + f3(m.cal) + '</span><span class="grid-plain"></span><span class="grid-plain"></span></div>' +
+        '<div class="compare-row"><span>Cuota (sin margen)</span><span class="grid-plain">' + f3(m.mkt) + '</span><span class="grid-plain"></span><span class="grid-plain" style="color:' + colSenal(m.zVsMkt) + '">' + mejoraMktTxt + '</span></div>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>Modelo vs cuota por mercado <small>(Brier, menor = mejor)</small></h3>' +
+        '<div class="compare-row compare-head"><span>Mercado</span><span>n</span><span>Modelo vs cuota</span><span>Mejora</span></div>' +
+        (filasMk || '<div class="compare-row"><span>Sin cuotas en el historial.</span></div>') +
+      '</div>' +
+      '<div class="card" style="border:2px solid var(--yellow);">' +
+        '<h3>🔎 Apostar con EV ≥ ' + FILTRO_EV + ' <small>(modelo puro, fuera de muestra)</small></h3>' +
+        '<div class="compare-row compare-head"><span>Mercado</span><span>Apuestas · acierto</span><span>EV medio</span><span>ROI ± error</span></div>' +
+        (filasEs || '<div class="compare-row"><span>Ningún lado superó el filtro EV.</span></div>') +
+        '<p style="margin:10px 0 0;font-size:.78rem;color:' + dim + ';line-height:1.5;">' +
+          'ROI ± error estándar. Si el ROI no supera ~1.64 veces el error, puede ser suerte. ⚠️ = menos de ' + ESCANEO_MIN_N + ' apuestas.' +
+        '</p>' +
+      '</div>' +
+      '<div class="card">' +
+        '<h3>Bloques <small>(entrena con lo anterior, prueba el bloque)</small></h3>' +
+        filasBl +
+      '</div>';
+
     resultsSection.style.display = 'block';
   }
 
   runBtn.addEventListener('click', async () => {
     if (!historial) return;
-    runBtn.disabled = true; runBtn.textContent = 'Calculando...';
-    logDiv.textContent = ''; resultsSection.style.display = 'none';
+    runBtn.disabled = true;
+    runBtn.textContent = 'Calculando...';
+    logDiv.textContent = '';
+    resultsSection.style.display = 'none';
     try {
       const warmup = Math.max(20, +warmupInput.value || 40);
       const step = Math.max(5, +stepInput.value || 20);
       const res = await walkForward(historial.leagueKey, historial.partidos, { warmup, step, onLog: log });
-      if (res.error) { log('❌ ' + res.error); }
-      else { log(`✅ Listo: ${res.evaluados} evaluados, ${res.saltados} salteados.`); render(res); }
+      if (res.error) {
+        log('❌ ' + res.error);
+      } else {
+        log('✅ Listo: ' + res.evaluados + ' evaluados, ' + res.saltados + ' salteados.');
+        render(res);
+      }
     } catch (err) {
-      console.error(err); log('❌ Error: ' + err.message);
+      console.error(err);
+      log('❌ Error: ' + err.message);
     } finally {
-      runBtn.disabled = false; runBtn.textContent = 'Ejecutar walk-forward';
+      runBtn.disabled = false;
+      runBtn.textContent = 'Ejecutar walk-forward';
     }
   });
 }
