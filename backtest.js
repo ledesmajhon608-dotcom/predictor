@@ -1,6 +1,5 @@
 // backtest.js
 // v4: agrega 1X y X2 (doble oportunidad) al backtest.
-
 import { LIGAS, HOME_ADVANTAGE, DIXON_COLES_RHO, FILTRO_EV, SHRINK_ALPHA, getUmbrales } from './leagues.js';
 import { simulateMatch, getStaticRating } from './model.js';
 import { ratingsWalkForward } from './ratings.js';
