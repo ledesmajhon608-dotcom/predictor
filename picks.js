@@ -1,8 +1,21 @@
 // picks.js
-// v5: fix del umbral de BTTS No (antes usaba 100-umbral, recomendaba el lado perdedor).
+// v6: suprime el 1X2 individual cuando el favorito no llega al 60% y hay
+// una doble oportunidad (1X / X2) disponible con probabilidad >= umbralDC.
+//
+// Lógica nueva:
+//   1. Se calculan primero las probabilidades de 1X2 y de las DC.
+//   2. Si max1x2 < 60% Y existe alguna DC >= umbralDC → se agrega SOLO la DC.
+//   3. Si no hay DC o el favorito >= 60% → se agrega el 1X2 como antes.
+//
+// El umbral "1X2 alto" es configurable por liga vía umbral1x2Alto en
+// UMBRALES_POR_LIGA (si no está definido, usa 60).
 
 import { LIGAS, getUmbrales, SHRINK_ALPHA, FILTRO_EV, KELLY_FRACTION, STAKE_MAX_PCT, getFiltroEV } from './leagues.js';
 import { shrinkHaciaBase } from './calibrate.js';
+
+// Umbral por defecto para el 1X2 "alto". Si la liga define umbral1x2Alto
+// en leagues.js, se respeta ese valor.
+const UMBRAL_1X2_ALTO_DEFAULT = 60;
 
 export function getBettingConfig(ligaKey) {
   const liga = LIGAS[ligaKey];
@@ -63,28 +76,48 @@ export function generarPicks(data, ligaKey) {
 
   const U = getUmbrales(ligaKey);
   const rp = data.resultProbs;
+
+  // ---------- Cálculo previo: 1X2 y DC ----------
   const max1x2 = Math.max(rp.local, rp.empate, rp.visitante);
-
-  // --- 1X2 individual ---
-  if (max1x2 >= U.umbral1x2 && esMercadoValido(ligaKey, '1X2')) {
-    if (rp.local === max1x2) picks.push({ key: 'local', label: 'Local gana', prob: rp.local, mercado: '1X2' });
-    else if (rp.empate === max1x2) picks.push({ key: 'empate', label: 'Empate', prob: rp.empate, mercado: '1X2' });
-    else picks.push({ key: 'visitante', label: 'Visitante gana', prob: rp.visitante, mercado: '1X2' });
-  }
-
-  // --- Doble oportunidad 1X / X2 ---
   const dc1X = +(rp.local + rp.empate).toFixed(1);
   const dcX2 = +(rp.empate + rp.visitante).toFixed(1);
   const umbralDC = U.umbralDC ?? 68;
+  const umbral1x2Alto = U.umbral1x2Alto ?? UMBRAL_1X2_ALTO_DEFAULT;
 
-  if (dc1X >= umbralDC && esMercadoDCValido(ligaKey)) {
-    picks.push({ key: 'dc1X', label: 'Local o Empate (1X)', prob: dc1X, mercado: '1X' });
-  }
-  if (dcX2 >= umbralDC && esMercadoDCValido(ligaKey)) {
-    picks.push({ key: 'dcX2', label: 'Empate o Visitante (X2)', prob: dcX2, mercado: 'X2' });
+  // ¿Hay alguna DC que pase el umbral Y la liga la permita?
+  const permiteDC = esMercadoDCValido(ligaKey);
+  const dcDisponible = permiteDC && (dc1X >= umbralDC || dcX2 >= umbralDC);
+
+  // ---------- 1X2 individual ----------
+  // Se agrega SOLO si:
+  //   - supera el umbral1x2 normal (50% típico), Y
+  //   - supera el umbral1x2 alto (60%), O no hay DC disponible.
+  if (max1x2 >= U.umbral1x2 && esMercadoValido(ligaKey, '1X2')) {
+    const pasaAlto = max1x2 >= umbral1x2Alto;
+    const debeMostrar1x2 = pasaAlto || !dcDisponible;
+
+    if (debeMostrar1x2) {
+      if (rp.local === max1x2) {
+        picks.push({ key: 'local', label: 'Local gana', prob: rp.local, mercado: '1X2' });
+      } else if (rp.empate === max1x2) {
+        picks.push({ key: 'empate', label: 'Empate', prob: rp.empate, mercado: '1X2' });
+      } else {
+        picks.push({ key: 'visitante', label: 'Visitante gana', prob: rp.visitante, mercado: '1X2' });
+      }
+    }
   }
 
-  // --- Overs ---
+  // ---------- Doble oportunidad 1X / X2 ----------
+  if (permiteDC) {
+    if (dc1X >= umbralDC) {
+      picks.push({ key: 'dc1X', label: 'Local o Empate (1X)', prob: dc1X, mercado: '1X' });
+    }
+    if (dcX2 >= umbralDC) {
+      picks.push({ key: 'dcX2', label: 'Empate o Visitante (X2)', prob: dcX2, mercado: 'X2' });
+    }
+  }
+
+  // ---------- Overs ----------
   const overs = [
     { key: 'over35', label: 'Over 3.5 goles', prob: data.over35, mercado: 'Over 3.5' },
     { key: 'over25', label: 'Over 2.5 goles', prob: data.over25, mercado: 'Over 2.5' },
@@ -97,7 +130,7 @@ export function generarPicks(data, ligaKey) {
     }
   }
 
-  // --- Unders ---
+  // ---------- Unders ----------
   const under15 = data.under15 ?? (data.over15 != null ? 100 - data.over15 : null);
   const under25 = data.under25 ?? (data.over25 != null ? 100 - data.over25 : null);
   const under35 = data.under35 ?? (data.over35 != null ? 100 - data.over35 : null);
@@ -113,9 +146,8 @@ export function generarPicks(data, ligaKey) {
     }
   }
 
-  // --- BTTS ---
-  // FIX: cada lado usa el MISMO umbral, aplicado a SU propia probabilidad.
-  // Antes el "No" usaba (100 - umbral) y recomendaba el lado perdedor.
+  // ---------- BTTS ----------
+  // Simétrico: cada lado con el mismo umbral aplicado a su propia probabilidad.
   if (data.btts != null && esMercadoValido(ligaKey, 'BTTS')) {
     if (data.btts >= U.umbralBtss) {
       picks.push({ key: 'bttsSi', label: 'Ambos marcan (Sí)', prob: data.btts, mercado: 'BTTS Sí' });
@@ -126,7 +158,7 @@ export function generarPicks(data, ligaKey) {
     }
   }
 
-  // --- Córners ---
+  // ---------- Córners ----------
   if (data.cornerProbs && LIGAS[ligaKey]?.markets?.corn !== false) {
     const lineasCorners = [
       { key: 'c_over95', label: 'Over 9.5 córners', prob: data.cornerProbs.over9, mercado: 'Córners' },
@@ -146,5 +178,13 @@ export function generarPicks(data, ligaKey) {
 
 export function textoUmbrales(ligaKey) {
   const U = getUmbrales(ligaKey);
-  return `Umbrales ${ligaKey}: 1X2 ≥${U.umbral1x2}% · DC ≥${U.umbralDC}% · Goles ≥${U.umbralGoles}% · BTTS ≥${U.umbralBtss}% · Córners ≥${U.umbralCorners}%`;
+  const umbral1x2Alto = U.umbral1x2Alto ?? UMBRAL_1X2_ALTO_DEFAULT;
+  return (
+    'Umbrales ' + ligaKey + ': ' +
+    '1X2 ≥' + U.umbral1x2 + '% (alto ≥' + umbral1x2Alto + '%) · ' +
+    'DC ≥' + U.umbralDC + '% · ' +
+    'Goles ≥' + U.umbralGoles + '% · ' +
+    'BTTS ≥' + U.umbralBtss + '% · ' +
+    'Córners ≥' + U.umbralCorners + '%'
+  );
 }
