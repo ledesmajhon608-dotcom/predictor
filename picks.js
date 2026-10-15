@@ -1,9 +1,10 @@
 // picks.js
-// MEJORA: se quitaron los córners por equipo (local Over 3.5 y visitante
-// Over 3.5). Quedan solo los córners totales (Over 7.5 / 8.5 / 9.5).
-// Cada pick trae `key` para poder tildarlo y guardarlo en el registro.
+// v3:
+// - Unders incluidos.
+// - Kelly fraccionado.
+// - Filtro EV adaptativo por mercado.
 
-import { LIGAS, getUmbrales, SHRINK_ALPHA, FILTRO_EV } from './leagues.js';
+import { LIGAS, getUmbrales, SHRINK_ALPHA, FILTRO_EV, KELLY_FRACTION, STAKE_MAX_PCT, getFiltroEV } from './leagues.js';
 import { shrinkHaciaBase } from './calibrate.js';
 
 export function getBettingConfig(ligaKey) {
@@ -15,7 +16,7 @@ export function esMercadoValido(ligaKey, mercado) {
   const config = getBettingConfig(ligaKey);
   if (config.status !== 'green' && config.status !== 'yellow') return false;
   if (!config.mercados) return false;
-  return config.mercados.some(m => mercado.includes(m));
+  return config.mercados.some(m => mercado.includes(m) || m.includes(mercado));
 }
 
 export function aplicarShrink(resultProbs, tasas, alpha = SHRINK_ALPHA) {
@@ -30,60 +31,93 @@ export function stakeSugerido(ligaKey) {
   return c.status === 'green' ? 1 : c.status === 'yellow' ? 0.5 : 0;
 }
 
-// EV = prob × cuota. Con valor si EV >= FILTRO_EV (el mismo filtro del backtest).
+// [NUEVO] Kelly fraccionado: f* = (p·cuota - 1) / (cuota - 1).
+// Se aplica Kelly/KELLY_FRACTION y se topea en STAKE_MAX_PCT% de banca.
+export function stakeKelly(probPct, cuota, { fraccion = KELLY_FRACTION, tope = STAKE_MAX_PCT } = {}) {
+  if (!Number.isFinite(probPct) || !Number.isFinite(cuota) || cuota <= 1) return null;
+  const p = probPct / 100;
+  const b = cuota - 1;
+  const f = (p * cuota - 1) / b;
+  if (!Number.isFinite(f) || f <= 0) return null;
+  const stake = Math.min(f * fraccion * 100, tope);
+  return +stake.toFixed(2);
+}
+
 export function calcEV(probPct, cuota) {
   if (!Number.isFinite(probPct) || !Number.isFinite(cuota) || cuota <= 1) return null;
   return (probPct / 100) * cuota;
 }
-export function cuotaMinima(probPct) {
+
+export function cuotaMinima(probPct, mercado = 'default') {
   if (!Number.isFinite(probPct) || probPct <= 0) return null;
-  // Se redondea HACIA ARRIBA a 2 decimales: con la cuota mínima que se muestra, el EV siempre da >= FILTRO_EV.
-  return Math.ceil((FILTRO_EV / (probPct / 100)) * 100 - 1e-9) / 100;
+  const filtro = getFiltroEV(mercado);
+  return Math.ceil((filtro / (probPct / 100)) * 100 - 1e-9) / 100;
 }
 
 export function generarPicks(data, ligaKey) {
   const picks = [];
   const config = getBettingConfig(ligaKey);
   if (config.status === 'red') return [];
-  // Equipo sin rating = el modelo asumió "equipo promedio": no se recomienda nada.
-  if (data.sinRating && data.sinRating.length > 0) return [];
-  const U = getUmbrales(ligaKey);
 
+  // Bloqueo si algún equipo no tiene rating: no recomendamos nada.
+  if (data.sinRating && data.sinRating.length > 0) return [];
+
+  const U = getUmbrales(ligaKey);
   const rp = data.resultProbs;
   const max1x2 = Math.max(rp.local, rp.empate, rp.visitante);
 
   if (max1x2 >= U.umbral1x2 && esMercadoValido(ligaKey, '1X2')) {
-    if (rp.local === max1x2) picks.push({ key: 'local', label: 'Local gana', prob: rp.local });
-    else if (rp.empate === max1x2) picks.push({ key: 'empate', label: 'Empate', prob: rp.empate });
-    else picks.push({ key: 'visitante', label: 'Visitante gana', prob: rp.visitante });
+    if (rp.local === max1x2) picks.push({ key: 'local', label: 'Local gana', prob: rp.local, mercado: '1X2' });
+    else if (rp.empate === max1x2) picks.push({ key: 'empate', label: 'Empate', prob: rp.empate, mercado: '1X2' });
+    else picks.push({ key: 'visitante', label: 'Visitante gana', prob: rp.visitante, mercado: '1X2' });
   }
 
-  const lineasGoles = [
+  // Overs (prioridad de mayor a menor).
+  const overs = [
     { key: 'over35', label: 'Over 3.5 goles', prob: data.over35, mercado: 'Over 3.5' },
     { key: 'over25', label: 'Over 2.5 goles', prob: data.over25, mercado: 'Over 2.5' },
     { key: 'over15', label: 'Over 1.5 goles', prob: data.over15, mercado: 'Over 1.5' },
   ];
-  for (const l of lineasGoles) {
+  for (const l of overs) {
     if (l.prob != null && l.prob >= U.umbralGoles && esMercadoValido(ligaKey, l.mercado)) {
-      picks.push({ key: l.key, label: l.label, prob: l.prob });
+      picks.push({ key: l.key, label: l.label, prob: l.prob, mercado: l.mercado });
+      break;
+    }
+  }
+
+  // [NUEVO] Unders: umbral más exigente porque el modelo tiene menos edge ahí.
+  const under15 = data.under15 ?? (data.over15 != null ? 100 - data.over15 : null);
+  const under25 = data.under25 ?? (data.over25 != null ? 100 - data.over25 : null);
+  const under35 = data.under35 ?? (data.over35 != null ? 100 - data.over35 : null);
+  const unders = [
+    { key: 'under15', label: 'Under 1.5 goles', prob: under15, mercado: 'Under 1.5', umbral: 82 },
+    { key: 'under25', label: 'Under 2.5 goles', prob: under25, mercado: 'Under 2.5', umbral: 75 },
+    { key: 'under35', label: 'Under 3.5 goles', prob: under35, mercado: 'Under 3.5', umbral: 72 },
+  ];
+  for (const l of unders) {
+    if (l.prob != null && l.prob >= l.umbral && esMercadoValido(ligaKey, l.mercado)) {
+      picks.push({ key: l.key, label: l.label, prob: l.prob, mercado: l.mercado });
       break;
     }
   }
 
   if (data.btts != null && data.btts >= U.umbralBtss && esMercadoValido(ligaKey, 'BTTS')) {
-    picks.push({ key: 'bttsSi', label: 'Ambos marcan (Sí)', prob: data.btts });
+    picks.push({ key: 'bttsSi', label: 'Ambos marcan (Sí)', prob: data.btts, mercado: 'BTTS Sí' });
+  }
+  // [NUEVO] BTTS No si la probabilidad de Sí es baja.
+  if (data.btts != null && (100 - data.btts) >= (100 - U.umbralBtss) && esMercadoValido(ligaKey, 'BTTS')) {
+    picks.push({ key: 'bttsNo', label: 'Ambos marcan (No)', prob: 100 - data.btts, mercado: 'BTTS No' });
   }
 
-  // Córners TOTALES solamente, y solo en ligas donde los córners están habilitados.
   if (data.cornerProbs && LIGAS[ligaKey]?.markets?.corn !== false) {
     const lineasCorners = [
-      { key: 'c_over95', label: 'Over 9.5 córners', prob: data.cornerProbs.over9 },
-      { key: 'c_over85', label: 'Over 8.5 córners', prob: data.cornerProbs.over8 },
-      { key: 'c_over75', label: 'Over 7.5 córners', prob: data.cornerProbs.over7 },
+      { key: 'c_over95', label: 'Over 9.5 córners', prob: data.cornerProbs.over9, mercado: 'Córners' },
+      { key: 'c_over85', label: 'Over 8.5 córners', prob: data.cornerProbs.over8, mercado: 'Córners' },
+      { key: 'c_over75', label: 'Over 7.5 córners', prob: data.cornerProbs.over7, mercado: 'Córners' },
     ];
     for (const l of lineasCorners) {
       if (l.prob != null && l.prob >= U.umbralCorners) {
-        picks.push({ key: l.key, label: l.label, prob: l.prob });
+        picks.push({ key: l.key, label: l.label, prob: l.prob, mercado: l.mercado });
         break;
       }
     }
