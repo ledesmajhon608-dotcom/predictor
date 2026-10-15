@@ -1,14 +1,5 @@
 // backtest.js
-// MEJORAS:
-// - Una sola calibración (AutoCalibrate.ejecutar).
-// - calcularRecomendacion respeta betting.status y betting.mercados.
-// - Sin córners por equipo (solo totales, umbral 75).
-// - try/catch en renderPicks y renderResults.
-// - Todas las secciones visibles al final.
-// NUEVO:
-// - Ratings de equipo WALK-FORWARD (cada partido solo usa lo que se sabía antes).
-// - Métricas 1X2 globales (log-loss, RPS, acierto) vs frecuencia base y vs cuota.
-// - Córners respetan LIGAS[x].markets.corn (igual que la app).
+// v4: agrega 1X y X2 (doble oportunidad) al backtest.
 
 import { LIGAS, HOME_ADVANTAGE, DIXON_COLES_RHO, FILTRO_EV, SHRINK_ALPHA, getUmbrales } from './leagues.js';
 import { simulateMatch, getStaticRating } from './model.js';
@@ -111,8 +102,6 @@ class MarketStats {
   }
 }
 
-// Métrica global 1X2 (una sola cifra por modelo, no una por resultado).
-// RPS respeta el orden Local < Empate < Visitante. Menor = mejor.
 class Multi1X2 {
   constructor(name) { this.name = name; this.n = 0; this.ll = 0; this.rps = 0; this.hits = 0; }
   add(pL, pE, pV, resultado) {
@@ -189,6 +178,7 @@ function renderCalibracion(resultado) {
       ${fila('Visitante gana', tasas.awayRate, ultimo.predAway)}
       <h3 class="corner-team-title">Umbrales activos para ${leagueKey}</h3>
       <div class="compare-row"><span>1X2 favorito mínimo</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">${umbrales.umbral1x2}%</span></div>
+      <div class="compare-row"><span>Doble oportunidad (1X/X2)</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">${umbrales.umbralDC}%</span></div>
       <div class="compare-row"><span>Goles (Over X.5)</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">${umbrales.umbralGoles}%</span></div>
       <div class="compare-row"><span>Córners totales</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">${umbrales.umbralCorners}%</span></div>
       <div class="compare-row"><span>BTTS</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">${umbrales.umbralBtss}%</span></div>
@@ -196,8 +186,10 @@ function renderCalibracion(resultado) {
       <p style="margin:10px 0 0; font-size:0.8rem; color:var(--chalk-dim)">
         Error total L/E/V: ${fmt(ultimo.err * 100)}% · goles/partido usados: ${calibracion.goalsAvg?.toFixed(2) ?? '—'}.
         ${hold ? `Hold-out (${hold.nTest} partidos): ${hold.aceptado ? 'ajuste aceptado' : 'el ajuste no mejoraba → se mantuvo el valor base'} (dif ${hold.mejora} ± ${hold.se}).` : 'Muestra chica: sin hold-out.'}
-        ${resultado.diagnostico?.holdRatings ? `Ratings del historial: ${resultado.diagnostico.holdRatings.usados ? 'ACTIVOS' : 'no mejoraron → se usan los estáticos'} (dif ${resultado.diagnostico.holdRatings.mejora} ± ${resultado.diagnostico.holdRatings.se}).` : 'Ratings del historial: no activados (muestra chica).'}
-        ${calibracion.cornAvg ? `Córners/partido usados: ${calibracion.cornAvg.toFixed(2)}.` : ''}
+        ${resultado.diagnostico?.estabilidad ? `Estabilidad HA: ${resultado.diagnostico.estabilidad.ha.toFixed(3)} [${resultado.diagnostico.estabilidad.haMin.toFixed(3)}…${resultado.diagnostico.estabilidad.haMax.toFixed(3)}] en ${resultado.diagnostico.estabilidad.nVentanas} ventanas.` : ''}
+        ${resultado.diagnostico?.holdRatings ? `Ratings: ${resultado.diagnostico.holdRatings.usados ? 'ACTIVOS' : 'estáticos'} (dif ${resultado.diagnostico.holdRatings.mejora} ± ${resultado.diagnostico.holdRatings.se}).` : ''}
+        ${calibracion.cornAvg ? `Córners/partido: ${calibracion.cornAvg.toFixed(2)}.` : ''}
+        ${calibracion.cornerRatings ? `Ratings de córners: ${Object.keys(calibracion.cornerRatings).length} equipos.` : ''}
         Shrinkage activo (α=${SHRINK_ALPHA}).
       </p>
     </div>`;
@@ -242,6 +234,24 @@ function calcularRecomendacion(p, pred, resultProbsFinal, leagueKey) {
     } else {
       rec.sinEV.push({ label: pick.label, prob: pick.prob, cuota: pick.casaOdds });
     }
+  }
+
+  // [NUEVO] Doble oportunidad
+  const dc1X = resultProbsFinal.local + resultProbsFinal.empate;
+  const dcX2 = resultProbsFinal.empate + resultProbsFinal.visitante;
+  const umbralDC = U.umbralDC ?? 68;
+  const permiteDC = () => {
+    if (statusLiga !== 'green' && statusLiga !== 'yellow') return false;
+    if (mercadosLiga.length === 0) return false;
+    return mercadosLiga.some(m => /1X2|1X|X2|DC|doble/i.test(m));
+  };
+  if (dc1X >= umbralDC && permiteDC()) {
+    const hit = rec.resultado != null ? (rec.resultado === 'local' || rec.resultado === 'empate') : null;
+    rec.picks.push({ mercado: '1X', code: 'dc1X', label: 'Local o Empate (1X)', prob: dc1X, casaOdds: null, hit, tieneReal: hit != null, sinCuota: true });
+  }
+  if (dcX2 >= umbralDC && permiteDC()) {
+    const hit = rec.resultado != null ? (rec.resultado === 'empate' || rec.resultado === 'visitante') : null;
+    rec.picks.push({ mercado: 'X2', code: 'dcX2', label: 'Empate o Visitante (X2)', prob: dcX2, casaOdds: null, hit, tieneReal: hit != null, sinCuota: true });
   }
 
   const lineas = [
@@ -291,8 +301,11 @@ function calcularRecomendacion(p, pred, resultProbsFinal, leagueKey) {
 class PicksStats {
   constructor(umbrales) {
     this.umbrales = umbrales;
+    // [MODIFICADO] se agregan 1X y X2.
     this.mercados = {
       '1X2': { n: 0, nCuota: 0, hits: 0, profit: 0, label: `1X2 (favorito ≥ ${umbrales.umbral1x2}%)` },
+      '1X': { n: 0, nCuota: 0, hits: 0, profit: 0, label: `1X (Local o Empate ≥ ${umbrales.umbralDC ?? 68}%)` },
+      'X2': { n: 0, nCuota: 0, hits: 0, profit: 0, label: `X2 (Empate o Visitante ≥ ${umbrales.umbralDC ?? 68}%)` },
       'Over 1.5': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Over 1.5 goles' },
       'Over 2.5': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Over 2.5 goles' },
       'Over 3.5': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Over 3.5 goles' },
@@ -309,6 +322,8 @@ class PicksStats {
       if (!pick.tieneReal) continue;
       let key;
       if (pick.mercado === '1X2') key = '1X2';
+      else if (pick.mercado === '1X') key = '1X';           // [NUEVO]
+      else if (pick.mercado === 'X2') key = 'X2';           // [NUEVO]
       else if (pick.mercado === 'Goles') {
         if (pick.code === 'over15') key = 'Over 1.5';
         else if (pick.code === 'over25') key = 'Over 2.5';
@@ -365,7 +380,7 @@ function renderPicks(recs, stats, leagueKey) {
       ${resumen || '<div class="compare-row"><span>Sin picks con resultado real.</span></div>'}
       <p style="margin:10px 0 0; font-size:0.78rem; color:var(--chalk-dim); line-height:1.5;">
         <strong>Reglas para ${leagueKey}:</strong>
-        1X2 ≥ ${U.umbral1x2}% · Goles ≥ ${U.umbralGoles}% · BTTS ≥ ${U.umbralBtss}% · Córners totales ≥ ${U.umbralCorners}% · Filtro EV ≥ ${FILTRO_EV}.
+        1X2 ≥ ${U.umbral1x2}% · DC ≥ ${U.umbralDC}% · Goles ≥ ${U.umbralGoles}% · BTTS ≥ ${U.umbralBtss}% · Córners totales ≥ ${U.umbralCorners}% · Filtro EV ≥ ${FILTRO_EV}.
         <br><strong>Partidos sin picks:</strong> ${sinPicks.length}.
       </p>
     </div>`;
@@ -387,7 +402,7 @@ function renderPicks(recs, stats, leagueKey) {
   }).join('');
 
   picksContent.innerHTML = resumenHTML + `<h2 style="font-family:'Anton',sans-serif;font-size:1.15rem;letter-spacing:0.02em;color:var(--chalk);margin:20px 0 10px;">Detalle por partido (${ordenados.length}${ordenados.length > 50 ? ', mostrando 50' : ''})</h2>${cards || '<div class="card"><p style="color:var(--chalk-dim);">Sin partidos con picks.</p></div>'}`;
-  // ——— IC del ROI (bootstrap): ¿el edge es real o ruido? ———
+
   try {
     const todos = recs.flatMap(r => r.picks).filter(p => p.casaOdds && p.hit != null);
     const b = roiBootstrap(todos.map(p => ({ cuota: p.casaOdds, hit: p.hit })));
@@ -397,13 +412,12 @@ function renderPicks(recs, stats, leagueKey) {
       picksContent.insertAdjacentHTML('beforeend', `<div class="card" style="border:2px solid ${color};">
         <h3>📉 ROI con intervalo de confianza <small>(bootstrap, ${b.n} apuestas con cuota)</small></h3>
         <p style="margin:0; font-size:0.9rem;">ROI: <strong style="color:${color};">${b.roi >= 0 ? '+' : ''}${b.roi}%</strong> · IC 95%: [${b.ic[0]}%, ${b.ic[1]}%]</p>
-        <p style="margin:6px 0 0; font-size:0.78rem; color:var(--chalk-dim);">${fiable ? '✅ Edge estadísticamente significativo (el IC no incluye 0).' : '⚠️ El IC incluye 0: con esta muestra no se distingue del azar. Acumulá más picks antes de subir stakes.'}</p>
+        <p style="margin:6px 0 0; font-size:0.78rem; color:var(--chalk-dim);">${fiable ? '✅ Edge estadísticamente significativo.' : '⚠️ El IC incluye 0: con esta muestra no se distingue del azar.'}</p>
       </div>`);
     } else if (b.aviso) {
       picksContent.insertAdjacentHTML('beforeend', `<div class="card"><h3>📉 ROI</h3><p style="margin:0; font-size:0.85rem; color:var(--yellow);">⚠️ ${b.aviso}</p></div>`);
     }
   } catch (e) { console.warn('No se pudo calcular IC del ROI:', e); }
-
 }
 
 runBtn.addEventListener('click', async () => {
@@ -428,7 +442,7 @@ runBtn.addEventListener('click', async () => {
 
   log(`\n▶ Corriendo backtest con calibración ${calibracion ? 'ACTIVA' : 'por defecto'}...`);
   log(`   Filtro EV ≥ ${FILTRO_EV} aplicado a picks con cuota.`);
-  log(`   Umbrales ${leagueKey}: 1X2 ≥${umbrales.umbral1x2}% · Goles ≥${umbrales.umbralGoles}% · BTTS ≥${umbrales.umbralBtss}% · Córners totales ≥${umbrales.umbralCorners}%`);
+  log(`   Umbrales ${leagueKey}: 1X2 ≥${umbrales.umbral1x2}% · DC ≥${umbrales.umbralDC}% · Goles ≥${umbrales.umbralGoles}% · BTTS ≥${umbrales.umbralBtss}% · Córners totales ≥${umbrales.umbralCorners}%`);
 
   const markets = {
     local: new MarketStats('Local gana'), empate: new MarketStats('Empate'), visitante: new MarketStats('Visitante gana'),
@@ -444,7 +458,6 @@ runBtn.addEventListener('click', async () => {
     local: new MarketStats('Local gana'), empate: new MarketStats('Empate'), visitante: new MarketStats('Visitante gana'),
     over15: new MarketStats('Over 1.5 goles'), over25: new MarketStats('Over 2.5 goles'), over35: new MarketStats('Over 3.5 goles'), btts: new MarketStats('Ambos marcan'),
   };
-
   const global1x2 = {
     modelo: new Multi1X2('Modelo'), base: new Multi1X2('Frecuencia base'),
     modeloCuota: new Multi1X2('Modelo (partidos con cuota)'), mercado: new Multi1X2('Cuota real (sin margen)'),
@@ -454,8 +467,6 @@ runBtn.addEventListener('click', async () => {
   const todasLasRecs = [];
   let evaluados = 0, conSinEV = 0;
 
-  // Ordenado por fecha para poder usar ratings walk-forward: cada partido solo
-  // "conoce" los resultados anteriores a él.
   const ordenados = [...partidos]
     .filter(p => p.goles_local != null && p.goles_visitante != null && p.local && p.visitante)
     .sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
@@ -682,7 +693,5 @@ exportBtn.addEventListener('click', () => exportarComparacionCSV(filasComparacio
 
 const exportParamsBtn = document.getElementById('export-params-btn');
 if (exportParamsBtn) {
-  exportParamsBtn.addEventListener('click', () => {
-    AutoCalibrate.exportarParamsJSON();
-  });
+  exportParamsBtn.addEventListener('click', () => { AutoCalibrate.exportarParamsJSON(); });
 }
