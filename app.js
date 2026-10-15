@@ -197,10 +197,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function fmt(n) { return Number(n).toFixed(1); }
 
-  function fila(label, prob) {
+  function fila(label, prob, key = null) {
     const color = getColor(prob);
     const pct = Math.max(0, Math.min(100, prob));
-    return `<div class="prob-row"><div class="prob-row-top"><span>${label}</span><span class="prob" style="color:${color}">${fmt(prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${pct}%;background:${color}"></div></div></div>`;
+    const check = key ? `<input type="checkbox" class="pick-check" data-key="${key}" style="width:16px;height:16px;flex-shrink:0;accent-color:#3ecf8e;margin-right:10px;">` : '';
+    return `<div class="prob-row" style="display:flex;align-items:center;">${check}<div style="flex:1;min-width:0;"><div class="prob-row-top"><span>${label}</span><span class="prob" style="color:${color}">${fmt(prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${pct}%;background:${color}"></div></div></div></div>`;
   }
 
   function gridProb(val) {
@@ -237,22 +238,22 @@ document.addEventListener('DOMContentLoaded', () => {
         </span>
       </label>`).join('');
 
-    return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p><p style="color:var(--chalk-dim); font-size:0.72rem; margin:6px 0 0;">☑️ Destildá los que NO vayas a apostar. Podés guardar varios picks del mismo partido.</p><button id="guardar-picks" style="width:100%; margin-top:12px;">📝 Guardar picks seleccionados</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardalos antes de que empiece el partido. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
+    return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
   }
 
-  // Guarda solo los picks tildados (puede haber varios del mismo partido).
+  // Guarda solo lo tildado (picks + mercados de las tarjetas; un solo clic).
   function wirePicksGuardar(data, ligaKey) {
     const btn = document.getElementById('guardar-picks');
     const st = document.getElementById('guardar-status');
     if (!btn || !st) return;
     btn.addEventListener('click', () => {
-      const elegidos = [...document.querySelectorAll('.pick-check:checked')].map(c => c.dataset.key);
-      if (!elegidos.length) { st.textContent = '⚠️ Tildá al menos un pick para guardar.'; st.style.color = 'var(--yellow)'; return; }
+      const elegidos = [...new Set([...document.querySelectorAll('.pick-check:checked')].map(c => c.dataset.key))];
+      if (!elegidos.length) { st.textContent = '⚠️ Tildá al menos un mercado para guardar.'; st.style.color = 'var(--yellow)'; return; }
       try {
         const r = agregarEntrada(entradaDesdeSimulacion(data, ligaKey, {}, elegidos));
         st.textContent = r.reemplazada
-          ? `✅ Actualizada con ${elegidos.length} pick${elegidos.length > 1 ? 's' : ''}. Total: ${r.total}.`
-          : `✅ Guardada con ${elegidos.length} pick${elegidos.length > 1 ? 's' : ''}. Total: ${r.total}.`;
+          ? `✅ Actualizada con ${elegidos.length} seleccionado${elegidos.length > 1 ? 's' : ''}. Total: ${r.total}.`
+          : `✅ Guardada con ${elegidos.length} seleccionado${elegidos.length > 1 ? 's' : ''}. Total: ${r.total}.`;
         st.style.color = 'var(--green)';
       } catch (e) {
         st.textContent = '❌ No se pudo guardar: ' + e.message;
@@ -268,12 +269,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const picksCard = renderPicksCard(data, ligaKey);
 
+    const saveCard = `<div class="card" style="border:2px solid var(--accent);"><h3>📝 ¿Qué apostás?</h3><p style="color:var(--chalk-dim); font-size:0.75rem; margin:0 0 10px; line-height:1.5;">Tildá todo lo que vayas a jugar: los picks de arriba (ya vienen tildados) y/o cualquier mercado de las tarjetas de abajo. Podés combinar varios del mismo partido.</p><button id="guardar-picks" style="width:100%;">💾 Guardar seleccionados</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardalo antes de que empiece el partido. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
+
     predictionsContent.innerHTML = `
       ${picksCard}
-      <div class="card"><h3>Resultado 1X2</h3>${fila('Local', data.resultProbs.local)}${fila('Empate', data.resultProbs.empate)}${fila('Visitante', data.resultProbs.visitante)}</div>
-      <div class="card"><h3>Goles</h3>${fila('Over 1.5', data.over15)}${fila('Over 2.5', data.over25)}${fila('Over 3.5', data.over35)}</div>
-      <div class="card"><h3>Ambos marcan (BTTS)</h3>${fila('Sí', data.btts)}</div>
-      ${data.cornerProbs ? `<div class="card"><h3>Córneres</h3>${fila('Over 7.5', data.cornerProbs.over7)}${fila('Over 8.5', data.cornerProbs.over8)}${fila('Over 9.5', data.cornerProbs.over9)}</div>` : ''}
+      ${saveCard}
+      <div class="card"><h3>Resultado 1X2</h3>${fila('Local', data.resultProbs.local, 'local')}${fila('Empate', data.resultProbs.empate, 'empate')}${fila('Visitante', data.resultProbs.visitante, 'visitante')}</div>
+      <div class="card"><h3>Goles</h3>${fila('Over 1.5', data.over15, 'over15')}${fila('Over 2.5', data.over25, 'over25')}${fila('Over 3.5', data.over35, 'over35')}</div>
+      <div class="card"><h3>Ambos marcan (BTTS)</h3>${fila('Sí', data.btts, 'bttsSi')}</div>
+      ${data.cornerProbs ? `<div class="card"><h3>Córneres</h3>${fila('Over 7.5', data.cornerProbs.over7, 'c_over75')}${fila('Over 8.5', data.cornerProbs.over8, 'c_over85')}${fila('Over 9.5', data.cornerProbs.over9, 'c_over95')}</div>` : ''}
       ${comparisonCard}
     `;
     resultsDiv.style.display = 'block';
