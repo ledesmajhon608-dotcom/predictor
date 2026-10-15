@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Suertudo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 720px) { .dash-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 400px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 104px;
+    }
+    .stat-card .stat-icon { font-size: 1rem; margin-bottom: 4px; opacity: 0.85; }
+    .stat-card .stat-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 600;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+    .stat-card .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      line-height: 1.3;
+    }
+    .stat-card .stat-sub {
+      font-size: 0.66rem;
+      color: var(--text-faint);
+      margin-top: 2px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .green  { color: var(--green); }
+    .yellow { color: var(--yellow); }
+    .red    { color: var(--red); }
+
+    .dash-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 720px) { .dash-row { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .chart-card h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 14px; }
+
+    .donut-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 0;
+    }
+    .donut { width: 130px; height: 130px; position: relative; }
+    .donut svg { transform: rotate(-90deg); display: block; }
+    .donut-center {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.5rem; font-weight: 600;
+    }
+    .donut-legend { display: flex; gap: 12px; font-size: 0.72rem; flex-wrap: wrap; justify-content: center; }
+    .donut-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+
+    .bets-table { width: 100%; font-size: 0.78rem; border-collapse: collapse; }
+    .bets-table th, .bets-table td {
+      text-align: left; padding: 8px 6px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .bets-table th {
+      font-size: 0.66rem; text-transform: uppercase;
+      color: var(--text-dim); font-weight: 500; letter-spacing: 0.05em;
+    }
+    .bets-table td.num { font-family: 'IBM Plex Mono', monospace; text-align: right; }
+    .bets-table tr.win td:first-child  { border-left: 3px solid var(--green); padding-left: 9px; }
+    .bets-table tr.loss td:first-child { border-left: 3px solid var(--red);   padding-left: 9px; }
+
+    .config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 520px) { .config-row { grid-template-columns: 1fr; } }
+
+    .empty-msg { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 920px;">
+
+    <header class="hero">
+      <h1>Dashboard</h1>
+      <p class="tagline">Rendimiento real de tus predicciones.</p>
+    </header>
+
+    <section class="panel">
+      <h2 class="panel-title">Configuración de banca</h2>
+      <div class="config-row">
+        <div class="field">
+          <label for="cfg-bank">Banca inicial</label>
+          <input type="number" id="cfg-bank" value="10000" min="1" step="100">
+        </div>
+        <div class="field">
+          <label for="cfg-unit-pct">Valor de 1U (% de la banca)</label>
+          <input type="number" id="cfg-unit-pct" value="1" min="0.1" max="10" step="0.1">
+        </div>
+      </div>
+      <p style="font-size:0.72rem; color:var(--text-dim); margin-top:6px;">
+        Cada pick del registro que tenga cuota cargada se cuenta como una apuesta de 1U.
+      </p>
+    </section>
+
+    <section id="dash-empty" class="panel" style="display:none;">
+      <p class="empty-msg" id="empty-msg">
+        Todavía no hay apuestas resueltas.<br><br>
+        Guardá predicciones en la app, cargá sus resultados en el
+        <a href="registro.html" style="color:var(--green);">registro</a> y volvé acá.
+      </p>
+    </section>
+
+    <section id="dash-content" style="display:none;">
+
+      <div class="dash-grid">
+        <div class="stat-card">
+          <div class="stat-icon">●</div>
+          <div class="stat-value" id="s-tasa">—</div>
+          <div class="stat-label">Tasa de Acierto</div>
+          <div class="stat-sub" id="s-tasa-sub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">%</div>
+          <div class="stat-value" id="s-yield">—</div>
+          <div class="stat-label">Yield</div>
+          <div class="stat-sub" id="s-yield-sub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-value" id="s-units">—</div>
+          <div class="stat-label">Unidades</div>
+          <div class="stat-sub" id="s-units-sub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-value" id="s-odds">—</div>
+          <div class="stat-label">Cuota Media</div>
+          <div class="stat-sub" id="s-odds-sub">—</div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="stat-card">
+          <div class="stat-icon">💵</div>
+          <div class="stat-value" id="s-bank">—</div>
+          <div class="stat-label">Banca Inicial</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-value green" id="s-profit">—</div>
+          <div class="stat-label">Beneficio</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💼</div>
+          <div class="stat-value" id="s-saldo">—</div>
+          <div class="stat-label">Saldo</div>
+          <div class="stat-sub" id="s-saldo-sub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-value" id="s-unit">—</div>
+          <div class="stat-label">1U =</div>
+        </div>
+      </div>
+
+      <div class="dash-row">
+        <div class="chart-card">
+          <h3>Beneficio acumulado</h3>
+          <div id="chart-container"></div>
+        </div>
+        <div class="chart-card">
+          <h3>Rendimiento</h3>
+          <div class="donut-wrap">
+            <div class="donut">
+              <svg viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="60" fill="none" stroke="var(--line)" stroke-width="10"/>
+                <circle id="donut-arc" cx="70" cy="70" r="60" fill="none" stroke="var(--green)" stroke-width="10"
+                        stroke-linecap="round" stroke-dasharray="0 377"/>
+              </svg>
+              <div class="donut-center" id="donut-pct">—</div>
+            </div>
+            <div class="donut-legend">
+              <span><span class="dot" style="background:var(--green)"></span><span id="dl-win">0</span> Ganadas</span>
+              <span><span class="dot" style="background:var(--red)"></span><span id="dl-loss">0</span> Perdidas</span>
+              <span><span class="dot" style="background:var(--text-dim)"></span><span id="dl-pend">0</span> Pendientes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:16px;">
+        <h3>Últimas apuestas resueltas</h3>
+        <div style="overflow-x:auto;">
+          <table class="bets-table">
+            <thead>
+              <tr>
+                <th>Partido</th>
+                <th>Mercado</th>
+                <th class="num">Cuota</th>
+                <th class="num">Prob</th>
+                <th class="num">Stake</th>
+                <th class="num">Retorno</th>
+              </tr>
+            </thead>
+            <tbody id="bets-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Navegación</h2>
+      <div class="tools-list">
+        <a href="index.html">🏠 Volver al inicio</a>
+        <a href="registro.html">📝 Registro</a>
+      </div>
+    </section>
+
+  </div>
+
+  <script type="module">
+    import { leerRegistro, MERCADOS } from './registro.js';
+
+    const CFG_KEY = 'suertudo_dashboard_cfg';
+    const cfgBank = document.getElementById('cfg-bank');
+    const cfgUnitPct = document.getElementById('cfg-unit-pct');
+
+    function cargarCfg() {
+      try {
+        const c = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
+        if (Number.isFinite(c.bank)) cfgBank.value = c.bank;
+        if (Number.isFinite(c.unitPct)) cfgUnitPct.value = c.unitPct;
+      } catch (e) {}
+    }
+    function guardarCfg() {
+      try {
+        localStorage.setItem(CFG_KEY, JSON.stringify({
+          bank: +cfgBank.value || 10000,
+          unitPct: +cfgUnitPct.value || 1,
+        }));
+      } catch (e) {}
+    }
+    cfgBank.addEventListener('change', () => { guardarCfg(); render(); });
+    cfgUnitPct.addEventListener('change', () => { guardarCfg(); render(); });
+
+    // Cada pick con cuota cargada se trata como una apuesta de 1U.
+    // Los picks sin resultado quedan como pendientes.
+    function extraerApuestas() {
+      const arr = leerRegistro();
+      const apuestas = [];
+      let pendientes = 0;
+
+      for (const e of arr) {
+        const resultado = e.resultado;
+        const r = resultado
+          ? { gl: resultado.gl, gv: resultado.gv, corners: resultado.corners }
+          : null;
+
+        for (const m of MERCADOS) {
+          const cuota = e.cuotas ? e.cuotas[m.key] : null;
+          if (!Number.isFinite(cuota) || cuota <= 1) continue;
+          const prob = m.p(e);
+          if (!Number.isFinite(prob)) continue;
+          if (m.corners && (!r || !Number.isFinite(r.corners))) continue;
+
+          if (!r) { pendientes++; continue; }
+
+          const hit = m.hit(r);
+          apuestas.push({
+            fecha: e.resuelto || e.creado || '',
+            partido: e.local + ' vs ' + e.visitante,
+            label: m.label,
+            cuota, prob, hit,
+          });
+        }
+      }
+
+      apuestas.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+      return { apuestas, pendientes };
+    }
+
+    function calcularStats(apuestas, bank, unitPct) {
+      const unit = bank * unitPct / 100;
+      const n = apuestas.length;
+      let wins = 0, losses = 0, staked = 0, returned = 0, sumOdds = 0;
+      let equity = bank;
+      const curva = [{ x: 0, y: bank }];
+
+      apuestas.forEach((a, i) => {
+        staked += unit;
+        sumOdds += a.cuota;
+        const ret = a.hit ? unit * a.cuota : 0;
+        returned += ret;
+        equity = equity - unit + ret;
+        if (a.hit) wins++; else losses++;
+        curva.push({ x: i + 1, y: equity });
+      });
+
+      const profit = returned - staked;
+      const yieldPct = staked > 0 ? (profit / staked) * 100 : 0;
+      const winRate = n > 0 ? (wins / n) * 100 : 0;
+      const avgOdds = n > 0 ? sumOdds / n : 0;
+      const units = unit > 0 ? profit / unit : 0;
+
+      return { n, wins, losses, staked, returned, profit, yieldPct, winRate, avgOdds, units, unit, equity, curva };
+    }
+
+    function fmt(v, dec) {
+      return new Intl.NumberFormat('es-CO', {
+        minimumFractionDigits: dec || 0,
+        maximumFractionDigits: dec || 0,
+      }).format(v);
+    }
+
+    function render() {
+      const bank = +cfgBank.value || 10000;
+      const unitPct = +cfgUnitPct.value || 1;
+
+      const { apuestas, pendientes } = extraerApuestas();
+      const empty = document.getElementById('dash-empty');
+      const content = document.getElementById('dash-content');
+
+      if (apuestas.length === 0) {
+        empty.style.display = 'block';
+        content.style.display = 'none';
+        const em = document.getElementById('empty-msg');
+        if (pendientes > 0) {
+          em.innerHTML = 'Todavía no hay apuestas resueltas.<br><br>' +
+            'Tenés <strong>' + pendientes + '</strong> apuestas pendientes de resultado.<br>' +
+            'Cargá los resultados en el <a href="registro.html" style="color:var(--green);">registro</a> para ver el dashboard.';
+        }
+        return;
+      }
+      empty.style.display = 'none';
+      content.style.display = 'block';
+
+      const s = calcularStats(apuestas, bank, unitPct);
+
+      const colTasa = s.winRate >= 55 ? 'green' : s.winRate >= 45 ? 'yellow' : 'red';
+      const elTasa = document.getElementById('s-tasa');
+      elTasa.textContent = s.winRate.toFixed(1) + '%';
+      elTasa.className = 'stat-value ' + colTasa;
+      document.getElementById('s-tasa-sub').textContent = s.wins + 'W / ' + s.losses + 'L';
+
+      const colYield = s.yieldPct > 0 ? 'green' : s.yieldPct < 0 ? 'red' : 'yellow';
+      const elYield = document.getElementById('s-yield');
+      elYield.textContent = (s.yieldPct >= 0 ? '+' : '') + s.yieldPct.toFixed(2) + '%';
+      elYield.className = 'stat-value ' + colYield;
+      document.getElementById('s-yield-sub').textContent = s.yieldPct >= 0 ? '↗ Rentable' : '↘ No rentable';
+
+      const colUnits = s.units > 0 ? 'green' : s.units < 0 ? 'red' : 'yellow';
+      const elUnits = document.getElementById('s-units');
+      elUnits.textContent = (s.units >= 0 ? '+' : '') + s.units.toFixed(2) + 'U';
+      elUnits.className = 'stat-value ' + colUnits;
+      document.getElementById('s-units-sub').textContent = 'Stake: ' + s.unit.toFixed(2) + 'U';
+
+      const elOdds = document.getElementById('s-odds');
+      elOdds.textContent = s.avgOdds.toFixed(2);
+      elOdds.className = 'stat-value';
+      document.getElementById('s-odds-sub').textContent = 'Stake %: ' + unitPct.toFixed(1) + '%';
+
+      document.getElementById('s-bank').textContent = fmt(bank, 0);
+      const elProfit = document.getElementById('s-profit');
+      elProfit.textContent = (s.profit >= 0 ? '+' : '') + fmt(s.profit, 2);
+      elProfit.className = 'stat-value ' + (s.profit >= 0 ? 'green' : 'red');
+      document.getElementById('s-saldo').textContent = fmt(s.equity, 2);
+      document.getElementById('s-saldo-sub').textContent = pendientes + ' pendientes';
+      document.getElementById('s-unit').textContent = fmt(s.unit, 2);
+
+      const pct = s.winRate;
+      const circ = 2 * Math.PI * 60;
+      document.getElementById('donut-arc').setAttribute(
+        'stroke-dasharray',
+        (pct / 100 * circ).toFixed(2) + ' ' + circ.toFixed(2)
+      );
+      document.getElementById('donut-pct').textContent = Math.round(pct) + '%';
+      document.getElementById('dl-win').textContent = s.wins;
+      document.getElementById('dl-loss').textContent = s.losses;
+      document.getElementById('dl-pend').textContent = pendientes;
+
+      dibujarChart(s.curva, bank);
+
+      const body = document.getElementById('bets-body');
+      const ultimas = apuestas.slice(-20).reverse();
+      body.innerHTML = ultimas.map(a => {
+        const cls = a.hit ? 'win' : 'loss';
+        const stakeTxt = '-1.00U';
+        const retTxt = a.hit ? '+' + (a.cuota - 1).toFixed(2) + 'U' : '-1.00U';
+        const colRet = a.hit ? 'green' : 'red';
+        return '<tr class="' + cls + '">' +
+          '<td>' + a.partido + '</td>' +
+          '<td>' + a.label + '</td>' +
+          '<td class="num">' + a.cuota.toFixed(2) + '</td>' +
+          '<td class="num">' + a.prob.toFixed(1) + '%</td>' +
+          '<td class="num">' + stakeTxt + '</td>' +
+          '<td class="num ' + colRet + '">' + retTxt + '</td>' +
+        '</tr>';
+      }).join('');
+    }
+
+    function dibujarChart(curva, bank) {
+      const cont = document.getElementById('chart-container');
+      const W = 560, H = 220, P = { t: 10, r: 12, b: 28, l: 56 };
+      const w = W - P.l - P.r, h = H - P.t - P.b;
+
+      const xs = curva.map(d => d.x);
+      const ys = curva.map(d => d.y);
+      const minX = Math.min.apply(null, xs), maxX = Math.max.apply(null, xs);
+      const minY = Math.min.apply(null, ys), maxY = Math.max.apply(null, ys);
+      const padY = (maxY - minY) * 0.1 || (bank * 0.01) || 1;
+      const y0 = minY - padY, y1 = maxY + padY;
+
+      const mapX = (x) => P.l + ((x - minX) / (maxX - minX || 1)) * w;
+      const mapY = (y) => P.t + h - ((y - y0) / (y1 - y0 || 1)) * h;
+
+      let path = '';
+      curva.forEach((d, i) => {
+        path += (i === 0 ? 'M' : 'L') + mapX(d.x).toFixed(1) + ' ' + mapY(d.y).toFixed(1) + ' ';
+      });
+
+      const areaPath =
+        path +
+        'L' + mapX(maxX).toFixed(1) + ' ' + (P.t + h).toFixed(1) +
+        ' L' + mapX(minX).toFixed(1) + ' ' + (P.t + h).toFixed(1) + ' Z';
+
+      let grid = '';
+      for (let i = 0; i <= 3; i++) {
+        const yy = P.t + (h / 3) * i;
+        const valor = y1 - ((y1 - y0) / 3) * i;
+        grid += '<line x1="' + P.l + '" y1="' + yy.toFixed(1) + '" x2="' + (P.l + w) + '" y2="' + yy.toFixed(1) + '" stroke="var(--line-soft)" stroke-width="1"/>';
+        grid += '<text x="' + (P.l - 6) + '" y="' + (yy + 3).toFixed(1) + '" text-anchor="end" font-family="IBM Plex Mono, monospace" font-size="9" fill="var(--text-faint)">' + Math.round(valor) + '</text>';
+      }
+
+      const last = curva[curva.length - 1].y;
+      const color = last >= bank ? 'var(--green)' : 'var(--red)';
+
+      cont.innerHTML =
+        '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;display:block;">' +
+          '<defs>' +
+            '<linearGradient id="areaGrad" x1="0" x2="0" y1="0" y2="1">' +
+              '<stop offset="0%" stop-color="' + color + '" stop-opacity="0.3"/>' +
+              '<stop offset="100%" stop-color="' + color + '" stop-opacity="0"/>' +
+            '</linearGradient>' +
+          '</defs>' +
+          grid +
+          '<path d="' + areaPath + '" fill="url(#areaGrad)"/>' +
+          '<path d="' + path + '" fill="none" stroke="' + color + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>' +
+        '</svg>';
+    }
+
+    cargarCfg();
+    render();
+  </script>
+</body>
+</html>
