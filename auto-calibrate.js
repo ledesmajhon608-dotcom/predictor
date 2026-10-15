@@ -1,7 +1,5 @@
 // auto-calibrate.js
-// MEJORA: sanearTasas valida las tasas guardadas/cargadas. ejecutar devuelve
-// más info (tasas, historial, error, diagnóstico) para que el backtest use
-// exactamente lo mismo que la app.
+// v3: pasa estabilidad y cornerRatings.
 
 import { LIGAS, MODEL_VERSION } from './leagues.js';
 import { calibrarLigaMLE, sanearParams } from './calibrate.js';
@@ -15,19 +13,11 @@ function sanearTasas(t) {
   if (![homeRate, drawRate, awayRate].every(v => Number.isFinite(v) && v >= 0 && v <= 1)) return null;
   const suma = homeRate + drawRate + awayRate;
   if (Math.abs(suma - 1) > 0.15) return null;
-  return {
-    homeRate, drawRate, awayRate,
-    n: Number.isFinite(t.n) ? t.n : undefined,
-  };
+  return { homeRate, drawRate, awayRate, n: Number.isFinite(t.n) ? t.n : undefined };
 }
 
 export const AutoCalibrate = {
-  CONFIG: {
-    VENTANA: 200,
-    PASO: 30,
-    MIN_PARTIDOS: 20,
-    ERROR_CONV: 0.02,
-  },
+  CONFIG: { VENTANA: 200, PASO: 30, MIN_PARTIDOS: 20, ERROR_CONV: 0.02 },
 
   _paramsJSONCache: null,
 
@@ -41,7 +31,7 @@ export const AutoCalibrate = {
       console.log(`📂 params.json cargado (${Object.keys(this._paramsJSONCache).length} ligas)`);
       return this._paramsJSONCache;
     } catch (e) {
-      console.warn('⚠️ No se pudo cargar params.json, usando localStorage:', e.message);
+      console.warn('⚠️ No se pudo cargar params.json:', e.message);
       this._paramsJSONCache = {};
       return {};
     }
@@ -62,20 +52,20 @@ export const AutoCalibrate = {
   setEstado(ligaKey, estado) {
     try {
       localStorage.setItem(`${STORAGE_PREFIX}${ligaKey}`, JSON.stringify({ ...estado, v: MODEL_VERSION }));
-    } catch (e) {
-      console.warn('No se pudo guardar estado:', e);
-    }
+    } catch (e) { console.warn('No se pudo guardar estado:', e); }
   },
 
-  // Gana la calibración MÁS NUEVA entre la local y la del repo (antes la local
-  // ganaba siempre, así que un params.json nuevo subido al repo nunca se veía
-  // en un dispositivo que ya hubiera calibrado alguna vez).
   async getParamsActivos(ligaKey) {
     const candidatos = [];
     const estado = this.getEstado(ligaKey);
     const local = sanearParams(estado.params);
     if (local) {
-      candidatos.push({ params: local, fuente: 'local', tasas: sanearTasas(estado.tasas), ultima: estado.ultima || null, ts: Date.parse(estado.ultima) || 0 });
+      candidatos.push({
+        params: local, fuente: 'local',
+        tasas: sanearTasas(estado.tasas),
+        ultima: estado.ultima || null,
+        ts: Date.parse(estado.ultima) || 0,
+      });
     }
 
     const paramsJSON = await this.cargarParamsJSON();
@@ -83,12 +73,17 @@ export const AutoCalibrate = {
     if (entrada?.params && entrada.v === MODEL_VERSION) {
       const repo = sanearParams(entrada.params);
       if (repo) {
-        candidatos.push({ params: repo, fuente: 'repo', tasas: sanearTasas(entrada.tasas), ultima: entrada.ultima || null, ts: Date.parse(entrada.ultima) || 0 });
+        candidatos.push({
+          params: repo, fuente: 'repo',
+          tasas: sanearTasas(entrada.tasas),
+          ultima: entrada.ultima || null,
+          ts: Date.parse(entrada.ultima) || 0,
+        });
       }
     }
 
     if (candidatos.length === 0) return null;
-    candidatos.sort((x, y) => y.ts - x.ts); // estable: en empate queda primero la local
+    candidatos.sort((x, y) => y.ts - x.ts);
     const mejor = candidatos[0];
     return { ...mejor.params, fuente: mejor.fuente, tasas: mejor.tasas, ultima: mejor.ultima };
   },
@@ -108,21 +103,9 @@ export const AutoCalibrate = {
   async calibrar(ligaKey, partidos, onLog = null) {
     const r = await calibrarLigaMLE(ligaKey, partidos, { onLog, minPartidos: this.CONFIG.MIN_PARTIDOS });
     if (!r.calibracion) {
-      return {
-        calibracion: null,
-        razon: r.razon,
-        tasas: r.tasas,
-        historial: r.historial || [],
-        diagnostico: r.diagnostico,
-      };
+      return { calibracion: null, razon: r.razon, tasas: r.tasas, historial: r.historial || [], diagnostico: r.diagnostico };
     }
-    return {
-      calibracion: r.calibracion,
-      tasas: r.tasas,
-      historial: r.historial,
-      error: r.error,
-      diagnostico: r.diagnostico,
-    };
+    return { calibracion: r.calibracion, tasas: r.tasas, historial: r.historial, error: r.error, diagnostico: r.diagnostico };
   },
 
   async ejecutar(ligaKey, partidos, { force = false, onLog = null } = {}) {
@@ -130,49 +113,26 @@ export const AutoCalibrate = {
 
     if (!partidos || partidos.length < this.CONFIG.MIN_PARTIDOS) {
       log(`⚠️ ${ligaKey}: solo ${partidos?.length || 0} partidos — no se calibra`);
-      return {
-        recalibrado: false,
-        razon: `solo ${partidos?.length || 0} partidos (mínimo ${this.CONFIG.MIN_PARTIDOS})`,
-        calibracion: null,
-        params: await this.getParamsActivos(ligaKey),
-        tasas: null,
-        historial: [],
-      };
+      return { recalibrado: false, razon: `solo ${partidos?.length || 0} partidos`, calibracion: null, params: await this.getParamsActivos(ligaKey), tasas: null, historial: [] };
     }
 
     partidos = [...partidos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-
     const estado = this.getEstado(ligaKey);
     const nuevos = partidos.length - estado.partidosCalibrados;
     const debe = force || nuevos >= this.CONFIG.PASO || !estado.params;
 
     if (!debe) {
-      log(`⏳ ${ligaKey}: usando params previos (faltan ${this.CONFIG.PASO - nuevos} partidos para recalibrar)`);
-      return {
-        recalibrado: false,
-        razon: 'params previos vigentes',
-        calibracion: estado.params,
-        params: estado.params,
-        tasas: sanearTasas(estado.tasas),
-        historial: [],
-      };
+      log(`⏳ ${ligaKey}: usando params previos (faltan ${this.CONFIG.PASO - nuevos} partidos)`);
+      return { recalibrado: false, razon: 'params previos vigentes', calibracion: estado.params, params: estado.params, tasas: sanearTasas(estado.tasas), historial: [] };
     }
 
-    log(`🔄 ${ligaKey}: recalibrando con ventana de ${this.CONFIG.VENTANA} partidos...`);
+    log(`🔄 ${ligaKey}: recalibrando (ventana ${this.CONFIG.VENTANA})...`);
     const ventana = partidos.slice(-this.CONFIG.VENTANA);
     const resultado = await this.calibrar(ligaKey, ventana, log);
 
     if (!resultado.calibracion) {
       log(`❌ ${ligaKey}: ${resultado.razon}`);
-      return {
-        recalibrado: false,
-        razon: resultado.razon,
-        calibracion: null,
-        params: estado.params,
-        tasas: resultado.tasas,
-        historial: resultado.historial || [],
-        diagnostico: resultado.diagnostico,
-      };
+      return { recalibrado: false, razon: resultado.razon, calibracion: null, params: estado.params, tasas: resultado.tasas, historial: resultado.historial || [], diagnostico: resultado.diagnostico };
     }
 
     const nuevoEstado = {
@@ -189,24 +149,13 @@ export const AutoCalibrate = {
     };
     this.setEstado(ligaKey, nuevoEstado);
 
-    log(`✅ ${ligaKey}: HA=${resultado.calibracion.homeAdvantage.toFixed(3)}, rho=${resultado.calibracion.rho.toFixed(3)}, goles/partido=${resultado.calibracion.goalsAvg}${resultado.calibracion.cornAvg ? `, córners/partido=${resultado.calibracion.cornAvg}` : ''}${resultado.calibracion.ratings ? `, ratings historial=${Object.keys(resultado.calibracion.ratings).length} equipos` : ''}, err L/E/V=${(resultado.error * 100).toFixed(1)}%`);
-    log(`💾 Parámetros guardados en localStorage (${partidos.length} partidos calibrados)`);
+    const est = resultado.diagnostico?.estabilidad;
+    log(`✅ ${ligaKey}: HA=${resultado.calibracion.homeAdvantage.toFixed(3)}, rho=${resultado.calibracion.rho.toFixed(3)}, goles/partido=${resultado.calibracion.goalsAvg}${resultado.calibracion.cornAvg ? `, córners=${resultado.calibracion.cornAvg}` : ''}${resultado.calibracion.ratings ? `, ratings=${Object.keys(resultado.calibracion.ratings).length}eq` : ''}${resultado.calibracion.cornerRatings ? `, cornRatings=${Object.keys(resultado.calibracion.cornerRatings).length}eq` : ''}, err L/E/V=${(resultado.error * 100).toFixed(1)}%${est ? ` · HA estab [${est.haMin} … ${est.haMax}]` : ''}`);
+    log(`💾 Parámetros guardados (${partidos.length} partidos calibrados)`);
 
-    return {
-      recalibrado: true,
-      calibracion: resultado.calibracion,
-      params: resultado.calibracion,
-      tasas: resultado.tasas,
-      historial: resultado.historial || [],
-      error: resultado.error,
-      diagnostico: resultado.diagnostico,
-    };
+    return { recalibrado: true, calibracion: resultado.calibracion, params: resultado.calibracion, tasas: resultado.tasas, historial: resultado.historial || [], error: resultado.error, diagnostico: resultado.diagnostico };
   },
 
-  // Arma el params.json a exportar PARTIENDO del que está en el repo y pisando
-  // solo las ligas calibradas en este dispositivo que sean más nuevas. Antes se
-  // exportaba solo lo que había en localStorage: si habías borrado la caché o
-  // calibrabas una sola liga, al subir el archivo se perdían todas las demás.
   async construirParamsExport() {
     const repo = await this.cargarParamsJSON();
     const params = {};
@@ -239,21 +188,14 @@ export const AutoCalibrate = {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = url;
-    a.download = 'params.json';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+    a.href = url; a.download = 'params.json';
+    document.body.appendChild(a); a.click(); a.remove();
     URL.revokeObjectURL(url);
-    console.log(`📥 params.json descargado (${Object.keys(params).length} ligas, incluye las del repo)`);
+    console.log(`📥 params.json descargado (${Object.keys(params).length} ligas)`);
   },
 
   reset(ligaKey) { localStorage.removeItem(`${STORAGE_PREFIX}${ligaKey}`); },
-  resetAll() {
-    for (const key of Object.keys(LIGAS)) {
-      localStorage.removeItem(`${STORAGE_PREFIX}${key}`);
-    }
-  },
+  resetAll() { for (const key of Object.keys(LIGAS)) localStorage.removeItem(`${STORAGE_PREFIX}${key}`); },
 
   getReporte() {
     const reporte = {};
