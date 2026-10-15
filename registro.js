@@ -1,17 +1,13 @@
 // registro.js
-// Registro de predicciones hacia adelante (forward test).
-// Guardás la predicción del modelo ANTES del partido, después cargás el
-// resultado con la cuota y el monto apostados, y acá se evalúa.
+// v4: agrega mercados dc1X y dcX2 a MERCADOS.
 
 import { FILTRO_EV } from './leagues.js';
-
 
 const KEY = 'suertudo_registro_v1';
 const Z = 1.64;
 const META_PARTIDOS = 100;
 const ESCANEO_MIN_N = 30;
 
-// ---------- almacenamiento ----------
 function store() { return (typeof localStorage !== 'undefined') ? localStorage : null; }
 
 export function leerRegistro() {
@@ -31,7 +27,6 @@ export function guardarRegistro(arr) {
 const nuevoId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 const r2 = (v) => (typeof v === 'number' && Number.isFinite(v) ? +v.toFixed(2) : null);
 
-// Arma la entrada a partir del resultado de simulateMatch (ya con shrink aplicado).
 export function entradaDesdeSimulacion(data, ligaKey, cuotas = {}, picks = []) {
   const rp = data.resultProbs;
   const cp = data.cornerProbs;
@@ -50,13 +45,12 @@ export function entradaDesdeSimulacion(data, ligaKey, cuotas = {}, picks = []) {
     },
     corners: cp ? { over7: r2(cp.over7), over8: r2(cp.over8), over9: r2(cp.over9), over10: r2(cp.over10) } : null,
     cuotas: limpias,
-    picks: Array.isArray(picks) ? [...picks] : [],   // mercados elegidos para apostar
-    apuesta: null,   // { cuota, monto } — se completa al cargar el resultado
+    picks: Array.isArray(picks) ? [...picks] : [],
+    apuesta: null,
     resultado: null,
   };
 }
 
-// Si ya hay una pendiente del mismo partido, la reemplaza (no se cuenta dos veces).
 export function agregarEntrada(entrada) {
   const arr = leerRegistro();
   const i = arr.findIndex(e => !e.resultado && e.liga === entrada.liga && e.local === entrada.local && e.visitante === entrada.visitante);
@@ -115,7 +109,6 @@ export function importarEntradas(nuevas) {
   return { agregadas, omitidas };
 }
 
-// ---------- estadística ----------
 function devigar2(a, b) { if (!a || !b) return null; const pa = 1 / a, pb = 1 / b; return (pa / (pa + pb)) * 100; }
 function devigar3(a, b, c) {
   if (!a || !b || !c) return null;
@@ -171,11 +164,20 @@ class Apuestas {
   }
 }
 
-// Mercados que se siguen en el registro (los únicos que aparecen en la app y acá).
+// [MODIFICADO] se agregaron dc1X y dcX2.
 export const MERCADOS = [
   { key: 'local', label: 'Local gana', p: e => e.prob?.local, hit: r => r.gl > r.gv },
   { key: 'empate', label: 'Empate', p: e => e.prob?.empate, hit: r => r.gl === r.gv },
   { key: 'visitante', label: 'Visitante gana', p: e => e.prob?.visitante, hit: r => r.gl < r.gv },
+
+  // [NUEVO] Doble oportunidad
+  { key: 'dc1X', label: 'Local o Empate (1X)',
+    p: e => (Number.isFinite(e.prob?.local) && Number.isFinite(e.prob?.empate)) ? e.prob.local + e.prob.empate : null,
+    hit: r => r.gl >= r.gv },
+  { key: 'dcX2', label: 'Empate o Visitante (X2)',
+    p: e => (Number.isFinite(e.prob?.empate) && Number.isFinite(e.prob?.visitante)) ? e.prob.empate + e.prob.visitante : null,
+    hit: r => r.gl <= r.gv },
+
   { key: 'over15', label: 'Más de 1.5 goles', p: e => e.prob?.over15, hit: r => r.gl + r.gv > 1.5 },
   { key: 'over25', label: 'Más de 2.5 goles', p: e => e.prob?.over25, hit: r => r.gl + r.gv > 2.5 },
   { key: 'over35', label: 'Más de 3.5 goles', p: e => e.prob?.over35, hit: r => r.gl + r.gv > 3.5 },
@@ -241,13 +243,13 @@ export function evaluar(entradas) {
   })).filter(c => c.n > 0);
 
   const lectura = [];
-  lectura.push(n >= META_PARTIDOS ? `Resueltas: ${n} (ya pasaste las ${META_PARTIDOS} recomendadas para una primera lectura; ${entradas.length - n} pendientes).` : `Resueltas: ${n} de ${META_PARTIDOS} recomendadas para una primera lectura (${entradas.length - n} pendientes).`);
+  lectura.push(n >= META_PARTIDOS ? `Resueltas: ${n} (ya pasaste las ${META_PARTIDOS} recomendadas).` : `Resueltas: ${n} de ${META_PARTIDOS} recomendadas (${entradas.length - n} pendientes).`);
   if (n < 30) lectura.push('Muestra muy chica: todavía no saques conclusiones.');
-  else if (conCuotas1x2 < 30) lectura.push('Hay pocas con cuotas 1X2 cargadas: sin cuota no se puede comparar contra la casa. Cargala al guardar cada predicción.');
+  else if (conCuotas1x2 < 30) lectura.push('Hay pocas con cuotas 1X2 cargadas: sin cuota no se puede comparar contra la casa.');
   else if (b1x2.z != null) {
     if (b1x2.z > Z) lectura.push('En 1X2 el modelo le gana a la cuota de forma significativa.');
     else if (b1x2.z < -Z) lectura.push('En 1X2 el modelo es PEOR que la cuota de forma significativa.');
-    else lectura.push('En 1X2 el modelo y la cuota están a la par (no se distinguen).');
+    else lectura.push('En 1X2 el modelo y la cuota están a la par.');
   }
   if (pool.n >= ESCANEO_MIN_N && pool.roi != null) {
     const sig = pool.z != null && pool.z > Z ? ' y supera el umbral de significancia' : pool.z != null && pool.z < -Z ? ' y es significativamente negativo' : ' pero no se distingue de la suerte';
@@ -255,8 +257,7 @@ export function evaluar(entradas) {
   }
   if (n >= 30) {
     const malos = calibracion.filter(c => c.n >= 30 && Math.abs(c.probMedia - c.frecReal) >= 8).map(c => c.label);
-    if (malos.length) lectura.push(`Calibración floja (predicho y real difieren 8 puntos o más): ${malos.join(', ')}.`);
-    lectura.push('Para confirmar un ROI real de pocos puntos hacen falta más de 1000 apuestas; el Brier contra la cuota y la calibración se estabilizan antes.');
+    if (malos.length) lectura.push(`Calibración floja: ${malos.join(', ')}.`);
   }
 
   return {
@@ -266,7 +267,7 @@ export function evaluar(entradas) {
   };
 }
 
-// ---------- interfaz (solo en registro.html) ----------
+// ---------- interfaz ----------
 if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')) {
   const $ = (id) => document.getElementById(id);
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
@@ -314,7 +315,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       <div class="compare-row"><span>Resueltas</span><span class="grid-plain">${ev.n} / ${ev.meta}</span><span class="grid-plain"></span><span class="grid-plain"></span></div>
       <div class="semaforo-track" style="margin-top:8px;"><div class="semaforo-fill" style="width:${Math.min(100, ev.n / ev.meta * 100)}%;background:var(--green)"></div></div>`;
 
-    $('reg-pendientes').innerHTML = pend.length ? pend.map(cardPendiente).join('') : `<p style="color:${dim};font-size:.85rem;">No hay predicciones pendientes. Simulá un partido en la app y tocá "Guardar seleccionados".</p>`;
+    $('reg-pendientes').innerHTML = pend.length ? pend.map(cardPendiente).join('') : `<p style="color:${dim};font-size:.85rem;">No hay predicciones pendientes.</p>`;
     $('reg-resueltas').innerHTML = resu.length ? `<div class="card">${resu.slice(0, 30).map(cardResuelta).join('')}</div>` : `<p style="color:${dim};font-size:.85rem;">Todavía no cargaste resultados.</p>`;
 
     if (!ev.n) { $('reg-eval').innerHTML = `<p style="color:${dim};font-size:.85rem;">La evaluación aparece cuando cargues el primer resultado.</p>`; return; }
@@ -335,7 +336,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         <div class="compare-row"><span>Modelo (con cuotas)</span><span class="grid-plain">${f3(b.modeloCuota)}</span><span class="grid-plain">n ${b.nCuota}</span><span class="grid-plain"></span></div>
         <div class="compare-row"><span>Cuota (sin margen)</span><span class="grid-plain">${f3(b.mercado)}</span><span class="grid-plain"></span><span class="grid-plain" style="color:${col(b.z)}">${b.mejora == null ? '—' : (b.mejora >= 0 ? '+' : '') + f1(b.mejora) + '% ' + senal(b.z)}</span></div>
       </div>
-      <div class="card"><h3>Modelo vs cuota <small>(solo 1X2 y BTTS: tienen cuota contraria)</small></h3>
+      <div class="card"><h3>Modelo vs cuota <small>(solo 1X2 y BTTS)</small></h3>
         <div class="compare-row compare-head"><span>Mercado</span><span>n</span><span>Modelo vs cuota</span><span>Mejora</span></div>
         ${filasMk || `<div class="compare-row"><span>Sin cuotas cargadas.</span></div>`}</div>
       <div class="card" style="border:2px solid var(--yellow);"><h3>🔎 Apostar con EV ≥ ${FILTRO_EV} <small>(${ev.pool.n} apuestas${ev.pool.roi != null ? `, ROI ${ev.pool.roi >= 0 ? '+' : ''}${f1(ev.pool.roi)}%${ev.pool.se != null ? ` ±${f1(ev.pool.se)}` : ''}` : ''})</small></h3>
@@ -345,7 +346,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       <div class="card"><h3>Calibración por mercado <small>(predicho vs real)</small></h3>
         <div class="compare-row compare-head"><span>Mercado</span><span>n</span><span>Predicho</span><span>Real</span></div>
         ${filasCal}
-        <p style="margin:10px 0 0;font-size:.78rem;color:${dim};line-height:1.5;">Si lo predicho y lo real se alejan 8 puntos o más (rojo), el modelo está mal calibrado en ese mercado. Los mercados de una sola cara no tienen cuota contraria, por eso se miden así y con el ROI.</p></div>`;
+        <p style="margin:10px 0 0;font-size:.78rem;color:${dim};line-height:1.5;">Si lo predicho y lo real se alejan 8 puntos o más (rojo), el modelo está mal calibrado en ese mercado.</p></div>`;
   }
 
   function entero(txt) {
@@ -361,8 +362,8 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       const gl = entero($('gl-' + id).value), gv = entero($('gv-' + id).value);
       const ccTxt = $('cc-' + id).value;
       const cc = String(ccTxt ?? '').trim() === '' ? null : entero(ccTxt);
-      if (gl == null || gv == null) { alert('Cargá los goles de los dos equipos (números enteros).'); return; }
-      if (String(ccTxt ?? '').trim() !== '' && cc == null) { alert('Los córners tienen que ser un número entero (o dejalo vacío).'); return; }
+      if (gl == null || gv == null) { alert('Cargá los goles de los dos equipos.'); return; }
+      if (String(ccTxt ?? '').trim() !== '' && cc == null) { alert('Los córners tienen que ser un número entero.'); return; }
       try { actualizarResultado(id, { gl, gv, corners: cc, apCuota: $('ca-' + id)?.value, apMonto: $('ma-' + id)?.value }); render(); } catch (e) { alert('Error: ' + e.message); }
     }
   });
@@ -372,7 +373,6 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
     if (t?.dataset?.accion === 'reabrir' && id) { borrarResultado(id); render(); }
   });
 
-  // CSV: una fila por (partido resuelto × mercado con cuota). Listo para Excel/Sheets.
   function exportarCSV(arr) {
     const resu = arr.filter(e => e.resultado && e.cuotas);
     const enc = ['fecha','liga','partido','mercado','prob_modelo','cuota','ev','cuota_apostada','acierto','retorno_u'];
@@ -393,7 +393,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         lineas.push([fecha, e.liga, partido, m.label, fnum(prob, 1), fnum(cuota), fnum(ev), fnum(e.apuesta?.cuota), hit ? 1 : 0, fnum(hit ? cuota - 1 : -1)].map(escap).join(';'));
       }
     }
-    return '﻿' + lineas.join('\n');   // BOM para que Excel abra las tildes
+    return '﻿' + lineas.join('\n');
   }
 
   function descargar(contenido, nombre, tipo) {
