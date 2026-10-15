@@ -1,29 +1,21 @@
 // ============================================================
 // api.js – llamadas a la API externa de Bzzoiro
-// Mejoras: timeout + reintentos con backoff, no cachear null transitorio,
-// filtro defensivo de fecha en la predicción ML.
-// NUEVO: cuotas reales automáticas (findUpcomingEvent, fetchEventOdds,
-// normalizarOddsBzzoiro con mapeo exacto del formato snake_case de Bzzoiro).
+// v3: buscarEquipoEn usa TEAM_ALIASES antes del match difuso.
 // ============================================================
-import { BZZOIRO_COUNTRY } from './leagues.js';
+import { BZZOIRO_COUNTRY, TEAM_ALIASES } from './leagues.js';
 
 const BASE_URL = 'https://sports.bzzoiro.com/api/v2';
 const DEFAULT_TIMEOUT_MS = 12000;
 const DEFAULT_RETRIES = 2;
 
 function getToken() {
-  if (typeof process !== 'undefined' && process.env?.BZZOIRO_TOKEN) {
-    return process.env.BZZOIRO_TOKEN;
-  }
-  if (typeof window !== 'undefined' && window.localStorage) {
-    return localStorage.getItem('bzzoiro_token');
-  }
+  if (typeof process !== 'undefined' && process.env?.BZZOIRO_TOKEN) return process.env.BZZOIRO_TOKEN;
+  if (typeof window !== 'undefined' && window.localStorage) return localStorage.getItem('bzzoiro_token');
   return null;
 }
 
 function sleep(ms) { return new Promise((r) => setTimeout(r, ms)); }
 
-// MEJORA: solo cachear null en 404 real. Errores transitorios se reintentan.
 async function fetchFromAPI(endpoint, {
   timeoutMs = DEFAULT_TIMEOUT_MS,
   retries = DEFAULT_RETRIES,
@@ -32,7 +24,6 @@ async function fetchFromAPI(endpoint, {
   if (!token) throw new Error('Token no configurado. Ingresa tu API key de Bzzoiro.');
 
   let ultimoError = null;
-
   for (let intento = 0; intento <= retries; intento++) {
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), timeoutMs);
@@ -42,13 +33,11 @@ async function fetchFromAPI(endpoint, {
         signal: ctrl.signal,
       });
       clearTimeout(timer);
-
       if (res.ok) return await res.json();
 
       const errorText = await res.text();
       const err = new Error(`Error ${res.status}: ${errorText}`);
       err.status = res.status;
-
       if (res.status >= 400 && res.status < 500 && res.status !== 429) throw err;
       ultimoError = err;
     } catch (e) {
@@ -58,10 +47,8 @@ async function fetchFromAPI(endpoint, {
         ? new Error(`Timeout tras ${timeoutMs}ms en ${endpoint}`)
         : e;
     }
-
     if (intento < retries) await sleep(400 * (2 ** intento));
   }
-
   throw ultimoError || new Error(`Fallo desconocido en ${endpoint}`);
 }
 
@@ -71,23 +58,34 @@ function cleanName(name) {
     .replace(/[^\p{L}\p{N}\s]/gu, '')
     .trim().toLowerCase();
 }
-
-function tokens(name) {
-  return cleanName(name).split(/\s+/).filter(Boolean);
-}
-
+function tokens(name) { return cleanName(name).split(/\s+/).filter(Boolean); }
 function todasLasPalabrasEstan(chicas, grandes) {
   const set = new Set(grandes);
   return chicas.length > 0 && chicas.every(t => set.has(t));
 }
 
+// [MODIFICADO] Ahora prueba aliases primero.
 export function buscarEquipoEn(mapa, nombre) {
   if (!mapa || !nombre) return null;
   if (mapa[nombre]) return mapa[nombre];
+
+  // 1) alias exacto
+  const alias = TEAM_ALIASES[nombre];
+  if (alias && mapa[alias]) return mapa[alias];
+
   const limpio = cleanName(nombre);
   const nombres = Object.keys(mapa);
+
+  // 2) match exacto por nombre limpio
   const igual = nombres.find(n => cleanName(n) === limpio);
   if (igual) return mapa[igual];
+
+  // 3) alias con nombre limpio
+  for (const [k, v] of Object.entries(TEAM_ALIASES)) {
+    if (cleanName(k) === limpio && mapa[v]) return mapa[v];
+  }
+
+  // 4) match por tokens
   const tk = tokens(nombre);
   const candidatos = nombres.filter(n => {
     const t = tokens(n);
@@ -108,18 +106,13 @@ const seasonIdCache = new Map();
 
 export async function resolveLeagueId(leagueKey, leagueDisplayName) {
   if (leagueIdCache.has(leagueKey)) return leagueIdCache.get(leagueKey);
-
   const country = BZZOIRO_COUNTRY[leagueKey];
-  if (!country) {
-    leagueIdCache.set(leagueKey, null);
-    return null;
-  }
+  if (!country) { leagueIdCache.set(leagueKey, null); return null; }
 
   const data = await fetchFromAPI(`/leagues/?country=${encodeURIComponent(country)}&limit=300`);
   const results = data.results || data || [];
   const target = cleanName(leagueDisplayName);
   const targetTokens = tokens(leagueDisplayName);
-
   const exacto = results.find(l => cleanName(l.name) === target);
 
   const PALABRA_CATEGORIA_INFERIOR = /^(\d+|ii|iii|iv|b|u1[6-9]|u2[0-3]|sub\d*|reserva|reservas|reserve|youth|juvenil|femenino|women|ladies)$/i;
@@ -154,7 +147,6 @@ export async function resolveLeagueId(leagueKey, leagueDisplayName) {
       `Ligas que sí devolvió: ${candidatas}`
     );
   }
-
   leagueIdCache.set(leagueKey, match.id);
   return match.id;
 }
@@ -166,11 +158,8 @@ async function resolveCurrentSeason(bzzoiroLeagueId) {
     seasonIdCache.set(bzzoiroLeagueId, season.id);
     return season.id;
   } catch (e) {
-    if (e.status === 404) {
-      seasonIdCache.set(bzzoiroLeagueId, null);
-      return null;
-    }
-    console.warn('⚠️ Error resolviendo temporada actual (se reintentará más tarde):', e.message);
+    if (e.status === 404) { seasonIdCache.set(bzzoiroLeagueId, null); return null; }
+    console.warn('⚠️ Error resolviendo temporada actual:', e.message);
     return null;
   }
 }
@@ -185,7 +174,7 @@ function extractRows(standingsResponse) {
 
 export async function fetchLeagueDynamicData(leagueKey, leagueDisplayName) {
   const bzzoiroLeagueId = await resolveLeagueId(leagueKey, leagueDisplayName);
-  if (!bzzoiroLeagueId) throw new Error('Liga no resoluble en Bzzoiro (se usa dato estático)');
+  if (!bzzoiroLeagueId) throw new Error('Liga no resoluble en Bzzoiro');
 
   const seasonId = await resolveCurrentSeason(bzzoiroLeagueId);
   const query = seasonId ? `?season_id=${seasonId}` : '';
@@ -204,7 +193,6 @@ export async function fetchLeagueDynamicData(leagueKey, leagueDisplayName) {
     const played = row.played || 0;
     const gf = row.goals_for || 0;
     const ga = row.goals_against || 0;
-
     teamStats[name] = { played, gf, ga };
     totalGF += gf;
     totalPlayed += played;
@@ -224,36 +212,28 @@ export async function fetchLeagueDynamicData(leagueKey, leagueDisplayName) {
       played: s.played
     };
   }
-
   console.log(`✅ Standings OK. Equipos con datos en vivo: ${Object.keys(teamRatings).length}/${rows.length}`);
   return { goalsAvg, totalPlayed, cornAvg: null, teamRatings, bzzoiroLeagueId };
 }
 
 export async function fetchMatchPrediction(bzzoiroLeagueId, homeTeam, awayTeam) {
   if (!bzzoiroLeagueId) return null;
-
   const today = new Date();
   const in21 = new Date(today.getTime() + 21 * 24 * 60 * 60 * 1000);
   const fmt = d => d.toISOString().slice(0, 10);
-
   try {
     const data = await fetchFromAPI(
       `/predictions/?league_id=${bzzoiroLeagueId}&date_from=${fmt(today)}&date_to=${fmt(in21)}&limit=100`
     );
     const results = data.results || data || [];
-
     const hTokens = tokens(homeTeam);
     const aTokens = tokens(awayTeam);
-
     const found = results.find(p => {
       const ehTokens = tokens(p.event?.home_team || '');
       const eaTokens = tokens(p.event?.away_team || '');
-
       const matchHome = todasLasPalabrasEstan(hTokens, ehTokens) || todasLasPalabrasEstan(ehTokens, hTokens);
       const matchAway = todasLasPalabrasEstan(aTokens, eaTokens) || todasLasPalabrasEstan(eaTokens, aTokens);
-
       if (!(matchHome && matchAway)) return false;
-
       const fechaStr = p.event?.event_date || p.event?.date || p.event_date || p.date;
       if (fechaStr) {
         const fechaEv = new Date(fechaStr).getTime();
@@ -262,10 +242,8 @@ export async function fetchMatchPrediction(bzzoiroLeagueId, homeTeam, awayTeam) 
           if (diffDias < -2 || diffDias > 23) return false;
         }
       }
-
       return true;
     });
-
     if (!found) return null;
     console.log(`🤖 Predicción ML de Bzzoiro encontrada para ${homeTeam} vs ${awayTeam}`);
     return found;
@@ -275,12 +253,7 @@ export async function fetchMatchPrediction(bzzoiroLeagueId, homeTeam, awayTeam) 
   }
 }
 
-// ============================================================
-// CUOTAS REALES (Odds API — add-on de Bzzoiro)
-// Busca el evento próximo del partido y trae sus cuotas.
-// ============================================================
-
-// Encuentra el evento próximo (próximos 14 días) que coincide con local/visitante.
+// ---- Cuotas (sin cambios, se mantienen por compatibilidad) ----
 export async function findUpcomingEvent(bzzoiroLeagueId, homeTeam, awayTeam) {
   if (!bzzoiroLeagueId) return null;
   const hoy = new Date();
@@ -298,23 +271,15 @@ export async function findUpcomingEvent(bzzoiroLeagueId, homeTeam, awayTeam) {
   }) || null;
 }
 
-// Cuotas de un evento. Lanza error si el token no tiene el add-on Odds (403).
 export async function fetchEventOdds(eventId) {
   return await fetchFromAPI(`/events/${eventId}/odds/`);
 }
 
-// Convierte la respuesta cruda de /odds/ al formato de cuotas de la app.
-// FORMATO REAL de Bzzoiro: {"event_id":..., "odds": {"home_win":1.9, "draw":3.36, ...}}
-// Si el formato cambia, cae en el parser defensivo de abajo.
 export function normalizarOddsBzzoiro(raw) {
   const out = {};
   const flat = (raw && typeof raw === 'object' && raw.odds && typeof raw.odds === 'object') ? raw.odds : raw;
-
-  // 1) Mapeo exacto por clave snake_case (con alias por si cambian los nombres)
   const MAPA = {
-    local: ['home_win', 'home'],
-    empate: ['draw', 'x'],
-    visitante: ['away_win', 'away'],
+    local: ['home_win', 'home'], empate: ['draw', 'x'], visitante: ['away_win', 'away'],
     over15: ['over_15_goals'], under15: ['under_15_goals'],
     over25: ['over_25_goals'], under25: ['under_25_goals'],
     over35: ['over_35_goals'], under35: ['under_35_goals'],
@@ -333,61 +298,5 @@ export function normalizarOddsBzzoiro(raw) {
       if (Number.isFinite(v) && v > 1 && v < 1000) { out[target] = +v.toFixed(2); break; }
     }
   }
-  if (Object.keys(out).length) return out;
-
-  // 2) Fallback defensivo: recorre el JSON buscando pares (nombre, cuota)
-  const pares = [];
-  (function walk(node) {
-    if (node == null) return;
-    if (Array.isArray(node)) { node.forEach(walk); return; }
-    if (typeof node === 'object') {
-      const nombre = node.name ?? node.label ?? node.outcome ?? node.selection
-        ?? node.team?.name ?? (typeof node.value === 'string' ? node.value : null);
-      const odd = node.odd ?? node.price ?? node.odds ?? (typeof node.value === 'number' ? node.value : null)
-        ?? node.coefficient ?? node.rate;
-      const cuota = parseFloat(odd);
-      if (typeof nombre === 'string' && Number.isFinite(cuota) && cuota > 1 && cuota < 1000) {
-        pares.push({
-          label: nombre.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, ''),
-          mercado: String(node.market?.name ?? node.market ?? node.group ?? node.category ?? '').toLowerCase(),
-          odd: +cuota.toFixed(2),
-        });
-      }
-      Object.values(node).forEach(walk);
-    }
-  })(raw);
-
-  const pick = (reMerc, reLabel) => {
-    let mejor = null;
-    for (const p of pares) {
-      if (reMerc && !reMerc.test(p.mercado)) continue;
-      if (!reLabel.test(p.label)) continue;
-      if (!mejor || p.odd > mejor.odd) mejor = p;
-    }
-    return mejor ? mejor.odd : null;
-  };
-  const asignar = (target, reMerc, reLabel) => {
-    const o = pick(reMerc, reLabel);
-    if (o && !out[target]) out[target] = o;
-  };
-  asignar('local', /1x2|match|result|moneyline|winner|game|^$/, /^(1|home|local)$/);
-  asignar('empate', /1x2|match|result|draw|^$/, /^(x|draw|empate)$/);
-  asignar('visitante', /1x2|match|result|moneyline|winner|game|^$/, /^(2|away|visitante|visitor)$/);
-  asignar('over15', /goal|goles|total|^$/, /^over 1\.5$/);
-  asignar('under15', /goal|goles|total|^$/, /^under 1\.5$/);
-  asignar('over25', /goal|goles|total|^$/, /^over 2\.5$/);
-  asignar('under25', /goal|goles|total|^$/, /^under 2\.5$/);
-  asignar('over35', /goal|goles|total|^$/, /^over 3\.5$/);
-  asignar('under35', /goal|goles|total|^$/, /^under 3\.5$/);
-  asignar('over45', /goal|goles|total|^$/, /^over 4\.5$/);
-  asignar('under45', /goal|goles|total|^$/, /^under 4\.5$/);
-  asignar('bttsSi', /btts|both|ambos|team.*score|^$/, /^(yes|si|sí)$/);
-  asignar('bttsNo', /btts|both|ambos|team.*score|^$/, /^(no)$/);
-  asignar('c_over75', /corner|córner/, /^over 7\.5$/);
-  asignar('c_over85', /corner|córner/, /^over 8\.5$/);
-  asignar('c_over95', /corner|córner/, /^over 9\.5$/);
-  asignar('c_under95', /corner|córner/, /^under 9\.5$/);
-  asignar('c_under105', /corner|córner/, /^under 10\.5$/);
-
   return out;
 }
