@@ -1,7 +1,5 @@
 // ratings.js
-// Lógica pura (sin DOM) para estimar ataque/defensa por equipo a partir de
-// partidos jugados. Se usa en: calibración (calibrate.js), backtest walk-forward
-// y la página "Recalcular ratings".
+// v3: recalcularRatings acepta campos personalizados (útil para córners).
 
 import { RATINGS_PRIOR_JUEGOS, RATINGS_HALFLIFE_DIAS } from './leagues.js';
 
@@ -11,33 +9,33 @@ export function fechaMs(fechaStr) {
   return Number.isFinite(t) ? t : null;
 }
 
-// A los `halflife` días, un partido pesa la mitad que uno de hoy.
 export function pesoPorAntiguedad(fechaStr, halflifeDias, ahoraMs = Date.now()) {
-  if (!fechaStr) return 0.3; // sin fecha: peso bajo, no se descarta
+  if (!fechaStr) return 0.3;
   const dias = (ahoraMs - new Date(fechaStr).getTime()) / (1000 * 60 * 60 * 24);
   if (!Number.isFinite(dias) || dias < 0) return 0.3;
   return Math.pow(0.5, dias / halflifeDias);
 }
 
-// Recalcula atk/def por equipo. Modelo multiplicativo AJUSTADO POR RIVAL, con
-// ventaja local y encogimiento según cuántos partidos hay.
-// NUEVO: `prior(team) -> {atk, def} | null` encoge hacia el rating estático del
-// equipo (en vez de hacia 1.0). Sin `prior` se comporta exactamente como antes.
+// [MODIFICADO] campoLocal / campoVisitante permiten usar la misma lógica con
+// goles (por defecto) o córners u otra métrica.
 export function recalcularRatings(partidos, {
   halflifeDias = 60, minMatches = 3, ahoraMs = Date.now(),
   homeAdv = 1.2, priorJuegos = 4, iteraciones = 30, prior = null,
+  campoLocal = 'goles_local', campoVisitante = 'goles_visitante',
 } = {}) {
   const validos = [];
   const conteo = {};
   let sumaPesoGoles = 0, sumaPeso = 0;
 
   for (const p of partidos) {
-    if (p.goles_local == null || p.goles_visitante == null || !p.local || !p.visitante) continue;
+    const gl = p[campoLocal];
+    const gv = p[campoVisitante];
+    if (gl == null || gv == null || !p.local || !p.visitante) continue;
     const w = pesoPorAntiguedad(p.fecha, halflifeDias, ahoraMs);
-    validos.push({ h: p.local, a: p.visitante, gl: p.goles_local, gv: p.goles_visitante, w });
+    validos.push({ h: p.local, a: p.visitante, gl, gv, w });
     conteo[p.local] = (conteo[p.local] || 0) + 1;
     conteo[p.visitante] = (conteo[p.visitante] || 0) + 1;
-    sumaPesoGoles += w * (p.goles_local + p.goles_visitante);
+    sumaPesoGoles += w * (gl + gv);
     sumaPeso += w * 2;
   }
 
@@ -63,7 +61,6 @@ export function recalcularRatings(partidos, {
       numD[n] = priorJuegos * avg * priorDef[n]; denD[n] = priorJuegos * avg;
     }
     for (const m of validos) {
-      // goles del local = avg * atk_local * def_visita * sq ; visitante = avg * atk_visita * def_local / sq
       numA[m.h] += m.w * m.gl;  denA[m.h] += m.w * avg * def[m.a] * sq;
       numA[m.a] += m.w * m.gv;  denA[m.a] += m.w * avg * def[m.h] / sq;
       numD[m.h] += m.w * m.gv;  denD[m.h] += m.w * avg * atk[m.a] / sq;
@@ -71,7 +68,7 @@ export function recalcularRatings(partidos, {
     }
     let sA = 0, sD = 0;
     for (const n of nombres) { atk[n] = numA[n] / denA[n]; def[n] = numD[n] / denD[n]; sA += atk[n]; sD += def[n]; }
-    const mA = sA / nombres.length, mD = sD / nombres.length; // media 1.0
+    const mA = sA / nombres.length, mD = sD / nombres.length;
     for (const n of nombres) { atk[n] /= mA; def[n] /= mD; }
   }
 
@@ -81,7 +78,6 @@ export function recalcularRatings(partidos, {
     equipos.push({ team: n, atk: +atk[n].toFixed(3), def: +def[n].toFixed(3), partidos: conteo[n] });
   }
   equipos.sort((a, b) => a.team.localeCompare(b.team));
-
   return { ligaAvgPorLado, equipos };
 }
 
@@ -91,10 +87,20 @@ export function equiposAMapa(equipos) {
   return m;
 }
 
-// Ratings "como se habrían conocido" antes de cada partido: r[i] solo usa
-// partidos[0..i-1]. `partidos` debe venir válido y ordenado por fecha.
-// Para no recalcular 200 veces, se refit cada `paso` partidos (sin mirar nunca
-// hacia adelante). r[i] = null mientras haya muy pocos partidos previos.
+// [NUEVO] Aprendé ratings de córners a partir del historial.
+// homeAdv=1 porque el sesgo local de córners se aplica aparte (CORNER_HOME_BIAS).
+export function calcularCornerRatings(partidos, {
+  halflifeDias = 90, minMatches = 3, ahoraMs = Date.now(),
+  priorJuegos = 8, prior = null,
+} = {}) {
+  const { equipos } = recalcularRatings(partidos, {
+    halflifeDias, minMatches, ahoraMs,
+    homeAdv: 1.0, priorJuegos, prior,
+    campoLocal: 'corners_local', campoVisitante: 'corners_visitante',
+  });
+  return equiposAMapa(equipos);
+}
+
 export function ratingsWalkForward(partidos, {
   homeAdv = 1.2, prior = null, minPrevios = 10, paso = null,
   halflifeDias = RATINGS_HALFLIFE_DIAS, priorJuegos = RATINGS_PRIOR_JUEGOS,
