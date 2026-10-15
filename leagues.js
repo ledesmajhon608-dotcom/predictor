@@ -1,20 +1,19 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
-// - 12 ligas calibradas (sin Eredivisie)
+// v3:
+// - TEAM_ALIASES para nombres alternativos de equipos
+// - PLATT goals45
+// - KELLY_FRACTION + FILTRO_EV_POR_MERCADO
+// - LIVE_PRIOR_GAMES más bajo (ratings en vivo pesan más rápido)
 // ============================================================================
 
 export const LIGAS = {
-  // === VERDES (con edge medido) ===
   "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "BTTS"], "nota": "Local +1.7% vs cuota." } },
   "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Visitante +5.9% vs cuota. 4 mercados con edge." } },
   "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 0.5, "mercados": ["1X2", "Over 1.5"], "nota": "Over 1.5 +2.5%, Visitante +2.4% (muestra chica)." } },
   "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["Over 1.5", "Over 3.5"], "nota": "Over 1.5 +3.7% vs cuota (solo 10 picks: muestra chica, stake bajado de 2% a 1%)." } },
   "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["Over 1.5", "Over 3.5"], "nota": "Over 1.5 +1.1% (17 picks), Over 3.5 +2.6%." } },
-
-  // === AMARILLAS (poca muestra o dudosas) ===
   "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": false }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["Over 2.5", "BTTS"], "nota": "⚠️ err 11.7%. Solo Over 2.5 y BTTS." } },
-
-  // === ROJAS (no apostar) ===
   "PL": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "goalsAvg": 2.85, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "PD": { "name": "🇪🇸 La Liga", "goalsAvg": 2.55, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "SA": { "name": "🇮🇹 Serie A", "goalsAvg": 2.65, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red" } },
@@ -178,6 +177,80 @@ export const TEAM_STRENGTH_DB = {
   }
 };
 
+// [NUEVO] Aliases de equipos: nombres alternativos que devuelve Bzzoiro
+// y que deben mapear al nombre canónico en TEAM_STRENGTH_DB.
+export const TEAM_ALIASES = {
+  // Premier League
+  'Barcelona': 'FC Barcelona',
+  'Real Madrid CF': 'Real Madrid',
+  'Man City': 'Manchester City',
+  'Man United': 'Manchester United',
+  'Manchester Utd': 'Manchester United',
+  'Spurs': 'Tottenham Hotspur',
+  'Tottenham': 'Tottenham Hotspur',
+  'Wolves': 'Wolverhampton',
+  'Newcastle': 'Newcastle United',
+  'Brighton': 'Brighton & Hove Albion',
+  'Nottm Forest': 'Nottingham Forest',
+  // La Liga
+  'Atletico Madrid': 'Atlético Madrid',
+  'Atletico de Madrid': 'Atlético Madrid',
+  'Athletic Bilbao': 'Athletic Club',
+  'Betis': 'Real Betis',
+  'Real Betis Balompié': 'Real Betis',
+  'Alaves': 'Deportivo Alavés',
+  // Serie A
+  'Milan': 'AC Milan',
+  'Inter Milan': 'Inter',
+  'Internazionale': 'Inter',
+  'Napoli': 'SSC Napoli',
+  'Roma': 'AS Roma',
+  // Bundesliga
+  'Bayern Munich': 'FC Bayern München',
+  'Bayern München': 'FC Bayern München',
+  'Borussia Dortmund BVB': 'Borussia Dortmund',
+  'Leverkusen': 'Bayer 04 Leverkusen',
+  'RB Leipzig Leipzig': 'RB Leipzig',
+  // Ligue 1
+  'PSG': 'Paris Saint-Germain',
+  'Marseille': 'Olympique de Marseille',
+  'Lyon': 'Olympique Lyonnais',
+  // Brasil
+  'Atletico Mineiro': 'Atlético Mineiro',
+  'Atletico MG': 'Atlético Mineiro',
+  'Bragantino': 'Red Bull Bragantino',
+  // Portugal
+  'Sporting Lisbon': 'Sporting CP',
+  'Porto': 'FC Porto',
+  'Benfica Lisbon': 'Benfica',
+  // Argentina
+  'Independiente': 'CA Independiente',
+  'Lanús': 'CA Lanús',
+  'Talleres': 'CA Talleres',
+  'River': 'River Plate',
+  'Boca': 'Boca Juniors',
+  'Vélez': 'Vélez Sarsfield',
+  // Colombia
+  'Atletico Nacional': 'Atlético Nacional',
+  'America de Cali': 'América de Cali',
+  'Santa Fe': 'Independiente Santa Fe',
+  'Medellin': 'Independiente Medellín',
+  'Junior': 'Junior Barranquilla',
+  // MLS
+  'Inter Miami': 'Inter Miami CF',
+  'LAFC': 'Los Angeles FC',
+  'LA Galaxy': 'LA Galaxy',
+  'NYCFC': 'New York City FC',
+  'NY Red Bulls': 'New York Red Bulls',
+  'Seattle Sounders': 'Seattle Sounders FC',
+  'Vancouver': 'Vancouver Whitecaps',
+  // Mexico
+  'America': 'Club América',
+  'Chivas': 'CD Guadalajara',
+  'Cruz Azul CDMX': 'Cruz Azul',
+  'Tigres': 'Tigres UANL',
+};
+
 export const HOME_ADVANTAGE = {
   "PL": 1.078, "BL1": 1.185, "SA": 1.087, "PD": 1.419, "FL1": 1.203,
   "BSA": 1.317, "ELC": 1.142, "MXL": 1.281, "MLS": 1.303, "PPT": 1.373,
@@ -191,7 +264,18 @@ export const DIXON_COLES_RHO = {
   "default": -0.100
 };
 
-export const PLATT_PARAMS = { goals15: { A: 0.951, B: -0.038 }, goals25: { A: 0.933, B: -0.055 }, goals35: { A: 0.933, B: -0.055 }, btts: { A: 0.956, B: -0.034 }, corners: { A: 0.970, B: -0.022 }, goals_ht05: { A: 0.960, B: -0.030 }, goals_ht15: { A: 0.938, B: -0.048 }, resultado: { A: 0.918, B: -0.068 } };
+// [MODIFICADO] se agregó goals45 con sus propios parámetros.
+export const PLATT_PARAMS = {
+  goals15: { A: 0.951, B: -0.038 },
+  goals25: { A: 0.933, B: -0.055 },
+  goals35: { A: 0.933, B: -0.055 },
+  goals45: { A: 0.940, B: -0.045 },
+  btts: { A: 0.956, B: -0.034 },
+  corners: { A: 0.970, B: -0.022 },
+  goals_ht05: { A: 0.960, B: -0.030 },
+  goals_ht15: { A: 0.938, B: -0.048 },
+  resultado: { A: 0.918, B: -0.068 }
+};
 
 export const CORNER_HOME_BIAS = 1.12;
 export const CORNER_HOME_BIAS_LEAGUE = { BSA: 1.66 };
@@ -223,19 +307,50 @@ export const RHO_MIN = -0.20, RHO_MAX = 0.05;
 export const RATING_SHRINK = 0.85;
 export const RATING_MIN = 0.45, RATING_MAX = 1.90;
 
-export const LIVE_PRIOR_GAMES = 6;
+// [MODIFICADO] 6 → 4: los ratings en vivo pesan más rápido.
+export const LIVE_PRIOR_GAMES = 4;
 export const GOALS_AVG_PRIOR_MATCHES = 20;
 
 export const ML_MAX_WEIGHT = 0.6;
 
-// Ratings de equipo aprendidos del historial (ver ratings.js / calibrate.js):
-// priorJuegos = cuántos "partidos virtuales" pesa el rating estático al mezclar.
 export const RATINGS_PRIOR_JUEGOS = 6;
 export const RATINGS_HALFLIFE_DIAS = 60;
-// Córners: cuántos partidos pesa el promedio estático de la liga vs el observado.
 export const CORNER_PRIOR_MATCHES = 20;
 
+// [NUEVO] Ratings de córners aprendidos del historial.
+export const CORNER_RATINGS_PRIOR_JUEGOS = 8;
+export const CORNER_RATINGS_HALFLIFE_DIAS = 90;
+
+// [NUEVO] Calibración con peso por recencia.
+export const CALIB_HALFLIFE_DIAS = 90;
+
+// [NUEVO] Kelly fraccionado (0.25 = Kelly/4, conservador).
+export const KELLY_FRACTION = 0.25;
+// Tope de stake por pick, en % de la banca.
+export const STAKE_MAX_PCT = 3;
+
 export const FILTRO_EV = 1.05;
+
+// [NUEVO] Filtro EV adaptativo por mercado. Si el modelo es más débil en un
+// mercado, subimos el umbral para exigir más valor antes de recomendar.
+export const FILTRO_EV_POR_MERCADO = {
+  '1X2': 1.07,
+  'Over 1.5': 1.03,
+  'Over 2.5': 1.05,
+  'Over 3.5': 1.07,
+  'Under 1.5': 1.10,
+  'Under 2.5': 1.08,
+  'Under 3.5': 1.08,
+  'BTTS Sí': 1.06,
+  'BTTS No': 1.10,
+  'Córners': 1.10,
+  'default': 1.05,
+};
+
+export function getFiltroEV(mercado) {
+  return FILTRO_EV_POR_MERCADO[mercado] ?? FILTRO_EV_POR_MERCADO.default;
+}
+
 export const SHRINK_ALPHA = 0.15;
 
 export const UMBRALES_POR_LIGA = {
