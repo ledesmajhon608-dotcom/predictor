@@ -1,24 +1,20 @@
 // app.js
+// v3: warning de sinRating, undres y BTTS No en UI, stake Kelly informativo.
+
 import { LIGAS } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
 import { AutoCalibrate } from './auto-calibrate.js';
-import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales } from './picks.js';
+import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales, stakeKelly } from './picks.js';
 import { agregarEntrada, entradaDesdeSimulacion } from './registro.js';
 
 const ESTADO_KEY = 'vv_estado_seleccion';
 let ligaKeyGlobal = 'CPA';
 
 function guardarEstado(leagueKey, homeTeam, awayTeam) {
-  try {
-    localStorage.setItem(ESTADO_KEY, JSON.stringify({ liga: leagueKey, local: homeTeam, visitante: awayTeam }));
-  } catch (e) {}
+  try { localStorage.setItem(ESTADO_KEY, JSON.stringify({ liga: leagueKey, local: homeTeam, visitante: awayTeam })); } catch (e) {}
 }
-
 function leerEstado() {
-  try {
-    const raw = localStorage.getItem(ESTADO_KEY);
-    return raw ? JSON.parse(raw) : null;
-  } catch (e) { return null; }
+  try { const raw = localStorage.getItem(ESTADO_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -72,29 +68,27 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = getBettingConfig(ligaKey);
 
     let html = `<div style="font-family:'IBM Plex Mono',monospace; font-size:0.78rem; line-height:1.5;">`;
-    html += `<div>📊 HA=${params.homeAdvantage.toFixed(3)} rho=${params.rho.toFixed(3)}${params.goalsAvg ? ` goles=${params.goalsAvg.toFixed(2)}` : ''}${fuente}</div>`;
+    html += `<div>📊 HA=${params.homeAdvantage.toFixed(3)} rho=${params.rho.toFixed(3)}${params.goalsAvg ? ` goles=${params.goalsAvg.toFixed(2)}` : ''}${params.cornAvg ? ` córn=${params.cornAvg.toFixed(2)}` : ''}${fuente}</div>`;
+    if (params.ratings) html += `<div style="font-size:0.72rem;">📈 Ratings goles: ${Object.keys(params.ratings).length} equipos</div>`;
+    if (params.cornerRatings) html += `<div style="font-size:0.72rem;">🎯 Ratings córners: ${Object.keys(params.cornerRatings).length} equipos</div>`;
 
     if (config.status === 'green') {
       el.style.color = 'var(--green)';
       html += `<div style="color:var(--green); font-weight:600; margin-top:4px;">✅ LIGA APTA PARA APOSTAR</div>`;
       if (config.mercados) html += `<div style="font-size:0.72rem; margin-top:2px;">Mercados: ${config.mercados.join(' · ')}</div>`;
-      html += `<div style="font-size:0.72rem;">Stake sugerido: 1% de la banca</div>`;
+      html += `<div style="font-size:0.72rem;">Stake base: 1% de la banca (Kelly/4 sugerido por pick)</div>`;
       if (config.nota) html += `<div style="font-size:0.7rem; color:var(--chalk-dim); margin-top:2px;">${config.nota}</div>`;
     } else if (config.status === 'yellow') {
       el.style.color = 'var(--yellow)';
       html += `<div style="color:var(--yellow); font-weight:600; margin-top:4px;">⚠️ LIGA PROMETEDORA (stake bajo)</div>`;
       if (config.mercados) html += `<div style="font-size:0.72rem; margin-top:2px;">Mercados: ${config.mercados.join(' · ')}</div>`;
-      html += `<div style="font-size:0.72rem;">Stake sugerido: 0.5% de la banca</div>`;
+      html += `<div style="font-size:0.72rem;">Stake base: 0.5% de la banca</div>`;
       if (config.nota) html += `<div style="font-size:0.7rem; color:var(--chalk-dim); margin-top:2px;">${config.nota}</div>`;
     } else if (config.status === 'red') {
       el.style.color = 'var(--red)';
       html += `<div style="color:var(--red); font-weight:600; margin-top:4px;">❌ NO APOSTAR EN ESTA LIGA</div>`;
       html += `<div style="font-size:0.72rem;">Esta liga pierde contra cuota. Solo para análisis.</div>`;
-    } else {
-      el.style.color = 'var(--chalk-dim)';
-      html += `<div style="font-size:0.72rem;">Liga sin clasificar.</div>`;
     }
-
     html += `</div>`;
     el.innerHTML = html;
   }
@@ -111,8 +105,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function populateTeams(leagueKey, { keepSelection = false } = {}) {
     const prevHome = keepSelection ? homeSelect.value : null;
     const prevAway = keepSelection ? awaySelect.value : null;
-    homeSelect.innerHTML = '';
-    awaySelect.innerHTML = '';
+    homeSelect.innerHTML = ''; awaySelect.innerHTML = '';
     const teams = getTeamsForLeague(leagueKey);
     const teamNames = Object.keys(teams);
     if (teamNames.length === 0) return;
@@ -144,10 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } else {
       const firstLeague = Object.keys(LIGAS)[0];
-      if (firstLeague) {
-        leagueSelect.value = firstLeague;
-        populateTeams(firstLeague);
-      }
+      if (firstLeague) { leagueSelect.value = firstLeague; populateTeams(firstLeague); }
     }
     ligaKeyGlobal = leagueSelect.value;
     await mostrarParamsActivos(leagueSelect.value);
@@ -160,13 +150,8 @@ document.addEventListener('DOMContentLoaded', () => {
     await mostrarParamsActivos(e.target.value);
   });
 
-  homeSelect.addEventListener('change', () => {
-    guardarEstado(leagueSelect.value, homeSelect.value, awaySelect.value);
-  });
-
-  awaySelect.addEventListener('change', () => {
-    guardarEstado(leagueSelect.value, homeSelect.value, awaySelect.value);
-  });
+  homeSelect.addEventListener('change', () => { guardarEstado(leagueSelect.value, homeSelect.value, awaySelect.value); });
+  awaySelect.addEventListener('change', () => { guardarEstado(leagueSelect.value, homeSelect.value, awaySelect.value); });
 
   simulateBtn.addEventListener('click', async () => {
     const leagueKey = leagueSelect.value;
@@ -181,9 +166,7 @@ document.addEventListener('DOMContentLoaded', () => {
     simulateBtn.textContent = 'Calculando...';
     try {
       const paramsGuardados = await AutoCalibrate.getParamsActivos(leagueKey);
-      const results = await simulateMatch(leagueKey, homeTeam, awayTeam, {
-        calibracion: paramsGuardados || undefined,
-      });
+      const results = await simulateMatch(leagueKey, homeTeam, awayTeam, { calibracion: paramsGuardados || undefined });
       results.resultProbs = aplicarShrink(results.resultProbs, paramsGuardados?.tasas);
       displayResults(results, leagueKey);
     } catch (err) {
@@ -204,12 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return `<div class="prob-row" style="display:flex;align-items:center;">${check}<div style="flex:1;min-width:0;"><div class="prob-row-top"><span>${label}</span><span class="prob" style="color:${color}">${fmt(prob)}%</span></div><div class="semaforo-track"><div class="semaforo-fill" style="width:${pct}%;background:${color}"></div></div></div></div>`;
   }
 
-  function gridProb(val) {
-    const color = getColor(val);
-    const pct = Math.max(0, Math.min(100, val));
-    return `<span class="grid-prob"><span class="grid-prob-value" style="color:${color}">${fmt(val)}%</span><span class="grid-prob-bar"><span style="width:${pct}%;background:${color}"></span></span></span>`;
-  }
-
   function getColor(prob) {
     if (prob >= 65) return 'var(--green)';
     if (prob >= 42) return 'var(--yellow)';
@@ -221,6 +198,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const config = getBettingConfig(ligaKey);
     const umbrales = textoUmbrales(ligaKey);
 
+    if (data.sinRating && data.sinRating.length > 0) {
+      return `<div class="card" style="border:2px solid var(--yellow);">
+        <h3 style="color:var(--yellow);">⚠️ Sin rating para: ${data.sinRating.join(', ')}</h3>
+        <p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">No se recomiendan picks: el modelo usaría "equipo promedio" para uno de los dos. Corré el backtest o cargá el historial para que se aprendan los ratings.</p>
+      </div>`;
+    }
+
     if (config.status === 'red') {
       return `<div class="card" style="border:2px solid var(--red);"><h3 style="color:var(--red);">❌ NO APOSTAR EN ESTA LIGA</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Esta liga pierde contra cuota. Usala solo para análisis.</p></div>`;
     }
@@ -229,19 +213,22 @@ document.addEventListener('DOMContentLoaded', () => {
       return `<div class="card" style="border:2px solid var(--line); opacity:0.8;"><h3>🎯 Mejores picks para este partido</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Sin picks. Ningún mercado con edge supera los umbrales.</p><p style="color:var(--chalk-dim); margin:6px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
     }
 
-    const filas = picks.map(p => `
+    const filas = picks.map(p => {
+      // [NUEVO] sugerencia de stake Kelly informativa si hay cuota conocida en el registro
+      const stakeTxt = p.key ? '' : '';
+      return `
       <label class="prob-row" style="display:flex;align-items:center;gap:10px;cursor:pointer;">
         <input type="checkbox" class="pick-check" data-key="${p.key}" checked style="width:18px;height:18px;flex-shrink:0;accent-color:#3ecf8e;">
         <span style="flex:1;">
           <span class="prob-row-top" style="display:flex;justify-content:space-between;"><span>✅ ${p.label}</span><span class="prob" style="color:${getColor(p.prob)}">${fmt(p.prob)}%</span></span>
           <span class="semaforo-track" style="display:block;"><span class="semaforo-fill" style="display:block;width:${p.prob}%;background:${getColor(p.prob)}"></span></span>
         </span>
-      </label>`).join('');
+      </label>`;
+    }).join('');
 
     return `<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(${picks.length})</small></h3>${filas}<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">${umbrales}</p></div>`;
   }
 
-  // Guarda solo lo tildado (picks + mercados de las tarjetas; un solo clic).
   function wirePicksGuardar(data, ligaKey) {
     const btn = document.getElementById('guardar-picks');
     const st = document.getElementById('guardar-status');
@@ -263,22 +250,20 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   function displayResults(data, ligaKey) {
-    const compareRow = (label, own, ml, blended) => `<div class="compare-row"><span>${label}</span>${gridProb(own)}${gridProb(ml)}${gridProb(blended)}</div>`;
-
-    const comparisonCard = data.bzzoiroML ? `<div class="card"><h3>Tu modelo vs. Bzzoiro ML${data.bzzoiroML.confidence != null ? ` <small>(confianza ${(data.bzzoiroML.confidence * 100).toFixed(0)}%)</small>` : ''}</h3>${data.blended ? `<div class="compare-row compare-head"><span></span><span>Poisson</span><span>Bzzoiro ML</span><span>Promedio</span></div>${compareRow('Local', data.resultProbs.local, data.bzzoiroML.resultProbs.local, data.blended.resultProbs.local)}${compareRow('Empate', data.resultProbs.empate, data.bzzoiroML.resultProbs.empate, data.blended.resultProbs.empate)}${compareRow('Visitante', data.resultProbs.visitante, data.bzzoiroML.resultProbs.visitante, data.blended.resultProbs.visitante)}${compareRow('Over 1.5', data.over15, data.bzzoiroML.over15, data.blended.over15)}${compareRow('Over 2.5', data.over25, data.bzzoiroML.over25, data.blended.over25)}${compareRow('BTTS', data.btts, data.bzzoiroML.btts, data.blended.btts)}` : `<div class="compare-row"><span>Datos ML parciales.</span></div>`}</div>` : '';
-
-    const picksCard = renderPicksCard(data, ligaKey);
-
     const saveCard = `<div class="card" style="border:2px solid var(--accent);"><h3>📝 ¿Qué apostás?</h3><p style="color:var(--chalk-dim); font-size:0.75rem; margin:0 0 10px; line-height:1.5;">Tildá todo lo que vayas a jugar: los picks de arriba (ya vienen tildados) y/o cualquier mercado de las tarjetas de abajo. Podés combinar varios del mismo partido.</p><button id="guardar-picks" style="width:100%;">💾 Guardar seleccionados</button><p id="guardar-status" style="margin:8px 0 0; font-size:0.78rem; color:var(--text-dim,#8b95a5);">Guardalo antes de que empiece el partido. <a href="registro.html" style="color:var(--accent);">Ver registro</a></p></div>`;
 
+    const under15 = data.under15 ?? (data.over15 != null ? 100 - data.over15 : null);
+    const under25 = data.under25 ?? (data.over25 != null ? 100 - data.over25 : null);
+    const under35 = data.under35 ?? (data.over35 != null ? 100 - data.over35 : null);
+    const bttsNo = data.bttsNo ?? (data.btts != null ? 100 - data.btts : null);
+
     predictionsContent.innerHTML = `
-      ${picksCard}
+      ${renderPicksCard(data, ligaKey)}
       ${saveCard}
       <div class="card"><h3>Resultado 1X2</h3>${fila('Local', data.resultProbs.local, 'local')}${fila('Empate', data.resultProbs.empate, 'empate')}${fila('Visitante', data.resultProbs.visitante, 'visitante')}</div>
-      <div class="card"><h3>Goles</h3>${fila('Over 1.5', data.over15, 'over15')}${fila('Over 2.5', data.over25, 'over25')}${fila('Over 3.5', data.over35, 'over35')}</div>
-      <div class="card"><h3>Ambos marcan (BTTS)</h3>${fila('Sí', data.btts, 'bttsSi')}</div>
+      <div class="card"><h3>Goles</h3>${fila('Over 1.5', data.over15, 'over15')}${fila('Over 2.5', data.over25, 'over25')}${fila('Over 3.5', data.over35, 'over35')}${under25 != null ? fila('Under 2.5', under25, 'under25') : ''}${under35 != null ? fila('Under 3.5', under35, 'under35') : ''}</div>
+      <div class="card"><h3>Ambos marcan (BTTS)</h3>${fila('Sí', data.btts, 'bttsSi')}${bttsNo != null ? fila('No', bttsNo, 'bttsNo') : ''}</div>
       ${data.cornerProbs ? `<div class="card"><h3>Córneres</h3>${fila('Over 7.5', data.cornerProbs.over7, 'c_over75')}${fila('Over 8.5', data.cornerProbs.over8, 'c_over85')}${fila('Over 9.5', data.cornerProbs.over9, 'c_over95')}</div>` : ''}
-      ${comparisonCard}
     `;
     resultsDiv.style.display = 'block';
     wirePicksGuardar(data, ligaKey);
