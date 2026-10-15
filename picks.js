@@ -1,6 +1,7 @@
 // picks.js
 // MEJORA: se quitaron los córners por equipo (local Over 3.5 y visitante
 // Over 3.5). Quedan solo los córners totales (Over 7.5 / 8.5 / 9.5).
+// Cada pick trae `key` para poder tildarlo y guardarlo en el registro.
 
 import { LIGAS, getUmbrales, SHRINK_ALPHA, FILTRO_EV } from './leagues.js';
 import { shrinkHaciaBase } from './calibrate.js';
@@ -52,37 +53,37 @@ export function generarPicks(data, ligaKey) {
   const max1x2 = Math.max(rp.local, rp.empate, rp.visitante);
 
   if (max1x2 >= U.umbral1x2 && esMercadoValido(ligaKey, '1X2')) {
-    if (rp.local === max1x2) picks.push({ label: 'Local gana', prob: rp.local });
-    else if (rp.empate === max1x2) picks.push({ label: 'Empate', prob: rp.empate });
-    else picks.push({ label: 'Visitante gana', prob: rp.visitante });
+    if (rp.local === max1x2) picks.push({ key: 'local', label: 'Local gana', prob: rp.local });
+    else if (rp.empate === max1x2) picks.push({ key: 'empate', label: 'Empate', prob: rp.empate });
+    else picks.push({ key: 'visitante', label: 'Visitante gana', prob: rp.visitante });
   }
 
   const lineasGoles = [
-    { label: 'Over 3.5 goles', prob: data.over35, mercado: 'Over 3.5' },
-    { label: 'Over 2.5 goles', prob: data.over25, mercado: 'Over 2.5' },
-    { label: 'Over 1.5 goles', prob: data.over15, mercado: 'Over 1.5' },
+    { key: 'over35', label: 'Over 3.5 goles', prob: data.over35, mercado: 'Over 3.5' },
+    { key: 'over25', label: 'Over 2.5 goles', prob: data.over25, mercado: 'Over 2.5' },
+    { key: 'over15', label: 'Over 1.5 goles', prob: data.over15, mercado: 'Over 1.5' },
   ];
   for (const l of lineasGoles) {
     if (l.prob != null && l.prob >= U.umbralGoles && esMercadoValido(ligaKey, l.mercado)) {
-      picks.push({ label: l.label, prob: l.prob });
+      picks.push({ key: l.key, label: l.label, prob: l.prob });
       break;
     }
   }
 
   if (data.btts != null && data.btts >= U.umbralBtss && esMercadoValido(ligaKey, 'BTTS')) {
-    picks.push({ label: 'Ambos marcan (Sí)', prob: data.btts });
+    picks.push({ key: 'bttsSi', label: 'Ambos marcan (Sí)', prob: data.btts });
   }
 
   // Córners TOTALES solamente, y solo en ligas donde los córners están habilitados.
   if (data.cornerProbs && LIGAS[ligaKey]?.markets?.corn !== false) {
     const lineasCorners = [
-      { label: 'Over 9.5 córners', prob: data.cornerProbs.over9 },
-      { label: 'Over 8.5 córners', prob: data.cornerProbs.over8 },
-      { label: 'Over 7.5 córners', prob: data.cornerProbs.over7 },
+      { key: 'c_over95', label: 'Over 9.5 córners', prob: data.cornerProbs.over9 },
+      { key: 'c_over85', label: 'Over 8.5 córners', prob: data.cornerProbs.over8 },
+      { key: 'c_over75', label: 'Over 7.5 córners', prob: data.cornerProbs.over7 },
     ];
     for (const l of lineasCorners) {
       if (l.prob != null && l.prob >= U.umbralCorners) {
-        picks.push({ label: l.label, prob: l.prob });
+        picks.push({ key: l.key, label: l.label, prob: l.prob });
         break;
       }
     }
