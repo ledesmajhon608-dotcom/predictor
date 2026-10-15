@@ -1,5 +1,5 @@
 // backtest.js
-// v5: reescrito para evitar template literals anidados y ?? dentro de strings.
+// v5 completo: sin template literals anidados ni ?? dentro de strings.
 
 import { LIGAS, HOME_ADVANTAGE, DIXON_COLES_RHO, FILTRO_EV, SHRINK_ALPHA, getUmbrales } from './leagues.js';
 import { simulateMatch, getStaticRating } from './model.js';
@@ -214,7 +214,11 @@ async function calibrarLiga(leagueKey, partidos) {
 // ---------- render calibración ----------
 function renderCalibracion(resultado) {
   if (!resultado) return;
-  const { calibracion, tasas, historial, leagueKey } = resultado;
+  const calibracion = resultado.calibracion;
+  const tasas = resultado.tasas;
+  const historial = resultado.historial;
+  const leagueKey = resultado.leagueKey;
+
   calibrationSection.style.display = 'block';
   if (!calibracion) {
     calibrationContent.innerHTML = '<p style="color:var(--chalk-dim)">Liga con ' + (tasas && tasas.n ? tasas.n : 0) + ' partidos — no se calibró (mínimo ' + CAL_MIN_PARTIDOS + ').</p>';
@@ -421,7 +425,6 @@ function renderPicks(recs, stats, leagueKey) {
   const conPicks = recs.filter(r => r.picks.length > 0);
   const sinPicks = recs.filter(r => r.picks.length === 0);
 
-  // ---- tabla resumen de mercados ----
   const filasResumen = [];
   for (const m of stats.mercados) {
     if (m.n === 0) continue;
@@ -457,7 +460,6 @@ function renderPicks(recs, stats, leagueKey) {
       '</p>' +
     '</div>';
 
-  // ---- tarjetas por partido ----
   const ordenados = [...conPicks].sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''));
   const cartas = [];
   for (const r of ordenados.slice(0, 50)) {
@@ -816,4 +818,94 @@ runBtn.addEventListener('click', async () => {
     if (fOver25 != null) { mercado.over25.add(fOver25, totalGoles > 2.5); modeloVsMercado.over25.add(pred.over25, totalGoles > 2.5); }
     const fOver35 = devigar2(p.odds_over35, p.odds_under35);
     if (fOver35 != null) { mercado.over35.add(fOver35, totalGoles > 3.5); modeloVsMercado.over35.add(pred.over35, totalGoles > 3.5); }
-    const fBtts = devigar2(p.odds_btts_si, p.odds_b
+    const fBtts = devigar2(p.odds_btts_si, p.odds_btts_no);
+    if (fBtts != null) { mercado.btts.add(fBtts, p.goles_local > 0 && p.goles_visitante > 0); modeloVsMercado.btts.add(pred.btts, p.goles_local > 0 && p.goles_visitante > 0); }
+
+    if (p.corners_local != null && p.corners_visitante != null && pred.cornerProbs) {
+      const totalCorners = p.corners_local + p.corners_visitante;
+      markets.corners75.add(pred.cornerProbs.over7, totalCorners > 7.5);
+      markets.corners85.add(pred.cornerProbs.over8, totalCorners > 8.5);
+      markets.corners95.add(pred.cornerProbs.over9, totalCorners > 9.5);
+    }
+
+    filasComparacion.push({
+      fecha: p.fecha || '', local: p.local, visitante: p.visitante,
+      app: {
+        local: resultProbsFinal.local, empate: resultProbsFinal.empate, visitante: resultProbsFinal.visitante,
+        over15: pred.over15, over25: pred.over25, over35: pred.over35, btts: pred.btts,
+        corners_over75: pred.cornerProbs ? pred.cornerProbs.over7 : null,
+        corners_over85: pred.cornerProbs ? pred.cornerProbs.over8 : null,
+        corners_over95: pred.cornerProbs ? pred.cornerProbs.over9 : null,
+      },
+      real: {
+        goles_local: p.goles_local, goles_visitante: p.goles_visitante,
+        total_goles: totalGoles, resultado,
+        over15: totalGoles > 1.5 ? 1 : 0, over25: totalGoles > 2.5 ? 1 : 0, over35: totalGoles > 3.5 ? 1 : 0,
+        btts: (p.goles_local > 0 && p.goles_visitante > 0) ? 1 : 0,
+        corners_local: p.corners_local != null ? p.corners_local : null,
+        corners_visitante: p.corners_visitante != null ? p.corners_visitante : null,
+        corners_total: (p.corners_local != null && p.corners_visitante != null) ? p.corners_local + p.corners_visitante : null,
+      },
+      casa: {
+        odds_local: p.odds_local != null ? p.odds_local : null,
+        odds_empate: p.odds_empate != null ? p.odds_empate : null,
+        odds_visitante: p.odds_visitante != null ? p.odds_visitante : null,
+        odds_over15: p.odds_over15 != null ? p.odds_over15 : null,
+        odds_under15: p.odds_under15 != null ? p.odds_under15 : null,
+        odds_over25: p.odds_over25 != null ? p.odds_over25 : null,
+        odds_under25: p.odds_under25 != null ? p.odds_under25 : null,
+        odds_over35: p.odds_over35 != null ? p.odds_over35 : null,
+        odds_under35: p.odds_under35 != null ? p.odds_under35 : null,
+        odds_btts_si: p.odds_btts_si != null ? p.odds_btts_si : null,
+        odds_btts_no: p.odds_btts_no != null ? p.odds_btts_no : null,
+      },
+    });
+
+    evaluados++;
+    if (evaluados % 20 === 0) log('  ' + evaluados + '/' + ordenados.length + '...');
+  }
+
+  log('\n✅ Listo. ' + evaluados + ' evaluados, ' + saltados + ' salteados.');
+  log('📋 Picks generados en ' + picksStats.partidosConPick + '/' + evaluados + ' partidos.');
+  log('🚫 ' + conSinEV + ' partidos tenían picks potenciales que no pasaron el filtro EV.');
+
+  const mercadoResumen = {};
+  for (const [k, m] of Object.entries(mercado)) mercadoResumen[k] = m.summary();
+  const modeloVsMercadoResumen = {};
+  for (const [k, m] of Object.entries(modeloVsMercado)) modeloVsMercadoResumen[k] = m.summary();
+
+  try { renderPicks(todasLasRecs, picksStats.summary(), leagueKey); }
+  catch (err) {
+    console.error('❌ Error en renderPicks:', err);
+    picksSection.style.display = 'block';
+    picksContent.innerHTML = '<div class="card"><h3>⚠️ Error al renderizar picks</h3><p style="color:var(--red);font-size:0.8rem;">' + err.message + '</p></div>';
+  }
+
+  try {
+    renderResults(
+      Object.entries(markets).map(([k, m]) => Object.assign({ key: k }, m.summary())),
+      mercadoResumen,
+      modeloVsMercadoResumen,
+      Object.fromEntries(Object.entries(global1x2).map(([k, m]) => [k, m.summary()]))
+    );
+  } catch (err) {
+    console.error('❌ Error en renderResults:', err);
+    resultsSection.style.display = 'block';
+    resultsContent.innerHTML = '<div class="card"><h3>⚠️ Error al renderizar resultados</h3><p style="color:var(--red);font-size:0.8rem;">' + err.message + '</p></div>';
+  }
+
+  calibrationSection.style.display = 'block';
+  picksSection.style.display = 'block';
+  resultsSection.style.display = 'block';
+  exportSection.style.display = 'block';
+  runBtn.disabled = false;
+  runBtn.textContent = 'Ejecutar backtest';
+});
+
+// ---------- export ----------
+exportBtn.addEventListener('click', () => exportarComparacionCSV(filasComparacion));
+
+const exportParamsBtn = document.getElementById('export-params-btn');
+if (exportParamsBtn) {
+  exportParamsBtn.addEventListener('click', () => { AutoCalibrate.exportarParamsJSON(); });
+}
