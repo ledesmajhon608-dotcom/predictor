@@ -1,6 +1,5 @@
 // model.js
-// MEJORA: normalizarML ahora normaliza cada campo por separado (antes decidía
-// con la suma y rompía si venían mezclados porcentaje y fracción).
+// v3: usa calibracion.ratings y calibracion.cornerRatings; devuelve sinRating.
 
 import {
   LIGAS, TEAM_STRENGTH_DB, HOME_ADVANTAGE, CORNER_HOME_BIAS, CORNER_HOME_BIAS_LEAGUE,
@@ -14,7 +13,6 @@ import { fetchLeagueDynamicData, fetchMatchPrediction, buscarEquipoEn } from './
 const CACHE_TTL_MS = 60 * 60 * 1000;
 const dynamicCache = {};
 const LAMBDA_MIN = 0.12, LAMBDA_MAX = 4.2;
-
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 async function getDynamicData(leagueKey, leagueDisplayName) {
@@ -33,7 +31,6 @@ async function getDynamicData(leagueKey, leagueDisplayName) {
 }
 
 const normCache = {};
-
 function normalizarSubLiga(subKey) {
   if (normCache[subKey]) return normCache[subKey];
   const raw = TEAM_STRENGTH_DB[subKey] || {};
@@ -54,10 +51,7 @@ function normalizarSubLiga(subKey) {
 export function getTeamsForLeague(leagueKey) {
   const liga = LIGAS[leagueKey];
   if (liga?.compositeOf) {
-    return liga.compositeOf.reduce(
-      (acc, subKey) => ({ ...acc, ...normalizarSubLiga(subKey) }),
-      {}
-    );
+    return liga.compositeOf.reduce((acc, subKey) => ({ ...acc, ...normalizarSubLiga(subKey) }), {});
   }
   return normalizarSubLiga(leagueKey);
 }
@@ -67,21 +61,29 @@ export function getStaticRating(leagueKey, teamName) {
   return teams[teamName] || buscarEquipoEn(teams, teamName) || null;
 }
 
-function getTeamRating(leagueKey, teamName, dynamicRatings) {
+// [MODIFICADO] Ahora acepta ratings calibrados (del params.json) y los
+// prioriza sobre los "en vivo". Antes se ignoraban por completo.
+// Devuelve también `{ sinRating: true }` si el equipo no tiene ningún dato.
+function getTeamRating(leagueKey, teamName, { dynamicRatings = null, calRatings = null } = {}) {
   const estatico = getStaticRating(leagueKey, teamName);
+  const cal = buscarEquipoEn(calRatings, teamName);
   const vivo = buscarEquipoEn(dynamicRatings, teamName);
 
-  if (!estatico && !vivo) {
-    console.warn(`⚠️ ALERTA: Equipo "${teamName}" no encontrado. Usando rating por defecto 1.0`);
-    return { atk: 1.0, def: 1.0 };
+  // Prioridad: calibrado > vivo > estático
+  const fuente = cal || vivo;
+
+  if (!estatico && !fuente) {
+    return { atk: 1.0, def: 1.0, sinRating: true };
   }
   const prior = estatico || { atk: 1.0, def: 1.0 };
-  if (!vivo) return prior;
+  if (!fuente) return { ...prior, sinRating: false };
 
-  const w = vivo.played / (vivo.played + LIVE_PRIOR_GAMES);
+  const played = fuente.played ?? fuente.partidos ?? 0;
+  const w = played / (played + LIVE_PRIOR_GAMES);
   return {
-    atk: clamp(w * vivo.atk + (1 - w) * prior.atk, RATING_MIN, RATING_MAX),
-    def: clamp(w * vivo.def + (1 - w) * prior.def, RATING_MIN, RATING_MAX),
+    atk: clamp(w * fuente.atk + (1 - w) * prior.atk, RATING_MIN, RATING_MAX),
+    def: clamp(w * fuente.def + (1 - w) * prior.def, RATING_MIN, RATING_MAX),
+    sinRating: false,
   };
 }
 
@@ -102,29 +104,19 @@ export function calcLambdas(goalsAvg, hRating, aRating, homeAdv) {
   };
 }
 
-// MEJORA: normalizar cada campo por separado. Antes se usaba la suma de
-// resultProbs para decidir si todo venía en fracción o en porcentaje, y eso
-// rompía si la API mezclaba (ej. 1X2 en % pero over/btts en fracción).
 function normalizarML(ml) {
   const rp = ml.resultProbs || {};
-
   const toPct = (v) => {
     if (typeof v !== 'number' || !Number.isFinite(v)) return null;
     return v <= 1.5 ? +(v * 100).toFixed(1) : +v.toFixed(1);
   };
-
   let conf = ml.confidence;
   if (typeof conf === 'number' && conf > 1) conf = conf / 100;
-
   return {
     resultProbs: {
-      local: toPct(rp.local),
-      empate: toPct(rp.empate),
-      visitante: toPct(rp.visitante),
+      local: toPct(rp.local), empate: toPct(rp.empate), visitante: toPct(rp.visitante),
     },
-    over15: toPct(ml.over15),
-    over25: toPct(ml.over25),
-    over35: toPct(ml.over35),
+    over15: toPct(ml.over15), over25: toPct(ml.over25), over35: toPct(ml.over35),
     btts: toPct(ml.btts),
     confidence: typeof conf === 'number' && Number.isFinite(conf) ? conf : null,
   };
@@ -144,40 +136,55 @@ function blend(own, ml) {
   if (s > 0) { L = +(L / s * 100).toFixed(1); E = +(E / s * 100).toFixed(1); V = +(V / s * 100).toFixed(1); }
   return {
     resultProbs: { local: L, empate: E, visitante: V },
-    over15: mix(own.over15, ml.over15),
-    over25: mix(own.over25, ml.over25),
-    over35: mix(own.over35, ml.over35),
-    btts: mix(own.btts, ml.btts),
+    over15: mix(own.over15, ml.over15), over25: mix(own.over25, ml.over25),
+    over35: mix(own.over35, ml.over35), btts: mix(own.btts, ml.btts),
     pesoML: w,
   };
 }
 
 export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
-  staticOnly = false,
-  calibracion = null,
+  staticOnly = false, calibracion = null,
 } = {}) {
   const liga = LIGAS[leagueKey];
   if (!liga) throw new Error('Liga no encontrada');
 
   const dynamic = staticOnly ? null : await getDynamicData(leagueKey, liga.name);
   const goalsAvg = resolverGoalsAvg(liga, dynamic, calibracion);
-  const cornAvg = dynamic?.cornAvg ?? liga.cornAvg;
+  const cornAvg = calibracion?.cornAvg ?? dynamic?.cornAvg ?? liga.cornAvg;
 
-  const hRating = getTeamRating(leagueKey, homeTeam, dynamic?.teamRatings);
-  const aRating = getTeamRating(leagueKey, awayTeam, dynamic?.teamRatings);
+  // [MODIFICADO] pasamos los ratings calibrados.
+  const hRating = getTeamRating(leagueKey, homeTeam, {
+    dynamicRatings: dynamic?.teamRatings,
+    calRatings: calibracion?.ratings || null,
+  });
+  const aRating = getTeamRating(leagueKey, awayTeam, {
+    dynamicRatings: dynamic?.teamRatings,
+    calRatings: calibracion?.ratings || null,
+  });
+
+  // [NUEVO] marcamos equipos sin rating para bloquear picks.
+  const sinRating = [];
+  if (hRating.sinRating) sinRating.push(homeTeam);
+  if (aRating.sinRating) sinRating.push(awayTeam);
 
   const homeAdv = calibracion?.homeAdvantage ?? HOME_ADVANTAGE[leagueKey] ?? DEFAULT_HOME_ADV;
   const rho = calibracion?.rho;
 
   const { lambdaHome, lambdaAway } = calcLambdas(goalsAvg, hRating, aRating, homeAdv);
-
   const mk = stats.calcGoalMarkets(lambdaHome, lambdaAway, leagueKey, rho);
 
   let cornerProbs = null;
   if (cornAvg && cornAvg > 0) {
     const cornBias = CORNER_HOME_BIAS_LEAGUE[leagueKey] ?? CORNER_HOME_BIAS;
+
+    // [MODIFICADO] Si tenemos ratings de córners aprendidos, los usamos.
+    const hCornerAtk = calibracion?.cornerRatings?.[homeTeam]?.atk ?? hRating.atk;
+    const hCornerDef = calibracion?.cornerRatings?.[homeTeam]?.def ?? hRating.def;
+    const aCornerAtk = calibracion?.cornerRatings?.[awayTeam]?.atk ?? aRating.atk;
+    const aCornerDef = calibracion?.cornerRatings?.[awayTeam]?.def ?? aRating.def;
+
     const { home: lCornerHome, away: lCornerAway } = stats.splitCornerLambda(
-      cornAvg, hRating.atk, hRating.def, aRating.atk, aRating.def, cornBias
+      cornAvg, hCornerAtk, hCornerDef, aCornerAtk, aCornerDef, cornBias
     );
     const totalCorners = lCornerHome + lCornerAway;
     const r = liga.cornR || 20;
@@ -208,9 +215,8 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
   const sumaCal = calLocal + calEmpate + calVisitante;
 
   const ownResult = {
-    liga: liga.name,
-    homeTeam,
-    awayTeam,
+    liga: liga.name, homeTeam, awayTeam,
+    sinRating,
     resultProbs: {
       local: +(calLocal * 100 / sumaCal).toFixed(1),
       empate: +(calEmpate * 100 / sumaCal).toFixed(1),
@@ -219,9 +225,12 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
     over15: stats.plattCalibrate(mk.over15, 'goals15'),
     over25: stats.plattCalibrate(mk.over25, 'goals25'),
     over35: stats.plattCalibrate(mk.over35, 'goals35'),
-    // Over 4.5: sin parámetros Platt propios, se reutilizan los de 3.5.
-    over45: stats.plattCalibrate(mk.over45, 'goals35'),
+    over45: stats.plattCalibrate(mk.over45, 'goals45'),  // [MODIFICADO] ahora tiene su propio Platt
+    under15: 100 - stats.plattCalibrate(mk.over15, 'goals15'),
+    under25: 100 - stats.plattCalibrate(mk.over25, 'goals25'),
+    under35: 100 - stats.plattCalibrate(mk.over35, 'goals35'),
     btts: stats.plattCalibrate(mk.btts, 'btts'),
+    bttsNo: 100 - stats.plattCalibrate(mk.btts, 'btts'),
     cornerProbs,
     lambdas: { local: +lambdaHome.toFixed(3), visitante: +lambdaAway.toFixed(3) },
   };
@@ -246,12 +255,13 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
   }
 
   const hasFullML = bzzoiroML
-    && [bzzoiroML.resultProbs.local, bzzoiroML.resultProbs.empate, bzzoiroML.resultProbs.visitante, bzzoiroML.over15, bzzoiroML.over25, bzzoiroML.btts]
+    && [bzzoiroML.resultProbs.local, bzzoiroML.resultProbs.empate, bzzoiroML.resultProbs.visitante,
+        bzzoiroML.over15, bzzoiroML.over25, bzzoiroML.btts]
       .every(v => typeof v === 'number' && Number.isFinite(v));
 
   return {
     ...ownResult,
     bzzoiroML,
-    blended: hasFullML ? blend(ownResult, bzzoiroML) : null
+    blended: hasFullML ? blend(ownResult, bzzoiroML) : null,
   };
 }
