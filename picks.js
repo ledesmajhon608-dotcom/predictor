@@ -1,5 +1,5 @@
 // picks.js
-// v4: agrega 1X y X2 (doble oportunidad).
+// v5: fix del umbral de BTTS No (antes usaba 100-umbral, recomendaba el lado perdedor).
 
 import { LIGAS, getUmbrales, SHRINK_ALPHA, FILTRO_EV, KELLY_FRACTION, STAKE_MAX_PCT, getFiltroEV } from './leagues.js';
 import { shrinkHaciaBase } from './calibrate.js';
@@ -16,7 +16,6 @@ export function esMercadoValido(ligaKey, mercado) {
   return config.mercados.some(m => mercado.includes(m) || m.includes(mercado));
 }
 
-// [NUEVO] DC se permite si la liga lista 1X2 o explícitamente 1X/X2/DC.
 function esMercadoDCValido(ligaKey) {
   const config = getBettingConfig(ligaKey);
   if (config.status !== 'green' && config.status !== 'yellow') return false;
@@ -73,7 +72,7 @@ export function generarPicks(data, ligaKey) {
     else picks.push({ key: 'visitante', label: 'Visitante gana', prob: rp.visitante, mercado: '1X2' });
   }
 
-  // --- [NUEVO] Doble oportunidad 1X / X2 ---
+  // --- Doble oportunidad 1X / X2 ---
   const dc1X = +(rp.local + rp.empate).toFixed(1);
   const dcX2 = +(rp.empate + rp.visitante).toFixed(1);
   const umbralDC = U.umbralDC ?? 68;
@@ -115,11 +114,16 @@ export function generarPicks(data, ligaKey) {
   }
 
   // --- BTTS ---
-  if (data.btts != null && data.btts >= U.umbralBtss && esMercadoValido(ligaKey, 'BTTS')) {
-    picks.push({ key: 'bttsSi', label: 'Ambos marcan (Sí)', prob: data.btts, mercado: 'BTTS Sí' });
-  }
-  if (data.btts != null && (100 - data.btts) >= (100 - U.umbralBtss) && esMercadoValido(ligaKey, 'BTTS')) {
-    picks.push({ key: 'bttsNo', label: 'Ambos marcan (No)', prob: 100 - data.btts, mercado: 'BTTS No' });
+  // FIX: cada lado usa el MISMO umbral, aplicado a SU propia probabilidad.
+  // Antes el "No" usaba (100 - umbral) y recomendaba el lado perdedor.
+  if (data.btts != null && esMercadoValido(ligaKey, 'BTTS')) {
+    if (data.btts >= U.umbralBtss) {
+      picks.push({ key: 'bttsSi', label: 'Ambos marcan (Sí)', prob: data.btts, mercado: 'BTTS Sí' });
+    }
+    const bttsNoProb = 100 - data.btts;
+    if (bttsNoProb >= U.umbralBtss) {
+      picks.push({ key: 'bttsNo', label: 'Ambos marcan (No)', prob: bttsNoProb, mercado: 'BTTS No' });
+    }
   }
 
   // --- Córners ---
