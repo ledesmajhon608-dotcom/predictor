@@ -249,6 +249,10 @@
     const cfgBank = document.getElementById('cfg-bank');
     const cfgUnitPct = document.getElementById('cfg-unit-pct');
 
+    // Índice de MERCADOS por key, para acceso O(1)
+    const MERCADO_POR_KEY = {};
+    for (const m of MERCADOS) MERCADO_POR_KEY[m.key] = m;
+
     function cargarCfg() {
       try {
         const c = JSON.parse(localStorage.getItem(CFG_KEY) || '{}');
@@ -267,10 +271,12 @@
     cfgBank.addEventListener('change', () => { guardarCfg(); render(); });
     cfgUnitPct.addEventListener('change', () => { guardarCfg(); render(); });
 
-    // Extrae DOS listas:
-    //  - conCuota: apuestas resueltas con cuota cargada (métricas financieras)
-    //  - sinCuota: apuestas resueltas sin cuota (solo aciertos)
-    // Además cuenta los pendientes.
+    // Extrae ÚNICAMENTE los picks que el usuario tildó al guardar.
+    // La cuota se asigna así:
+    //   1. e.cuotas[key] si existe (cuota específica del mercado)
+    //   2. e.apuesta.cuota si solo hay 1 pick tildado → va directo a ese
+    //   3. e.apuesta.cuota al pick de mayor EV si hay varios tildados
+    //   4. null si no hay forma de saber
     function extraerApuestas() {
       const arr = leerRegistro();
       const conCuota = [];
@@ -278,20 +284,61 @@
       let pendientes = 0;
 
       for (const e of arr) {
+        const picksTildados = Array.isArray(e.picks) ? e.picks : [];
+        if (picksTildados.length === 0) continue;
+
         const resultado = e.resultado;
         const r = resultado
           ? { gl: resultado.gl, gv: resultado.gv, corners: resultado.corners }
           : null;
 
-        for (const m of MERCADOS) {
+        const cuotaGlobal = e.apuesta && Number.isFinite(e.apuesta.cuota) && e.apuesta.cuota > 1
+          ? e.apuesta.cuota : null;
+
+        // Determinar a qué pick tildado asignarle cuotaGlobal
+        let pickConCuotaGlobal = null;
+        if (cuotaGlobal != null) {
+          if (picksTildados.length === 1) {
+            pickConCuotaGlobal = picksTildados[0];
+          } else {
+            let mejorEV = -Infinity;
+            for (const key of picksTildados) {
+              const m = MERCADO_POR_KEY[key];
+              if (!m) continue;
+              const prob = m.p(e);
+              if (!Number.isFinite(prob)) continue;
+              const ev = (prob / 100) * cuotaGlobal;
+              if (ev > mejorEV) { mejorEV = ev; pickConCuotaGlobal = key; }
+            }
+          }
+        }
+
+        // Iterar SOLO sobre los picks que el usuario tildó
+        for (const key of picksTildados) {
+          const m = MERCADO_POR_KEY[key];
+          if (!m) continue;
+
           const prob = m.p(e);
           if (!Number.isFinite(prob)) continue;
 
-          // Picks de córners sin marcador de córners → no se pueden evaluar
+          // Córners sin marcador → no se puede evaluar
           if (m.corners && (!r || !Number.isFinite(r.corners))) continue;
 
-          const cuota = e.cuotas ? e.cuotas[m.key] : null;
-          const tieneCuota = Number.isFinite(cuota) && cuota > 1;
+          // Determinar cuota de este pick
+          let cuota = null;
+          if (e.cuotas && Number.isFinite(e.cuotas[key]) && e.cuotas[key] > 1) {
+            cuota = e.cuotas[key];
+          } else if (cuotaGlobal != null && key === pickConCuotaGlobal) {
+            cuota = cuotaGlobal;
+          }
+
+          const base = {
+            fecha: e.resuelto || e.creado || '',
+            partido: e.local + ' vs ' + e.visitante,
+            label: m.label,
+            key: key,
+            prob: prob,
+          };
 
           if (!r) {
             pendientes++;
@@ -299,16 +346,9 @@
           }
 
           const hit = m.hit(r);
-          const base = {
-            fecha: e.resuelto || e.creado || '',
-            partido: e.local + ' vs ' + e.visitante,
-            label: m.label,
-            key: m.key,
-            prob: prob,
-            hit: hit,
-          };
+          base.hit = hit;
 
-          if (tieneCuota) {
+          if (cuota != null) {
             conCuota.push(Object.assign({}, base, { cuota: cuota }));
           } else {
             sinCuota.push(base);
@@ -398,14 +438,12 @@
       const totalConResultado = todas.length;
       const winRateTotal = totalConResultado > 0 ? (winsTotal / totalConResultado) * 100 : 0;
 
-      // Tasa de acierto — siempre calculable
       const colTasa = winRateTotal >= 55 ? 'green' : winRateTotal >= 45 ? 'yellow' : 'red';
       const elTasa = document.getElementById('s-tasa');
       elTasa.textContent = winRateTotal.toFixed(1) + '%';
       elTasa.className = 'stat-value ' + colTasa;
-      document.getElementById('s-tasa-sub').textContent = winsTotal + 'W / ' + lossTotal + 'L' + (hayCuotas ? '' : ' (sin cuotas)');
+      document.getElementById('s-tasa-sub').textContent = winsTotal + 'W / ' + lossTotal + 'L';
 
-      // Yield
       const elYield = document.getElementById('s-yield');
       if (hayCuotas) {
         const colYield = s.yieldPct > 0 ? 'green' : s.yieldPct < 0 ? 'red' : 'yellow';
@@ -418,7 +456,6 @@
         document.getElementById('s-yield-sub').textContent = 'Falta cargar cuotas';
       }
 
-      // Unidades
       const elUnits = document.getElementById('s-units');
       if (hayCuotas) {
         const colUnits = s.units > 0 ? 'green' : s.units < 0 ? 'red' : 'yellow';
@@ -431,7 +468,6 @@
         document.getElementById('s-units-sub').textContent = 'Requiere cuota';
       }
 
-      // Cuota media
       const elOdds = document.getElementById('s-odds');
       if (hayCuotas) {
         elOdds.textContent = s.avgOdds.toFixed(2);
@@ -443,10 +479,8 @@
         document.getElementById('s-odds-sub').textContent = 'Ninguna cuota cargada';
       }
 
-      // Banca
       document.getElementById('s-bank').textContent = fmt(bank, 0);
 
-      // Beneficio
       const elProfit = document.getElementById('s-profit');
       if (hayCuotas) {
         elProfit.textContent = (s.profit >= 0 ? '+' : '') + fmt(s.profit, 2);
@@ -456,14 +490,11 @@
         elProfit.className = 'stat-value';
       }
 
-      // Saldo
       document.getElementById('s-saldo').textContent = hayCuotas ? fmt(s.equity, 2) : fmt(bank, 2);
       document.getElementById('s-saldo-sub').textContent = pendientes + ' pendientes · ' + sinCuota.length + ' sin cuota';
 
-      // 1U
       document.getElementById('s-unit').textContent = fmt(bank * unitPct / 100, 2);
 
-      // Donut
       const pct = winRateTotal;
       const circ = 2 * Math.PI * 60;
       document.getElementById('donut-arc').setAttribute(
@@ -477,11 +508,12 @@
 
       dibujarChart(s.curva, bank);
 
-      // Tabla de últimas apuestas
       const body = document.getElementById('bets-body');
-      const ultimas = conCuota.concat(sinCuota)
+      const fuente = conCuota.length > 0 ? conCuota : sinCuota;
+      const ultimas = fuente
+        .slice()
         .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))
-        .slice(0, 20);
+        .slice(0, 30);
 
       body.innerHTML = ultimas.map(a => {
         const cls = a.hit ? 'win' : 'loss';
