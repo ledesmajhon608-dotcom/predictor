@@ -1,5 +1,5 @@
 // registro.js
-// v4: agrega mercados dc1X y dcX2 a MERCADOS.
+// v5: leer e.apuesta.cuota además de e.cuotas[key] para que el análisis funcione.
 
 import { FILTRO_EV } from './leagues.js';
 
@@ -109,6 +109,7 @@ export function importarEntradas(nuevas) {
   return { agregadas, omitidas };
 }
 
+// ---------- estadística ----------
 function devigar2(a, b) { if (!a || !b) return null; const pa = 1 / a, pb = 1 / b; return (pa / (pa + pb)) * 100; }
 function devigar3(a, b, c) {
   if (!a || !b || !c) return null;
@@ -164,20 +165,16 @@ class Apuestas {
   }
 }
 
-// [MODIFICADO] se agregaron dc1X y dcX2.
 export const MERCADOS = [
   { key: 'local', label: 'Local gana', p: e => e.prob?.local, hit: r => r.gl > r.gv },
   { key: 'empate', label: 'Empate', p: e => e.prob?.empate, hit: r => r.gl === r.gv },
   { key: 'visitante', label: 'Visitante gana', p: e => e.prob?.visitante, hit: r => r.gl < r.gv },
-
-  // [NUEVO] Doble oportunidad
   { key: 'dc1X', label: 'Local o Empate (1X)',
     p: e => (Number.isFinite(e.prob?.local) && Number.isFinite(e.prob?.empate)) ? e.prob.local + e.prob.empate : null,
     hit: r => r.gl >= r.gv },
   { key: 'dcX2', label: 'Empate o Visitante (X2)',
     p: e => (Number.isFinite(e.prob?.empate) && Number.isFinite(e.prob?.visitante)) ? e.prob.empate + e.prob.visitante : null,
     hit: r => r.gl <= r.gv },
-
   { key: 'over15', label: 'Más de 1.5 goles', p: e => e.prob?.over15, hit: r => r.gl + r.gv > 1.5 },
   { key: 'over25', label: 'Más de 2.5 goles', p: e => e.prob?.over25, hit: r => r.gl + r.gv > 2.5 },
   { key: 'over35', label: 'Más de 3.5 goles', p: e => e.prob?.over35, hit: r => r.gl + r.gv > 3.5 },
@@ -190,7 +187,45 @@ export const MERCADOS = [
   { key: 'c_under95', label: 'Menos de 9.5 córners', corners: true, p: e => 100 - e.corners?.over9, hit: r => r.corners < 9.5 },
   { key: 'c_under105', label: 'Menos de 10.5 córners', corners: true, p: e => 100 - e.corners?.over10, hit: r => r.corners < 10.5 },
 ];
-const CLAVES_MERCADOS = new Set(MERCADOS.map(m => m.key));
+
+const MERCADO_POR_KEY = {};
+for (const m of MERCADOS) MERCADO_POR_KEY[m.key] = m;
+
+// Devuelve un mapa de cuotas efectivas por key, combinando:
+//   1. e.cuotas[key]   (cuota específica de ese mercado, si existe)
+//   2. e.apuesta.cuota (cuota global al pick tildado de mayor EV)
+function cuotasEfectivas(e) {
+  const out = {};
+  if (e.cuotas && typeof e.cuotas === 'object') {
+    for (const [k, v] of Object.entries(e.cuotas)) {
+      if (Number.isFinite(v) && v > 1) out[k] = v;
+    }
+  }
+  const picksTildados = Array.isArray(e.picks) ? e.picks : [];
+  const cuotaGlobal = e.apuesta && Number.isFinite(e.apuesta.cuota) && e.apuesta.cuota > 1
+    ? e.apuesta.cuota : null;
+
+  if (cuotaGlobal != null && picksTildados.length > 0) {
+    let pickConCuota = null;
+    if (picksTildados.length === 1) {
+      pickConCuota = picksTildados[0];
+    } else {
+      let mejorEV = -Infinity;
+      for (const key of picksTildados) {
+        const m = MERCADO_POR_KEY[key];
+        if (!m) continue;
+        const prob = m.p(e);
+        if (!Number.isFinite(prob)) continue;
+        const ev = (prob / 100) * cuotaGlobal;
+        if (ev > mejorEV) { mejorEV = ev; pickConCuota = key; }
+      }
+    }
+    if (pickConCuota != null && out[pickConCuota] == null) {
+      out[pickConCuota] = cuotaGlobal;
+    }
+  }
+  return out;
+}
 
 export function evaluar(entradas) {
   const res = entradas.filter(e => e.resultado && Number.isFinite(e.resultado.gl) && Number.isFinite(e.resultado.gv) && e.prob);
@@ -204,18 +239,21 @@ export function evaluar(entradas) {
   let conCuotas1x2 = 0;
 
   for (const e of res) {
-    const p = e.prob, o = e.cuotas || {}, r = e.resultado, { gl, gv } = r;
+    const p = e.prob, r = e.resultado, { gl, gv } = r;
+    const cuotas = cuotasEfectivas(e);
     const idx = gl > gv ? 0 : gl === gv ? 1 : 2, bttsReal = gl > 0 && gv > 0;
     const bModelo = brier3([p.local, p.empate, p.visitante], idx);
     b3Modelo.push(bModelo);
 
-    const m3 = devigar3(o.local, o.empate, o.visitante);
+    const m3 = devigar3(cuotas.local, cuotas.empate, cuotas.visitante);
     if (m3) {
       conCuotas1x2++;
       b3ModC.push(bModelo); b3Mkt.push(brier3(m3, idx)); dMkt.push(brier3(m3, idx) - bModelo);
-      mk.local.add(p.local, m3[0], idx === 0); mk.empate.add(p.empate, m3[1], idx === 1); mk.visitante.add(p.visitante, m3[2], idx === 2);
+      mk.local.add(p.local, m3[0], idx === 0);
+      mk.empate.add(p.empate, m3[1], idx === 1);
+      mk.visitante.add(p.visitante, m3[2], idx === 2);
     }
-    const fb = devigar2(o.bttsSi, o.bttsNo);
+    const fb = devigar2(cuotas.bttsSi, cuotas.bttsNo);
     if (fb != null) mk.bttsSi.add(p.btts, fb, bttsReal);
 
     for (const m of MERCADOS) {
@@ -224,7 +262,7 @@ export function evaluar(entradas) {
       if (m.corners && !Number.isFinite(r.corners)) continue;
       const hit = m.hit(r);
       const c = cal[m.key]; c.n++; c.sumP += prob; if (hit) c.hits++;
-      ap.add(m.key, m.label, prob, o[m.key], hit);
+      ap.add(m.key, m.label, prob, cuotas[m.key], hit);
     }
   }
 
