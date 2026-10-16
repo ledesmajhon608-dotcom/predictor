@@ -267,11 +267,14 @@
     cfgBank.addEventListener('change', () => { guardarCfg(); render(); });
     cfgUnitPct.addEventListener('change', () => { guardarCfg(); render(); });
 
-    // Cada pick con cuota cargada se trata como una apuesta de 1U.
-    // Los picks sin resultado quedan como pendientes.
+    // Extrae DOS listas:
+    //  - conCuota: apuestas resueltas con cuota cargada (métricas financieras)
+    //  - sinCuota: apuestas resueltas sin cuota (solo aciertos)
+    // Además cuenta los pendientes.
     function extraerApuestas() {
       const arr = leerRegistro();
-      const apuestas = [];
+      const conCuota = [];
+      const sinCuota = [];
       let pendientes = 0;
 
       for (const e of arr) {
@@ -281,26 +284,41 @@
           : null;
 
         for (const m of MERCADOS) {
-          const cuota = e.cuotas ? e.cuotas[m.key] : null;
-          if (!Number.isFinite(cuota) || cuota <= 1) continue;
           const prob = m.p(e);
           if (!Number.isFinite(prob)) continue;
+
+          // Picks de córners sin marcador de córners → no se pueden evaluar
           if (m.corners && (!r || !Number.isFinite(r.corners))) continue;
 
-          if (!r) { pendientes++; continue; }
+          const cuota = e.cuotas ? e.cuotas[m.key] : null;
+          const tieneCuota = Number.isFinite(cuota) && cuota > 1;
+
+          if (!r) {
+            pendientes++;
+            continue;
+          }
 
           const hit = m.hit(r);
-          apuestas.push({
+          const base = {
             fecha: e.resuelto || e.creado || '',
             partido: e.local + ' vs ' + e.visitante,
             label: m.label,
-            cuota, prob, hit,
-          });
+            key: m.key,
+            prob: prob,
+            hit: hit,
+          };
+
+          if (tieneCuota) {
+            conCuota.push(Object.assign({}, base, { cuota: cuota }));
+          } else {
+            sinCuota.push(base);
+          }
         }
       }
 
-      apuestas.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
-      return { apuestas, pendientes };
+      conCuota.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+      sinCuota.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
+      return { conCuota: conCuota, sinCuota: sinCuota, pendientes: pendientes };
     }
 
     function calcularStats(apuestas, bank, unitPct) {
@@ -326,7 +344,7 @@
       const avgOdds = n > 0 ? sumOdds / n : 0;
       const units = unit > 0 ? profit / unit : 0;
 
-      return { n, wins, losses, staked, returned, profit, yieldPct, winRate, avgOdds, units, unit, equity, curva };
+      return { n: n, wins: wins, losses: losses, staked: staked, returned: returned, profit: profit, yieldPct: yieldPct, winRate: winRate, avgOdds: avgOdds, units: units, unit: unit, equity: equity, curva: curva };
     }
 
     function fmt(v, dec) {
@@ -340,11 +358,17 @@
       const bank = +cfgBank.value || 10000;
       const unitPct = +cfgUnitPct.value || 1;
 
-      const { apuestas, pendientes } = extraerApuestas();
+      const datos = extraerApuestas();
+      const conCuota = datos.conCuota;
+      const sinCuota = datos.sinCuota;
+      const pendientes = datos.pendientes;
+
       const empty = document.getElementById('dash-empty');
       const content = document.getElementById('dash-content');
 
-      if (apuestas.length === 0) {
+      const totalResueltas = conCuota.length + sinCuota.length;
+
+      if (totalResueltas === 0) {
         empty.style.display = 'block';
         content.style.display = 'none';
         const em = document.getElementById('empty-msg');
@@ -352,69 +376,130 @@
           em.innerHTML = 'Todavía no hay apuestas resueltas.<br><br>' +
             'Tenés <strong>' + pendientes + '</strong> apuestas pendientes de resultado.<br>' +
             'Cargá los resultados en el <a href="registro.html" style="color:var(--green);">registro</a> para ver el dashboard.';
+        } else {
+          em.innerHTML = 'Todavía no hay apuestas resueltas.<br><br>' +
+            'Guardá predicciones en la app, cargá sus resultados en el ' +
+            '<a href="registro.html" style="color:var(--green);">registro</a> y volvé acá.';
         }
         return;
       }
       empty.style.display = 'none';
       content.style.display = 'block';
 
-      const s = calcularStats(apuestas, bank, unitPct);
+      const hayCuotas = conCuota.length > 0;
 
-      const colTasa = s.winRate >= 55 ? 'green' : s.winRate >= 45 ? 'yellow' : 'red';
+      const s = hayCuotas
+        ? calcularStats(conCuota, bank, unitPct)
+        : { n: 0, wins: 0, losses: 0, staked: 0, returned: 0, profit: 0, yieldPct: 0, winRate: 0, avgOdds: 0, units: 0, unit: bank * unitPct / 100, equity: bank, curva: [] };
+
+      const todas = conCuota.concat(sinCuota);
+      const winsTotal = todas.filter(a => a.hit).length;
+      const lossTotal = todas.filter(a => !a.hit).length;
+      const totalConResultado = todas.length;
+      const winRateTotal = totalConResultado > 0 ? (winsTotal / totalConResultado) * 100 : 0;
+
+      // Tasa de acierto — siempre calculable
+      const colTasa = winRateTotal >= 55 ? 'green' : winRateTotal >= 45 ? 'yellow' : 'red';
       const elTasa = document.getElementById('s-tasa');
-      elTasa.textContent = s.winRate.toFixed(1) + '%';
+      elTasa.textContent = winRateTotal.toFixed(1) + '%';
       elTasa.className = 'stat-value ' + colTasa;
-      document.getElementById('s-tasa-sub').textContent = s.wins + 'W / ' + s.losses + 'L';
+      document.getElementById('s-tasa-sub').textContent = winsTotal + 'W / ' + lossTotal + 'L' + (hayCuotas ? '' : ' (sin cuotas)');
 
-      const colYield = s.yieldPct > 0 ? 'green' : s.yieldPct < 0 ? 'red' : 'yellow';
+      // Yield
       const elYield = document.getElementById('s-yield');
-      elYield.textContent = (s.yieldPct >= 0 ? '+' : '') + s.yieldPct.toFixed(2) + '%';
-      elYield.className = 'stat-value ' + colYield;
-      document.getElementById('s-yield-sub').textContent = s.yieldPct >= 0 ? '↗ Rentable' : '↘ No rentable';
+      if (hayCuotas) {
+        const colYield = s.yieldPct > 0 ? 'green' : s.yieldPct < 0 ? 'red' : 'yellow';
+        elYield.textContent = (s.yieldPct >= 0 ? '+' : '') + s.yieldPct.toFixed(2) + '%';
+        elYield.className = 'stat-value ' + colYield;
+        document.getElementById('s-yield-sub').textContent = s.yieldPct >= 0 ? '↗ Rentable' : '↘ No rentable';
+      } else {
+        elYield.textContent = '—';
+        elYield.className = 'stat-value';
+        document.getElementById('s-yield-sub').textContent = 'Falta cargar cuotas';
+      }
 
-      const colUnits = s.units > 0 ? 'green' : s.units < 0 ? 'red' : 'yellow';
+      // Unidades
       const elUnits = document.getElementById('s-units');
-      elUnits.textContent = (s.units >= 0 ? '+' : '') + s.units.toFixed(2) + 'U';
-      elUnits.className = 'stat-value ' + colUnits;
-      document.getElementById('s-units-sub').textContent = 'Stake: ' + s.unit.toFixed(2) + 'U';
+      if (hayCuotas) {
+        const colUnits = s.units > 0 ? 'green' : s.units < 0 ? 'red' : 'yellow';
+        elUnits.textContent = (s.units >= 0 ? '+' : '') + s.units.toFixed(2) + 'U';
+        elUnits.className = 'stat-value ' + colUnits;
+        document.getElementById('s-units-sub').textContent = 'Stake: ' + s.unit.toFixed(2) + 'U';
+      } else {
+        elUnits.textContent = '—';
+        elUnits.className = 'stat-value';
+        document.getElementById('s-units-sub').textContent = 'Requiere cuota';
+      }
 
+      // Cuota media
       const elOdds = document.getElementById('s-odds');
-      elOdds.textContent = s.avgOdds.toFixed(2);
-      elOdds.className = 'stat-value';
-      document.getElementById('s-odds-sub').textContent = 'Stake %: ' + unitPct.toFixed(1) + '%';
+      if (hayCuotas) {
+        elOdds.textContent = s.avgOdds.toFixed(2);
+        elOdds.className = 'stat-value';
+        document.getElementById('s-odds-sub').textContent = 'Stake %: ' + unitPct.toFixed(1) + '%';
+      } else {
+        elOdds.textContent = '—';
+        elOdds.className = 'stat-value';
+        document.getElementById('s-odds-sub').textContent = 'Ninguna cuota cargada';
+      }
 
+      // Banca
       document.getElementById('s-bank').textContent = fmt(bank, 0);
-      const elProfit = document.getElementById('s-profit');
-      elProfit.textContent = (s.profit >= 0 ? '+' : '') + fmt(s.profit, 2);
-      elProfit.className = 'stat-value ' + (s.profit >= 0 ? 'green' : 'red');
-      document.getElementById('s-saldo').textContent = fmt(s.equity, 2);
-      document.getElementById('s-saldo-sub').textContent = pendientes + ' pendientes';
-      document.getElementById('s-unit').textContent = fmt(s.unit, 2);
 
-      const pct = s.winRate;
+      // Beneficio
+      const elProfit = document.getElementById('s-profit');
+      if (hayCuotas) {
+        elProfit.textContent = (s.profit >= 0 ? '+' : '') + fmt(s.profit, 2);
+        elProfit.className = 'stat-value ' + (s.profit >= 0 ? 'green' : 'red');
+      } else {
+        elProfit.textContent = '—';
+        elProfit.className = 'stat-value';
+      }
+
+      // Saldo
+      document.getElementById('s-saldo').textContent = hayCuotas ? fmt(s.equity, 2) : fmt(bank, 2);
+      document.getElementById('s-saldo-sub').textContent = pendientes + ' pendientes · ' + sinCuota.length + ' sin cuota';
+
+      // 1U
+      document.getElementById('s-unit').textContent = fmt(bank * unitPct / 100, 2);
+
+      // Donut
+      const pct = winRateTotal;
       const circ = 2 * Math.PI * 60;
       document.getElementById('donut-arc').setAttribute(
         'stroke-dasharray',
         (pct / 100 * circ).toFixed(2) + ' ' + circ.toFixed(2)
       );
       document.getElementById('donut-pct').textContent = Math.round(pct) + '%';
-      document.getElementById('dl-win').textContent = s.wins;
-      document.getElementById('dl-loss').textContent = s.losses;
+      document.getElementById('dl-win').textContent = winsTotal;
+      document.getElementById('dl-loss').textContent = lossTotal;
       document.getElementById('dl-pend').textContent = pendientes;
 
       dibujarChart(s.curva, bank);
 
+      // Tabla de últimas apuestas
       const body = document.getElementById('bets-body');
-      const ultimas = apuestas.slice(-20).reverse();
+      const ultimas = conCuota.concat(sinCuota)
+        .sort((a, b) => (b.fecha || '').localeCompare(a.fecha || ''))
+        .slice(0, 20);
+
       body.innerHTML = ultimas.map(a => {
         const cls = a.hit ? 'win' : 'loss';
-        const stakeTxt = '-1.00U';
-        const retTxt = a.hit ? '+' + (a.cuota - 1).toFixed(2) + 'U' : '-1.00U';
-        const colRet = a.hit ? 'green' : 'red';
+        const cuotaTxt = Number.isFinite(a.cuota) ? a.cuota.toFixed(2) : '<span style="color:var(--text-faint);">—</span>';
+        let stakeTxt, retTxt, colRet;
+        if (Number.isFinite(a.cuota)) {
+          stakeTxt = '-1.00U';
+          retTxt = a.hit ? '+' + (a.cuota - 1).toFixed(2) + 'U' : '-1.00U';
+          colRet = a.hit ? 'green' : 'red';
+        } else {
+          stakeTxt = '—';
+          retTxt = a.hit ? '✓' : '✗';
+          colRet = a.hit ? 'green' : 'red';
+        }
         return '<tr class="' + cls + '">' +
           '<td>' + a.partido + '</td>' +
           '<td>' + a.label + '</td>' +
-          '<td class="num">' + a.cuota.toFixed(2) + '</td>' +
+          '<td class="num">' + cuotaTxt + '</td>' +
           '<td class="num">' + a.prob.toFixed(1) + '%</td>' +
           '<td class="num">' + stakeTxt + '</td>' +
           '<td class="num ' + colRet + '">' + retTxt + '</td>' +
@@ -424,6 +509,13 @@
 
     function dibujarChart(curva, bank) {
       const cont = document.getElementById('chart-container');
+      if (!curva || curva.length < 2) {
+        cont.innerHTML = '<p style="color:var(--text-dim); font-size:0.82rem; text-align:center; padding:40px 12px; margin:0;">' +
+          'Sin apuestas con cuota cargada.<br>El gráfico aparece cuando cargues la cuota de al menos una apuesta resuelta.' +
+        '</p>';
+        return;
+      }
+
       const W = 560, H = 220, P = { t: 10, r: 12, b: 28, l: 56 };
       const w = W - P.l - P.r, h = H - P.t - P.b;
 
