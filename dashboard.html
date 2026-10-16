@@ -1,3 +1,248 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — Suertudo</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .dash-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    @media (max-width: 720px) { .dash-grid { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 400px) { .dash-grid { grid-template-columns: 1fr; } }
+
+    .stat-card {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px 12px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      min-height: 104px;
+    }
+    .stat-card .stat-icon { font-size: 1rem; margin-bottom: 4px; opacity: 0.85; }
+    .stat-card .stat-value {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.35rem;
+      font-weight: 600;
+      line-height: 1.1;
+      margin-bottom: 4px;
+    }
+    .stat-card .stat-label {
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      line-height: 1.3;
+    }
+    .stat-card .stat-sub {
+      font-size: 0.66rem;
+      color: var(--text-faint);
+      margin-top: 2px;
+      font-family: 'IBM Plex Mono', monospace;
+    }
+    .green  { color: var(--green); }
+    .yellow { color: var(--yellow); }
+    .red    { color: var(--red); }
+
+    .dash-row { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 16px; }
+    @media (max-width: 720px) { .dash-row { grid-template-columns: 1fr; } }
+
+    .chart-card {
+      background: linear-gradient(180deg, var(--surface) 0%, var(--surface-2) 100%);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+    }
+    .chart-card h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 14px; }
+
+    .donut-wrap {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      padding: 8px 0;
+    }
+    .donut { width: 130px; height: 130px; position: relative; }
+    .donut svg { transform: rotate(-90deg); display: block; }
+    .donut-center {
+      position: absolute; inset: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 1.5rem; font-weight: 600;
+    }
+    .donut-legend { display: flex; gap: 12px; font-size: 0.72rem; flex-wrap: wrap; justify-content: center; }
+    .donut-legend .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 4px; vertical-align: middle; }
+
+    .bets-table { width: 100%; font-size: 0.78rem; border-collapse: collapse; }
+    .bets-table th, .bets-table td {
+      text-align: left; padding: 8px 6px;
+      border-bottom: 1px solid var(--line-soft);
+    }
+    .bets-table th {
+      font-size: 0.66rem; text-transform: uppercase;
+      color: var(--text-dim); font-weight: 500; letter-spacing: 0.05em;
+    }
+    .bets-table td.num { font-family: 'IBM Plex Mono', monospace; text-align: right; }
+    .bets-table tr.win td:first-child  { border-left: 3px solid var(--green); padding-left: 9px; }
+    .bets-table tr.loss td:first-child { border-left: 3px solid var(--red);   padding-left: 9px; }
+
+    .config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 520px) { .config-row { grid-template-columns: 1fr; } }
+
+    .empty-msg { text-align: center; padding: 40px 20px; color: var(--text-dim); font-size: 0.9rem; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="container" style="max-width: 920px;">
+
+    <header class="hero">
+      <h1>Dashboard</h1>
+      <p class="tagline">Rendimiento real de tus predicciones.</p>
+    </header>
+
+    <section class="panel">
+      <h2 class="panel-title">Configuración de banca</h2>
+      <div class="config-row">
+        <div class="field">
+          <label for="cfg-bank">Banca inicial</label>
+          <input type="number" id="cfg-bank" value="10000" min="1" step="100">
+        </div>
+        <div class="field">
+          <label for="cfg-unit-pct">Valor de 1U (% de la banca)</label>
+          <input type="number" id="cfg-unit-pct" value="1" min="0.1" max="10" step="0.1">
+        </div>
+      </div>
+      <p style="font-size:0.72rem; color:var(--text-dim); margin-top:6px;">
+        Cada pick del registro que tenga cuota cargada se cuenta como una apuesta de 1U.
+      </p>
+    </section>
+
+    <section id="dash-empty" class="panel" style="display:none;">
+      <p class="empty-msg" id="empty-msg">
+        Todavía no hay apuestas resueltas.<br><br>
+        Guardá predicciones en la app, cargá sus resultados en el
+        <a href="registro.html" style="color:var(--green);">registro</a> y volvé acá.
+      </p>
+    </section>
+
+    <section id="dash-content" style="display:none;">
+
+      <div class="dash-grid">
+        <div class="stat-card">
+          <div class="stat-icon">●</div>
+          <div class="stat-value" id="s-tasa">—</div>
+          <div class="stat-label">Tasa de Acierto</div>
+          <div class="stat-sub" id="s-tasa-sub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">%</div>
+          <div class="stat-value" id="s-yield">—</div>
+          <div class="stat-label">Yield</div>
+          <div class="stat-sub" id="s-yield-sub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💰</div>
+          <div class="stat-value" id="s-units">—</div>
+          <div class="stat-label">Unidades</div>
+          <div class="stat-sub" id="s-units-sub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-value" id="s-odds">—</div>
+          <div class="stat-label">Cuota Media</div>
+          <div class="stat-sub" id="s-odds-sub">—</div>
+        </div>
+      </div>
+
+      <div class="dash-grid">
+        <div class="stat-card">
+          <div class="stat-icon">💵</div>
+          <div class="stat-value" id="s-bank">—</div>
+          <div class="stat-label">Banca Inicial</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📈</div>
+          <div class="stat-value green" id="s-profit">—</div>
+          <div class="stat-label">Beneficio</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💼</div>
+          <div class="stat-value" id="s-saldo">—</div>
+          <div class="stat-label">Saldo</div>
+          <div class="stat-sub" id="s-saldo-sub">—</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">🎯</div>
+          <div class="stat-value" id="s-unit">—</div>
+          <div class="stat-label">1U =</div>
+        </div>
+      </div>
+
+      <div class="dash-row">
+        <div class="chart-card">
+          <h3>Beneficio acumulado</h3>
+          <div id="chart-container"></div>
+        </div>
+        <div class="chart-card">
+          <h3>Rendimiento</h3>
+          <div class="donut-wrap">
+            <div class="donut">
+              <svg viewBox="0 0 140 140">
+                <circle cx="70" cy="70" r="60" fill="none" stroke="var(--line)" stroke-width="10"/>
+                <circle id="donut-arc" cx="70" cy="70" r="60" fill="none" stroke="var(--green)" stroke-width="10"
+                        stroke-linecap="round" stroke-dasharray="0 377"/>
+              </svg>
+              <div class="donut-center" id="donut-pct">—</div>
+            </div>
+            <div class="donut-legend">
+              <span><span class="dot" style="background:var(--green)"></span><span id="dl-win">0</span> Ganadas</span>
+              <span><span class="dot" style="background:var(--red)"></span><span id="dl-loss">0</span> Perdidas</span>
+              <span><span class="dot" style="background:var(--text-dim)"></span><span id="dl-pend">0</span> Pendientes</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chart-card" style="margin-bottom:16px;">
+        <h3>Últimas apuestas resueltas</h3>
+        <div style="overflow-x:auto;">
+          <table class="bets-table">
+            <thead>
+              <tr>
+                <th>Partido</th>
+                <th>Mercado</th>
+                <th class="num">Cuota</th>
+                <th class="num">Prob</th>
+                <th class="num">Stake</th>
+                <th class="num">Retorno</th>
+              </tr>
+            </thead>
+            <tbody id="bets-body"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel">
+      <h2 class="panel-title">Navegación</h2>
+      <div class="tools-list">
+        <a href="index.html">🏠 Volver al inicio</a>
+        <a href="registro.html">📝 Registro</a>
+      </div>
+    </section>
+
+  </div>
+
+  <script type="module">
     import { leerRegistro, MERCADOS } from './registro.js';
 
     const CFG_KEY = 'suertudo_dashboard_cfg';
@@ -25,11 +270,6 @@
     cfgBank.addEventListener('change', () => { guardarCfg(); render(); });
     cfgUnitPct.addEventListener('change', () => { guardarCfg(); render(); });
 
-    // Extrae TODAS las apuestas (con y sin cuota).
-    // Regla de cuota:
-    //   1. e.cuotas[key] si existe
-    //   2. e.apuesta.cuota al pick tildado de mayor EV (o al único tildado)
-    //   3. null (cuenta para acierto, no para rentabilidad)
     function extraerApuestas() {
       const arr = leerRegistro();
       const todas = [];
@@ -102,7 +342,6 @@
       return { todas: todas, pendientes: pendientes };
     }
 
-    // Métricas financieras solo sobre las que tienen cuota.
     function calcularStats(apuestasConCuota, bank, unitPct) {
       const unit = bank * unitPct / 100;
       const n = apuestasConCuota.length;
@@ -165,23 +404,19 @@
       empty.style.display = 'none';
       content.style.display = 'block';
 
-      // Separar en dos sets: las que aportan al dinero y las que no.
       const conCuota = todas.filter(a => Number.isFinite(a.cuota));
       const sinCuota = todas.filter(a => !Number.isFinite(a.cuota));
       const hayCuotas = conCuota.length > 0;
 
-      // Métricas financieras solo de conCuota.
       const s = hayCuotas
         ? calcularStats(conCuota, bank, unitPct)
         : { n: 0, wins: 0, losses: 0, staked: 0, returned: 0, profit: 0, yieldPct: 0, winRate: 0, avgOdds: 0, units: 0, unit: bank * unitPct / 100, equity: bank, curva: [] };
 
-      // Aciertos sobre TODAS las apuestas resueltas (con + sin cuota).
       const winsTotal = todas.filter(a => a.hit).length;
       const lossTotal = todas.filter(a => !a.hit).length;
       const totalConResultado = todas.length;
       const winRateTotal = totalConResultado > 0 ? (winsTotal / totalConResultado) * 100 : 0;
 
-      // ---------- Tarjetas ----------
       const colTasa = winRateTotal >= 55 ? 'green' : winRateTotal >= 45 ? 'yellow' : 'red';
       const elTasa = document.getElementById('s-tasa');
       elTasa.textContent = winRateTotal.toFixed(1) + '%';
@@ -240,7 +475,6 @@
 
       document.getElementById('s-unit').textContent = fmt(bank * unitPct / 100, 2);
 
-      // ---------- Donut ----------
       const circ = 2 * Math.PI * 60;
       document.getElementById('donut-arc').setAttribute(
         'stroke-dasharray',
@@ -251,11 +485,8 @@
       document.getElementById('dl-loss').textContent = lossTotal;
       document.getElementById('dl-pend').textContent = pendientes;
 
-      // ---------- Chart ----------
       dibujarChart(s.curva, bank);
 
-      // ---------- Tabla ----------
-      // Mostrar TODAS las apuestas (con y sin cuota) para que matchee el donut.
       const body = document.getElementById('bets-body');
       const ultimas = todas
         .slice()
@@ -346,3 +577,6 @@
 
     cargarCfg();
     render();
+  </script>
+</body>
+</html>
