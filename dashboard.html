@@ -86,6 +86,7 @@
     .bets-table th, .bets-table td {
       text-align: left; padding: 8px 6px;
       border-bottom: 1px solid var(--line-soft);
+      vertical-align: top;
     }
     .bets-table th {
       font-size: 0.66rem; text-transform: uppercase;
@@ -94,6 +95,18 @@
     .bets-table td.num { font-family: 'IBM Plex Mono', monospace; text-align: right; }
     .bets-table tr.win td:first-child  { border-left: 3px solid var(--green); padding-left: 9px; }
     .bets-table tr.loss td:first-child { border-left: 3px solid var(--red);   padding-left: 9px; }
+
+    .badge-combi {
+      display: inline-block;
+      font-size: 0.62rem;
+      font-family: 'IBM Plex Mono', monospace;
+      padding: 1px 5px;
+      border-radius: 3px;
+      background: rgba(255, 183, 0, 0.15);
+      color: var(--yellow);
+      margin-left: 4px;
+      vertical-align: middle;
+    }
 
     .config-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
     @media (max-width: 520px) { .config-row { grid-template-columns: 1fr; } }
@@ -122,7 +135,7 @@
         </div>
       </div>
       <p style="font-size:0.72rem; color:var(--text-dim); margin-top:6px;">
-        Cada pick del registro que tenga cuota cargada se cuenta como una apuesta de 1U.
+        Cada entrada del registro = una apuesta. Si tiene 2+ mercados tildados, se cuenta como combinada.
       </p>
     </section>
 
@@ -219,7 +232,7 @@
             <thead>
               <tr>
                 <th>Partido</th>
-                <th>Mercado</th>
+                <th>Mercado(s)</th>
                 <th class="num">Cuota</th>
                 <th class="num">Prob</th>
                 <th class="num">Stake</th>
@@ -270,6 +283,10 @@
     cfgBank.addEventListener('change', () => { guardarCfg(); render(); });
     cfgUnitPct.addEventListener('change', () => { guardarCfg(); render(); });
 
+    // Cada entrada del registro = UNA apuesta.
+    //  - 1 pick tildado  → apuesta simple
+    //  - 2+ picks tildados → combinada (gana solo si TODOS aciertan)
+    // La cuota se toma de e.apuesta.cuota (o e.cuotas[key] si existe).
     function extraerApuestas() {
       const arr = leerRegistro();
       const todas = [];
@@ -287,55 +304,71 @@
         const cuotaGlobal = e.apuesta && Number.isFinite(e.apuesta.cuota) && e.apuesta.cuota > 1
           ? e.apuesta.cuota : null;
 
-        let pickConCuotaGlobal = null;
-        if (cuotaGlobal != null) {
-          if (picksTildados.length === 1) {
-            pickConCuotaGlobal = picksTildados[0];
-          } else {
-            let mejorEV = -Infinity;
-            for (const key of picksTildados) {
-              const m = MERCADO_POR_KEY[key];
-              if (!m) continue;
-              const prob = m.p(e);
-              if (!Number.isFinite(prob)) continue;
-              const ev = (prob / 100) * cuotaGlobal;
-              if (ev > mejorEV) { mejorEV = ev; pickConCuotaGlobal = key; }
-            }
-          }
-        }
-
+        // Recopilar las legs válidas
+        const legs = [];
+        let skip = false;
         for (const key of picksTildados) {
           const m = MERCADO_POR_KEY[key];
           if (!m) continue;
-
           const prob = m.p(e);
           if (!Number.isFinite(prob)) continue;
-          if (m.corners && (!r || !Number.isFinite(r.corners))) continue;
+          if (m.corners && (!r || !Number.isFinite(r.corners))) { skip = true; break; }
 
-          let cuota = null;
+          // Cuota por leg (si está en e.cuotas) — si no, se usará la global para la combinada
+          let cuotaLeg = null;
           if (e.cuotas && Number.isFinite(e.cuotas[key]) && e.cuotas[key] > 1) {
-            cuota = e.cuotas[key];
-          } else if (cuotaGlobal != null && key === pickConCuotaGlobal) {
-            cuota = cuotaGlobal;
+            cuotaLeg = e.cuotas[key];
           }
 
-          const base = {
-            fecha: e.resuelto || e.creado || '',
-            partido: e.local + ' vs ' + e.visitante,
-            label: m.label,
+          legs.push({
             key: key,
+            label: m.label,
             prob: prob,
-            cuota: cuota,
-          };
-
-          if (!r) {
-            pendientes++;
-            continue;
-          }
-
-          base.hit = m.hit(r);
-          todas.push(base);
+            cuota: cuotaLeg,
+            hit: r ? m.hit(r) : null,
+          });
         }
+        if (skip || legs.length === 0) continue;
+
+        const esCombinada = legs.length > 1;
+        const labelFinal = esCombinada
+          ? legs.map(l => l.label).join(' + ')
+          : legs[0].label;
+
+        // Probabilidad de la combinada = producto de legs
+        const probFinal = esCombinada
+          ? +(legs.reduce((acc, l) => acc * (l.prob / 100), 1) * 100).toFixed(1)
+          : legs[0].prob;
+
+        // Cuota final: si es combinada, la global (o el producto de cuotas por leg)
+        let cuotaFinal = cuotaGlobal;
+        if (cuotaFinal == null && esCombinada && legs.every(l => Number.isFinite(l.cuota))) {
+          cuotaFinal = +legs.reduce((acc, l) => acc * l.cuota, 1).toFixed(2);
+        } else if (cuotaFinal == null && !esCombinada) {
+          cuotaFinal = legs[0].cuota;
+        }
+
+        const base = {
+          fecha: e.resuelto || e.creado || '',
+          partido: e.local + ' vs ' + e.visitante,
+          label: labelFinal,
+          esCombinada: esCombinada,
+          nLegs: legs.length,
+          prob: probFinal,
+          cuota: cuotaFinal,
+        };
+
+        if (!r) {
+          pendientes++;
+          continue;
+        }
+
+        // Acierto: combinada requiere que TODAS las legs acierten
+        base.hit = esCombinada
+          ? legs.every(l => l.hit)
+          : legs[0].hit;
+
+        todas.push(base);
       }
 
       todas.sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
@@ -507,9 +540,12 @@
           retTxt = a.hit ? '✓' : '✗';
           colRet = a.hit ? 'green' : 'red';
         }
+        const badge = a.esCombinada
+          ? '<span class="badge-combi">COMBI x' + a.nLegs + '</span>'
+          : '';
         return '<tr class="' + cls + '">' +
           '<td>' + a.partido + '</td>' +
-          '<td>' + a.label + '</td>' +
+          '<td>' + a.label + badge + '</td>' +
           '<td class="num">' + cuotaTxt + '</td>' +
           '<td class="num">' + a.prob.toFixed(1) + '%</td>' +
           '<td class="num">' + stakeTxt + '</td>' +
