@@ -1,5 +1,5 @@
 // registro.js
-// v5: leer e.apuesta.cuota además de e.cuotas[key] para que el análisis funcione.
+// v6: MERCADOS cubre todo lo que genera picks.js (under15, under25, c_over95); antes se perdían al guardar.
 
 import { FILTRO_EV } from './leagues.js';
 
@@ -178,12 +178,15 @@ export const MERCADOS = [
   { key: 'over15', label: 'Más de 1.5 goles', p: e => e.prob?.over15, hit: r => r.gl + r.gv > 1.5 },
   { key: 'over25', label: 'Más de 2.5 goles', p: e => e.prob?.over25, hit: r => r.gl + r.gv > 2.5 },
   { key: 'over35', label: 'Más de 3.5 goles', p: e => e.prob?.over35, hit: r => r.gl + r.gv > 3.5 },
+  { key: 'under15', label: 'Menos de 1.5 goles', p: e => 100 - e.prob?.over15, hit: r => r.gl + r.gv < 1.5 },
+  { key: 'under25', label: 'Menos de 2.5 goles', p: e => 100 - e.prob?.over25, hit: r => r.gl + r.gv < 2.5 },
   { key: 'under35', label: 'Menos de 3.5 goles', p: e => 100 - e.prob?.over35, hit: r => r.gl + r.gv < 3.5 },
   { key: 'under45', label: 'Menos de 4.5 goles', p: e => 100 - e.prob?.over45, hit: r => r.gl + r.gv < 4.5 },
   { key: 'bttsSi', label: 'BTTS Sí', p: e => e.prob?.btts, hit: r => r.gl > 0 && r.gv > 0 },
   { key: 'bttsNo', label: 'BTTS No', p: e => 100 - e.prob?.btts, hit: r => !(r.gl > 0 && r.gv > 0) },
   { key: 'c_over75', label: 'Más de 7.5 córners', corners: true, p: e => e.corners?.over7, hit: r => r.corners > 7.5 },
   { key: 'c_over85', label: 'Más de 8.5 córners', corners: true, p: e => e.corners?.over8, hit: r => r.corners > 8.5 },
+  { key: 'c_over95', label: 'Más de 9.5 córners', corners: true, p: e => e.corners?.over9, hit: r => r.corners > 9.5 },
   { key: 'c_under95', label: 'Menos de 9.5 córners', corners: true, p: e => 100 - e.corners?.over9, hit: r => r.corners < 9.5 },
   { key: 'c_under105', label: 'Menos de 10.5 córners', corners: true, p: e => 100 - e.corners?.over10, hit: r => r.corners < 10.5 },
 ];

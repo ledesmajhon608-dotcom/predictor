@@ -1,20 +1,14 @@
 // picks.js
-// v6: suprime el 1X2 individual cuando el favorito no llega al 60% y hay
-// una doble oportunidad (1X / X2) disponible con probabilidad >= umbralDC.
-//
-// Lógica nueva:
-//   1. Se calculan primero las probabilidades de 1X2 y de las DC.
-//   2. Si max1x2 < 60% Y existe alguna DC >= umbralDC → se agrega SOLO la DC.
-//   3. Si no hay DC o el favorito >= 60% → se agrega el 1X2 como antes.
-//
-// El umbral "1X2 alto" es configurable por liga vía umbral1x2Alto en
-// UMBRALES_POR_LIGA (si no está definido, usa 60).
+// v7:
+//  - Whitelist EXACTA (antes 'includes' dejaba pasar 1X2 si la liga tenía solo 1X/X2).
+//  - Córners, Unders y BTTS No ahora respetan la whitelist.
+//  - generarPicks(data, liga, { ignorarConfig }) para analizar ligas rojas con la MISMA política.
+//  - hitPick / ODDS_CAMPO compartidos con backtest.js y analizar-liga.html.
+//  - valorPick (EV + Kelly/4) y mezclarConMercado (modelo + cuota sin margen).
 
-import { LIGAS, getUmbrales, SHRINK_ALPHA, FILTRO_EV, KELLY_FRACTION, STAKE_MAX_PCT, getFiltroEV } from './leagues.js';
+import { LIGAS, getUmbrales, SHRINK_ALPHA, KELLY_FRACTION, STAKE_MAX_PCT, getFiltroEV } from './leagues.js';
 import { shrinkHaciaBase } from './calibrate.js';
 
-// Umbral por defecto para el 1X2 "alto". Si la liga define umbral1x2Alto
-// en leagues.js, se respeta ese valor.
 const UMBRAL_1X2_ALTO_DEFAULT = 60;
 
 export function getBettingConfig(ligaKey) {
@@ -22,18 +16,26 @@ export function getBettingConfig(ligaKey) {
   return liga?.betting || { status: 'unknown' };
 }
 
+// ---------- whitelist exacta ----------
+function norm(s) {
+  return String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+const ALIAS_WL = {
+  'btts': 'btts si',                 // compat: 'BTTS' = solo el lado Sí
+  'corners totales': 'corners',
+  'doble oportunidad': 'dc', 'doble': 'dc',
+};
+function normMercado(m) { const n = norm(m); return ALIAS_WL[n] || n; }
+
 export function esMercadoValido(ligaKey, mercado) {
   const config = getBettingConfig(ligaKey);
   if (config.status !== 'green' && config.status !== 'yellow') return false;
-  if (!config.mercados) return false;
-  return config.mercados.some(m => mercado.includes(m) || m.includes(mercado));
-}
-
-function esMercadoDCValido(ligaKey) {
-  const config = getBettingConfig(ligaKey);
-  if (config.status !== 'green' && config.status !== 'yellow') return false;
-  if (!config.mercados || config.mercados.length === 0) return false;
-  return config.mercados.some(m => /1X2|1X|X2|DC|doble/i.test(m));
+  if (!Array.isArray(config.mercados) || config.mercados.length === 0) return false;
+  const wl = new Set(config.mercados.map(normMercado));
+  const m = normMercado(mercado);
+  if (wl.has(m)) return true;
+  if ((m === '1x' || m === 'x2') && wl.has('dc')) return true;
+  return false;
 }
 
 export function aplicarShrink(resultProbs, tasas, alpha = SHRINK_ALPHA) {
@@ -68,69 +70,118 @@ export function cuotaMinima(probPct, mercado = 'default') {
   return Math.ceil((filtro / (probPct / 100)) * 100 - 1e-9) / 100;
 }
 
-export function generarPicks(data, ligaKey) {
+// EV contra el filtro del mercado + Kelly/4 (solo si pasa el filtro).
+export function valorPick(probPct, cuota, mercado = 'default') {
+  const filtro = getFiltroEV(mercado);
+  const ev = calcEV(probPct, cuota);
+  if (ev == null) return { ev: null, filtro, pasa: false, kelly: null };
+  const pasa = ev > filtro;
+  return { ev: +ev.toFixed(3), filtro, pasa, kelly: pasa ? stakeKelly(probPct, cuota) : null };
+}
+
+// ---------- cuota sin margen y mezcla con el modelo ----------
+export function devigar3(a, b, c) {
+  if (![a, b, c].every(v => Number.isFinite(v) && v > 1)) return null;
+  const pa = 1 / a, pb = 1 / b, pc = 1 / c, s = pa + pb + pc;
+  return [(pa / s) * 100, (pb / s) * 100, (pc / s) * 100];
+}
+
+export function mezclarConMercado(resultProbs, cuotas, w) {
+  const peso = Number.isFinite(w) ? Math.min(1, Math.max(0, w)) : 0;
+  const m = devigar3(cuotas?.local, cuotas?.empate, cuotas?.visitante);
+  if (!m || peso === 0) return { resultProbs, mercado: m, aplicado: false, w: peso };
+  const L = (1 - peso) * resultProbs.local + peso * m[0];
+  const E = (1 - peso) * resultProbs.empate + peso * m[1];
+  const V = (1 - peso) * resultProbs.visitante + peso * m[2];
+  const s = L + E + V;
+  return {
+    resultProbs: {
+      local: +(L / s * 100).toFixed(1),
+      empate: +(E / s * 100).toFixed(1),
+      visitante: +(V / s * 100).toFixed(1),
+    },
+    mercado: m, aplicado: true, w: peso,
+  };
+}
+
+// ---------- resultado real de cada pick (compartido con backtest/analizar) ----------
+export const ODDS_CAMPO = {
+  local: 'odds_local', empate: 'odds_empate', visitante: 'odds_visitante',
+  over15: 'odds_over15', over25: 'odds_over25', over35: 'odds_over35',
+  under15: 'odds_under15', under25: 'odds_under25', under35: 'odds_under35',
+  bttsSi: 'odds_btts_si', bttsNo: 'odds_btts_no',
+};
+
+// real = { gl, gv, corners } → true / false / null (sin dato)
+export function hitPick(key, real) {
+  if (!real || !Number.isFinite(real.gl) || !Number.isFinite(real.gv)) return null;
+  const { gl, gv } = real, t = gl + gv;
+  const cn = Number.isFinite(real.corners) ? real.corners : null;
+  switch (key) {
+    case 'local': return gl > gv;
+    case 'empate': return gl === gv;
+    case 'visitante': return gl < gv;
+    case 'dc1X': return gl >= gv;
+    case 'dcX2': return gl <= gv;
+    case 'over15': return t > 1.5;
+    case 'over25': return t > 2.5;
+    case 'over35': return t > 3.5;
+    case 'under15': return t < 1.5;
+    case 'under25': return t < 2.5;
+    case 'under35': return t < 3.5;
+    case 'bttsSi': return gl > 0 && gv > 0;
+    case 'bttsNo': return !(gl > 0 && gv > 0);
+    case 'c_over75': return cn == null ? null : cn > 7.5;
+    case 'c_over85': return cn == null ? null : cn > 8.5;
+    case 'c_over95': return cn == null ? null : cn > 9.5;
+    default: return null;
+  }
+}
+
+// ---------- generador de picks (política única para app, backtest y análisis) ----------
+export function generarPicks(data, ligaKey, { ignorarConfig = false } = {}) {
   const picks = [];
-  const config = getBettingConfig(ligaKey);
-  if (config.status === 'red') return [];
+  if (!ignorarConfig && getBettingConfig(ligaKey).status === 'red') return [];
   if (data.sinRating && data.sinRating.length > 0) return [];
 
+  const permite = (mercado) => ignorarConfig || esMercadoValido(ligaKey, mercado);
   const U = getUmbrales(ligaKey);
   const rp = data.resultProbs;
 
-  // ---------- Cálculo previo: 1X2 y DC ----------
   const max1x2 = Math.max(rp.local, rp.empate, rp.visitante);
   const dc1X = +(rp.local + rp.empate).toFixed(1);
   const dcX2 = +(rp.empate + rp.visitante).toFixed(1);
   const umbralDC = U.umbralDC ?? 68;
   const umbral1x2Alto = U.umbral1x2Alto ?? UMBRAL_1X2_ALTO_DEFAULT;
 
-  // ¿Hay alguna DC que pase el umbral Y la liga la permita?
-  const permiteDC = esMercadoDCValido(ligaKey);
-  const dcDisponible = permiteDC && (dc1X >= umbralDC || dcX2 >= umbralDC);
+  const dc1XOk = dc1X >= umbralDC && permite('1X');
+  const dcX2Ok = dcX2 >= umbralDC && permite('X2');
+  const dcDisponible = dc1XOk || dcX2Ok;
 
-  // ---------- 1X2 individual ----------
-  // Se agrega SOLO si:
-  //   - supera el umbral1x2 normal (50% típico), Y
-  //   - supera el umbral1x2 alto (60%), O no hay DC disponible.
-  if (max1x2 >= U.umbral1x2 && esMercadoValido(ligaKey, '1X2')) {
-    const pasaAlto = max1x2 >= umbral1x2Alto;
-    const debeMostrar1x2 = pasaAlto || !dcDisponible;
-
-    if (debeMostrar1x2) {
-      if (rp.local === max1x2) {
-        picks.push({ key: 'local', label: 'Local gana', prob: rp.local, mercado: '1X2' });
-      } else if (rp.empate === max1x2) {
-        picks.push({ key: 'empate', label: 'Empate', prob: rp.empate, mercado: '1X2' });
-      } else {
-        picks.push({ key: 'visitante', label: 'Visitante gana', prob: rp.visitante, mercado: '1X2' });
-      }
+  // 1X2: se suprime si el favorito no llega al umbral alto y hay una DC disponible.
+  if (max1x2 >= U.umbral1x2 && permite('1X2')) {
+    if (max1x2 >= umbral1x2Alto || !dcDisponible) {
+      if (rp.local === max1x2) picks.push({ key: 'local', label: 'Local gana', prob: rp.local, mercado: '1X2' });
+      else if (rp.empate === max1x2) picks.push({ key: 'empate', label: 'Empate', prob: rp.empate, mercado: '1X2' });
+      else picks.push({ key: 'visitante', label: 'Visitante gana', prob: rp.visitante, mercado: '1X2' });
     }
   }
 
-  // ---------- Doble oportunidad 1X / X2 ----------
-  if (permiteDC) {
-    if (dc1X >= umbralDC) {
-      picks.push({ key: 'dc1X', label: 'Local o Empate (1X)', prob: dc1X, mercado: '1X' });
-    }
-    if (dcX2 >= umbralDC) {
-      picks.push({ key: 'dcX2', label: 'Empate o Visitante (X2)', prob: dcX2, mercado: 'X2' });
-    }
-  }
+  if (dc1XOk) picks.push({ key: 'dc1X', label: 'Local o Empate (1X)', prob: dc1X, mercado: '1X' });
+  if (dcX2Ok) picks.push({ key: 'dcX2', label: 'Empate o Visitante (X2)', prob: dcX2, mercado: 'X2' });
 
-  // ---------- Overs ----------
   const overs = [
     { key: 'over35', label: 'Over 3.5 goles', prob: data.over35, mercado: 'Over 3.5' },
     { key: 'over25', label: 'Over 2.5 goles', prob: data.over25, mercado: 'Over 2.5' },
     { key: 'over15', label: 'Over 1.5 goles', prob: data.over15, mercado: 'Over 1.5' },
   ];
   for (const l of overs) {
-    if (l.prob != null && l.prob >= U.umbralGoles && esMercadoValido(ligaKey, l.mercado)) {
+    if (l.prob != null && l.prob >= U.umbralGoles && permite(l.mercado)) {
       picks.push({ key: l.key, label: l.label, prob: l.prob, mercado: l.mercado });
       break;
     }
   }
 
-  // ---------- Unders ----------
   const under15 = data.under15 ?? (data.over15 != null ? 100 - data.over15 : null);
   const under25 = data.under25 ?? (data.over25 != null ? 100 - data.over25 : null);
   const under35 = data.under35 ?? (data.over35 != null ? 100 - data.over35 : null);
@@ -140,26 +191,23 @@ export function generarPicks(data, ligaKey) {
     { key: 'under35', label: 'Under 3.5 goles', prob: under35, mercado: 'Under 3.5', umbral: 72 },
   ];
   for (const l of unders) {
-    if (l.prob != null && l.prob >= l.umbral && esMercadoValido(ligaKey, l.mercado)) {
+    if (l.prob != null && l.prob >= l.umbral && permite(l.mercado)) {
       picks.push({ key: l.key, label: l.label, prob: l.prob, mercado: l.mercado });
       break;
     }
   }
 
-  // ---------- BTTS ----------
-  // Simétrico: cada lado con el mismo umbral aplicado a su propia probabilidad.
-  if (data.btts != null && esMercadoValido(ligaKey, 'BTTS')) {
-    if (data.btts >= U.umbralBtss) {
+  if (data.btts != null) {
+    if (data.btts >= U.umbralBtss && permite('BTTS Sí')) {
       picks.push({ key: 'bttsSi', label: 'Ambos marcan (Sí)', prob: data.btts, mercado: 'BTTS Sí' });
     }
     const bttsNoProb = 100 - data.btts;
-    if (bttsNoProb >= U.umbralBtss) {
+    if (bttsNoProb >= U.umbralBtss && permite('BTTS No')) {
       picks.push({ key: 'bttsNo', label: 'Ambos marcan (No)', prob: bttsNoProb, mercado: 'BTTS No' });
     }
   }
 
-  // ---------- Córners ----------
-  if (data.cornerProbs && LIGAS[ligaKey]?.markets?.corn !== false) {
+  if (data.cornerProbs && LIGAS[ligaKey]?.markets?.corn !== false && permite('Córners')) {
     const lineasCorners = [
       { key: 'c_over95', label: 'Over 9.5 córners', prob: data.cornerProbs.over9, mercado: 'Córners' },
       { key: 'c_over85', label: 'Over 8.5 córners', prob: data.cornerProbs.over8, mercado: 'Córners' },

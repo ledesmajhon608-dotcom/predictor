@@ -14,13 +14,17 @@
 
     <header class="hero">
       <h1>Analizar liga</h1>
-      <p class="tagline">Cargá el CSV del backtest y mirá qué mercados son prometedores.</p>
+      <p class="tagline">Cargá el CSV del backtest y mirá qué mercados aguantan (misma política de picks que la app).</p>
     </header>
 
     <section class="panel">
       <h2 class="panel-title">Cargar CSV de backtest</h2>
       <label for="csv-file">Archivo <code>comparacion_[LIGA]_[FECHA].csv</code></label>
       <input type="file" id="csv-file" accept=".csv,text/csv">
+      <div class="field" style="margin-top:12px;">
+        <label for="liga-select">Liga a analizar (se detecta sola; corregila si hace falta)</label>
+        <select id="liga-select"></select>
+      </div>
       <p id="csv-info" style="margin-top:8px; font-size:0.85rem; color:var(--text-dim,#8b95a5);"></p>
     </section>
 
@@ -32,7 +36,7 @@
       </section>
 
       <section class="panel">
-        <h2 class="panel-title">Tasa de acierto por mercado</h2>
+        <h2 class="panel-title">Mercados</h2>
         <div id="tasa-content"></div>
       </section>
 
@@ -55,308 +59,231 @@
   </div>
 
 <script type="module">
-  // ---------- Parseo CSV ----------
+  import { LIGAS, getFiltroEV } from './leagues.js';
+  import { generarPicks, hitPick, ODDS_CAMPO } from './picks.js';
+  import { roiBootstrap } from './roi-ci.js';
+
+  const LABELS = {
+    local: '1X2 · Local gana', empate: '1X2 · Empate', visitante: '1X2 · Visitante gana',
+    dc1X: '1X (Local o Empate)', dcX2: 'X2 (Empate o Visitante)',
+    over15: 'Over 1.5', over25: 'Over 2.5', over35: 'Over 3.5',
+    under15: 'Under 1.5', under25: 'Under 2.5', under35: 'Under 3.5',
+    bttsSi: 'BTTS Sí', bttsNo: 'BTTS No',
+    c_over75: 'Over 7.5 córners', c_over85: 'Over 8.5 córners', c_over95: 'Over 9.5 córners',
+  };
+  // Tasa de acierto de equilibrio aproximada (cuotas típicas). Si hay cuotas en el CSV
+  // el criterio principal es el ROI con intervalo de confianza, no este mínimo.
+  const MIN_TASA = {
+    local: 55, empate: 30, visitante: 55, dc1X: 78, dcX2: 78,
+    over15: 88, over25: 68, over35: 55, under15: 90, under25: 78, under35: 75,
+    bttsSi: 62, bttsNo: 62, c_over75: 65, c_over85: 65, c_over95: 65,
+  };
+  const MIN_MUESTRA = 30;
+  const MIN_APUESTAS_ROI = 20;
+  const Z = 1.64;
+
+  const fileInput = document.getElementById('csv-file');
+  const csvInfo = document.getElementById('csv-info');
+  const ligaSelect = document.getElementById('liga-select');
+  const resultadoDiv = document.getElementById('resultado');
+  let filas = [];
+
+  for (const [k, l] of Object.entries(LIGAS)) ligaSelect.appendChild(new Option(l.name + ' (' + k + ')', k));
+
+  // ---------- CSV ----------
+  function parseLinea(l) {
+    const out = []; let cur = ''; let q = false;
+    for (let i = 0; i < l.length; i++) {
+      const c = l[i];
+      if (q) {
+        if (c === '"') { if (l[i + 1] === '"') { cur += '"'; i++; } else q = false; }
+        else cur += c;
+      } else if (c === '"') q = true;
+      else if (c === ',') { out.push(cur); cur = ''; }
+      else cur += c;
+    }
+    out.push(cur);
+    return out;
+  }
   function parseCSV(texto) {
-    const limpio = texto.replace(/^\ufeff/, '');
-    const lineas = limpio.split(/\r?\n/).filter(l => l.trim());
+    const lineas = texto.replace(/^\ufeff/, '').split(/\r?\n/).filter(l => l.trim());
     if (lineas.length < 2) return [];
-    const headers = lineas[0].split(',');
-    const filas = [];
+    const headers = parseLinea(lineas[0]);
+    const out = [];
     for (let i = 1; i < lineas.length; i++) {
-      const campos = lineas[i].split(',');
+      const campos = parseLinea(lineas[i]);
       const row = {};
       for (let j = 0; j < headers.length; j++) row[headers[j]] = campos[j];
-      filas.push(row);
+      out.push(row);
     }
-    return filas;
+    return out;
   }
-
   const num = (v) => {
+    if (v === undefined || v === null || String(v).trim() === '') return null;
     const n = parseFloat(v);
     return Number.isFinite(n) ? n : null;
   };
 
-  // ---------- Cálculo de tasa de acierto por mercado ----------
-  // Regla: el modelo "predijo" el lado con mayor probabilidad.
-  // Se cuenta acierto si el resultado real coincide con ese lado.
-  function analizar(filas) {
-    const mercados = {
-      local: { nombre: 'Local gana', n: 0, hits: 0, sumProb: 0 },
-      empate: { nombre: 'Empate', n: 0, hits: 0, sumProb: 0 },
-      visitante: { nombre: 'Visitante gana', n: 0, hits: 0, sumProb: 0 },
-      dc1X: { nombre: '1X (Local o Empate)', n: 0, hits: 0, sumProb: 0 },
-      dcX2: { nombre: 'X2 (Empate o Visitante)', n: 0, hits: 0, sumProb: 0 },
-      over15: { nombre: 'Over 1.5', n: 0, hits: 0, sumProb: 0 },
-      over25: { nombre: 'Over 2.5', n: 0, hits: 0, sumProb: 0 },
-      over35: { nombre: 'Over 3.5', n: 0, hits: 0, sumProb: 0 },
-      bttsSi: { nombre: 'BTTS Sí', n: 0, hits: 0, sumProb: 0 },
-      bttsNo: { nombre: 'BTTS No', n: 0, hits: 0, sumProb: 0 },
-      c_over75: { nombre: 'Over 7.5 córners', n: 0, hits: 0, sumProb: 0 },
-      c_over85: { nombre: 'Over 8.5 córners', n: 0, hits: 0, sumProb: 0 },
-      c_over95: { nombre: 'Over 9.5 córners', n: 0, hits: 0, sumProb: 0 },
-    };
+  function detectarLiga(nombre, rows) {
+    const col = rows[0] && rows[0].liga_key;
+    if (col && LIGAS[col]) return col;
+    const m = Object.keys(LIGAS).find(k => new RegExp('_' + k + '_', 'i').test(nombre));
+    return m || Object.keys(LIGAS)[0];
+  }
 
+  function wilsonLow(h, n) {
+    if (!n) return 0;
+    const p = h / n, z2 = Z * Z;
+    const centro = p + z2 / (2 * n);
+    const margen = Z * Math.sqrt(p * (1 - p) / n + z2 / (4 * n * n));
+    return (centro - margen) / (1 + z2 / n);
+  }
+
+  // ---------- análisis: MISMA política de picks que la app ----------
+  function analizar(rows, ligaKey) {
+    const st = {};
+    for (const k of Object.keys(LABELS)) st[k] = { key: k, label: LABELS[k], mercado: null, n: 0, hits: 0, sumProb: 0, bets: [], sinEV: 0 };
     let total = 0;
 
-    for (const f of filas) {
-      const gl = num(f.REAL_goles_local);
-      const gv = num(f.REAL_goles_visitante);
-      if (gl == null || gv == null) continue;
+    for (const f of rows) {
+      const gl = num(f.REAL_goles_local), gv = num(f.REAL_goles_visitante);
+      const pl = num(f.APP_local), pe = num(f.APP_empate), pv = num(f.APP_visitante);
+      if (gl == null || gv == null || pl == null || pe == null || pv == null) continue;
       total++;
-
-      const resultado = gl > gv ? 'local' : gl < gv ? 'visitante' : 'empate';
-      const totalGoles = gl + gv;
-      const bttsReal = gl > 0 && gv > 0;
-
-      const pl = num(f.APP_local);
-      const pe = num(f.APP_empate);
-      const pv = num(f.APP_visitante);
-      const p_o15 = num(f.APP_over15);
-      const p_o25 = num(f.APP_over25);
-      const p_o35 = num(f.APP_over35);
-      const p_btts = num(f.APP_btts);
-      const p_c75 = num(f.APP_corners_over75);
-      const p_c85 = num(f.APP_corners_over85);
-      const p_c95 = num(f.APP_corners_over95);
-
-      const cornTotal = num(f.REAL_corners_total);
-
-      // 1X2 — el modelo apuesta al lado con mayor probabilidad
-      if (pl != null && pe != null && pv != null) {
-        const max = Math.max(pl, pe, pv);
-        if (max === pl) { mercados.local.n++; mercados.local.sumProb += pl; if (resultado === 'local') mercados.local.hits++; }
-        else if (max === pe) { mercados.empate.n++; mercados.empate.sumProb += pe; if (resultado === 'empate') mercados.empate.hits++; }
-        else { mercados.visitante.n++; mercados.visitante.sumProb += pv; if (resultado === 'visitante') mercados.visitante.hits++; }
-
-        // Doble oportunidad — se cuenta solo cuando el lado supera 60% (umbral real de la app)
-        const dc1X = pl + pe;
-        const dcX2 = pe + pv;
-        if (dc1X >= 60) {
-          mercados.dc1X.n++; mercados.dc1X.sumProb += dc1X;
-          if (resultado === 'local' || resultado === 'empate') mercados.dc1X.hits++;
-        }
-        if (dcX2 >= 60) {
-          mercados.dcX2.n++; mercados.dcX2.sumProb += dcX2;
-          if (resultado === 'empate' || resultado === 'visitante') mercados.dcX2.hits++;
-        }
-      }
-
-      // Overs — se cuentan cuando el modelo supera los umbrales reales de la app
-      if (p_o15 != null && p_o15 >= 60) {
-        mercados.over15.n++; mercados.over15.sumProb += p_o15;
-        if (totalGoles > 1.5) mercados.over15.hits++;
-      }
-      if (p_o25 != null && p_o25 >= 65) {
-        mercados.over25.n++; mercados.over25.sumProb += p_o25;
-        if (totalGoles > 2.5) mercados.over25.hits++;
-      }
-      if (p_o35 != null && p_o35 >= 65) {
-        mercados.over35.n++; mercados.over35.sumProb += p_o35;
-        if (totalGoles > 3.5) mercados.over35.hits++;
-      }
-
-      // BTTS — simétrico, umbral 60 en cada lado
-      if (p_btts != null) {
-        if (p_btts >= 60) {
-          mercados.bttsSi.n++; mercados.bttsSi.sumProb += p_btts;
-          if (bttsReal) mercados.bttsSi.hits++;
-        }
-        const p_no = 100 - p_btts;
-        if (p_no >= 60) {
-          mercados.bttsNo.n++; mercados.bttsNo.sumProb += p_no;
-          if (!bttsReal) mercados.bttsNo.hits++;
-        }
-      }
-
-      // Córners — umbral 75 real de la app
-      if (cornTotal != null) {
-        if (p_c75 != null && p_c75 >= 75) {
-          mercados.c_over75.n++; mercados.c_over75.sumProb += p_c75;
-          if (cornTotal > 7.5) mercados.c_over75.hits++;
-        }
-        if (p_c85 != null && p_c85 >= 75) {
-          mercados.c_over85.n++; mercados.c_over85.sumProb += p_c85;
-          if (cornTotal > 8.5) mercados.c_over85.hits++;
-        }
-        if (p_c95 != null && p_c95 >= 75) {
-          mercados.c_over95.n++; mercados.c_over95.sumProb += p_c95;
-          if (cornTotal > 9.5) mercados.c_over95.hits++;
+      const real = { gl: gl, gv: gv, corners: num(f.REAL_corners_total) };
+      const c7 = num(f.APP_corners_over75), c8 = num(f.APP_corners_over85), c9 = num(f.APP_corners_over95);
+      const data = {
+        resultProbs: { local: pl, empate: pe, visitante: pv },
+        over15: num(f.APP_over15), over25: num(f.APP_over25), over35: num(f.APP_over35),
+        btts: num(f.APP_btts),
+        cornerProbs: (c7 != null && c8 != null && c9 != null) ? { over7: c7, over8: c8, over9: c9 } : null,
+        sinRating: [],
+      };
+      const picks = generarPicks(data, ligaKey, { ignorarConfig: true });
+      for (const pk of picks) {
+        const hit = hitPick(pk.key, real);
+        const s = st[pk.key];
+        if (hit == null || !s) continue;
+        s.mercado = pk.mercado; s.n++; s.sumProb += pk.prob;
+        if (hit) s.hits++;
+        const campo = ODDS_CAMPO[pk.key];
+        const cuota = campo ? num(f['CASA_' + campo]) : null;
+        if (cuota != null && cuota > 1) {
+          if ((pk.prob / 100) * cuota > getFiltroEV(pk.mercado)) s.bets.push({ cuota: cuota, hit: hit });
+          else s.sinEV++;
         }
       }
     }
 
-    // ---------- Umbrales mínimos para mover a amarillo ----------
-    // Si la tasa supera el mínimo Y hay muestra suficiente (>= 20), el mercado es "prometedor".
-    const UMBRALES_MINIMOS = {
-      local: 55, empate: 30, visitante: 55,
-      dc1X: 78, dcX2: 78,
-      over15: 88, over25: 68, over35: 55,
-      bttsSi: 62, bttsNo: 62,
-      c_over75: 65, c_over85: 65, c_over95: 65,
-    };
-    const MIN_MUESTRA = 20;
-
-    const filasResumen = Object.entries(mercados).map(([key, m]) => {
-      const tasa = m.n > 0 ? (m.hits / m.n * 100) : null;
-      const probMedia = m.n > 0 ? (m.sumProb / m.n) : null;
-      const min = UMBRALES_MINIMOS[key];
-      const suficiente = m.n >= MIN_MUESTRA;
-      const prometedor = tasa != null && tasa >= min && suficiente;
-      return {
-        key, nombre: m.nombre, n: m.n, hits: m.hits, tasa, probMedia, min, suficiente, prometedor,
-      };
+    const resumen = Object.values(st).filter(s => s.n > 0).map(s => {
+      const tasa = s.hits / s.n * 100;
+      const low = wilsonLow(s.hits, s.n) * 100;
+      const min = MIN_TASA[s.key];
+      const roi = s.bets.length >= MIN_APUESTAS_ROI ? roiBootstrap(s.bets) : null;
+      let nivel = 'no';
+      if (s.n >= MIN_MUESTRA) {
+        if (roi && roi.roi != null) {
+          if (roi.ic[0] > 0) nivel = 'solido';
+          else if (roi.roi > 0 && tasa >= min) nivel = 'prometedor';
+        } else if (low >= min) nivel = 'solido';
+        else if (tasa >= min) nivel = 'prometedor';
+      }
+      return { key: s.key, label: s.label, mercado: s.mercado, n: s.n, tasa: tasa, low: low, min: min,
+        probMedia: s.sumProb / s.n, roi: roi, nBets: s.bets.length, sinEV: s.sinEV, nivel: nivel };
     });
-
-    return { filasResumen, total };
+    return { resumen: resumen, total: total };
   }
 
-  // ---------- Render ----------
-  const fileInput = document.getElementById('csv-file');
-  const csvInfo = document.getElementById('csv-info');
-  const resultadoDiv = document.getElementById('resultado');
+  // ---------- render ----------
+  const ICONO = { solido: '✅', prometedor: '🟡', no: '' };
+
+  function renderVeredicto(res, ligaKey) {
+    const solidos = res.resumen.filter(r => r.nivel === 'solido');
+    const prom = res.resumen.filter(r => r.nivel === 'prometedor');
+    const aptos = solidos.length + prom.length;
+    let titulo, color;
+    if (solidos.length >= 2) { titulo = '✅ LIGA VERDE — ' + solidos.length + ' mercados sólidos'; color = 'var(--green)'; }
+    else if (aptos >= 1) { titulo = '⚠️ LIGA AMARILLA — ' + aptos + ' mercado' + (aptos > 1 ? 's' : '') + ' a vigilar'; color = 'var(--yellow)'; }
+    else { titulo = '❌ LIGA ROJA — ningún mercado aguanta'; color = 'var(--red)'; }
+
+    const fila = (r) => {
+      const extra = r.roi ? ' · ROI ' + (r.roi.roi >= 0 ? '+' : '') + r.roi.roi + '% [' + r.roi.ic[0] + ', ' + r.roi.ic[1] + ']' : ' · piso ' + r.low.toFixed(1) + '%';
+      return '<div class="compare-row" style="grid-template-columns:1.3fr 1fr 2fr;"><span>' + ICONO[r.nivel] + ' ' + r.label + '</span><span class="grid-plain">' + r.n + ' picks</span><span class="grid-plain">' + r.tasa.toFixed(1) + '%' + extra + '</span></div>';
+    };
+    document.getElementById('veredicto-content').innerHTML =
+      '<div class="card" style="border:2px solid ' + color + ';"><h3 style="color:' + color + ';">' + titulo + '</h3>' +
+      '<p style="margin:6px 0 0; font-size:0.85rem;">' + LIGAS[ligaKey].name + ' · partidos analizados: <strong>' + res.total + '</strong></p>' +
+      (solidos.length ? '<h4 style="margin:14px 0 6px; font-size:0.85rem;">Sólidos (' + solidos.length + ')</h4>' + solidos.map(fila).join('') : '') +
+      (prom.length ? '<h4 style="margin:14px 0 6px; font-size:0.85rem;">Prometedores (' + prom.length + ')</h4>' + prom.map(fila).join('') : '') +
+      '<p style="margin:10px 0 0; font-size:0.78rem; color:var(--text-dim); line-height:1.5;">' +
+        '⚠️ Este CSV sale del backtest, que ajusta sobre los mismos partidos (in-sample). Probando varios mercados, alguno sale bien por azar. ' +
+        'Sólido = ROI con IC95% > 0 (si hay ≥' + MIN_APUESTAS_ROI + ' apuestas con cuota) o piso de acierto ≥ mínimo. Confirmalo con walk-forward y con el registro antes de subir el stake.</p></div>';
+  }
+
+  function renderTasas(res) {
+    const orden = [...res.resumen].sort((a, b) => b.tasa - a.tasa);
+    const filasHtml = orden.map(r => {
+      const col = r.nivel === 'solido' ? 'var(--green)' : r.nivel === 'prometedor' ? 'var(--yellow)' : 'var(--red)';
+      const marca = ICONO[r.nivel] || (r.n < MIN_MUESTRA ? '⚠️' : '');
+      const roiTxt = r.roi ? (r.roi.roi >= 0 ? '+' : '') + r.roi.roi + '%' : (r.nBets ? r.nBets + ' c/cuota' : '—');
+      return '<div class="compare-row" style="grid-template-columns:1.4fr .6fr .8fr .8fr .8fr;"><span>' + marca + ' ' + r.label + '</span>' +
+        '<span class="grid-plain">' + r.n + '</span>' +
+        '<span class="grid-plain">' + r.probMedia.toFixed(1) + '%</span>' +
+        '<span class="grid-plain" style="color:' + col + '">' + r.tasa.toFixed(1) + '% (mín ' + r.min + ')</span>' +
+        '<span class="grid-plain">' + roiTxt + '</span></div>';
+    }).join('');
+    document.getElementById('tasa-content').innerHTML =
+      '<div class="card"><div class="compare-row compare-head" style="grid-template-columns:1.4fr .6fr .8fr .8fr .8fr;"><span>Mercado</span><span>Picks</span><span>Predicho</span><span>Acierto</span><span>ROI</span></div>' +
+      (filasHtml || '<div class="compare-row"><span>Ningún pick generado con los umbrales de la liga.</span></div>') +
+      '<p style="margin:10px 0 0; font-size:0.78rem; color:var(--text-dim); line-height:1.5;">⚠️ = menos de ' + MIN_MUESTRA + ' picks. Los picks son los que generaría la app (umbrales y reglas de la liga, un solo Over por partido, 1X2 suprimido si hay DC), sin mirar la whitelist actual.</p></div>';
+  }
+
+  function renderConfig(res, ligaKey) {
+    const buenos = res.resumen.filter(r => r.nivel === 'solido' || r.nivel === 'prometedor');
+    const solidos = res.resumen.filter(r => r.nivel === 'solido');
+    const mercados = [];
+    for (const r of buenos) if (r.mercado && !mercados.includes(r.mercado)) mercados.push(r.mercado);
+    let status = 'red', stake = 0;
+    if (solidos.length >= 2) { status = 'green'; stake = 1; }
+    else if (buenos.length >= 2) { status = 'yellow'; stake = 0.5; }
+    else if (buenos.length === 1) { status = 'yellow'; stake = 0.3; }
+
+    const config = {};
+    config[ligaKey] = { betting: { status: status, stake: stake, mercados: mercados,
+      nota: 'analizar-liga: ' + solidos.length + ' sólidos, ' + (buenos.length - solidos.length) + ' prometedores (in-sample).' } };
+    if (status === 'red') config[ligaKey].betting = { status: 'red' };
+
+    document.getElementById('config-json').textContent = JSON.stringify(config, null, 2) + '\n\n' +
+      '// Mercados: ' + (mercados.length ? mercados.join(', ') : '(ninguno)') + '\n' +
+      '// Status: ' + status + ' · Stake: ' + stake + '%\n' +
+      '// Reemplazá el bloque "betting" de ' + ligaKey + ' en LIGAS de leagues.js.\n' +
+      '// La whitelist es exacta: "BTTS Sí", "BTTS No" y "Córners" van por separado.';
+  }
+
+  function correr() {
+    if (!filas.length) return;
+    const ligaKey = ligaSelect.value;
+    const res = analizar(filas, ligaKey);
+    renderVeredicto(res, ligaKey);
+    renderTasas(res);
+    renderConfig(res, ligaKey);
+    resultadoDiv.style.display = 'block';
+  }
 
   fileInput.addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
     try {
-      const texto = await file.text();
-      const filas = parseCSV(texto);
-      if (filas.length === 0) {
-        csvInfo.textContent = '❌ El CSV está vacío o mal formado.';
-        return;
-      }
-      csvInfo.textContent = '✅ ' + filas.length + ' partidos cargados.';
-
-      const { filasResumen, total } = analizar(filas);
-      renderVeredicto(filasResumen, total);
-      renderTasas(filasResumen);
-      renderConfig(filasResumen);
-
-      resultadoDiv.style.display = 'block';
+      filas = parseCSV(await file.text());
+      if (filas.length === 0) { csvInfo.textContent = '❌ El CSV está vacío o mal formado.'; return; }
+      ligaSelect.value = detectarLiga(file.name || '', filas);
+      csvInfo.textContent = '✅ ' + filas.length + ' partidos cargados · liga ' + ligaSelect.value;
+      correr();
     } catch (err) {
       csvInfo.textContent = '❌ Error: ' + err.message;
     }
   });
-
-  function colorTasa(tasa, min) {
-    if (tasa == null) return 'var(--text-dim)';
-    if (tasa >= min + 5) return 'var(--green)';
-    if (tasa >= min) return 'var(--yellow)';
-    return 'var(--red)';
-  }
-
-  function renderVeredicto(filasResumen, total) {
-    const prometedores = filasResumen.filter(f => f.prometedor);
-    const casi = filasResumen.filter(f => !f.prometedor && f.n >= 20 && f.tasa != null && f.tasa >= f.min - 3);
-
-    let nivel = 'rojo';
-    let titulo = '❌ LIGA ROJA — No prometedora';
-    let color = 'var(--red)';
-    if (prometedores.length >= 3) {
-      nivel = 'verde'; titulo = '✅ LIGA VERDE — Múltiples mercados prometedores'; color = 'var(--green)';
-    } else if (prometedores.length >= 2) {
-      nivel = 'amarillo'; titulo = '⚠️ LIGA AMARILLA — Mover con whitelist'; color = 'var(--yellow)';
-    } else if (prometedores.length === 1) {
-      nivel = 'amarillo-flojo'; titulo = '⚠️ Un solo mercado prometedor — Amarillo dudoso'; color = 'var(--yellow)';
-    }
-
-    const filasProm = prometedores.map(f => {
-      const tasa = f.tasa.toFixed(1);
-      return '<div class="compare-row"><span>' + f.nombre + '</span><span class="grid-plain">' + f.n + ' apuestas</span><span class="grid-plain" style="color:var(--green)">' + tasa + '% acierto</span></div>';
-    }).join('');
-
-    const filasCasi = casi.map(f => {
-      const tasa = f.tasa.toFixed(1);
-      return '<div class="compare-row"><span>' + f.nombre + '</span><span class="grid-plain">' + f.n + ' apuestas</span><span class="grid-plain" style="color:var(--yellow)">' + tasa + '% (falta ' + (f.min - f.tasa).toFixed(1) + ' pts)</span></div>';
-    }).join('');
-
-    const aviso = nivel === 'rojo'
-      ? '<p style="margin:10px 0 0; font-size:0.85rem; color:var(--text-dim);">Ningún mercado supera el mínimo con muestra suficiente. Mantener en rojo.</p>'
-      : '<p style="margin:10px 0 0; font-size:0.85rem; color:var(--text-dim);">Para pasar a amarillo, agregar los mercados prometedores a la whitelist y dejar el resto en rojo (no apostar).</p>';
-
-    document.getElementById('veredicto-content').innerHTML =
-      '<div class="card" style="border:2px solid ' + color + ';">' +
-        '<h3 style="color:' + color + ';">' + titulo + '</h3>' +
-        '<p style="margin:6px 0 0; font-size:0.85rem;">Total partidos analizados: <strong>' + total + '</strong></p>' +
-        (prometedores.length ? '<h4 style="margin:14px 0 6px; font-size:0.85rem;">Mercados prometedores (' + prometedores.length + ')</h4>' + filasProm : '') +
-        (casi.length ? '<h4 style="margin:14px 0 6px; font-size:0.85rem;">Cerca del umbral (' + casi.length + ')</h4>' + filasCasi : '') +
-        aviso +
-      '</div>';
-  }
-
-  function renderTasas(filasResumen) {
-    const ordenadas = [...filasResumen].sort((a, b) => {
-      if (a.tasa == null) return 1;
-      if (b.tasa == null) return -1;
-      return b.tasa - a.tasa;
-    });
-
-    const filas = ordenadas.map(f => {
-      const tasaTxt = f.tasa == null ? '—' : f.tasa.toFixed(1) + '%';
-      const probTxt = f.probMedia == null ? '—' : f.probMedia.toFixed(1) + '%';
-      const col = colorTasa(f.tasa, f.min);
-      const marca = f.prometedor ? '✅ ' : (f.n < 20 ? '⚠️ ' : '');
-      const minTxt = f.min + '%';
-      return '<div class="compare-row"><span>' + marca + f.nombre + '</span>' +
-        '<span class="grid-plain">' + f.n + ' picks</span>' +
-        '<span class="grid-plain">' + probTxt + ' predicho</span>' +
-        '<span class="grid-plain" style="color:' + col + '">' + tasaTxt + ' (mín ' + minTxt + ')</span></div>';
-    }).join('');
-
-    document.getElementById('tasa-content').innerHTML =
-      '<div class="card">' +
-        '<div class="compare-row compare-head"><span>Mercado</span><span>Muestra</span><span>Prob. media</span><span>Tasa de acierto</span></div>' +
-        filas +
-        '<p style="margin:10px 0 0; font-size:0.78rem; color:var(--text-dim); line-height:1.5;">' +
-          '⚠️ = menos de 20 apuestas (muestra insuficiente). ✅ = supera el umbral con muestra suficiente.<br>' +
-          'Se cuenta acierto solo cuando el modelo supera el umbral real de la app por mercado.' +
-        '</p>' +
-      '</div>';
-  }
-
-  function renderConfig(filasResumen) {
-    const prometedores = filasResumen.filter(f => f.prometedor);
-    const mercados = [];
-    // Mapeo de clave interna → nombre de mercado tal como lo espera leagues.js
-    const MAPA_MERCADO = {
-      local: '1X2', empate: '1X2', visitante: '1X2',
-      dc1X: '1X', dcX2: 'X2',
-      over15: 'Over 1.5', over25: 'Over 2.5', over35: 'Over 3.5',
-      bttsSi: 'BTTS', bttsNo: 'BTTS',
-      c_over75: 'Córners', c_over85: 'Córners', c_over95: 'Córners',
-    };
-    for (const f of prometedores) {
-      const m = MAPA_MERCADO[f.key];
-      if (m && !mercados.includes(m)) mercados.push(m);
-    }
-
-    let status, stake;
-    if (prometedores.length >= 3) { status = 'green'; stake = 1; }
-    else if (prometedores.length >= 2) { status = 'yellow'; stake = 0.5; }
-    else if (prometedores.length === 1) { status = 'yellow'; stake = 0.3; }
-    else { status = 'red'; stake = 0; }
-
-    // Detectar liga desde el nombre del archivo (heurístico)
-    const nombreArchivo = fileInput.files[0]?.name || '';
-    const matchLiga = nombreArchivo.match(/comparacion_[^_]+_([A-Z0-9]+)_/i) || nombreArchivo.match(/_([A-Z0-9]+)_/);
-    const ligaGuess = matchLiga ? matchLiga[1] : 'XX';
-
-    const config = {
-      [ligaGuess]: {
-        betting: {
-          status: status,
-          stake: stake,
-          mercados: mercados,
-          nota: 'Revisado con analizar-liga.html sobre ' + prometedores.length + ' mercados prometedores',
-        },
-      },
-    };
-
-    document.getElementById('config-json').textContent = JSON.stringify(config, null, 2) + '\n\n' +
-      '// Mercados prometedores: ' + (mercados.length ? mercados.join(', ') : '(ninguno)') + '\n' +
-      '// Status: ' + status + ' · Stake: ' + stake + '%\n' +
-      '// Reemplazá el bloque de "' + ligaGuess + '" en LIGAS de leagues.js con este.';
-  }
+  ligaSelect.addEventListener('change', correr);
 </script>
 </body>
 </html>

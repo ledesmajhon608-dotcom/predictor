@@ -1,7 +1,9 @@
 // backtest.js
-// v5 completo: sin template literals anidados ni ?? dentro de strings.
+// v6: usa generarPicks (misma política que la app), whitelist exacta, EV por mercado,
+// unders y BTTS No incluidos, CSV con liga_key.
 
-import { LIGAS, HOME_ADVANTAGE, DIXON_COLES_RHO, FILTRO_EV, SHRINK_ALPHA, getUmbrales } from './leagues.js';
+import { LIGAS, HOME_ADVANTAGE, DIXON_COLES_RHO, SHRINK_ALPHA, getUmbrales, getFiltroEV } from './leagues.js';
+import { generarPicks, hitPick, ODDS_CAMPO } from './picks.js';
 import { simulateMatch, getStaticRating } from './model.js';
 import { ratingsWalkForward } from './ratings.js';
 import { calcularTasasBase, shrinkHaciaBase } from './calibrate.js';
@@ -21,10 +23,6 @@ function devigar3(oddsA, oddsB, oddsC) {
   const pA = 1 / oddsA, pB = 1 / oddsB, pC = 1 / oddsC;
   const s = pA + pB + pC;
   return [(pA / s) * 100, (pB / s) * 100, (pC / s) * 100];
-}
-function pasaEV(probPct, cuota) {
-  if (!cuota || !probPct) return false;
-  return (probPct / 100) * cuota > FILTRO_EV;
 }
 function fmt(n) { return Number(n).toFixed(1); }
 
@@ -131,52 +129,30 @@ class Multi1X2 {
   }
 }
 
+const PICK_LABELS = {
+  local: '1X2 · Local gana', empate: '1X2 · Empate', visitante: '1X2 · Visitante gana',
+  dc1X: '1X (Local o Empate)', dcX2: 'X2 (Empate o Visitante)',
+  over15: 'Over 1.5 goles', over25: 'Over 2.5 goles', over35: 'Over 3.5 goles',
+  under15: 'Under 1.5 goles', under25: 'Under 2.5 goles', under35: 'Under 3.5 goles',
+  bttsSi: 'Ambos marcan (Sí)', bttsNo: 'Ambos marcan (No)',
+  c_over75: 'Over 7.5 córners totales', c_over85: 'Over 8.5 córners totales', c_over95: 'Over 9.5 córners totales',
+};
+
 class PicksStats {
-  constructor(umbrales) {
-    this.umbrales = umbrales;
-    const u12 = umbrales.umbral1x2;
-    const udc = (umbrales.umbralDC != null) ? umbrales.umbralDC : 68;
-    this.mercados = {
-      '1X2': { n: 0, nCuota: 0, hits: 0, profit: 0, label: '1X2 (favorito ≥ ' + u12 + '%)' },
-      '1X': { n: 0, nCuota: 0, hits: 0, profit: 0, label: '1X (Local o Empate ≥ ' + udc + '%)' },
-      'X2': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'X2 (Empate o Visitante ≥ ' + udc + '%)' },
-      'Over 1.5': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Over 1.5 goles' },
-      'Over 2.5': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Over 2.5 goles' },
-      'Over 3.5': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Over 3.5 goles' },
-      'BTTS Sí': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Ambos marcan (Sí)' },
-      'Córners totales Over 7.5': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Over 7.5 córners totales' },
-      'Córners totales Over 8.5': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Over 8.5 córners totales' },
-      'Córners totales Over 9.5': { n: 0, nCuota: 0, hits: 0, profit: 0, label: 'Over 9.5 córners totales' },
-    };
+  constructor() {
+    this.mercados = {};
+    for (const [k, label] of Object.entries(PICK_LABELS)) this.mercados[k] = { n: 0, nCuota: 0, hits: 0, profit: 0, label };
     this.partidosConPick = 0;
   }
   add(rec) {
     if (rec.picks.length > 0) this.partidosConPick++;
     for (const pick of rec.picks) {
       if (!pick.tieneReal) continue;
-      let key = null;
-      if (pick.mercado === '1X2') key = '1X2';
-      else if (pick.mercado === '1X') key = '1X';
-      else if (pick.mercado === 'X2') key = 'X2';
-      else if (pick.mercado === 'Goles') {
-        if (pick.code === 'over15') key = 'Over 1.5';
-        else if (pick.code === 'over25') key = 'Over 2.5';
-        else if (pick.code === 'over35') key = 'Over 3.5';
-      } else if (pick.mercado === 'BTTS') key = 'BTTS Sí';
-      else if (pick.mercado === 'Córners totales') {
-        if (pick.code === 'c_over75') key = 'Córners totales Over 7.5';
-        else if (pick.code === 'c_over85') key = 'Córners totales Over 8.5';
-        else if (pick.code === 'c_over95') key = 'Córners totales Over 9.5';
-      }
-      if (!key || !this.mercados[key]) continue;
-      this.mercados[key].n++;
-      if (pick.casaOdds) this.mercados[key].nCuota++;
-      if (pick.hit) {
-        this.mercados[key].hits++;
-        if (pick.casaOdds) this.mercados[key].profit += (pick.casaOdds - 1);
-      } else {
-        if (pick.casaOdds) this.mercados[key].profit -= 1;
-      }
+      const m = this.mercados[pick.key];
+      if (!m) continue;
+      m.n++;
+      if (pick.hit) m.hits++;
+      if (pick.casaOdds) { m.nCuota++; m.profit += pick.hit ? (pick.casaOdds - 1) : -1; }
     }
   }
   summary() {
@@ -284,7 +260,7 @@ function renderCalibracion(resultado) {
       '<div class="compare-row"><span>Goles (Over X.5)</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">' + umbrales.umbralGoles + '%</span></div>' +
       '<div class="compare-row"><span>Córners totales</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">' + umbrales.umbralCorners + '%</span></div>' +
       '<div class="compare-row"><span>BTTS</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">' + umbrales.umbralBtss + '%</span></div>' +
-      '<div class="compare-row"><span>Filtro EV mínimo</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">' + FILTRO_EV + '</span></div>' +
+      '<div class="compare-row"><span>Filtro EV mínimo</span><span class="grid-plain"></span><span class="prob" style="color:var(--green)">por mercado</span></div>' +
       '<p style="margin:10px 0 0; font-size:0.8rem; color:var(--chalk-dim)">' +
         'Error total L/E/V: ' + fmt(ultimo.err * 100) + '%. ' +
         'Goles/partido usados: ' + (calibracion.goalsAvg != null ? calibracion.goalsAvg.toFixed(2) : '—') + '. ' +
@@ -294,12 +270,9 @@ function renderCalibracion(resultado) {
 }
 
 // ---------- recomendación por partido ----------
+// Usa generarPicks (la misma política que la app). Si hay cuota, el pick debe pasar
+// el filtro EV de su mercado; si no hay cuota, entra igual (solo mide acierto, no ROI).
 function calcularRecomendacion(p, pred, resultProbsFinal, leagueKey) {
-  const U = getUmbrales(leagueKey);
-  const betting = (LIGAS[leagueKey] && LIGAS[leagueKey].betting) || {};
-  const statusLiga = betting.status || 'unknown';
-  const mercadosLiga = betting.mercados || [];
-
   const rec = {
     fecha: p.fecha || '',
     local: p.local,
@@ -310,105 +283,39 @@ function calcularRecomendacion(p, pred, resultProbsFinal, leagueKey) {
     cornersLocal: (p.corners_local != null ? p.corners_local : null),
     cornersVisit: (p.corners_visitante != null ? p.corners_visitante : null),
     picks: [],
-    sin1x2: null,
     sinEV: [],
   };
 
-  if (statusLiga === 'red') return rec;
+  const betting = (LIGAS[leagueKey] && LIGAS[leagueKey].betting) || {};
+  if (betting.status === 'red') return rec;
 
-  const permite = (mercado) => {
-    if (statusLiga !== 'green' && statusLiga !== 'yellow') return false;
-    if (mercadosLiga.length === 0) return false;
-    return mercadosLiga.some(m => mercado.includes(m) || m.includes(mercado));
-  };
-
+  let real = null;
   if (p.goles_local != null && p.goles_visitante != null) {
     rec.totalGoles = p.goles_local + p.goles_visitante;
     rec.resultado = p.goles_local > p.goles_visitante ? 'local'
                   : p.goles_local < p.goles_visitante ? 'visitante' : 'empate';
+    real = {
+      gl: p.goles_local, gv: p.goles_visitante,
+      corners: (p.corners_local != null && p.corners_visitante != null) ? p.corners_local + p.corners_visitante : null,
+    };
   }
 
-  // ---- 1X2 individual ----
-  const max1x2 = Math.max(resultProbsFinal.local, resultProbsFinal.empate, resultProbsFinal.visitante);
-  if (max1x2 >= U.umbral1x2 && permite('1X2')) {
-    let pick = null;
-    if (resultProbsFinal.local === max1x2) {
-      pick = { code: '1', label: 'Local gana', prob: resultProbsFinal.local, casaOdds: p.odds_local, hit: rec.resultado === 'local' };
-    } else if (resultProbsFinal.empate === max1x2) {
-      pick = { code: 'X', label: 'Empate', prob: resultProbsFinal.empate, casaOdds: p.odds_empate, hit: rec.resultado === 'empate' };
-    } else {
-      pick = { code: '2', label: 'Visitante gana', prob: resultProbsFinal.visitante, casaOdds: p.odds_visitante, hit: rec.resultado === 'visitante' };
+  const potenciales = generarPicks(Object.assign({}, pred, { resultProbs: resultProbsFinal }), leagueKey);
+  for (const pk of potenciales) {
+    const campo = ODDS_CAMPO[pk.key];
+    const c = campo ? Number(p[campo]) : NaN;
+    const cuota = Number.isFinite(c) && c > 1 ? c : null;
+    if (cuota != null && !((pk.prob / 100) * cuota > getFiltroEV(pk.mercado))) {
+      rec.sinEV.push({ label: pk.label, prob: pk.prob, cuota: cuota });
+      continue;
     }
-    if (pasaEV(pick.prob, pick.casaOdds)) {
-      rec.picks.push({ mercado: '1X2', code: pick.code, label: pick.label, prob: pick.prob, casaOdds: pick.casaOdds, hit: pick.hit, tieneReal: rec.resultado != null });
-    } else {
-      rec.sinEV.push({ label: pick.label, prob: pick.prob, cuota: pick.casaOdds });
-    }
+    const hit = hitPick(pk.key, real);
+    rec.picks.push({
+      key: pk.key, mercado: pk.mercado, label: pk.label, prob: pk.prob,
+      casaOdds: cuota, hit: hit, tieneReal: hit != null,
+      esCorner: pk.key.indexOf('c_') === 0, sinCuota: cuota == null,
+    });
   }
-
-  // ---- Doble oportunidad 1X / X2 ----
-  const dc1X = resultProbsFinal.local + resultProbsFinal.empate;
-  const dcX2 = resultProbsFinal.empate + resultProbsFinal.visitante;
-  const umbralDC = (U.umbralDC != null) ? U.umbralDC : 68;
-  const permiteDC = () => {
-    if (statusLiga !== 'green' && statusLiga !== 'yellow') return false;
-    if (mercadosLiga.length === 0) return false;
-    return mercadosLiga.some(m => /1X2|1X|X2|DC|doble/i.test(m));
-  };
-
-  if (dc1X >= umbralDC && permiteDC()) {
-    const hit = rec.resultado != null ? (rec.resultado === 'local' || rec.resultado === 'empate') : null;
-    rec.picks.push({ mercado: '1X', code: 'dc1X', label: 'Local o Empate (1X)', prob: dc1X, casaOdds: null, hit, tieneReal: hit != null, sinCuota: true });
-  }
-  if (dcX2 >= umbralDC && permiteDC()) {
-    const hit = rec.resultado != null ? (rec.resultado === 'empate' || rec.resultado === 'visitante') : null;
-    rec.picks.push({ mercado: 'X2', code: 'dcX2', label: 'Empate o Visitante (X2)', prob: dcX2, casaOdds: null, hit, tieneReal: hit != null, sinCuota: true });
-  }
-
-  // ---- Overs ----
-  const lineas = [
-    { code: 'over35', label: 'Over 3.5 goles', prob: pred.over35, umbral: 3.5, casaOdds: p.odds_over35, mercado: 'Over 3.5' },
-    { code: 'over25', label: 'Over 2.5 goles', prob: pred.over25, umbral: 2.5, casaOdds: p.odds_over25, mercado: 'Over 2.5' },
-    { code: 'over15', label: 'Over 1.5 goles', prob: pred.over15, umbral: 1.5, casaOdds: p.odds_over15, mercado: 'Over 1.5' },
-  ];
-  for (const l of lineas) {
-    if (l.prob != null && l.prob >= U.umbralGoles && permite(l.mercado)) {
-      if (!pasaEV(l.prob, l.casaOdds)) {
-        rec.sinEV.push({ label: l.label, prob: l.prob, cuota: l.casaOdds });
-        break;
-      }
-      const hit = rec.totalGoles != null ? rec.totalGoles > l.umbral : null;
-      rec.picks.push({ mercado: 'Goles', code: l.code, label: l.label, prob: l.prob, casaOdds: l.casaOdds, hit, tieneReal: rec.totalGoles != null });
-      break;
-    }
-  }
-
-  // ---- BTTS ----
-  if (pred.btts != null && pred.btts >= U.umbralBtss && permite('BTTS')) {
-    if (pasaEV(pred.btts, p.odds_btts_si)) {
-      const hit = (p.goles_local != null && p.goles_visitante != null) ? (p.goles_local > 0 && p.goles_visitante > 0) : null;
-      rec.picks.push({ mercado: 'BTTS', code: 'btts_si', label: 'Ambos marcan (Sí)', prob: pred.btts, casaOdds: p.odds_btts_si, hit, tieneReal: hit != null });
-    } else {
-      rec.sinEV.push({ label: 'BTTS Sí', prob: pred.btts, cuota: p.odds_btts_si });
-    }
-  }
-
-  // ---- Córners ----
-  if (pred.cornerProbs && LIGAS[leagueKey] && LIGAS[leagueKey].markets && LIGAS[leagueKey].markets.corn !== false) {
-    const lineasC = [
-      { code: 'c_over95', label: 'Over 9.5 córners', prob: pred.cornerProbs.over9, umbral: 9.5 },
-      { code: 'c_over85', label: 'Over 8.5 córners', prob: pred.cornerProbs.over8, umbral: 8.5 },
-      { code: 'c_over75', label: 'Over 7.5 córners', prob: pred.cornerProbs.over7, umbral: 7.5 },
-    ];
-    for (const l of lineasC) {
-      if (l.prob != null && l.prob >= U.umbralCorners) {
-        const hit = (p.corners_local != null && p.corners_visitante != null) ? (p.corners_local + p.corners_visitante > l.umbral) : null;
-        rec.picks.push({ mercado: 'Córners totales', code: l.code, label: l.label, prob: l.prob, casaOdds: null, hit, tieneReal: hit != null, sinCuota: true });
-        break;
-      }
-    }
-  }
-
   return rec;
 }
 
@@ -447,7 +354,7 @@ function renderPicks(recs, stats, leagueKey) {
 
   const udc = (U.umbralDC != null) ? U.umbralDC : 68;
   const reglasTxt =
-    '1X2 ≥ ' + U.umbral1x2 + '% · DC ≥ ' + udc + '% · Goles ≥ ' + U.umbralGoles + '% · BTTS ≥ ' + U.umbralBtss + '% · Córners totales ≥ ' + U.umbralCorners + '% · Filtro EV ≥ ' + FILTRO_EV + '.';
+    '1X2 ≥ ' + U.umbral1x2 + '% · DC ≥ ' + udc + '% · Goles ≥ ' + U.umbralGoles + '% · BTTS ≥ ' + U.umbralBtss + '% · Córners totales ≥ ' + U.umbralCorners + '% · Filtro EV por mercado (1.03–1.10).';
 
   const resumenHTML =
     '<div class="card" style="border:2px solid var(--green);">' +
@@ -471,7 +378,7 @@ function renderPicks(recs, stats, leagueKey) {
       const marca = pick.tieneReal ? (pick.hit ? '✅' : '❌') : '⏳';
       let realDetalle = '';
       if (pick.tieneReal) {
-        if (pick.mercado === 'Córners totales') {
+        if (pick.esCorner) {
           const cl = (r.cornersLocal != null ? r.cornersLocal : 0);
           const cv = (r.cornersVisit != null ? r.cornersVisit : 0);
           realDetalle = (cl + cv) + ' córners';
@@ -482,7 +389,7 @@ function renderPicks(recs, stats, leagueKey) {
       const ev = valorEV(pick.prob, pick.casaOdds);
       let valorBadge = '';
       if (ev != null) {
-        if (ev >= FILTRO_EV) {
+        if (ev > getFiltroEV(pick.mercado)) {
           valorBadge = '<span style="color:var(--green); font-size:0.75rem;">· VALOR (EV ' + ev.toFixed(2) + ')</span>';
         } else {
           valorBadge = '<span style="color:var(--chalk-dim); font-size:0.75rem;">· sin valor (EV ' + ev.toFixed(2) + ')</span>';
@@ -649,7 +556,7 @@ function renderResults(summaries, mercadoResumen, modeloVsMercadoResumen, global
 function exportarComparacionCSV(filas) {
   if (!filas.length) { alert('No hay partidos para exportar.'); return; }
   const headers = [
-    'fecha','local','visitante','APP_local','APP_empate','APP_visitante','APP_over15','APP_over25','APP_over35','APP_btts',
+    'liga_key','fecha','local','visitante','APP_local','APP_empate','APP_visitante','APP_over15','APP_over25','APP_over35','APP_btts',
     'APP_corners_over75','APP_corners_over85','APP_corners_over95',
     'REAL_goles_local','REAL_goles_visitante','REAL_total_goles','REAL_resultado',
     'REAL_over15','REAL_over25','REAL_over35','REAL_btts',
@@ -662,6 +569,7 @@ function exportarComparacionCSV(filas) {
   ];
   const escapar = (v) => { if (v === null || v === undefined) return ''; const s = String(v); return /[",\n;]/.test(s) ? ('"' + s.replace(/"/g, '""') + '"') : s; };
   const num = (v) => (v == null || !Number.isFinite(v)) ? '' : Number(v).toFixed(2);
+  const leagueKeyCsv = (historial && historial.leagueKey) || '';
   const lineas = [headers.join(',')];
   for (const f of filas) {
     const dev3 = devigar3(f.casa.odds_local, f.casa.odds_empate, f.casa.odds_visitante);
@@ -671,7 +579,7 @@ function exportarComparacionCSV(filas) {
     const fairO35 = devigar2(f.casa.odds_over35, f.casa.odds_under35);
     const fairBttsSi = devigar2(f.casa.odds_btts_si, f.casa.odds_btts_no);
     const fila = [
-      f.fecha, f.local, f.visitante,
+      leagueKeyCsv, f.fecha, f.local, f.visitante,
       num(f.app.local), num(f.app.empate), num(f.app.visitante),
       num(f.app.over15), num(f.app.over25), num(f.app.over35), num(f.app.btts),
       num(f.app.corners_over75), num(f.app.corners_over85), num(f.app.corners_over95),
@@ -704,7 +612,7 @@ function exportarComparacionCSV(filas) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;
-  const ligaSlug = String((historial && (historial.liga || historial.leagueKey)) || 'backtest').replace(/\s+/g, '_');
+  const ligaSlug = String((historial && historial.leagueKey) || 'backtest').replace(/\s+/g, '_');
   a.download = 'comparacion_' + ligaSlug + '_' + new Date().toISOString().slice(0, 10) + '.csv';
   document.body.appendChild(a);
   a.click();
@@ -734,7 +642,7 @@ runBtn.addEventListener('click', async () => {
   renderCalibracion(calResult);
 
   log('\n▶ Corriendo backtest con calibración ' + (calibracion ? 'ACTIVA' : 'por defecto') + '...');
-  log('   Filtro EV ≥ ' + FILTRO_EV + ' aplicado a picks con cuota.');
+  log('   Filtro EV por mercado (leagues.js) aplicado a picks con cuota; sin cuota entran solo para medir acierto.');
   const udc = (umbrales.umbralDC != null) ? umbrales.umbralDC : 68;
   log('   Umbrales ' + leagueKey + ': 1X2 ≥' + umbrales.umbral1x2 + '% · DC ≥' + udc + '% · Goles ≥' + umbrales.umbralGoles + '% · BTTS ≥' + umbrales.umbralBtss + '% · Córners totales ≥' + umbrales.umbralCorners + '%');
 
@@ -757,7 +665,7 @@ runBtn.addEventListener('click', async () => {
     modeloCuota: new Multi1X2('Modelo (partidos con cuota)'), mercado: new Multi1X2('Cuota real (sin margen)'),
   };
 
-  const picksStats = new PicksStats(umbrales);
+  const picksStats = new PicksStats();
   const todasLasRecs = [];
   let evaluados = 0, conSinEV = 0;
 
