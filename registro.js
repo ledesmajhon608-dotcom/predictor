@@ -1,12 +1,20 @@
 // registro.js
-// v6: MERCADOS cubre todo lo que genera picks.js (under15, under25, c_over95); antes se perdían al guardar.
+// v7: CLV. Cuota de cierre por pick (manual o desde Bzzoiro), evaluación de ventaja real
+//     (global / por liga / por mercado) y estado por liga para decidir promociones con evidencia.
+// v6: MERCADOS cubre todo lo que genera picks.js (under15, under25, c_over95).
 
-import { FILTRO_EV } from './leagues.js';
+import { FILTRO_EV, LIGAS } from './leagues.js';
+import { clvPct, resumenCLV } from './clv.js';
+import { valorPick, cuotaMinima } from './picks.js';
+import { resolveLeagueId, findUpcomingEvent, fetchEventOdds, normalizarOddsBzzoiro } from './api.js';
 
 const KEY = 'suertudo_registro_v1';
 const Z = 1.64;
 const META_PARTIDOS = 100;
 const ESCANEO_MIN_N = 30;
+const CLV_MIN_N = 30;        // mínimo de picks con cierre para opinar
+const CLV_FIRME_N = 100;     // mínimo para confirmar ventaja
+const CIERRE_MAX_MIN = 180;  // un cierre tomado a más de 3 h del inicio no cuenta
 
 function store() { return (typeof localStorage !== 'undefined') ? localStorage : null; }
 
@@ -91,6 +99,70 @@ export function borrarResultado(id) {
 
 export function borrarEntrada(id) {
   guardarRegistro(leerRegistro().filter(e => e.id !== id));
+}
+
+// Cuota de la casa por pick (la que viste/apostaste). Vacío = se borra.
+export function guardarCuotas(id, mapa) {
+  const arr = leerRegistro();
+  const e = arr.find(x => x.id === id);
+  if (!e) throw new Error('No existe esa entrada');
+  const nuevas = Object.assign({}, e.cuotas || {});
+  for (const k of (e.picks || [])) {
+    if (!(k in (mapa || {}))) continue;
+    const n = parseFloat(String(mapa[k]).replace(',', '.'));
+    if (Number.isFinite(n) && n > 1) nuevas[k] = +n.toFixed(2); else delete nuevas[k];
+  }
+  e.cuotas = nuevas;
+  guardarRegistro(arr);
+  return e;
+}
+
+// Mercado (para el filtro EV de leagues.js) de cada pick.
+export const MERCADO_FILTRO = {
+  local: '1X2', empate: '1X2', visitante: '1X2', dc1X: '1X', dcX2: 'X2',
+  over15: 'Over 1.5', over25: 'Over 2.5', over35: 'Over 3.5',
+  under15: 'Under 1.5', under25: 'Under 2.5', under35: 'Under 3.5',
+  bttsSi: 'BTTS Sí', bttsNo: 'BTTS No',
+  c_over75: 'Córners', c_over85: 'Córners', c_over95: 'Córners',
+};
+
+export function guardarCierre(id, mapa, { fuente = 'manual', minutos = null } = {}) {
+  const arr = leerRegistro();
+  const e = arr.find(x => x.id === id);
+  if (!e) throw new Error('No existe esa entrada');
+  const limpio = {};
+  for (const [k, v] of Object.entries(mapa || {})) {
+    const n = parseFloat(String(v).replace(',', '.'));
+    if (Number.isFinite(n) && n > 1) limpio[k] = +n.toFixed(2);
+  }
+  if (!Object.keys(limpio).length) throw new Error('Cargá al menos una cuota de cierre (mayor a 1).');
+  e.cierre = Object.assign({}, e.cierre || {}, limpio);
+  e.cierreTs = new Date().toISOString();
+  e.cierreFuente = fuente;
+  if (Number.isFinite(minutos)) e.cierreMin = Math.round(minutos); else delete e.cierreMin;
+  guardarRegistro(arr);
+  return e;
+}
+
+// Trae la cuota actual de Bzzoiro para los picks de la entrada. Solo vale como cierre
+// si el partido todavía no empezó (se guarda cuántos minutos faltaban).
+export async function traerCierre(id) {
+  const e = leerRegistro().find(x => x.id === id);
+  if (!e) throw new Error('No existe esa entrada');
+  const nombre = (LIGAS[e.liga] && LIGAS[e.liga].name) || e.ligaNombre || e.liga;
+  const bzzoiroId = await resolveLeagueId(e.liga, nombre);
+  if (!bzzoiroId) throw new Error('Esta liga no tiene id en Bzzoiro.');
+  const ev = await findUpcomingEvent(bzzoiroId, e.local, e.visitante);
+  if (!ev) throw new Error('No encontré el partido en los próximos 14 días (¿ya empezó o ya se jugó?).');
+  const inicio = Date.parse(ev.event_date || ev.date || '');
+  const minutos = Number.isFinite(inicio) ? (inicio - Date.now()) / 60000 : null;
+  if (minutos != null && minutos <= 0) throw new Error('El partido ya empezó: esa cuota no sirve como cierre.');
+  const odds = normalizarOddsBzzoiro(await fetchEventOdds(ev.id));
+  const mapa = {}, faltan = [];
+  for (const key of (e.picks || [])) { if (odds[key]) mapa[key] = odds[key]; else faltan.push(key); }
+  if (!Object.keys(mapa).length) throw new Error('Bzzoiro no tiene cuota para estos mercados (' + faltan.join(', ') + '). Cargala a mano.');
+  guardarCierre(id, mapa, { fuente: 'bzzoiro', minutos });
+  return { mapa, faltan, minutos };
 }
 
 export function importarEntradas(nuevas) {
@@ -230,6 +302,84 @@ function cuotasEfectivas(e) {
   return out;
 }
 
+// ---------- CLV: ¿conseguís mejor precio que el cierre? ----------
+export function filasCLV(entradas) {
+  const out = [];
+  for (const e of entradas) {
+    if (!e || !e.cierre || !Array.isArray(e.picks)) continue;
+    if (Number.isFinite(e.cierreMin) && e.cierreMin > CIERRE_MAX_MIN) continue;
+    const cuotas = cuotasEfectivas(e);
+    for (const key of e.picks) {
+      const c = cuotas[key], cc = e.cierre[key];
+      const v = clvPct(c, cc);
+      if (v == null) continue;
+      out.push({ id: e.id, liga: e.liga, key, cuota: c, cierre: cc, clv: v });
+    }
+  }
+  return out;
+}
+
+function resumenFilas(rows) {
+  if (!rows.length) return { n: 0, media: null, mediana: null, pctPositivo: null, z: null };
+  const base = resumenCLV(rows.map(r => ({ cuota: r.cuota, cuotaCierre: r.cierre })));
+  return Object.assign({}, base, { z: zMedia(rows.map(r => r.clv)) });
+}
+
+export function nivelCLV(r) {
+  if (!r || r.n < CLV_MIN_N) return 'pocos';
+  if (r.media > 0 && r.n >= CLV_FIRME_N && r.z != null && r.z > Z) return 'confirmada';
+  if (r.media > 0) return 'observacion';
+  return 'sin_ventaja';
+}
+
+function consejoLiga(nivel, statusConfig, n) {
+  const activa = statusConfig === 'green' || statusConfig === 'yellow';
+  if (nivel === 'confirmada') return 'CLV positivo y significativo: la ventaja se sostiene. Podés mantener o subir el stake.';
+  if (nivel === 'observacion') {
+    return 'CLV positivo pero sin confirmar (hacen falta ' + CLV_FIRME_N + ' picks y z > ' + Z + ').' +
+      (statusConfig === 'green' ? ' Está en verde sin confirmación: bajala a amarillo hasta confirmar.' : ' No pases de amarillo.');
+  }
+  if (nivel === 'sin_ventaja') {
+    return activa ? 'CLV ≤ 0 con ' + n + ' picks: no hay evidencia de ventaja. Bajala a rojo o reducí el stake.'
+                  : 'CLV ≤ 0: mantenela en rojo.';
+  }
+  return n >= 1 ? 'Faltan ' + (CLV_MIN_N - n) + ' picks con cuota y cierre para opinar.' : 'Sin picks con cuota y cierre cargados.';
+}
+
+export function estadoPorLiga(entradas) {
+  const filas = filasCLV(entradas);
+  const porLiga = {};
+  for (const f of filas) (porLiga[f.liga] = porLiga[f.liga] || []).push(f);
+  const claves = new Set(Object.keys(porLiga));
+  for (const [k, l] of Object.entries(LIGAS)) {
+    const st = l.betting && l.betting.status;
+    if (st === 'green' || st === 'yellow') claves.add(k);
+  }
+  const out = {};
+  for (const liga of claves) {
+    const r = resumenFilas(porLiga[liga] || []);
+    const statusConfig = (LIGAS[liga] && LIGAS[liga].betting && LIGAS[liga].betting.status) || 'unknown';
+    const nivel = nivelCLV(r);
+    out[liga] = Object.assign({}, r, { nivel, statusConfig, consejo: consejoLiga(nivel, statusConfig, r.n) });
+  }
+  return out;
+}
+
+export function clvPorMercado(filas) {
+  const g = {};
+  for (const f of filas) (g[f.key] = g[f.key] || []).push(f);
+  return Object.entries(g).map(([key, rows]) => {
+    const r = resumenFilas(rows);
+    return { key, label: (MERCADO_POR_KEY[key] && MERCADO_POR_KEY[key].label) || key, n: r.n, media: r.media, pctPositivo: r.pctPositivo };
+  }).sort((a, b) => b.n - a.n);
+}
+
+export function analizarCLV(entradas) {
+  const filas = filasCLV(entradas);
+  const resumen = resumenFilas(filas);
+  return { resumen, nivel: nivelCLV(resumen), porLiga: estadoPorLiga(entradas), porMercado: clvPorMercado(filas) };
+}
+
 export function evaluar(entradas) {
   const res = entradas.filter(e => e.resultado && Number.isFinite(e.resultado.gl) && Number.isFinite(e.resultado.gv) && e.prob);
   const b3Modelo = [], b3ModC = [], b3Mkt = [], dMkt = [];
@@ -301,8 +451,16 @@ export function evaluar(entradas) {
     if (malos.length) lectura.push(`Calibración floja: ${malos.join(', ')}.`);
   }
 
+  const clv = analizarCLV(entradas);
+  if (clv.resumen.n > 0) {
+    const txt = { pocos: 'todavía pocos picks para concluir', confirmada: 'ventaja confirmada', observacion: 'positivo pero sin confirmar', sin_ventaja: 'sin evidencia de ventaja' }[clv.nivel];
+    lectura.push('CLV: ' + (clv.resumen.media >= 0 ? '+' : '') + clv.resumen.media.toFixed(2) + '% en ' + clv.resumen.n + ' picks con cierre (' + clv.resumen.pctPositivo + '% positivos) → ' + txt + '.');
+  } else if (entradas.length) {
+    lectura.push('Sin cuotas de cierre cargadas: no se puede medir si le ganás al mercado. Cargalas en "Pendientes" antes del partido.');
+  }
+
   return {
-    n, pendientes: entradas.length - n, meta: META_PARTIDOS, conCuotas1x2,
+    n, pendientes: entradas.length - n, meta: META_PARTIDOS, conCuotas1x2, clv,
     b1x2, mercados: Object.values(mk).map(m => m.summary()).filter(s => s.n > 0),
     escaneo, pool, calibracion, lectura,
   };
@@ -319,6 +477,59 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
   const senal = (z) => z == null ? '—' : z > Z ? '✅ mejor' : z < -Z ? '❌ peor' : '≈ empate';
   const fechaCorta = (iso) => (iso || '').slice(0, 10);
 
+  const parseNum = (t) => { const n = parseFloat(String(t ?? '').replace(',', '.')); return Number.isFinite(n) && n > 1 ? n : null; };
+
+  function textoEV(e, key, cuota) {
+    const m = MERCADOS.find(x => x.key === key);
+    const prob = m ? m.p(e) : null;
+    const merc = MERCADO_FILTRO[key] || 'default';
+    if (!Number.isFinite(prob)) return { texto: '', color: dim };
+    if (cuota == null) {
+      const min = cuotaMinima(prob, merc);
+      return { texto: `modelo ${f1(prob)}% · cuota mín. con valor ${min == null ? '—' : min.toFixed(2)}`, color: dim };
+    }
+    const v = valorPick(prob, cuota, merc);
+    if (v.ev == null) return { texto: '', color: dim };
+    if (v.pasa) return { texto: `EV ${v.ev.toFixed(2)} ✅ valor${v.kelly != null ? ' · Kelly/4 ' + v.kelly + '%' : ''}`, color: 'var(--green)' };
+    return { texto: `EV ${v.ev.toFixed(2)} ❌ sin valor (mín. ${cuotaMinima(prob, merc).toFixed(2)})`, color: 'var(--red)' };
+  }
+
+  function leerInputs(e) {
+    const cuotas = {}, cierre = {};
+    for (const key of (e.picks || [])) {
+      const a = $('cq-' + e.id + '-' + key), b = $('cl-' + e.id + '-' + key);
+      if (a) cuotas[key] = a.value;
+      if (b && String(b.value).trim() !== '') cierre[key] = b.value;
+    }
+    return { cuotas, cierre };
+  }
+
+  // Guarda cuotas apostadas y cierre tal como están en pantalla (para no perder lo escrito al re-renderizar).
+  function guardarInputs(id) {
+    const e = leerRegistro().find(x => x.id === id);
+    if (!e) return;
+    const { cuotas, cierre } = leerInputs(e);
+    guardarCuotas(id, cuotas);
+    if (Object.keys(cierre).length) guardarCierre(id, cierre);
+  }
+
+  function cierreHtml(e) {
+    if (!(e.picks || []).length) return '';
+    const filas = e.picks.map(k => {
+      const lab = MERCADOS.find(m => m.key === k)?.label || k;
+      const cuota = e.cuotas?.[k] ?? null;
+      const t = textoEV(e, k, cuota);
+      return `<div style="margin-bottom:8px;">
+        <div class="field-row" style="grid-template-columns:1.3fr 1fr 1fr;margin-bottom:2px;align-items:center;"><span style="font-size:.78rem;">${esc(lab)}</span>
+          <input type="text" inputmode="decimal" data-ev="1" data-id="${esc(e.id)}" data-key="${esc(k)}" id="cq-${esc(e.id)}-${esc(k)}" placeholder="cuota casa" value="${cuota ?? ''}" style="padding:8px;text-align:center;">
+          <input type="text" inputmode="decimal" id="cl-${esc(e.id)}-${esc(k)}" placeholder="cierre" value="${e.cierre?.[k] ?? ''}" style="padding:8px;text-align:center;"></div>
+        <div id="ev-${esc(e.id)}-${esc(k)}" style="font-size:.7rem;color:${t.color};">${t.texto}</div></div>`;
+    }).join('');
+    const estado = e.cierreTs ? `<p style="margin:4px 0 8px;font-size:.72rem;color:var(--green);">Cierre guardado (${esc(e.cierreFuente || 'manual')}${Number.isFinite(e.cierreMin) ? ', ' + e.cierreMin + ' min antes' : ''}).</p>` : '';
+    return `<p style="margin:8px 0 6px;font-size:.78rem;font-weight:600;">💰 Cuotas por pick <small style="color:${dim};font-weight:400;">(la de la casa · y el cierre justo antes del partido)</small></p>${filas}${estado}
+      <div style="margin-bottom:10px;"><button data-accion="guardar-cuotas" data-id="${esc(e.id)}" style="margin-right:8px;padding:8px 12px;font-size:.78rem;">Guardar cuotas</button><button data-accion="traer-cierre" data-id="${esc(e.id)}" style="padding:8px 12px;font-size:.78rem;">Traer cierre de Bzzoiro</button></div>`;
+  }
+
   function cardPendiente(e) {
     const p = e.prob;
     return `<div class="card">
@@ -331,9 +542,10 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         <input type="text" inputmode="numeric" id="cc-${esc(e.id)}" placeholder="córners tot." style="padding:8px;text-align:center;">
       </div>
       <div class="field-row" style="margin-bottom:8px;grid-template-columns:1fr 1fr;">
-        <input type="text" inputmode="decimal" id="ca-${esc(e.id)}" placeholder="cuota apostada (opc.)" style="padding:8px;text-align:center;" value="${e.apuesta?.cuota ?? ''}">
+        <input type="text" inputmode="decimal" id="ca-${esc(e.id)}" placeholder="cuota apostada (opc.)" style="padding:8px;text-align:center;" value="${e.apuesta?.cuota ?? ((e.picks && e.picks.length === 1 && e.cuotas && e.cuotas[e.picks[0]]) || '')}">
         <input type="text" inputmode="decimal" id="ma-${esc(e.id)}" placeholder="monto apostado (opc.)" style="padding:8px;text-align:center;" value="${e.apuesta?.monto ?? ''}">
       </div>
+      ${cierreHtml(e)}
       <button data-accion="resultado" data-id="${esc(e.id)}" style="margin-right:8px;">Guardar resultado</button>
       <button data-accion="borrar" data-id="${esc(e.id)}" style="background:var(--surface-2,#1c2530);color:var(--text,#f0f3f7);">🗑</button>
     </div>`;
@@ -345,9 +557,35 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
     return `<div class="compare-row" style="grid-template-columns:1.6fr .7fr auto;"><span>${esc(e.local)} vs ${esc(e.visitante)}<br><small style="color:${dim};">${fechaCorta(e.creado)}${apTxt}</small></span><span class="grid-plain"><strong>${r.gl}-${r.gv}</strong>${Number.isFinite(r.corners) ? `<br><small>${r.corners} córn.</small>` : ''}</span><span><button data-accion="reabrir" data-id="${esc(e.id)}" style="padding:6px 10px;font-size:.75rem;">↩︎</button></span></div>`;
   }
 
+  const NIVEL_TXT = { pocos: ['Pocos datos', dim], confirmada: ['✅ Ventaja confirmada', 'var(--green)'], observacion: ['🟡 Positivo, sin confirmar', 'var(--yellow)'], sin_ventaja: ['❌ Sin ventaja', 'var(--red)'] };
+  const ICONO_ST = { green: '🟢', yellow: '🟡', red: '🔴', unknown: '⚪' };
+
+  function renderCLV(clv, hayEntradas) {
+    const el = $('reg-clv');
+    if (!el) return;
+    const r = clv.resumen;
+    if (!r.n) {
+      el.innerHTML = `<p style="color:${dim};font-size:.85rem;line-height:1.5;">${hayEntradas ? 'Todavía no hay picks con cuota de cierre.' : 'Todavía no guardaste predicciones.'}<br>El CLV compara la cuota a la que apostaste con la cuota justo antes del partido. Si es positivo de forma sostenida (100+ picks), tenés ventaja real; el ROI solo puede ser suerte. Cargá la cuota en la app al guardar el pick y el cierre en "Pendientes".</p>`;
+      return;
+    }
+    const [nt, nc] = NIVEL_TXT[clv.nivel];
+    const sg = (x) => (x >= 0 ? '+' : '') + Number(x).toFixed(2);
+    const filasLiga = Object.entries(clv.porLiga).sort((a, b) => b[1].n - a[1].n).map(([k, s]) => {
+      const [lt, lc] = NIVEL_TXT[s.nivel];
+      return `<div class="card" style="margin-bottom:8px;padding:12px;"><div class="compare-row" style="grid-template-columns:1.4fr .6fr 1fr;border:none;padding:0 0 6px;"><span>${ICONO_ST[s.statusConfig] || '⚪'} ${esc(LIGAS[k]?.name || k)}</span><span class="grid-plain">${s.n} picks</span><span class="grid-plain" style="color:${lc}">${s.n ? sg(s.media) + '%' : '—'} · ${lt}</span></div><p style="margin:0;font-size:.74rem;color:${dim};line-height:1.45;">${esc(s.consejo)}</p></div>`;
+    }).join('');
+    const filasMk = clv.porMercado.map(m => `<div class="compare-row" style="grid-template-columns:1.6fr .6fr 1fr;"><span>${esc(m.label)}</span><span class="grid-plain">${m.n}</span><span class="grid-plain" style="color:${m.media > 0 ? 'var(--green)' : 'var(--red)'}">${sg(m.media)}% · ${m.pctPositivo}% +</span></div>`).join('');
+    el.innerHTML = `<div class="card" style="border:2px solid ${nc};"><h3 style="color:${nc};">${nt} <small>(${r.n} picks con cierre)</small></h3>
+        <div class="compare-row" style="grid-template-columns:1fr 1fr 1fr 1fr;"><span>CLV medio</span><span class="grid-plain" style="color:${r.media > 0 ? 'var(--green)' : 'var(--red)'}">${sg(r.media)}%</span><span class="grid-plain">mediana ${sg(r.mediana)}%</span><span class="grid-plain">${r.pctPositivo}% positivos</span></div>
+        <p style="margin:8px 0 0;font-size:.75rem;color:${dim};line-height:1.5;">z = ${r.z == null ? '—' : r.z.toFixed(2)} (confirma con z > ${Z} y ≥ ${CLV_FIRME_N} picks). CLV = cuota apostada / cuota de cierre − 1. Compará siempre contra una cuota de cierre de la misma casa o de una casa de margen parecido: si el cierre viene de otra fuente con otro margen, el número se sesga.</p></div>
+      <h3 class="corner-team-title">Estado por liga (evidencia real)</h3>${filasLiga || ''}
+      <h3 class="corner-team-title">Por mercado</h3><div class="card">${filasMk}</div>`;
+  }
+
   function render() {
     const arr = leerRegistro();
     const ev = evaluar(arr);
+    renderCLV(ev.clv, arr.length > 0);
     const pend = arr.filter(e => !e.resultado).sort((a, b) => (b.creado || '').localeCompare(a.creado || ''));
     const resu = arr.filter(e => e.resultado).sort((a, b) => (b.resuelto || '').localeCompare(a.resuelto || ''));
 
@@ -395,18 +633,46 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
     return /^\d+$/.test(t) ? parseInt(t, 10) : null;
   }
 
-  $('reg-pendientes').addEventListener('click', (ev) => {
+  $('reg-pendientes').addEventListener('click', async (ev) => {
     const t = ev.target, id = t?.dataset?.id, acc = t?.dataset?.accion;
     if (!id || !acc) return;
     if (acc === 'borrar') { if (confirm('¿Borrar esta predicción?')) { borrarEntrada(id); render(); } return; }
+    if (acc === 'guardar-cuotas') {
+      try { guardarInputs(id); render(); } catch (err) { alert('Error: ' + err.message); }
+      return;
+    }
+    if (acc === 'traer-cierre') {
+      t.disabled = true; t.textContent = 'Buscando...';
+      try {
+        guardarInputs(id);
+        const r = await traerCierre(id);
+        alert('Cierre guardado (' + (r.minutos != null ? Math.round(r.minutos) + ' min antes del inicio' : 'hora de inicio desconocida') + ').' + (r.faltan.length ? ' Sin cuota para: ' + r.faltan.join(', ') + ' (cargala a mano).' : ''));
+      } catch (err) { alert('No se pudo traer el cierre: ' + err.message); }
+      render();
+      return;
+    }
     if (acc === 'resultado') {
       const gl = entero($('gl-' + id).value), gv = entero($('gv-' + id).value);
       const ccTxt = $('cc-' + id).value;
       const cc = String(ccTxt ?? '').trim() === '' ? null : entero(ccTxt);
       if (gl == null || gv == null) { alert('Cargá los goles de los dos equipos.'); return; }
       if (String(ccTxt ?? '').trim() !== '' && cc == null) { alert('Los córners tienen que ser un número entero.'); return; }
-      try { actualizarResultado(id, { gl, gv, corners: cc, apCuota: $('ca-' + id)?.value, apMonto: $('ma-' + id)?.value }); render(); } catch (e) { alert('Error: ' + e.message); }
+      try {
+        try { guardarInputs(id); } catch (_) { /* cuotas inválidas: se ignoran */ }
+        actualizarResultado(id, { gl, gv, corners: cc, apCuota: $('ca-' + id)?.value, apMonto: $('ma-' + id)?.value });
+        render();
+      } catch (e) { alert('Error: ' + e.message); }
     }
+  });
+
+  $('reg-pendientes').addEventListener('input', (ev) => {
+    const t = ev.target;
+    if (!t || !t.dataset || !t.dataset.ev) return;
+    const e = leerRegistro().find(x => x.id === t.dataset.id);
+    const out = $('ev-' + t.dataset.id + '-' + t.dataset.key);
+    if (!e || !out) return;
+    const r = textoEV(e, t.dataset.key, parseNum(t.value));
+    out.textContent = r.texto; out.style.color = r.color;
   });
 
   $('reg-resueltas').addEventListener('click', (ev) => {
@@ -416,7 +682,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
 
   function exportarCSV(arr) {
     const resu = arr.filter(e => e.resultado && e.cuotas);
-    const enc = ['fecha','liga','partido','mercado','prob_modelo','cuota','ev','cuota_apostada','acierto','retorno_u'];
+    const enc = ['fecha','liga','partido','mercado','prob_modelo','cuota','ev','cuota_apostada','acierto','retorno_u','cuota_cierre','clv_pct'];
     const escap = (v) => { const t = String(v ?? ''); return /[",\n;]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
     const fnum = (v, d = 2) => (v == null || !Number.isFinite(v)) ? '' : Number(v).toFixed(d);
     const lineas = [enc.join(';')];
@@ -431,7 +697,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         if (!Number.isFinite(prob)) continue;
         const hit = m.hit(r);
         const ev = (prob / 100) * cuota;
-        lineas.push([fecha, e.liga, partido, m.label, fnum(prob, 1), fnum(cuota), fnum(ev), fnum(e.apuesta?.cuota), hit ? 1 : 0, fnum(hit ? cuota - 1 : -1)].map(escap).join(';'));
+        lineas.push([fecha, e.liga, partido, m.label, fnum(prob, 1), fnum(cuota), fnum(ev), fnum(e.apuesta?.cuota), hit ? 1 : 0, fnum(hit ? cuota - 1 : -1), fnum(e.cierre?.[m.key]), fnum(clvPct(cuota, e.cierre?.[m.key]))].map(escap).join(';'));
       }
     }
     return '﻿' + lineas.join('\n');
