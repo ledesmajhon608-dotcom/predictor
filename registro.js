@@ -1,9 +1,10 @@
 // registro.js
+// v8: con 2+ picks (combinada) hay UNA sola cuota (la del ticket) y su cierre; con 1 pick, la del pick.
 // v7: CLV. Cuota de cierre por pick (manual o desde Bzzoiro), evaluación de ventaja real
 //     (global / por liga / por mercado) y estado por liga para decidir promociones con evidencia.
 // v6: MERCADOS cubre todo lo que genera picks.js (under15, under25, c_over95).
 
-import { FILTRO_EV, LIGAS } from './leagues.js';
+import { FILTRO_EV, LIGAS, getFiltroEV } from './leagues.js';
 import { clvPct, resumenCLV } from './clv.js';
 import { valorPick, cuotaMinima } from './picks.js';
 import { resolveLeagueId, findUpcomingEvent, fetchEventOdds, normalizarOddsBzzoiro } from './api.js';
@@ -101,13 +102,32 @@ export function borrarEntrada(id) {
   guardarRegistro(leerRegistro().filter(e => e.id !== id));
 }
 
-// Cuota de la casa por pick (la que viste/apostaste). Vacío = se borra.
+// Claves donde se guarda la cuota: 1 pick → el pick; 2 o más picks → 'combinada' (cuota del ticket).
+export function clavesCuota(e) {
+  const n = (e.picks || []).length;
+  return n >= 2 ? ['combinada'] : (e.picks || []);
+}
+
+// Probabilidad del modelo de que acierten TODOS los picks (producto; asume mercados independientes).
+export function probCombinada(e) {
+  let p = 1;
+  for (const k of (e.picks || [])) {
+    const m = MERCADO_POR_KEY[k];
+    const v = m ? m.p(e) : null;
+    if (!Number.isFinite(v)) return null;
+    p *= v / 100;
+  }
+  return (e.picks || []).length ? +(p * 100).toFixed(1) : null;
+}
+
+// Cuota de la casa (la que viste/apostaste). Vacío = se borra.
 export function guardarCuotas(id, mapa) {
   const arr = leerRegistro();
   const e = arr.find(x => x.id === id);
   if (!e) throw new Error('No existe esa entrada');
   const nuevas = Object.assign({}, e.cuotas || {});
-  for (const k of (e.picks || [])) {
+  const permitidas = new Set([...(e.picks || []), ...((e.picks || []).length >= 2 ? ['combinada'] : [])]);
+  for (const k of permitidas) {
     if (!(k in (mapa || {}))) continue;
     const n = parseFloat(String(mapa[k]).replace(',', '.'));
     if (Number.isFinite(n) && n > 1) nuevas[k] = +n.toFixed(2); else delete nuevas[k];
@@ -158,11 +178,19 @@ export async function traerCierre(id) {
   const minutos = Number.isFinite(inicio) ? (inicio - Date.now()) / 60000 : null;
   if (minutos != null && minutos <= 0) throw new Error('El partido ya empezó: esa cuota no sirve como cierre.');
   const odds = normalizarOddsBzzoiro(await fetchEventOdds(ev.id));
-  const mapa = {}, faltan = [];
-  for (const key of (e.picks || [])) { if (odds[key]) mapa[key] = odds[key]; else faltan.push(key); }
-  if (!Object.keys(mapa).length) throw new Error('Bzzoiro no tiene cuota para estos mercados (' + faltan.join(', ') + '). Cargala a mano.');
+  const picks = e.picks || [];
+  const faltan = picks.filter(k => !odds[k]);
+  let mapa;
+  if (picks.length >= 2) {
+    if (faltan.length) throw new Error('Bzzoiro no tiene cuota para ' + faltan.join(', ') + ': cargá a mano el cierre de la combinada.');
+    mapa = { combinada: +picks.reduce((a, k) => a * odds[k], 1).toFixed(2) };
+  } else {
+    mapa = {};
+    for (const k of picks) if (odds[k]) mapa[k] = odds[k];
+    if (!Object.keys(mapa).length) throw new Error('Bzzoiro no tiene cuota para este mercado (' + faltan.join(', ') + '). Cargala a mano.');
+  }
   guardarCierre(id, mapa, { fuente: 'bzzoiro', minutos });
-  return { mapa, faltan, minutos };
+  return { mapa, faltan: picks.length >= 2 ? [] : faltan, minutos };
 }
 
 export function importarEntradas(nuevas) {
@@ -280,7 +308,7 @@ function cuotasEfectivas(e) {
   const cuotaGlobal = e.apuesta && Number.isFinite(e.apuesta.cuota) && e.apuesta.cuota > 1
     ? e.apuesta.cuota : null;
 
-  if (cuotaGlobal != null && picksTildados.length > 0) {
+  if (cuotaGlobal != null && picksTildados.length > 0 && !(picksTildados.length > 1 && out.combinada != null)) {
     let pickConCuota = null;
     if (picksTildados.length === 1) {
       pickConCuota = picksTildados[0];
@@ -309,7 +337,8 @@ export function filasCLV(entradas) {
     if (!e || !e.cierre || !Array.isArray(e.picks)) continue;
     if (Number.isFinite(e.cierreMin) && e.cierreMin > CIERRE_MAX_MIN) continue;
     const cuotas = cuotasEfectivas(e);
-    for (const key of e.picks) {
+    const claves = e.picks.length >= 2 ? [...e.picks, 'combinada'] : e.picks;
+    for (const key of claves) {
       const c = cuotas[key], cc = e.cierre[key];
       const v = clvPct(c, cc);
       if (v == null) continue;
@@ -370,7 +399,7 @@ export function clvPorMercado(filas) {
   for (const f of filas) (g[f.key] = g[f.key] || []).push(f);
   return Object.entries(g).map(([key, rows]) => {
     const r = resumenFilas(rows);
-    return { key, label: (MERCADO_POR_KEY[key] && MERCADO_POR_KEY[key].label) || key, n: r.n, media: r.media, pctPositivo: r.pctPositivo };
+    return { key, label: key === 'combinada' ? 'Combinada (cuota del ticket)' : ((MERCADO_POR_KEY[key] && MERCADO_POR_KEY[key].label) || key), n: r.n, media: r.media, pctPositivo: r.pctPositivo };
   }).sort((a, b) => b.n - a.n);
 }
 
@@ -480,13 +509,21 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
   const parseNum = (t) => { const n = parseFloat(String(t ?? '').replace(',', '.')); return Number.isFinite(n) && n > 1 ? n : null; };
 
   function textoEV(e, key, cuota) {
-    const m = MERCADOS.find(x => x.key === key);
-    const prob = m ? m.p(e) : null;
-    const merc = MERCADO_FILTRO[key] || 'default';
+    let prob, merc;
+    if (key === 'combinada') {
+      prob = probCombinada(e);
+      // filtro EV más exigente entre las patas
+      merc = (e.picks || []).map(k => MERCADO_FILTRO[k] || 'default').sort((a, b) => getFiltroEV(b) - getFiltroEV(a))[0] || 'default';
+    } else {
+      const m = MERCADOS.find(x => x.key === key);
+      prob = m ? m.p(e) : null;
+      merc = MERCADO_FILTRO[key] || 'default';
+    }
     if (!Number.isFinite(prob)) return { texto: '', color: dim };
+    const etiqueta = key === 'combinada' ? 'combinada' : 'modelo';
     if (cuota == null) {
       const min = cuotaMinima(prob, merc);
-      return { texto: `modelo ${f1(prob)}% · cuota mín. con valor ${min == null ? '—' : min.toFixed(2)}`, color: dim };
+      return { texto: `${etiqueta} ${f1(prob)}% · cuota mín. con valor ${min == null ? '—' : min.toFixed(2)}`, color: dim };
     }
     const v = valorPick(prob, cuota, merc);
     if (v.ev == null) return { texto: '', color: dim };
@@ -496,7 +533,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
 
   function leerInputs(e) {
     const cuotas = {}, cierre = {};
-    for (const key of (e.picks || [])) {
+    for (const key of clavesCuota(e)) {
       const a = $('cq-' + e.id + '-' + key), b = $('cl-' + e.id + '-' + key);
       if (a) cuotas[key] = a.value;
       if (b && String(b.value).trim() !== '') cierre[key] = b.value;
@@ -504,7 +541,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
     return { cuotas, cierre };
   }
 
-  // Guarda cuotas apostadas y cierre tal como están en pantalla (para no perder lo escrito al re-renderizar).
+  // Guarda cuotas y cierre tal como están en pantalla (para no perder lo escrito al re-renderizar).
   function guardarInputs(id) {
     const e = leerRegistro().find(x => x.id === id);
     if (!e) return;
@@ -514,9 +551,11 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
   }
 
   function cierreHtml(e) {
-    if (!(e.picks || []).length) return '';
-    const filas = e.picks.map(k => {
-      const lab = MERCADOS.find(m => m.key === k)?.label || k;
+    const picks = e.picks || [];
+    if (!picks.length) return '';
+    const combinada = picks.length >= 2;
+    const filas = clavesCuota(e).map(k => {
+      const lab = k === 'combinada' ? 'Cuota del ticket' : (MERCADOS.find(m => m.key === k)?.label || k);
       const cuota = e.cuotas?.[k] ?? null;
       const t = textoEV(e, k, cuota);
       return `<div style="margin-bottom:8px;">
@@ -525,14 +564,16 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
           <input type="text" inputmode="decimal" id="cl-${esc(e.id)}-${esc(k)}" placeholder="1.80" value="${e.cierre?.[k] ?? ''}" style="padding:8px;text-align:center;"></div>
         <div id="ev-${esc(e.id)}-${esc(k)}" style="font-size:.7rem;color:${t.color};">${t.texto}</div></div>`;
     }).join('');
+    const detalle = combinada
+      ? `<div style="margin:0 0 8px;font-size:.74rem;color:${dim};line-height:1.5;">${picks.map(k => esc(MERCADOS.find(m => m.key === k)?.label || k) + ' · modelo ' + f1(MERCADOS.find(m => m.key === k)?.p(e))).join('<br>')}<br><em>La probabilidad combinada multiplica las de cada pick (asume que son independientes).</em></div>`
+      : '';
     const estado = e.cierreTs ? `<p style="margin:4px 0 8px;font-size:.72rem;color:var(--green);">Cierre guardado (${esc(e.cierreFuente || 'manual')}${Number.isFinite(e.cierreMin) ? ', ' + e.cierreMin + ' min antes' : ''}).</p>` : '';
     const cab = `<div class="field-row" style="grid-template-columns:1.3fr 1fr 1fr;margin-bottom:4px;"><span></span><small style="color:${dim};text-align:center;">Cuota casa</small><small style="color:${dim};text-align:center;">Cierre</small></div>`;
-    return `<p style="margin:8px 0 6px;font-size:.78rem;font-weight:600;">💰 Cuotas por pick <small style="color:${dim};font-weight:400;">(cierre = justo antes del partido)</small></p>${cab}${filas}${estado}
+    const titulo = combinada ? `🎟️ Combinada <small style="color:${dim};font-weight:400;">(${picks.length} picks · una sola cuota)</small>` : `💰 Cuota <small style="color:${dim};font-weight:400;">(cierre = justo antes del partido)</small>`;
+    return `<p style="margin:8px 0 6px;font-size:.78rem;font-weight:600;">${titulo}</p>${detalle}${cab}${filas}${estado}
       <div style="margin-bottom:10px;"><button data-accion="guardar-cuotas" data-id="${esc(e.id)}" style="margin-right:8px;padding:8px 12px;font-size:.78rem;">Guardar cuotas</button><button data-accion="traer-cierre" data-id="${esc(e.id)}" style="padding:8px 12px;font-size:.78rem;">Traer cierre de Bzzoiro</button></div>`;
   }
 
-  // Una sola cuota por pick (arriba). Acá solo va el monto; la cuota de la apuesta se deduce de los picks.
-  // Entradas viejas sin picks conservan cuota + monto.
   function apuestaHtml(e) {
     const n = (e.picks || []).length;
     const monto = `<input type="text" inputmode="decimal" id="ma-${esc(e.id)}" placeholder="monto apostado (opcional)" value="${e.apuesta?.monto ?? ''}" style="padding:8px;text-align:center;">`;
@@ -542,7 +583,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr 1fr;">${ca}${monto}</div>` + nota('Opcionales: cuota y monto (van juntos).');
     }
     return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr;">${monto}</div>` +
-      nota(n === 1 ? 'La cuota es la del pick de arriba.' : 'Con 2 o más picks se cuenta como combinada: cuota = producto de las cuotas de cada pick.');
+      nota(n === 1 ? 'La cuota es la del pick de arriba.' : 'La cuota es la del ticket de arriba.');
   }
 
   function cardPendiente(e) {
@@ -676,9 +717,8 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         const hayMonto = String(monto ?? '').trim() !== '';
         let apCuota;
         if (ent && (ent.picks || []).length > 0) {
-          const cu = ent.picks.map(k => ent.cuotas?.[k]);
-          const completas = cu.every(c => Number.isFinite(c) && c > 1);
-          apCuota = (String(monto ?? '').trim() !== '' && completas) ? String(+cu.reduce((a, b) => a * b, 1).toFixed(2)) : '';
+          const c = ent.cuotas?.[clavesCuota(ent)[0]];
+          apCuota = (c && String(monto ?? '').trim() !== '') ? String(c) : '';
         } else apCuota = $('ca-' + id)?.value;
         actualizarResultado(id, { gl, gv, corners: cc, apCuota, apMonto: monto });
         render();
