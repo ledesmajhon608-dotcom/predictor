@@ -2,19 +2,171 @@
   "MLS": {
     "v": 2,
     "params": {
-      "homeAdvantage": 1.25,
-      "rho": -0.07,
-      "goalsAvg": 3.182,
-      "cornAvg": 10.01
+      "homeAdvantage": 1.26,
+      "rho": -0.09,
+      "goalsAvg": 3.232,
+      "cornAvg": 10.25,
+      "cornerRatings": {
+        "Atlanta United": {
+          "atk": 1.003,
+          "def": 1.044,
+          "partidos": 13
+        },
+        "Austin FC": {
+          "atk": 0.97,
+          "def": 1.058,
+          "partidos": 13
+        },
+        "CF Montréal": {
+          "atk": 0.97,
+          "def": 0.965,
+          "partidos": 13
+        },
+        "Charlotte FC": {
+          "atk": 0.993,
+          "def": 1.31,
+          "partidos": 13
+        },
+        "Chicago Fire": {
+          "atk": 0.928,
+          "def": 0.89,
+          "partidos": 14
+        },
+        "Colorado Rapids": {
+          "atk": 1.032,
+          "def": 0.77,
+          "partidos": 13
+        },
+        "Columbus Crew": {
+          "atk": 1.082,
+          "def": 0.842,
+          "partidos": 12
+        },
+        "DC United": {
+          "atk": 0.989,
+          "def": 1.016,
+          "partidos": 12
+        },
+        "FC Cincinnati": {
+          "atk": 1.125,
+          "def": 0.997,
+          "partidos": 11
+        },
+        "FC Dallas": {
+          "atk": 0.924,
+          "def": 1.191,
+          "partidos": 14
+        },
+        "Houston Dynamo": {
+          "atk": 0.901,
+          "def": 0.957,
+          "partidos": 14
+        },
+        "Inter Miami CF": {
+          "atk": 0.862,
+          "def": 0.902,
+          "partidos": 13
+        },
+        "LA Galaxy": {
+          "atk": 0.975,
+          "def": 0.949,
+          "partidos": 14
+        },
+        "Los Angeles FC": {
+          "atk": 1.128,
+          "def": 1.053,
+          "partidos": 14
+        },
+        "Minnesota United": {
+          "atk": 0.995,
+          "def": 1.045,
+          "partidos": 13
+        },
+        "Nashville SC": {
+          "atk": 1.087,
+          "def": 0.876,
+          "partidos": 13
+        },
+        "New England Revolution": {
+          "atk": 1.046,
+          "def": 1.14,
+          "partidos": 14
+        },
+        "New York City FC": {
+          "atk": 0.99,
+          "def": 0.945,
+          "partidos": 13
+        },
+        "New York Red Bulls": {
+          "atk": 1.064,
+          "def": 1.018,
+          "partidos": 13
+        },
+        "Orlando City SC": {
+          "atk": 0.895,
+          "def": 1.136,
+          "partidos": 13
+        },
+        "Philadelphia Union": {
+          "atk": 1.07,
+          "def": 0.863,
+          "partidos": 13
+        },
+        "Portland Timbers": {
+          "atk": 0.937,
+          "def": 0.932,
+          "partidos": 14
+        },
+        "Real Salt Lake": {
+          "atk": 0.96,
+          "def": 1.134,
+          "partidos": 15
+        },
+        "San Diego FC": {
+          "atk": 1.024,
+          "def": 0.937,
+          "partidos": 14
+        },
+        "San Jose Earthquakes": {
+          "atk": 1.024,
+          "def": 0.94,
+          "partidos": 14
+        },
+        "Seattle Sounders FC": {
+          "atk": 1.108,
+          "def": 1.1,
+          "partidos": 14
+        },
+        "Sporting Kansas City": {
+          "atk": 0.948,
+          "def": 1.054,
+          "partidos": 14
+        },
+        "St.Louis City": {
+          "atk": 0.931,
+          "def": 1.05,
+          "partidos": 13
+        },
+        "Toronto FC": {
+          "atk": 0.864,
+          "def": 1.071,
+          "partidos": 13
+        },
+        "Vancouver Whitecaps": {
+          "atk": 1.174,
+          "def": 0.816,
+          "partidos": 14
+        }
+      }
     },
     "tasas": {
-      "homeRate": 0.445,
-      "drawRate": 0.285,
-      "awayRate": 0.27
+      "homeRate": 0.41,
+      "drawRate": 0.325,
+      "awayRate": 0.265
     },
     "partidosCalibrados": 200,
-    "ultima": "2026-10-11T04:08:53.415Z",
-    "error": 0.08804000000000012
+    "ultima": "2026-10-18T18:31:37.965Z",
+    "error": 0.1561800000000001
   },
   "CPA": {
     "v": 2,
