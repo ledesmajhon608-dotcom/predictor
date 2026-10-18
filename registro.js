@@ -531,16 +531,18 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       <div style="margin-bottom:10px;"><button data-accion="guardar-cuotas" data-id="${esc(e.id)}" style="margin-right:8px;padding:8px 12px;font-size:.78rem;">Guardar cuotas</button><button data-accion="traer-cierre" data-id="${esc(e.id)}" style="padding:8px 12px;font-size:.78rem;">Traer cierre de Bzzoiro</button></div>`;
   }
 
+  // Una sola cuota por pick (arriba). Acá solo va el monto; la cuota de la apuesta se deduce de los picks.
+  // Entradas viejas sin picks conservan cuota + monto.
   function apuestaHtml(e) {
     const n = (e.picks || []).length;
-    const monto = `<input type="text" inputmode="decimal" id="ma-${esc(e.id)}" placeholder="monto apostado" value="${e.apuesta?.monto ?? ''}" style="padding:8px;text-align:center;">`;
+    const monto = `<input type="text" inputmode="decimal" id="ma-${esc(e.id)}" placeholder="monto apostado (opcional)" value="${e.apuesta?.monto ?? ''}" style="padding:8px;text-align:center;">`;
     const nota = (t) => `<p style="margin:0 0 10px;font-size:.7rem;color:${dim};line-height:1.4;">${t}</p>`;
-    if (n === 1) {
-      return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr;">${monto}</div>` + nota('Monto opcional. La cuota que cuenta es la del pick de arriba.');
+    if (n === 0) {
+      const ca = `<input type="text" inputmode="decimal" id="ca-${esc(e.id)}" placeholder="cuota apostada" value="${e.apuesta?.cuota ?? ''}" style="padding:8px;text-align:center;">`;
+      return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr 1fr;">${ca}${monto}</div>` + nota('Opcionales: cuota y monto (van juntos).');
     }
-    const ca = `<input type="text" inputmode="decimal" id="ca-${esc(e.id)}" placeholder="${n >= 2 ? 'cuota combinada' : 'cuota apostada'}" value="${e.apuesta?.cuota ?? ''}" style="padding:8px;text-align:center;">`;
-    return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr 1fr;">${ca}${monto}</div>` +
-      (n >= 2 ? nota('Solo si apostaste todo en una combinada: cuota total y monto. Si no, dejalo vacío.') : nota('Opcionales: cuota y monto (van juntos).'));
+    return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr;">${monto}</div>` +
+      nota(n === 1 ? 'La cuota es la del pick de arriba.' : 'Con 2 o más picks se cuenta como combinada: cuota = producto de las cuotas de cada pick.');
   }
 
   function cardPendiente(e) {
@@ -671,10 +673,12 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         try { guardarInputs(id); } catch (_) { /* cuotas inválidas: se ignoran */ }
         const ent = leerRegistro().find(x => x.id === id);
         const monto = $('ma-' + id)?.value;
+        const hayMonto = String(monto ?? '').trim() !== '';
         let apCuota;
-        if (ent && (ent.picks || []).length === 1) {
-          const unico = ent.cuotas?.[ent.picks[0]];
-          apCuota = (unico && String(monto ?? '').trim() !== '') ? String(unico) : '';
+        if (ent && (ent.picks || []).length > 0) {
+          const cu = ent.picks.map(k => ent.cuotas?.[k]);
+          const completas = cu.every(c => Number.isFinite(c) && c > 1);
+          apCuota = (String(monto ?? '').trim() !== '' && completas) ? String(+cu.reduce((a, b) => a * b, 1).toFixed(2)) : '';
         } else apCuota = $('ca-' + id)?.value;
         actualizarResultado(id, { gl, gv, corners: cc, apCuota, apMonto: monto });
         render();
