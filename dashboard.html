@@ -302,7 +302,8 @@
           : null;
 
         const cuotaGlobal = e.apuesta && Number.isFinite(e.apuesta.cuota) && e.apuesta.cuota > 1
-          ? e.apuesta.cuota : null;
+          ? e.apuesta.cuota
+          : (picksTildados.length > 1 && e.cuotas && Number.isFinite(e.cuotas.combinada) && e.cuotas.combinada > 1 ? e.cuotas.combinada : null);
 
         // Recopilar las legs válidas
         const legs = [];
