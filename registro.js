@@ -521,13 +521,26 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       const t = textoEV(e, k, cuota);
       return `<div style="margin-bottom:8px;">
         <div class="field-row" style="grid-template-columns:1.3fr 1fr 1fr;margin-bottom:2px;align-items:center;"><span style="font-size:.78rem;">${esc(lab)}</span>
-          <input type="text" inputmode="decimal" data-ev="1" data-id="${esc(e.id)}" data-key="${esc(k)}" id="cq-${esc(e.id)}-${esc(k)}" placeholder="cuota casa" value="${cuota ?? ''}" style="padding:8px;text-align:center;">
-          <input type="text" inputmode="decimal" id="cl-${esc(e.id)}-${esc(k)}" placeholder="cierre" value="${e.cierre?.[k] ?? ''}" style="padding:8px;text-align:center;"></div>
+          <input type="text" inputmode="decimal" data-ev="1" data-id="${esc(e.id)}" data-key="${esc(k)}" id="cq-${esc(e.id)}-${esc(k)}" placeholder="1.85" value="${cuota ?? ''}" style="padding:8px;text-align:center;">
+          <input type="text" inputmode="decimal" id="cl-${esc(e.id)}-${esc(k)}" placeholder="1.80" value="${e.cierre?.[k] ?? ''}" style="padding:8px;text-align:center;"></div>
         <div id="ev-${esc(e.id)}-${esc(k)}" style="font-size:.7rem;color:${t.color};">${t.texto}</div></div>`;
     }).join('');
     const estado = e.cierreTs ? `<p style="margin:4px 0 8px;font-size:.72rem;color:var(--green);">Cierre guardado (${esc(e.cierreFuente || 'manual')}${Number.isFinite(e.cierreMin) ? ', ' + e.cierreMin + ' min antes' : ''}).</p>` : '';
-    return `<p style="margin:8px 0 6px;font-size:.78rem;font-weight:600;">💰 Cuotas por pick <small style="color:${dim};font-weight:400;">(la de la casa · y el cierre justo antes del partido)</small></p>${filas}${estado}
+    const cab = `<div class="field-row" style="grid-template-columns:1.3fr 1fr 1fr;margin-bottom:4px;"><span></span><small style="color:${dim};text-align:center;">Cuota casa</small><small style="color:${dim};text-align:center;">Cierre</small></div>`;
+    return `<p style="margin:8px 0 6px;font-size:.78rem;font-weight:600;">💰 Cuotas por pick <small style="color:${dim};font-weight:400;">(cierre = justo antes del partido)</small></p>${cab}${filas}${estado}
       <div style="margin-bottom:10px;"><button data-accion="guardar-cuotas" data-id="${esc(e.id)}" style="margin-right:8px;padding:8px 12px;font-size:.78rem;">Guardar cuotas</button><button data-accion="traer-cierre" data-id="${esc(e.id)}" style="padding:8px 12px;font-size:.78rem;">Traer cierre de Bzzoiro</button></div>`;
+  }
+
+  function apuestaHtml(e) {
+    const n = (e.picks || []).length;
+    const monto = `<input type="text" inputmode="decimal" id="ma-${esc(e.id)}" placeholder="monto apostado" value="${e.apuesta?.monto ?? ''}" style="padding:8px;text-align:center;">`;
+    const nota = (t) => `<p style="margin:0 0 10px;font-size:.7rem;color:${dim};line-height:1.4;">${t}</p>`;
+    if (n === 1) {
+      return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr;">${monto}</div>` + nota('Monto opcional. La cuota que cuenta es la del pick de arriba.');
+    }
+    const ca = `<input type="text" inputmode="decimal" id="ca-${esc(e.id)}" placeholder="${n >= 2 ? 'cuota combinada' : 'cuota apostada'}" value="${e.apuesta?.cuota ?? ''}" style="padding:8px;text-align:center;">`;
+    return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr 1fr;">${ca}${monto}</div>` +
+      (n >= 2 ? nota('Solo si apostaste todo en una combinada: cuota total y monto. Si no, dejalo vacío.') : nota('Opcionales: cuota y monto (van juntos).'));
   }
 
   function cardPendiente(e) {
@@ -541,11 +554,8 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         <input type="text" inputmode="numeric" id="gv-${esc(e.id)}" placeholder="goles visit." style="padding:8px;text-align:center;">
         <input type="text" inputmode="numeric" id="cc-${esc(e.id)}" placeholder="córners tot." style="padding:8px;text-align:center;">
       </div>
-      <div class="field-row" style="margin-bottom:8px;grid-template-columns:1fr 1fr;">
-        <input type="text" inputmode="decimal" id="ca-${esc(e.id)}" placeholder="cuota apostada (opc.)" style="padding:8px;text-align:center;" value="${e.apuesta?.cuota ?? ((e.picks && e.picks.length === 1 && e.cuotas && e.cuotas[e.picks[0]]) || '')}">
-        <input type="text" inputmode="decimal" id="ma-${esc(e.id)}" placeholder="monto apostado (opc.)" style="padding:8px;text-align:center;" value="${e.apuesta?.monto ?? ''}">
-      </div>
       ${cierreHtml(e)}
+      ${apuestaHtml(e)}
       <button data-accion="resultado" data-id="${esc(e.id)}" style="margin-right:8px;">Guardar resultado</button>
       <button data-accion="borrar" data-id="${esc(e.id)}" style="background:var(--surface-2,#1c2530);color:var(--text,#f0f3f7);">🗑</button>
     </div>`;
@@ -659,7 +669,14 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
       if (String(ccTxt ?? '').trim() !== '' && cc == null) { alert('Los córners tienen que ser un número entero.'); return; }
       try {
         try { guardarInputs(id); } catch (_) { /* cuotas inválidas: se ignoran */ }
-        actualizarResultado(id, { gl, gv, corners: cc, apCuota: $('ca-' + id)?.value, apMonto: $('ma-' + id)?.value });
+        const ent = leerRegistro().find(x => x.id === id);
+        const monto = $('ma-' + id)?.value;
+        let apCuota;
+        if (ent && (ent.picks || []).length === 1) {
+          const unico = ent.cuotas?.[ent.picks[0]];
+          apCuota = (unico && String(monto ?? '').trim() !== '') ? String(unico) : '';
+        } else apCuota = $('ca-' + id)?.value;
+        actualizarResultado(id, { gl, gv, corners: cc, apCuota, apMonto: monto });
         render();
       } catch (e) { alert('Error: ' + e.message); }
     }

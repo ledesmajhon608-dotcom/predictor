@@ -62,6 +62,7 @@
   import { LIGAS, getFiltroEV } from './leagues.js';
   import { generarPicks, hitPick, ODDS_CAMPO } from './picks.js';
   import { roiBootstrap } from './roi-ci.js';
+  import { leerRegistro, estadoPorLiga } from './registro.js';
 
   const LABELS = {
     local: '1X2 · Local gana', empate: '1X2 · Empate', visitante: '1X2 · Visitante gana',
@@ -197,6 +198,12 @@
   // ---------- render ----------
   const ICONO = { solido: '✅', prometedor: '🟡', no: '' };
 
+  function evidenciaReal(ligaKey) {
+    let e = null;
+    try { e = estadoPorLiga(leerRegistro())[ligaKey]; } catch (err) { e = null; }
+    return e || { n: 0, nivel: 'pocos', media: null, consejo: 'Sin picks con cuota y cierre cargados.' };
+  }
+
   function renderVeredicto(res, ligaKey) {
     const solidos = res.resumen.filter(r => r.nivel === 'solido');
     const prom = res.resumen.filter(r => r.nivel === 'prometedor');
@@ -217,6 +224,7 @@
       (prom.length ? '<h4 style="margin:14px 0 6px; font-size:0.85rem;">Prometedores (' + prom.length + ')</h4>' + prom.map(fila).join('') : '') +
       '<p style="margin:10px 0 0; font-size:0.78rem; color:var(--text-dim); line-height:1.5;">' +
         '⚠️ Este CSV sale del backtest, que ajusta sobre los mismos partidos (in-sample). Probando varios mercados, alguno sale bien por azar. ' +
+        '<br><strong>Evidencia real (registro, CLV):</strong> ' + (function () { const ev = evidenciaReal(ligaKey); return (ev.n ? ev.n + ' picks · CLV ' + (ev.media >= 0 ? '+' : '') + ev.media.toFixed(2) + '% · ' : '') + ev.consejo; })() + '<br>' +
         'Sólido = ROI con IC95% > 0 (si hay ≥' + MIN_APUESTAS_ROI + ' apuestas con cuota) o piso de acierto ≥ mínimo. Confirmalo con walk-forward y con el registro antes de subir el stake.</p></div>';
   }
 
@@ -248,9 +256,21 @@
     else if (buenos.length >= 2) { status = 'yellow'; stake = 0.5; }
     else if (buenos.length === 1) { status = 'yellow'; stake = 0.3; }
 
+    // Tope por evidencia real: el verde solo con CLV confirmado en el registro.
+    const real = evidenciaReal(ligaKey);
+    let notaReal = '';
+    if (status === 'green' && real.nivel !== 'confirmada') {
+      status = 'yellow'; stake = 0.5;
+      notaReal = ' Verde pendiente: CLV real ' + (real.n ? 'sin confirmar (' + real.n + ' picks)' : 'sin datos') + '.';
+    }
+    if (status !== 'red' && real.nivel === 'sin_ventaja') {
+      status = 'yellow'; stake = Math.min(stake, 0.3);
+      notaReal = ' CLV real ≤ 0 (' + real.n + ' picks): no promover.';
+    }
+
     const config = {};
     config[ligaKey] = { betting: { status: status, stake: stake, mercados: mercados,
-      nota: 'analizar-liga: ' + solidos.length + ' sólidos, ' + (buenos.length - solidos.length) + ' prometedores (in-sample).' } };
+      nota: 'analizar-liga: ' + solidos.length + ' sólidos, ' + (buenos.length - solidos.length) + ' prometedores (in-sample).' + notaReal } };
     if (status === 'red') config[ligaKey].betting = { status: 'red' };
 
     document.getElementById('config-json').textContent = JSON.stringify(config, null, 2) + '\n\n' +
