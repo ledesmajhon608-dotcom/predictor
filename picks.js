@@ -4,7 +4,7 @@
 //  - Córners, Unders y BTTS No ahora respetan la whitelist.
 //  - generarPicks(data, liga, { ignorarConfig }) para analizar ligas rojas con la MISMA política.
 //  - hitPick / ODDS_CAMPO compartidos con backtest.js y analizar-liga.html.
-//  - valorPick (EV + Kelly/4) y mezclarConMercado (modelo + cuota sin margen).
+//  - valorPick (EV + Kelly/4).
 
 import { LIGAS, getUmbrales, SHRINK_ALPHA, KELLY_FRACTION, STAKE_MAX_PCT, getFiltroEV } from './leagues.js';
 import { shrinkHaciaBase } from './calibrate.js';
@@ -77,31 +77,6 @@ export function valorPick(probPct, cuota, mercado = 'default') {
   if (ev == null) return { ev: null, filtro, pasa: false, kelly: null };
   const pasa = ev > filtro;
   return { ev: +ev.toFixed(3), filtro, pasa, kelly: pasa ? stakeKelly(probPct, cuota) : null };
-}
-
-// ---------- cuota sin margen y mezcla con el modelo ----------
-export function devigar3(a, b, c) {
-  if (![a, b, c].every(v => Number.isFinite(v) && v > 1)) return null;
-  const pa = 1 / a, pb = 1 / b, pc = 1 / c, s = pa + pb + pc;
-  return [(pa / s) * 100, (pb / s) * 100, (pc / s) * 100];
-}
-
-export function mezclarConMercado(resultProbs, cuotas, w) {
-  const peso = Number.isFinite(w) ? Math.min(1, Math.max(0, w)) : 0;
-  const m = devigar3(cuotas?.local, cuotas?.empate, cuotas?.visitante);
-  if (!m || peso === 0) return { resultProbs, mercado: m, aplicado: false, w: peso };
-  const L = (1 - peso) * resultProbs.local + peso * m[0];
-  const E = (1 - peso) * resultProbs.empate + peso * m[1];
-  const V = (1 - peso) * resultProbs.visitante + peso * m[2];
-  const s = L + E + V;
-  return {
-    resultProbs: {
-      local: +(L / s * 100).toFixed(1),
-      empate: +(E / s * 100).toFixed(1),
-      visitante: +(V / s * 100).toFixed(1),
-    },
-    mercado: m, aplicado: true, w: peso,
-  };
 }
 
 // ---------- resultado real de cada pick (compartido con backtest/analizar) ----------
