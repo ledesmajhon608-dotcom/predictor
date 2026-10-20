@@ -5,7 +5,7 @@ import {
   LIGAS, TEAM_STRENGTH_DB, HOME_ADVANTAGE, CORNER_HOME_BIAS, CORNER_HOME_BIAS_LEAGUE,
   DEFAULT_HOME_ADV, HA_MIN, HA_MAX,
   RATING_SHRINK, RATING_MIN, RATING_MAX,
-  LIVE_PRIOR_GAMES, GOALS_AVG_PRIOR_MATCHES, ML_MAX_WEIGHT,
+  LIVE_PRIOR_GAMES, GOALS_AVG_PRIOR_MATCHES,
 } from './leagues.js';
 import * as stats from './stats.js';
 import { fetchLeagueDynamicData, fetchMatchPrediction, buscarEquipoEn } from './api.js';
@@ -61,15 +61,12 @@ export function getStaticRating(leagueKey, teamName) {
   return teams[teamName] || buscarEquipoEn(teams, teamName) || null;
 }
 
-// [MODIFICADO] Ahora acepta ratings calibrados (del params.json) y los
-// prioriza sobre los "en vivo". Antes se ignoraban por completo.
-// Devuelve también `{ sinRating: true }` si el equipo no tiene ningún dato.
+// Prioriza ratings calibrados > vivos > estáticos. Devuelve sinRating si no hay nada.
 function getTeamRating(leagueKey, teamName, { dynamicRatings = null, calRatings = null } = {}) {
   const estatico = getStaticRating(leagueKey, teamName);
   const cal = buscarEquipoEn(calRatings, teamName);
   const vivo = buscarEquipoEn(dynamicRatings, teamName);
 
-  // Prioridad: calibrado > vivo > estático
   const fuente = cal || vivo;
 
   if (!estatico && !fuente) {
@@ -122,26 +119,6 @@ function normalizarML(ml) {
   };
 }
 
-function blend(own, ml) {
-  const confianza = typeof ml.confidence === 'number' ? ml.confidence : 0.5;
-  const w = clamp(confianza, 0, ML_MAX_WEIGHT);
-  const mix = (ownVal, mlVal) => {
-    if (typeof mlVal !== 'number' || isNaN(mlVal)) return ownVal;
-    return +((ownVal * (1 - w) + mlVal * w)).toFixed(1);
-  };
-  let L = mix(own.resultProbs.local, ml.resultProbs.local);
-  let E = mix(own.resultProbs.empate, ml.resultProbs.empate);
-  let V = mix(own.resultProbs.visitante, ml.resultProbs.visitante);
-  const s = L + E + V;
-  if (s > 0) { L = +(L / s * 100).toFixed(1); E = +(E / s * 100).toFixed(1); V = +(V / s * 100).toFixed(1); }
-  return {
-    resultProbs: { local: L, empate: E, visitante: V },
-    over15: mix(own.over15, ml.over15), over25: mix(own.over25, ml.over25),
-    over35: mix(own.over35, ml.over35), btts: mix(own.btts, ml.btts),
-    pesoML: w,
-  };
-}
-
 export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
   staticOnly = false, calibracion = null,
 } = {}) {
@@ -152,7 +129,6 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
   const goalsAvg = resolverGoalsAvg(liga, dynamic, calibracion);
   const cornAvg = calibracion?.cornAvg ?? dynamic?.cornAvg ?? liga.cornAvg;
 
-  // [MODIFICADO] pasamos los ratings calibrados.
   const hRating = getTeamRating(leagueKey, homeTeam, {
     dynamicRatings: dynamic?.teamRatings,
     calRatings: calibracion?.ratings || null,
@@ -162,7 +138,6 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
     calRatings: calibracion?.ratings || null,
   });
 
-  // [NUEVO] marcamos equipos sin rating para bloquear picks.
   const sinRating = [];
   if (hRating.sinRating) sinRating.push(homeTeam);
   if (aRating.sinRating) sinRating.push(awayTeam);
@@ -177,7 +152,6 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
   if (cornAvg && cornAvg > 0) {
     const cornBias = CORNER_HOME_BIAS_LEAGUE[leagueKey] ?? CORNER_HOME_BIAS;
 
-    // [MODIFICADO] Si tenemos ratings de córners aprendidos, los usamos.
     const hCornerAtk = calibracion?.cornerRatings?.[homeTeam]?.atk ?? hRating.atk;
     const hCornerDef = calibracion?.cornerRatings?.[homeTeam]?.def ?? hRating.def;
     const aCornerAtk = calibracion?.cornerRatings?.[awayTeam]?.atk ?? aRating.atk;
@@ -225,7 +199,7 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
     over15: stats.plattCalibrate(mk.over15, 'goals15'),
     over25: stats.plattCalibrate(mk.over25, 'goals25'),
     over35: stats.plattCalibrate(mk.over35, 'goals35'),
-    over45: stats.plattCalibrate(mk.over45, 'goals45'),  // [MODIFICADO] ahora tiene su propio Platt
+    over45: stats.plattCalibrate(mk.over45, 'goals45'),
     under15: 100 - stats.plattCalibrate(mk.over15, 'goals15'),
     under25: 100 - stats.plattCalibrate(mk.over25, 'goals25'),
     under35: 100 - stats.plattCalibrate(mk.over35, 'goals35'),
@@ -254,14 +228,8 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
     }
   }
 
-  const hasFullML = bzzoiroML
-    && [bzzoiroML.resultProbs.local, bzzoiroML.resultProbs.empate, bzzoiroML.resultProbs.visitante,
-        bzzoiroML.over15, bzzoiroML.over25, bzzoiroML.btts]
-      .every(v => typeof v === 'number' && Number.isFinite(v));
-
   return {
     ...ownResult,
     bzzoiroML,
-    blended: hasFullML ? blend(ownResult, bzzoiroML) : null,
   };
 }
