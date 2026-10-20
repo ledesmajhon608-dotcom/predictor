@@ -183,14 +183,6 @@
     "ultima": "2026-10-11T04:11:26.006Z",
     "error": 0.05211000000000021
   },
-  "JPL": {
-    "v": 2,
-    "params": { "homeAdvantage": 1.19, "rho": -0.08, "goalsAvg": 2.889 },
-    "tasas": { "homeRate": 0.44, "drawRate": 0.215, "awayRate": 0.345 },
-    "partidosCalibrados": 200,
-    "ultima": "2026-10-10T01:09:59.556Z",
-    "error": 0.09562222222222203
-  },
   "PL": {
     "v": 2,
     "params": {
@@ -394,38 +386,6 @@
     "partidosCalibrados": 200,
     "ultima": "2026-10-19T14:47:57.702Z",
     "error": 0.05093877551020387
-  },
-  "BSB": {
-    "v": 2,
-    "params": { "homeAdvantage": 1.45, "rho": -0.04, "goalsAvg": 2.373 },
-    "tasas": { "homeRate": 0.5, "drawRate": 0.235, "awayRate": 0.265 },
-    "partidosCalibrados": 200,
-    "ultima": "2026-10-10T01:43:19.905Z",
-    "error": 0.09335000000000004
-  },
-  "SPL": {
-    "v": 2,
-    "params": { "homeAdvantage": 1.06, "rho": -0.1, "goalsAvg": 2.955 },
-    "tasas": { "homeRate": 0.445, "drawRate": 0.24, "awayRate": 0.315 },
-    "partidosCalibrados": 200,
-    "ultima": "2026-10-10T02:17:23.378Z",
-    "error": 0.12239622641509418
-  },
-  "SD2": {
-    "v": 2,
-    "params": { "homeAdvantage": 1.27, "rho": -0.06, "goalsAvg": 2.566 },
-    "tasas": { "homeRate": 0.45, "drawRate": 0.225, "awayRate": 0.325 },
-    "partidosCalibrados": 200,
-    "ultima": "2026-10-10T01:50:39.899Z",
-    "error": 0.10907913669064737
-  },
-  "SUI1": {
-    "v": 2,
-    "params": { "homeAdvantage": 1.06, "rho": -0.08, "goalsAvg": 3.391 },
-    "tasas": { "homeRate": 0.39, "drawRate": 0.25, "awayRate": 0.36 },
-    "partidosCalibrados": 200,
-    "ultima": "2026-10-10T01:59:17.758Z",
-    "error": 0.009218390804597826
   },
   "ARG": {
     "v": 2,
