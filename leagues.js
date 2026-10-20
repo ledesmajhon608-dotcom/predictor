@@ -1,6 +1,7 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
 // v4: agrega umbralDC (doble oportunidad), filtros EV 1X/X2.
+// v5: HOME_ADVANTAGE sincronizado con params.json (priors actuales).
 // ============================================================================
 
 export const LIGAS = {
@@ -173,7 +174,6 @@ export const TEAM_STRENGTH_DB = {
   }
 };
 
-// [NUEVO] Aliases de equipos
 export const TEAM_ALIASES = {
   'Barcelona': 'FC Barcelona', 'Real Madrid CF': 'Real Madrid',
   'Man City': 'Manchester City', 'Man United': 'Manchester United',
@@ -206,10 +206,12 @@ export const TEAM_ALIASES = {
   'Cruz Azul CDMX': 'Cruz Azul', 'Tigres': 'Tigres UANL',
 };
 
+// Prior de HOME_ADVANTAGE (sincronizado con params.json — usado en calibración como prior).
+// Se sobrescribe con los valores calibrados del params.json al cargar.
 export const HOME_ADVANTAGE = {
-  "PL": 1.078, "BL1": 1.185, "SA": 1.087, "PD": 1.419, "FL1": 1.203,
-  "BSA": 1.317, "ELC": 1.142, "MXL": 1.281, "MLS": 1.303, "PPT": 1.373,
-  "CPA": 1.263, "ARG": 1.196
+  "PL": 1.17, "BL1": 1.32, "SA": 1.11, "PD": 1.38, "FL1": 1.19,
+  "BSA": 1.28, "ELC": 1.18, "MXL": 1.34, "MLS": 1.26, "PPT": 1.22,
+  "CPA": 1.36, "ARG": 1.19
 };
 
 export const DIXON_COLES_RHO = {
@@ -280,7 +282,6 @@ export const STAKE_MAX_PCT = 3;
 
 export const FILTRO_EV = 1.05;
 
-// [NUEVO] Filtro EV adaptativo por mercado, incluyendo 1X/X2.
 export const FILTRO_EV_POR_MERCADO = {
   '1X2': 1.07,
   '1X': 1.04,
@@ -319,8 +320,6 @@ export const UMBRALES_POR_LIGA = {
   DEFAULT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: true },
 };
 
-// [MODIFICADO] Merge con DEFAULT: así agregar umbralDC solo al DEFAULT alcanza
-// para todas las ligas, sin tener que repetirlo en cada una.
 export function getUmbrales(leagueKey) {
   const liga = UMBRALES_POR_LIGA[leagueKey] || {};
   return { ...UMBRALES_POR_LIGA.DEFAULT, ...liga };
