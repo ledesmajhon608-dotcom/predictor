@@ -265,6 +265,10 @@ class Apuestas {
   }
 }
 
+// null-safe para mercados "under" y BTTS No: si la prob base es null, el resultado es null
+// (antes 100 - null = 100, envenenando calibración / CLV / escaneo).
+const inv = (x) => (Number.isFinite(x) ? 100 - x : null);
+
 export const MERCADOS = [
   { key: 'local', label: 'Local gana', p: e => e.prob?.local, hit: r => r.gl > r.gv },
   { key: 'empate', label: 'Empate', p: e => e.prob?.empate, hit: r => r.gl === r.gv },
@@ -278,17 +282,17 @@ export const MERCADOS = [
   { key: 'over15', label: 'Más de 1.5 goles', p: e => e.prob?.over15, hit: r => r.gl + r.gv > 1.5 },
   { key: 'over25', label: 'Más de 2.5 goles', p: e => e.prob?.over25, hit: r => r.gl + r.gv > 2.5 },
   { key: 'over35', label: 'Más de 3.5 goles', p: e => e.prob?.over35, hit: r => r.gl + r.gv > 3.5 },
-  { key: 'under15', label: 'Menos de 1.5 goles', p: e => 100 - e.prob?.over15, hit: r => r.gl + r.gv < 1.5 },
-  { key: 'under25', label: 'Menos de 2.5 goles', p: e => 100 - e.prob?.over25, hit: r => r.gl + r.gv < 2.5 },
-  { key: 'under35', label: 'Menos de 3.5 goles', p: e => 100 - e.prob?.over35, hit: r => r.gl + r.gv < 3.5 },
-  { key: 'under45', label: 'Menos de 4.5 goles', p: e => 100 - e.prob?.over45, hit: r => r.gl + r.gv < 4.5 },
+  { key: 'under15', label: 'Menos de 1.5 goles', p: e => inv(e.prob?.over15), hit: r => r.gl + r.gv < 1.5 },
+  { key: 'under25', label: 'Menos de 2.5 goles', p: e => inv(e.prob?.over25), hit: r => r.gl + r.gv < 2.5 },
+  { key: 'under35', label: 'Menos de 3.5 goles', p: e => inv(e.prob?.over35), hit: r => r.gl + r.gv < 3.5 },
+  { key: 'under45', label: 'Menos de 4.5 goles', p: e => inv(e.prob?.over45), hit: r => r.gl + r.gv < 4.5 },
   { key: 'bttsSi', label: 'BTTS Sí', p: e => e.prob?.btts, hit: r => r.gl > 0 && r.gv > 0 },
-  { key: 'bttsNo', label: 'BTTS No', p: e => 100 - e.prob?.btts, hit: r => !(r.gl > 0 && r.gv > 0) },
+  { key: 'bttsNo', label: 'BTTS No', p: e => inv(e.prob?.btts), hit: r => !(r.gl > 0 && r.gv > 0) },
   { key: 'c_over75', label: 'Más de 7.5 córners', corners: true, p: e => e.corners?.over7, hit: r => r.corners > 7.5 },
   { key: 'c_over85', label: 'Más de 8.5 córners', corners: true, p: e => e.corners?.over8, hit: r => r.corners > 8.5 },
   { key: 'c_over95', label: 'Más de 9.5 córners', corners: true, p: e => e.corners?.over9, hit: r => r.corners > 9.5 },
-  { key: 'c_under95', label: 'Menos de 9.5 córners', corners: true, p: e => 100 - e.corners?.over9, hit: r => r.corners < 9.5 },
-  { key: 'c_under105', label: 'Menos de 10.5 córners', corners: true, p: e => 100 - e.corners?.over10, hit: r => r.corners < 10.5 },
+  { key: 'c_under95', label: 'Menos de 9.5 córners', corners: true, p: e => inv(e.corners?.over9), hit: r => r.corners < 9.5 },
+  { key: 'c_under105', label: 'Menos de 10.5 córners', corners: true, p: e => inv(e.corners?.over10), hit: r => r.corners < 10.5 },
 ];
 
 const MERCADO_POR_KEY = {};
@@ -761,7 +765,7 @@ if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')
         lineas.push([fecha, e.liga, partido, m.label, fnum(prob, 1), fnum(cuota), fnum(ev), fnum(e.apuesta?.cuota), hit ? 1 : 0, fnum(hit ? cuota - 1 : -1), fnum(e.cierre?.[m.key]), fnum(clvPct(cuota, e.cierre?.[m.key]))].map(escap).join(';'));
       }
     }
-    return '﻿' + lineas.join('\n');
+    return '\ufeff' + lineas.join('\n');
   }
 
   function descargar(contenido, nombre, tipo) {
