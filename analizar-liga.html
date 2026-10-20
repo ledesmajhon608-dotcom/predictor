@@ -209,9 +209,19 @@
     const prom = res.resumen.filter(r => r.nivel === 'prometedor');
     const aptos = solidos.length + prom.length;
     let titulo, color;
-    if (solidos.length >= 2) { titulo = '✅ LIGA VERDE — ' + solidos.length + ' mercados sólidos'; color = 'var(--green)'; }
-    else if (aptos >= 1) { titulo = '⚠️ LIGA AMARILLA — ' + aptos + ' mercado' + (aptos > 1 ? 's' : '') + ' a vigilar'; color = 'var(--yellow)'; }
-    else { titulo = '❌ LIGA ROJA — ningún mercado aguanta'; color = 'var(--red)'; }
+    if (res.total === 0 || res.resumen.length === 0) {
+      titulo = '⚠️ SIN DATOS — el CSV no tiene partidos válidos';
+      color = 'var(--yellow)';
+    } else if (solidos.length >= 2) {
+      titulo = '✅ LIGA VERDE — ' + solidos.length + ' mercados sólidos';
+      color = 'var(--green)';
+    } else if (aptos >= 1) {
+      titulo = '⚠️ LIGA AMARILLA — ' + aptos + ' mercado' + (aptos > 1 ? 's' : '') + ' a vigilar';
+      color = 'var(--yellow)';
+    } else {
+      titulo = '❌ LIGA ROJA — ningún mercado aguanta';
+      color = 'var(--red)';
+    }
 
     const fila = (r) => {
       const extra = r.roi ? ' · ROI ' + (r.roi.roi >= 0 ? '+' : '') + r.roi.roi + '% [' + r.roi.ic[0] + ', ' + r.roi.ic[1] + ']' : ' · piso ' + r.low.toFixed(1) + '%';
