@@ -1,4 +1,5 @@
 // walkforward.js
+// v6: estimarRatings delegado a ratings.js (una sola implementación de ratings).
 // v5: reescrito sin template literals anidados ni ?? dentro de strings.
 // Incluye 1X y X2 en el escaneo (walk-forward, sin cuota real).
 
@@ -9,6 +10,7 @@ import {
 import { simulateMatch, calcLambdas } from './model.js';
 import { calibrarLigaMLE, shrinkHaciaBase } from './calibrate.js';
 import { calcGoalMarkets, plattCalibrate, logLikMarcador } from './stats.js';
+import { recalcularRatings } from './ratings.js';
 
 const Z_SIGNIFICATIVO = 1.64;
 const ESCANEO_MIN_N = 30;
@@ -66,58 +68,22 @@ export function predecir(leagueKey, hR, aR, { goalsAvg, homeAdv, rho }) {
   };
 }
 
-function pesoAntiguedad(fechaStr, halflifeDias, ahoraMs) {
-  if (!fechaStr) return 0.3;
-  const dias = (ahoraMs - new Date(fechaStr).getTime()) / 86400000;
-  if (!Number.isFinite(dias) || dias < 0) return 0.3;
-  return Math.pow(0.5, dias / halflifeDias);
-}
-
+// [MODIFICADO] La lógica de ratings vive en ratings.js → recalcularRatings.
+// Acá solo adaptamos la salida a un mapa { team: { atk, def } } con clamp
+// al rango válido, para no tocar el resto de walkforward.js.
 export function estimarRatings(partidos, {
   halflifeDias = 60, minMatches = 3, ahoraMs = Date.now(),
   homeAdv = 1.2, priorJuegos = 4, iteraciones = 30,
 } = {}) {
-  const validos = [], conteo = {};
-  let sumaPesoGoles = 0, sumaPeso = 0;
-  for (const p of partidos) {
-    if (p.goles_local == null || p.goles_visitante == null || !p.local || !p.visitante) continue;
-    const w = pesoAntiguedad(p.fecha, halflifeDias, ahoraMs);
-    validos.push({ h: p.local, a: p.visitante, gl: p.goles_local, gv: p.goles_visitante, w });
-    conteo[p.local] = (conteo[p.local] || 0) + 1;
-    conteo[p.visitante] = (conteo[p.visitante] || 0) + 1;
-    sumaPesoGoles += w * (p.goles_local + p.goles_visitante);
-    sumaPeso += w * 2;
-  }
-  const avg = sumaPeso > 0 ? sumaPesoGoles / sumaPeso : null;
-  if (!avg) return {};
-
-  const nombres = Object.keys(conteo);
-  const atk = {}, def = {};
-  for (const n of nombres) { atk[n] = 1; def[n] = 1; }
-  const sq = Math.sqrt(homeAdv);
-
-  for (let it = 0; it < iteraciones; it++) {
-    const numA = {}, denA = {}, numD = {}, denD = {};
-    for (const n of nombres) {
-      numA[n] = priorJuegos * avg; denA[n] = priorJuegos * avg;
-      numD[n] = priorJuegos * avg; denD[n] = priorJuegos * avg;
-    }
-    for (const m of validos) {
-      numA[m.h] += m.w * m.gl;  denA[m.h] += m.w * avg * def[m.a] * sq;
-      numA[m.a] += m.w * m.gv;  denA[m.a] += m.w * avg * def[m.h] / sq;
-      numD[m.h] += m.w * m.gv;  denD[m.h] += m.w * avg * atk[m.a] / sq;
-      numD[m.a] += m.w * m.gl;  denD[m.a] += m.w * avg * atk[m.h] * sq;
-    }
-    let sA = 0, sD = 0;
-    for (const n of nombres) { atk[n] = numA[n] / denA[n]; def[n] = numD[n] / denD[n]; sA += atk[n]; sD += def[n]; }
-    const mA = sA / nombres.length, mD = sD / nombres.length;
-    for (const n of nombres) { atk[n] /= mA; def[n] /= mD; }
-  }
-
+  const { equipos } = recalcularRatings(partidos, {
+    halflifeDias, minMatches, ahoraMs, homeAdv, priorJuegos, iteraciones,
+  });
   const mapa = {};
-  for (const n of nombres) {
-    if (conteo[n] < minMatches) continue;
-    mapa[n] = { atk: clamp(atk[n], RATING_MIN, RATING_MAX), def: clamp(def[n], RATING_MIN, RATING_MAX) };
+  for (const e of equipos) {
+    mapa[e.team] = {
+      atk: clamp(e.atk, RATING_MIN, RATING_MAX),
+      def: clamp(e.def, RATING_MIN, RATING_MAX),
+    };
   }
   return mapa;
 }
