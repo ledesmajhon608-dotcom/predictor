@@ -1,6 +1,8 @@
 // app.js
+// v7: muestra "cuota justa" (100/prob) al lado de cada mercado — informativo.
+//     Los picks muestran "justa X.XX · mín. valor Y.YY" para contexto.
 // v6: la app es SOLO predicción (casillas para elegir). Las cuotas de la casa se cargan
-//     en el registro (Pendientes), no acá. Muestra la cuota mínima con valor como dato.
+//     en el registro (Pendientes), no acá.
 
 import { LIGAS } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
@@ -26,8 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const resultsDiv = document.getElementById('results');
   const predictionsContent = document.getElementById('predictions-content');
 
-  // Estado de la simulación en pantalla
-  let ultimo = null;          // { base, ligaKey }  (base = probabilidades del modelo, con shrink)
+  let ultimo = null;
 
   function updateTokenStatus() {
     const token = localStorage.getItem('bzzoiro_token');
@@ -92,6 +93,7 @@ document.addEventListener('DOMContentLoaded', () => {
       el.style.color = 'var(--red)';
       html += '<div style="color:var(--red); font-weight:600; margin-top:4px;">❌ NO APOSTAR EN ESTA LIGA</div>';
       html += '<div style="font-size:0.72rem;">Esta liga pierde contra cuota. Solo para análisis.</div>';
+      if (config.nota) html += '<div style="font-size:0.7rem; color:var(--chalk-dim); margin-top:2px;">' + config.nota + '</div>';
     }
     html += '</div>';
     el.innerHTML = html;
@@ -179,19 +181,31 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'var(--red)';
   }
 
+  // Cuota justa = lo que el mercado "debería" pagar si estuviera de acuerdo con el modelo.
+  // 100/prob sin margen. Informativo, no reemplaza a cuotaMinima (que sí aplica el filtro EV).
+  function cuotaJusta(probPct) {
+    if (!Number.isFinite(probPct) || probPct <= 0) return null;
+    return 100 / probPct;
+  }
+
   function fila(label, prob, key) {
     const color = getColor(prob);
     const pct = Math.max(0, Math.min(100, prob));
     const check = key ? '<input type="checkbox" class="pick-check" data-key="' + key + '" style="width:16px;height:16px;flex-shrink:0;accent-color:#3ecf8e;margin-right:10px;">' : '';
+    const justa = cuotaJusta(prob);
+    const justaHtml = justa ? '<small style="color:var(--text-dim);font-weight:400;margin-left:6px;">cuota justa ' + justa.toFixed(2) + '</small>' : '';
     return '<div class="prob-row" style="display:flex;align-items:center;">' + check +
-      '<div style="flex:1;min-width:0;"><div class="prob-row-top"><span>' + label + '</span><span class="prob" style="color:' + color + '">' + fmt(prob) + '%</span></div>' +
+      '<div style="flex:1;min-width:0;"><div class="prob-row-top"><span>' + label + justaHtml + '</span><span class="prob" style="color:' + color + '">' + fmt(prob) + '%</span></div>' +
       '<div class="semaforo-track"><div class="semaforo-fill" style="width:' + pct + '%;background:' + color + '"></div></div></div></div>';
   }
 
-  // Dato informativo: cuota mínima a la que el pick tiene valor (no hay nada que cargar acá).
+  // Dato informativo: cuota justa del modelo + cuota mínima con valor (aplica filtro EV).
   function textoMinima(prob, mercado) {
     const min = cuotaMinima(prob, mercado);
-    return min == null ? '' : 'cuota mín. con valor: ' + min.toFixed(2);
+    if (min == null) return '';
+    const justa = cuotaJusta(prob);
+    const justaTxt = justa ? justa.toFixed(2) : '—';
+    return 'justa ' + justaTxt + ' · mín. con valor ' + min.toFixed(2);
   }
 
   function renderPicksCard(data, ligaKey) {
@@ -206,7 +220,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     if (config.status === 'red') {
-      return '<div class="card" style="border:2px solid var(--red);"><h3 style="color:var(--red);">❌ NO APOSTAR EN ESTA LIGA</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Esta liga pierde contra cuota. Usala solo para análisis.</p></div>';
+      return '<div class="card" style="border:2px solid var(--red);"><h3 style="color:var(--red);">❌ NO APOSTAR EN ESTA LIGA</h3><p style="color:var(--chalk-dim); margin:8px 0 0; font-size:0.9rem;">Esta liga pierde contra cuota. Usala solo para análisis.</p>' +
+        (config.nota ? '<p style="color:var(--text-dim); margin:6px 0 0; font-size:0.72rem;">' + config.nota + '</p>' : '') + '</div>';
     }
 
     if (picks.length === 0) {
@@ -229,7 +244,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }).join('');
 
     return '<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(' + picks.length + ')</small></h3>' + filas +
-      '<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">' + umbrales + '<br>La cuota de la casa la cargás en el registro, al guardar la apuesta.</p></div>';
+      '<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">' + umbrales + '<br>"Cuota justa" = 100/prob (lo que el mercado debería pagar si coincidiera con el modelo). "Mín. con valor" = la cuota mínima para que tenga EV positivo. La cuota real la cargás en el registro.</p></div>';
   }
 
   function renderMLCard(ml) {
