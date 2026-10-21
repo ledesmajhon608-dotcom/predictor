@@ -1,24 +1,26 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
-// v7: calibración selectiva por liga (usaCalibracion).
-// v6: BSA a rojo (walk-forward -21% con 316 apuestas).
-//     HOME_ADVANTAGE BSA a 1.20 y rho a -0.11 (calibrados).
-//     Filtro EV Over 1.5 subido de 1.03 a 1.10.
+// v8: cierre de las 12 walk-forwards.
+//     - BL1 → red (ROI -19.9%, 207 apuestas).
+//     - PPT → mercados ["1X", "X2", "Over 3.5"] (Over 3.5 con edge real).
+//     - Notas actualizadas con datos out-of-sample.
+//     - CALIBRACION_POR_LIGA: MLS/BSA/CPA/BL1/PPT = false.
+// v6: BSA a rojo, HA=1.20, rho=-0.11. Filtro EV Over 1.5 a 1.10.
 // ============================================================================
 
 export const LIGAS = {
-  "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "BTTS"], "nota": "Local +1.7% vs cuota." } },
-  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Walk-forward: +2.3% global, Visitante +5.3% significativo. Único edge real del modelo." } },
-  "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 0.5, "mercados": ["1X2", "1X", "X2", "Over 1.5"], "nota": "Over 1.5 +2.5%, Visitante +2.4% (muestra chica). Walk-forward: ≈ empate con cuota." } },
-  "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X", "X2", "Over 1.5", "Over 3.5"], "nota": "Walk-forward: ≈ empate con cuota en todos los mercados. Modelo sano." } },
-  "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -21% ROI con 316 apuestas. Local gana -56%, BTTS Sí -50%. Modelo crudo mejor que calibrado. HA bajó de 1.28 a 1.20." } },
-  "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": false }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X", "X2", "Over 2.5", "BTTS"], "nota": "⚠️ err 11.7%. Solo Over 2.5 y BTTS." } },
-  "PL": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "goalsAvg": 2.85, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
-  "PD": { "name": "🇪🇸 La Liga", "goalsAvg": 2.55, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
-  "SA": { "name": "🇮🇹 Serie A", "goalsAvg": 2.65, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -23% global. Local -32%, Visitante -26%. HA cambió de 1.17 a 1.06." } },
-  "BL1": { "name": "🇩🇪 Bundesliga", "goalsAvg": 3.00, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X", "X2","Over 2.5", "BTTS"], "nota": "Revisado con analizar-liga. Over 2.5 70.8%, BTTS Sí 64.8%. Local gana falla (48%), Visitante gana pasa (62%) pero no se puede aislar del 1X2. Over 1.5 queda cerca (85% vs 88% mín). Stake 0.5% por ser in-sample." } },
-  "ELC": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship (Inglaterra)", "goalsAvg": 2.65, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
-  "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } }
+  "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "BTTS"], "nota": "Walk-forward: ROI +0.6% (417), modelo ≈ cuota. Calibración empeora (desactivada)." } },
+  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Walk-forward: +2.3% global, Visitante +5.3% significativo. Calibración empeora (desactivada)." } },
+  "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 0.5, "mercados": ["1X2", "1X", "X2", "Over 1.5"], "nota": "Walk-forward: ≈ empate. ÚNICA liga donde la calibración mejora (mantiene activa)." } },
+  "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X", "X2", "Over 1.5", "Over 3.5"], "nota": "Walk-forward: ≈ empate en todos los mercados. Modelo sano." } },
+  "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -21.1% ROI con 316 apuestas. Local gana -56%, BTTS Sí -50%. Calibración empeora (desactivada)." } },
+  "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X", "X2", "Over 3.5"], "nota": "Walk-forward: ROI +15.9% (318). Over 3.5 +7.6% significativo. Empate -5.6% roto. Calibración empeora (desactivada)." } },
+  "PL": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "goalsAvg": 2.85, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -1.4% ROI (142). HA inestable (1.06-1.26). Ratings de leagues.js peores que calculados." } },
+  "PD": { "name": "🇪🇸 La Liga", "goalsAvg": 2.55, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -39.6% ROI (409 apuestas). Los 7 mercados peor significativos. La liga más eficiente: modelo no compite." } },
+  "SA": { "name": "🇮🇹 Serie A", "goalsAvg": 2.65, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -44.6% global. Local -32%, Visitante -26%. HA cambió de 1.17 a 1.06." } },
+  "BL1": { "name": "🇩🇪 Bundesliga", "goalsAvg": 3.00, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -19.9% ROI (207). Over 2.5 -11.6% y BTTS Sí -6.5% significativos peores. Calibración empeora (desactivada)." } },
+  "ELC": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship (Inglaterra)", "goalsAvg": 2.65, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -30.9% ROI (248). 6 de 7 mercados peor significativos. Mejor mezcla 100% cuota." } },
+  "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -0.3% ROI (271) pero modelo no aporta (mezcla 100% cuota). Todos los mercados ≈ empate negativos." } }
 };
 
 export const TEAM_STRENGTH_DB = {
@@ -330,23 +332,30 @@ export function getUmbrales(leagueKey) {
 // ============================================================================
 // CALIBRACIÓN SELECTIVA POR LIGA
 // ----------------------------------------------------------------------------
-// Los walk-forwards mostraron que la calibración MLE + shrink (SHRINK_ALPHA=0.15)
-// EMPEORA el Brier 1X2 en algunas ligas. Estas banderas permiten desactivarla
-// por liga sin tocar calibrate.js.
+// Los 12 walk-forwards mostraron que la calibración MLE + shrink
+// (SHRINK_ALPHA=0.15) EMPEORA el Brier 1X2 en varias ligas. Estas banderas
+// permiten desactivarla por liga sin tocar calibrate.js.
 //
-// Datos (Brier 1X2 out-of-sample, menor = mejor):
-//   MXL:  0.612 calibrado vs 0.618 base  → ✅ mejora → true
-//   SA:   ≈ empate → true
-//   FL1:  ≈ empate → true
-//   MLS:  0.647 calibrado vs 0.640 base  → ❌ empeora → false
-//   BSA:  0.639 calibrado vs 0.633 base  → ❌ empeora → false
-//   CPA:  0.592 calibrado vs 0.585 base  → ❌ empeora → false
-// Ligas no probadas: true (comportamiento histórico).
+// Datos (Brier 1X2 out-of-sample calibrado vs base, menor = mejor):
+//   MXL:  0.612 vs 0.618  → ✅ mejora  → true
+//   SA:   0.617 vs —      → ≈ neutro  → true
+//   FL1:  0.629 vs 0.627  → ≈ neutro  → true
+//   ARG:  0.652 vs 0.654  → ≈ neutro  → true
+//   PL:   0.647 vs 0.649  → ≈ neutro  → true
+//   PD:   0.609 vs 0.611  → ≈ neutro  → true
+//   ELC:  0.669 vs 0.667  → ≈ neutro  → true
+//   MLS:  0.647 vs 0.640  → ❌ empeora → false
+//   BSA:  0.639 vs 0.633  → ❌ empeora → false
+//   CPA:  0.592 vs 0.585  → ❌ empeora → false
+//   BL1:  0.607 vs 0.601  → ❌ empeora → false
+//   PPT:  0.578 vs 0.568  → ❌ empeora → false
 // ============================================================================
 export const CALIBRACION_POR_LIGA = {
   MLS: false,
   BSA: false,
   CPA: false,
+  BL1: false,
+  PPT: false,
 };
 
 export function usaCalibracion(leagueKey) {
