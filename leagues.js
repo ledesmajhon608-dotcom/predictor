@@ -1,19 +1,20 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
-// v4: agrega umbralDC (doble oportunidad), filtros EV 1X/X2.
-// v5: HOME_ADVANTAGE sincronizado con params.json (priors actuales).
+// v6: BSA a rojo (walk-forward -21% con 316 apuestas).
+//     HOME_ADVANTAGE BSA a 1.20 y rho a -0.11 (calibrados).
+//     Filtro EV Over 1.5 subido de 1.03 a 1.10.
 // ============================================================================
 
 export const LIGAS = {
   "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "BTTS"], "nota": "Local +1.7% vs cuota." } },
-  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Visitante +5.9% vs cuota. 4 mercados con edge." } },
-  "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 0.5, "mercados": ["1X2", "1X", "X2", "Over 1.5"], "nota": "Over 1.5 +2.5%, Visitante +2.4% (muestra chica)." } },
-  "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X", "X2", "Over 1.5", "Over 3.5"], "nota": "Over 1.5 +3.7% vs cuota (solo 10 picks)." } },
-  "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X", "X2", "Over 1.5", "Over 3.5"], "nota": "Over 1.5 +1.1% (17 picks), Over 3.5 +2.6%." } },
+  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Walk-forward: +2.3% global, Visitante +5.3% significativo. Único edge real del modelo." } },
+  "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 0.5, "mercados": ["1X2", "1X", "X2", "Over 1.5"], "nota": "Over 1.5 +2.5%, Visitante +2.4% (muestra chica). Walk-forward: ≈ empate con cuota." } },
+  "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X", "X2", "Over 1.5", "Over 3.5"], "nota": "Walk-forward: ≈ empate con cuota en todos los mercados. Modelo sano." } },
+  "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -21% ROI con 316 apuestas. Local gana -56%, BTTS Sí -50%. Modelo crudo mejor que calibrado. HA bajó de 1.28 a 1.20." } },
   "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": false }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X", "X2", "Over 2.5", "BTTS"], "nota": "⚠️ err 11.7%. Solo Over 2.5 y BTTS." } },
   "PL": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "goalsAvg": 2.85, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "PD": { "name": "🇪🇸 La Liga", "goalsAvg": 2.55, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
-  "SA": { "name": "🇮🇹 Serie A", "goalsAvg": 2.65, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red" } },
+  "SA": { "name": "🇮🇹 Serie A", "goalsAvg": 2.65, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -23% global. Local -32%, Visitante -26%. HA cambió de 1.17 a 1.06." } },
   "BL1": { "name": "🇩🇪 Bundesliga", "goalsAvg": 3.00, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X", "X2","Over 2.5", "BTTS"], "nota": "Revisado con analizar-liga. Over 2.5 70.8%, BTTS Sí 64.8%. Local gana falla (48%), Visitante gana pasa (62%) pero no se puede aislar del 1X2. Over 1.5 queda cerca (85% vs 88% mín). Stake 0.5% por ser in-sample." } },
   "ELC": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship (Inglaterra)", "goalsAvg": 2.65, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red" } },
   "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red" } }
@@ -208,15 +209,16 @@ export const TEAM_ALIASES = {
 
 // Prior de HOME_ADVANTAGE (sincronizado con params.json — usado en calibración como prior).
 // Se sobrescribe con los valores calibrados del params.json al cargar.
+// BSA actualizado a 1.20 (walk-forward mostró HA calibrado 1.20-1.25 vs 1.28 viejo).
 export const HOME_ADVANTAGE = {
   "PL": 1.17, "BL1": 1.32, "SA": 1.11, "PD": 1.38, "FL1": 1.19,
-  "BSA": 1.28, "ELC": 1.18, "MXL": 1.34, "MLS": 1.26, "PPT": 1.22,
+  "BSA": 1.20, "ELC": 1.18, "MXL": 1.34, "MLS": 1.26, "PPT": 1.22,
   "CPA": 1.36, "ARG": 1.19
 };
 
 export const DIXON_COLES_RHO = {
   "PL": -0.065, "BL1": -0.085, "SA": -0.130, "PD": -0.098, "FL1": -0.105,
-  "BSA": -0.090, "ELC": -0.078, "MXL": -0.095, "MLS": -0.070, "PPT": -0.080,
+  "BSA": -0.110, "ELC": -0.078, "MXL": -0.095, "MLS": -0.070, "PPT": -0.080,
   "CPA": -0.095, "ARG": -0.070,
   "default": -0.100
 };
@@ -286,7 +288,7 @@ export const FILTRO_EV_POR_MERCADO = {
   '1X2': 1.07,
   '1X': 1.04,
   'X2': 1.04,
-  'Over 1.5': 1.03,
+  'Over 1.5': 1.10,   // ← subido de 1.03 (walk-forward: 14% acierto en SA)
   'Over 2.5': 1.05,
   'Over 3.5': 1.07,
   'Under 1.5': 1.10,
