@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Debug Registro</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Debug</h1>
+    <button onclick="revisar()" class="btn-primary" style="width:100%;">Revisar Registro</button>
+    <div id="out" style="margin-top:20px; font-family:monospace; font-size:14px; white-space:pre-wrap; background:var(--surface); padding:15px; border-radius:8px; color:var(--text);"></div>
+  </div>
+  <script>
+    function revisar() {
+      const out = document.getElementById('out');
+      out.innerHTML = '';
+      try {
+        const raw = localStorage.getItem('suertudo_registro_v1');
+        if (!raw) {
+          out.innerHTML = '⚠️ El registro está VACÍO (localStorage no tiene la clave).';
+          return;
+        }
+
+        const arr = JSON.parse(raw);
+        out.innerHTML += `<strong>✅ Total guardadas: ${arr.length}</strong>\n\n`;
+
+        let bytes = new Blob([raw]).size;
+        out.innerHTML += `Peso del registro: ${(bytes / 1024).toFixed(2)} KB\n`;
+        
+        arr.forEach((e, i) => {
+          const estado = e.resultado ? 'RESUELTO' : 'PENDIENTE';
+          out.innerHTML += `\n${i+1}. [${estado}] ${e.liga} - ${e.local} vs ${e.visitante}\n`;
+        });
+
+      } catch (err) {
+        out.innerHTML = '❌ ERROR al leer: ' + err.message;
+      }
+    }
+  </script>
+</body>
+</html>
