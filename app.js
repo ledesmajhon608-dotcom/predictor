@@ -1,6 +1,6 @@
 // app.js
-// v9: fix cosmético — mostrar HA/rho reales desde HOME_ADVANTAGE/DIXON_COLES_RHO
-//     (antes leía liga.homeAdvantage que no existe → mostraba "—").
+// v10: Mejoras visuales (grid de mercados, badges, match header, dots).
+// v9: fix cosmético — mostrar HA/rho reales desde HOME_ADVANTAGE/DIXON_COLES_RHO.
 // v8: respeta usaCalibracion(ligaKey). En ligas con calibración desactivada
 //     (walk-forward mostró que empeora), usa HA/rho de leagues.js y sin shrink.
 // v7: muestra "cuota justa" (100/prob) al lado de cada mercado — informativo.
@@ -65,7 +65,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const haBase = HOME_ADVANTAGE[ligaKey] ?? DEFAULT_HOME_ADV;
     const rhoBase = DIXON_COLES_RHO[ligaKey] ?? DIXON_COLES_RHO.default ?? DEFAULT_RHO;
 
-    // Calibración desactivada → usar valores base de leagues.js (walk-forward mostró que mejora)
     if (!usaCalibracion(ligaKey)) {
       el.style.color = 'var(--text-dim)';
       el.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace; font-size:0.78rem; line-height:1.5;">' +
@@ -200,19 +199,28 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'var(--red)';
   }
 
+  function getDotClass(prob) {
+    if (prob >= 65) return 'dot-green';
+    if (prob >= 42) return 'dot-yellow';
+    return 'dot-red';
+  }
+
   function cuotaJusta(probPct) {
     if (!Number.isFinite(probPct) || probPct <= 0) return null;
     return 100 / probPct;
   }
 
+  // ACTUALIZADO: Usa el badge-justa y el dot
   function fila(label, prob, key) {
     const color = getColor(prob);
     const pct = Math.max(0, Math.min(100, prob));
     const check = key ? '<input type="checkbox" class="pick-check" data-key="' + key + '" style="width:16px;height:16px;flex-shrink:0;accent-color:#3ecf8e;margin-right:10px;">' : '';
     const justa = cuotaJusta(prob);
-    const justaHtml = justa ? '<small style="color:var(--text-dim);font-weight:400;margin-left:6px;">cuota justa ' + justa.toFixed(2) + '</small>' : '';
+    const justaHtml = justa ? '<span class="badge-justa">justa ' + justa.toFixed(2) + '</span>' : '';
+    const dotHtml = '<span class="dot ' + getDotClass(prob) + '"></span>';
+    
     return '<div class="prob-row" style="display:flex;align-items:center;">' + check +
-      '<div style="flex:1;min-width:0;"><div class="prob-row-top"><span>' + label + justaHtml + '</span><span class="prob" style="color:' + color + '">' + fmt(prob) + '%</span></div>' +
+      '<div style="flex:1;min-width:0;"><div class="prob-row-top"><span>' + dotHtml + label + justaHtml + '</span><span class="prob" style="color:' + color + '">' + fmt(prob) + '%</span></div>' +
       '<div class="semaforo-track"><div class="semaforo-fill" style="width:' + pct + '%;background:' + color + '"></div></div></div></div>';
   }
 
@@ -251,7 +259,7 @@ document.addEventListener('DOMContentLoaded', () => {
         '<div style="display:flex;align-items:center;gap:10px;">' +
           '<input type="checkbox" class="pick-check" data-key="' + p.key + '" checked style="width:18px;height:18px;flex-shrink:0;accent-color:#3ecf8e;">' +
           '<div style="flex:1;min-width:0;">' +
-            '<div class="prob-row-top"><span>✅ ' + p.label + '</span><span class="prob" style="color:' + getColor(p.prob) + '">' + fmt(p.prob) + '%</span></div>' +
+            '<div class="prob-row-top"><span><span class="dot dot-green"></span>' + p.label + '</span><span class="prob" style="color:' + getColor(p.prob) + '">' + fmt(p.prob) + '%</span></div>' +
             '<div class="semaforo-track"><div class="semaforo-fill" style="width:' + p.prob + '%;background:' + getColor(p.prob) + '"></div></div>' +
             '<div style="font-size:0.7rem;color:var(--text-dim);margin-top:4px;">' + textoMinima(p.prob, p.mercado) + '</div>' +
           '</div>' +
@@ -259,7 +267,7 @@ document.addEventListener('DOMContentLoaded', () => {
       '</div>';
     }).join('');
 
-    return '<div class="card" style="border:2px solid var(--green);"><h3>🎯 Mejores picks <small>(' + picks.length + ')</small></h3>' + filas +
+    return '<div class="card card-destacada"><h3>🎯 Mejores picks <small>(' + picks.length + ')</small></h3>' + filas +
       '<p style="color:var(--chalk-dim); margin:10px 0 0; font-size:0.72rem;">' + umbrales + '<br>"Cuota justa" = 100/prob (lo que el mercado debería pagar si coincidiera con el modelo). "Mín. con valor" = la cuota mínima para que tenga EV positivo. La cuota real la cargás en el registro.</p></div>';
   }
 
@@ -283,6 +291,13 @@ document.addEventListener('DOMContentLoaded', () => {
       ? '<div class="card" style="border:1px solid var(--line); background:var(--bg-2);"><p style="margin:0;font-size:0.75rem;color:var(--text-dim);">🔇 Calibración desactivada en ' + ligaKey + ' (walk-forward: empeora el 1X2). Usando valores base de leagues.js.</p></div>'
       : '';
 
+    // NUEVO: Encabezado visual del partido
+    const matchHeader = '<div class="match-header">' +
+      '<div class="match-team"><div class="match-team-name">' + data.homeTeam + '</div><div class="match-team-role">Local</div></div>' +
+      '<div class="match-vs">VS</div>' +
+      '<div class="match-team"><div class="match-team-name">' + data.awayTeam + '</div><div class="match-team-role">Visitante</div></div>' +
+    '</div>';
+
     const saveCard = '<div class="card" style="border:2px solid var(--accent);"><h3>📝 ¿Qué apostás?</h3>' +
       '<p style="color:var(--chalk-dim); font-size:0.75rem; margin:0 0 10px; line-height:1.5;">Tildá todo lo que vayas a jugar: los picks de arriba (ya vienen tildados) y/o cualquier mercado de las tarjetas de abajo. Después cargás la cuota de la casa en el registro (Pendientes).</p>' +
       '<button id="guardar-picks" style="width:100%;">💾 Guardar seleccionados</button>' +
@@ -295,25 +310,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const under35 = data.under35 != null ? data.under35 : (data.over35 != null ? 100 - data.over35 : null);
     const bttsNo = data.bttsNo != null ? data.bttsNo : (data.btts != null ? 100 - data.btts : null);
 
-    const corners = data.cornerProbs
+    // NUEVO: Grid de 2 columnas para Goles y Córners
+    const golesCard = '<div class="card"><h3>Goles</h3>' +
+        fila('Over 1.5', data.over15, 'over15') + fila('Over 2.5', data.over25, 'over25') + fila('Over 3.5', data.over35, 'over35') +
+        (under15 != null ? fila('Under 1.5', under15, 'under15') : '') +
+        (under25 != null ? fila('Under 2.5', under25, 'under25') : '') +
+        (under35 != null ? fila('Under 3.5', under35, 'under35') : '') + '</div>';
+
+    const cornersCard = data.cornerProbs
       ? '<div class="card"><h3>Córneres</h3>' + fila('Over 7.5', data.cornerProbs.over7, 'c_over75') + fila('Over 8.5', data.cornerProbs.over8, 'c_over85') + fila('Over 9.5', data.cornerProbs.over9, 'c_over95') + '</div>'
       : '';
 
+    const marketsGrid = '<div class="markets-grid">' + golesCard + cornersCard + '</div>';
+
     predictionsContent.innerHTML =
       avisoCalib +
+      matchHeader +
       renderPicksCard(data, ligaKey) +
       saveCard +
       '<div class="card"><h3>Resultado 1X2</h3>' +
         fila('Local', data.resultProbs.local, 'local') + fila('Empate', data.resultProbs.empate, 'empate') + fila('Visitante', data.resultProbs.visitante, 'visitante') + '</div>' +
       '<div class="card"><h3>Doble oportunidad <small>(menos varianza)</small></h3>' +
         fila('1X — Local o Empate', dc1X, 'dc1X') + fila('X2 — Empate o Visitante', dcX2, 'dcX2') + '</div>' +
-      '<div class="card"><h3>Goles</h3>' +
-        fila('Over 1.5', data.over15, 'over15') + fila('Over 2.5', data.over25, 'over25') + fila('Over 3.5', data.over35, 'over35') +
-        (under15 != null ? fila('Under 1.5', under15, 'under15') : '') +
-        (under25 != null ? fila('Under 2.5', under25, 'under25') : '') +
-        (under35 != null ? fila('Under 3.5', under35, 'under35') : '') + '</div>' +
+      marketsGrid +
       '<div class="card"><h3>Ambos marcan (BTTS)</h3>' + fila('Sí', data.btts, 'bttsSi') + (bttsNo != null ? fila('No', bttsNo, 'bttsNo') : '') + '</div>' +
-      corners +
       renderMLCard(ultimo.base.bzzoiroML);
     resultsDiv.style.display = 'block';
   }
