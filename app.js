@@ -1,10 +1,10 @@
 // app.js
+// v8: respeta usaCalibracion(ligaKey). En ligas con calibración desactivada
+//     (walk-forward mostró que empeora), usa HA/rho de leagues.js y sin shrink.
 // v7: muestra "cuota justa" (100/prob) al lado de cada mercado — informativo.
-//     Los picks muestran "justa X.XX · mín. valor Y.YY" para contexto.
-// v6: la app es SOLO predicción (casillas para elegir). Las cuotas de la casa se cargan
-//     en el registro (Pendientes), no acá.
+// v6: la app es SOLO predicción. Las cuotas de la casa se cargan en el registro.
 
-import { LIGAS } from './leagues.js';
+import { LIGAS, usaCalibracion } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
 import { AutoCalibrate } from './auto-calibrate.js';
 import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales, cuotaMinima, stakeSugerido } from './picks.js';
@@ -56,10 +56,21 @@ document.addEventListener('DOMContentLoaded', () => {
   updateTokenStatus();
 
   async function mostrarParamsActivos(ligaKey) {
-    const params = await AutoCalibrate.getParamsActivos(ligaKey);
     const el = document.getElementById('params-status');
     if (!el) return;
 
+    // Calibración desactivada → usar valores base de leagues.js (walk-forward mostró que mejora)
+    if (!usaCalibracion(ligaKey)) {
+      const liga = LIGAS[ligaKey];
+      el.style.color = 'var(--text-dim)';
+      el.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace; font-size:0.78rem; line-height:1.5;">' +
+        '<div>🔇 Calibración desactivada en esta liga (walk-forward: empeora el 1X2).</div>' +
+        '<div style="font-size:0.72rem;">Usando valores base: HA=' + (liga?.homeAdvantage ?? '—') + ' · rho=' + (liga?.rho ?? '—') + ' · goles=' + (liga?.goalsAvg ?? '—') + '</div>' +
+        '</div>';
+      return;
+    }
+
+    const params = await AutoCalibrate.getParamsActivos(ligaKey);
     if (!params) {
       el.innerHTML = '⚠️ Sin calibración guardada: se usan valores base de la liga (corré el backtest para calibrar)';
       el.style.color = 'var(--yellow)';
@@ -158,10 +169,13 @@ document.addEventListener('DOMContentLoaded', () => {
     simulateBtn.disabled = true;
     simulateBtn.textContent = 'Calculando...';
     try {
-      const paramsGuardados = await AutoCalibrate.getParamsActivos(leagueKey);
+      const calibActiva = usaCalibracion(leagueKey);
+      const paramsGuardados = calibActiva ? await AutoCalibrate.getParamsActivos(leagueKey) : null;
       const results = await simulateMatch(leagueKey, homeTeam, awayTeam, { calibracion: paramsGuardados || undefined });
-      results.resultProbs = aplicarShrink(results.resultProbs, paramsGuardados && paramsGuardados.tasas);
-      ultimo = { base: results, ligaKey: leagueKey };
+      if (calibActiva) {
+        results.resultProbs = aplicarShrink(results.resultProbs, paramsGuardados && paramsGuardados.tasas);
+      }
+      ultimo = { base: results, ligaKey: leagueKey, calibActiva };
       render();
     } catch (err) {
       alert('Error: ' + err.message);
@@ -181,8 +195,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return 'var(--red)';
   }
 
-  // Cuota justa = lo que el mercado "debería" pagar si estuviera de acuerdo con el modelo.
-  // 100/prob sin margen. Informativo, no reemplaza a cuotaMinima (que sí aplica el filtro EV).
   function cuotaJusta(probPct) {
     if (!Number.isFinite(probPct) || probPct <= 0) return null;
     return 100 / probPct;
@@ -199,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
       '<div class="semaforo-track"><div class="semaforo-fill" style="width:' + pct + '%;background:' + color + '"></div></div></div></div>';
   }
 
-  // Dato informativo: cuota justa del modelo + cuota mínima con valor (aplica filtro EV).
   function textoMinima(prob, mercado) {
     const min = cuotaMinima(prob, mercado);
     if (min == null) return '';
@@ -259,10 +270,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
   function render() {
     if (!ultimo) return;
-    displayResults(ultimo.base, ultimo.ligaKey);
+    displayResults(ultimo.base, ultimo.ligaKey, ultimo.calibActiva);
   }
 
-  function displayResults(data, ligaKey) {
+  function displayResults(data, ligaKey, calibActiva) {
+    const avisoCalib = calibActiva === false
+      ? '<div class="card" style="border:1px solid var(--line); background:var(--bg-2);"><p style="margin:0;font-size:0.75rem;color:var(--text-dim);">🔇 Calibración desactivada en ' + ligaKey + ' (walk-forward: empeora el 1X2). Usando valores base de leagues.js.</p></div>'
+      : '';
+
     const saveCard = '<div class="card" style="border:2px solid var(--accent);"><h3>📝 ¿Qué apostás?</h3>' +
       '<p style="color:var(--chalk-dim); font-size:0.75rem; margin:0 0 10px; line-height:1.5;">Tildá todo lo que vayas a jugar: los picks de arriba (ya vienen tildados) y/o cualquier mercado de las tarjetas de abajo. Después cargás la cuota de la casa en el registro (Pendientes).</p>' +
       '<button id="guardar-picks" style="width:100%;">💾 Guardar seleccionados</button>' +
@@ -280,6 +295,7 @@ document.addEventListener('DOMContentLoaded', () => {
       : '';
 
     predictionsContent.innerHTML =
+      avisoCalib +
       renderPicksCard(data, ligaKey) +
       saveCard +
       '<div class="card"><h3>Resultado 1X2</h3>' +
@@ -297,7 +313,6 @@ document.addEventListener('DOMContentLoaded', () => {
     resultsDiv.style.display = 'block';
   }
 
-  // ---------- guardar selección en el registro (sin cuotas: se cargan allá) ----------
   function guardarSeleccion() {
     const st = document.getElementById('guardar-status');
     if (!st || !ultimo) return;
