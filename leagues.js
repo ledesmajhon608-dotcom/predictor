@@ -1,5 +1,6 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
+// v7: calibración selectiva por liga (usaCalibracion).
 // v6: BSA a rojo (walk-forward -21% con 316 apuestas).
 //     HOME_ADVANTAGE BSA a 1.20 y rho a -0.11 (calibrados).
 //     Filtro EV Over 1.5 subido de 1.03 a 1.10.
@@ -209,7 +210,6 @@ export const TEAM_ALIASES = {
 
 // Prior de HOME_ADVANTAGE (sincronizado con params.json — usado en calibración como prior).
 // Se sobrescribe con los valores calibrados del params.json al cargar.
-// BSA actualizado a 1.20 (walk-forward mostró HA calibrado 1.20-1.25 vs 1.28 viejo).
 export const HOME_ADVANTAGE = {
   "PL": 1.17, "BL1": 1.32, "SA": 1.11, "PD": 1.38, "FL1": 1.19,
   "BSA": 1.20, "ELC": 1.18, "MXL": 1.34, "MLS": 1.26, "PPT": 1.22,
@@ -288,7 +288,7 @@ export const FILTRO_EV_POR_MERCADO = {
   '1X2': 1.07,
   '1X': 1.04,
   'X2': 1.04,
-  'Over 1.5': 1.10,   // ← subido de 1.03 (walk-forward: 14% acierto en SA)
+  'Over 1.5': 1.10,
   'Over 2.5': 1.05,
   'Over 3.5': 1.07,
   'Under 1.5': 1.10,
@@ -325,4 +325,30 @@ export const UMBRALES_POR_LIGA = {
 export function getUmbrales(leagueKey) {
   const liga = UMBRALES_POR_LIGA[leagueKey] || {};
   return { ...UMBRALES_POR_LIGA.DEFAULT, ...liga };
+}
+
+// ============================================================================
+// CALIBRACIÓN SELECTIVA POR LIGA
+// ----------------------------------------------------------------------------
+// Los walk-forwards mostraron que la calibración MLE + shrink (SHRINK_ALPHA=0.15)
+// EMPEORA el Brier 1X2 en algunas ligas. Estas banderas permiten desactivarla
+// por liga sin tocar calibrate.js.
+//
+// Datos (Brier 1X2 out-of-sample, menor = mejor):
+//   MXL:  0.612 calibrado vs 0.618 base  → ✅ mejora → true
+//   SA:   ≈ empate → true
+//   FL1:  ≈ empate → true
+//   MLS:  0.647 calibrado vs 0.640 base  → ❌ empeora → false
+//   BSA:  0.639 calibrado vs 0.633 base  → ❌ empeora → false
+//   CPA:  0.592 calibrado vs 0.585 base  → ❌ empeora → false
+// Ligas no probadas: true (comportamiento histórico).
+// ============================================================================
+export const CALIBRACION_POR_LIGA = {
+  MLS: false,
+  BSA: false,
+  CPA: false,
+};
+
+export function usaCalibracion(leagueKey) {
+  return CALIBRACION_POR_LIGA[leagueKey] !== false;
 }
