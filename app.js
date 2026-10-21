@@ -1,10 +1,12 @@
 // app.js
+// v9: fix cosmético — mostrar HA/rho reales desde HOME_ADVANTAGE/DIXON_COLES_RHO
+//     (antes leía liga.homeAdvantage que no existe → mostraba "—").
 // v8: respeta usaCalibracion(ligaKey). En ligas con calibración desactivada
 //     (walk-forward mostró que empeora), usa HA/rho de leagues.js y sin shrink.
 // v7: muestra "cuota justa" (100/prob) al lado de cada mercado — informativo.
 // v6: la app es SOLO predicción. Las cuotas de la casa se cargan en el registro.
 
-import { LIGAS, usaCalibracion } from './leagues.js';
+import { LIGAS, usaCalibracion, HOME_ADVANTAGE, DIXON_COLES_RHO, DEFAULT_HOME_ADV, DEFAULT_RHO } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
 import { AutoCalibrate } from './auto-calibrate.js';
 import { generarPicks, getBettingConfig, aplicarShrink, textoUmbrales, cuotaMinima, stakeSugerido } from './picks.js';
@@ -59,13 +61,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const el = document.getElementById('params-status');
     if (!el) return;
 
+    const liga = LIGAS[ligaKey];
+    const haBase = HOME_ADVANTAGE[ligaKey] ?? DEFAULT_HOME_ADV;
+    const rhoBase = DIXON_COLES_RHO[ligaKey] ?? DIXON_COLES_RHO.default ?? DEFAULT_RHO;
+
     // Calibración desactivada → usar valores base de leagues.js (walk-forward mostró que mejora)
     if (!usaCalibracion(ligaKey)) {
-      const liga = LIGAS[ligaKey];
       el.style.color = 'var(--text-dim)';
       el.innerHTML = '<div style="font-family:\'IBM Plex Mono\',monospace; font-size:0.78rem; line-height:1.5;">' +
         '<div>🔇 Calibración desactivada en esta liga (walk-forward: empeora el 1X2).</div>' +
-        '<div style="font-size:0.72rem;">Usando valores base: HA=' + (liga?.homeAdvantage ?? '—') + ' · rho=' + (liga?.rho ?? '—') + ' · goles=' + (liga?.goalsAvg ?? '—') + '</div>' +
+        '<div style="font-size:0.72rem;">Usando valores base: HA=' + haBase.toFixed(3) + ' · rho=' + rhoBase.toFixed(3) + ' · goles=' + (liga?.goalsAvg ?? '—') + '</div>' +
         '</div>';
       return;
     }
