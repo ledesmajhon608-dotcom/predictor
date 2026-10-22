@@ -1,6 +1,6 @@
 {
   "name": "Pizarra Futbolera",
-  "short_name": "Pizarra Futbolera",
+  "short_name": "Pizarra",
   "description": "Simulador estadístico de fútbol",
   "start_url": "./index.html",
   "display": "standalone",
