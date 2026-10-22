@@ -1,7 +1,7 @@
 {
-  "name": "Suertudo - Simulador",
-  "short_name": "Suertudo",
-  "description": "Simulador estadístico de resultados de fútbol",
+  "name": "Pizarra Futbolera",
+  "short_name": "Pizarra Futbolera",
+  "description": "Simulador estadístico de fútbol",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#0d1117",
