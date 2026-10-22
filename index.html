@@ -4,6 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Suertudo — Simulador de córners y resultados</title>
+  
+  <!-- CONFIGURACIÓN PWA -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#00d97e">
+  <link rel="icon" href="icono.png" type="image/png">
+  <!-- FIN CONFIGURACIÓN PWA -->
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anton&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -77,5 +84,16 @@
   </div>
 
   <script type="module" src="app.js"></script>
+
+  <!-- REGISTRO DEL SERVICE WORKER -->
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js')
+          .then(reg => console.log('SW registrado correctamente'))
+          .catch(err => console.log('Error al registrar SW:', err));
+      });
+    }
+  </script>
 </body>
 </html>
