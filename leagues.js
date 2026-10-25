@@ -1,11 +1,8 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
+// v10: Agregadas 6 ligas en periodo de prueba (ERE, BL2, ITB, SWE, TUR, JPN).
 // v9: Agregada Eredivisie (ERE) en modo de prueba (red).
 // v8: cierre de las 12 walk-forwards.
-//     - BL1 → red (ROI -19.9%, 207 apuestas).
-//     - PPT → mercados ["1X", "X2", "Over 3.5"] (Over 3.5 con edge real).
-//     - Notas actualizadas con datos out-of-sample.
-//     - CALIBRACION_POR_LIGA: MLS/BSA/CPA/BL1/PPT = false.
 // ============================================================================
 
 export const LIGAS = {
@@ -21,7 +18,14 @@ export const LIGAS = {
   "BL1": { "name": "🇩🇪 Bundesliga", "goalsAvg": 3.00, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -19.9% ROI (207). Over 2.5 -11.6% y BTTS Sí -6.5% significativos peores. Calibración empeora (desactivada)." } },
   "ELC": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship (Inglaterra)", "goalsAvg": 2.65, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -30.9% ROI (248). 6 de 7 mercados peor significativos. Mejor mezcla 100% cuota." } },
   "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -0.3% ROI (271) pero modelo no aporta (mezcla 100% cuota). Todos los mercados ≈ empate negativos." } },
-  "ERE": { "name": "🇳🇱 Eredivisie", "goalsAvg": 3.15, "cornAvg": 10.2, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X2", "1X", "X2", "Over 2.5"], "nota": "Liga en prueba. Backtest in-sample muestra +3.6% vs cuota en Local." } }
+  
+  // --- LIGAS EN PRUEBA ---
+  "ERE": { "name": "🇳🇱 Eredivisie", "goalsAvg": 3.15, "cornAvg": 10.2, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Walk-forward: -6.1% ROI. Mejor mezcla 75% cuota. Over 2.5 y 3.5 peores que la cuota." } },
+  "BL2": { "name": "🇩🇪 2. Bundesliga", "goalsAvg": 3.10, "cornAvg": 10.2, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } },
+  "ITB": { "name": "🇮🇹 Serie B", "goalsAvg": 2.55, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } },
+  "SWE": { "name": "🇸🇪 Allsvenskan", "goalsAvg": 2.80, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } },
+  "TUR": { "name": "🇹🇷 Süper Lig", "goalsAvg": 2.85, "cornAvg": 9.8, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } },
+  "JPN": { "name": "🇯🇵 J1 League", "goalsAvg": 2.60, "cornAvg": 9.2, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } }
 };
 
 export const TEAM_STRENGTH_DB = {
@@ -177,12 +181,43 @@ export const TEAM_STRENGTH_DB = {
     "Internacional de Bogotá": { "atk": 0.959, "def": 1.406 }, "Junior Barranquilla": { "atk": 1.183, "def": 0.96 },
     "Millonarios": { "atk": 1.161, "def": 0.706 }, "Once Caldas": { "atk": 0.914, "def": 1.035 }
   },
+  // --- EQUIPOS BASE PARA LAS LIGAS EN PRUEBA ---
   "ERE": {
     "Ajax": { "atk": 1.25, "def": 0.85 }, "PSV": { "atk": 1.35, "def": 0.80 },
     "Feyenoord": { "atk": 1.28, "def": 0.88 }, "AZ Alkmaar": { "atk": 1.15, "def": 0.95 },
     "Twente": { "atk": 1.10, "def": 0.98 }, "Utrecht": { "atk": 1.05, "def": 1.02 },
     "Vitesse": { "atk": 0.90, "def": 1.15 }, "Heerenveen": { "atk": 0.92, "def": 1.10 },
     "Sparta Rotterdam": { "atk": 0.85, "def": 1.18 }, "Go Ahead Eagles": { "atk": 0.88, "def": 1.12 }
+  },
+  "BL2": {
+    "Hamburger SV": { "atk": 1.10, "def": 0.95 }, "Schalke 04": { "atk": 1.05, "def": 1.10 },
+    "Hertha BSC": { "atk": 1.08, "def": 1.02 }, "Fortuna Düsseldorf": { "atk": 1.05, "def": 0.98 },
+    "SC Paderborn": { "atk": 1.00, "def": 1.05 }, "Hannover 96": { "atk": 0.95, "def": 1.05 },
+    "Karlsruher SC": { "atk": 0.92, "def": 1.12 }, "Holstein Kiel": { "atk": 1.02, "def": 1.00 }
+  },
+  "ITB": {
+    "Sampdoria": { "atk": 1.05, "def": 1.00 }, "Palermo": { "atk": 1.00, "def": 1.05 },
+    "Cremonese": { "atk": 1.10, "def": 0.92 }, "Parma": { "atk": 1.15, "def": 0.88 },
+    "Venezia": { "atk": 1.08, "def": 0.95 }, "Como": { "atk": 0.95, "def": 1.08 },
+    "Spezia": { "atk": 0.90, "def": 1.10 }, "Pisa": { "atk": 0.88, "def": 1.12 }
+  },
+  "SWE": {
+    "Malmö FF": { "atk": 1.25, "def": 0.82 }, "AIK": { "atk": 1.10, "def": 0.92 },
+    "Djurgården": { "atk": 1.15, "def": 0.90 }, "IFK Göteborg": { "atk": 1.05, "def": 1.05 },
+    "Hammarby": { "atk": 1.08, "def": 0.95 }, "Häcken": { "atk": 1.12, "def": 0.88 },
+    "Norrköping": { "atk": 0.92, "def": 1.10 }, "Elfsborg": { "atk": 1.00, "def": 1.02 }
+  },
+  "TUR": {
+    "Galatasaray": { "atk": 1.35, "def": 0.80 }, "Fenerbahçe": { "atk": 1.32, "def": 0.82 },
+    "Beşiktaş": { "atk": 1.20, "def": 0.90 }, "Trabzonspor": { "atk": 1.18, "def": 0.92 },
+    "Başakşehir": { "atk": 1.10, "def": 0.98 }, "Adana Demirspor": { "atk": 1.05, "def": 1.02 },
+    "Antalyaspor": { "atk": 0.95, "def": 1.05 }, "Konyaspor": { "atk": 0.92, "def": 1.08 }
+  },
+  "JPN": {
+    "Kawasaki Frontale": { "atk": 1.15, "def": 0.92 }, "Yokohama F. Marinos": { "atk": 1.20, "def": 0.90 },
+    "Vissel Kobe": { "atk": 1.22, "def": 0.88 }, "Urawa Reds": { "atk": 1.05, "def": 1.02 },
+    "Kashima Antlers": { "atk": 1.08, "def": 1.00 }, "Sanfrecce Hiroshima": { "atk": 1.10, "def": 0.95 },
+    "Cerezo Osaka": { "atk": 1.02, "def": 1.05 }, "FC Tokyo": { "atk": 0.98, "def": 1.02 }
   }
 };
 
@@ -221,13 +256,15 @@ export const TEAM_ALIASES = {
 export const HOME_ADVANTAGE = {
   "PL": 1.17, "BL1": 1.32, "SA": 1.11, "PD": 1.38, "FL1": 1.19,
   "BSA": 1.20, "ELC": 1.18, "MXL": 1.34, "MLS": 1.26, "PPT": 1.22,
-  "CPA": 1.36, "ARG": 1.19, "ERE": 1.22
+  "CPA": 1.36, "ARG": 1.19,
+  "ERE": 1.22, "BL2": 1.25, "ITB": 1.20, "SWE": 1.20, "TUR": 1.28, "JPN": 1.15
 };
 
 export const DIXON_COLES_RHO = {
   "PL": -0.065, "BL1": -0.085, "SA": -0.130, "PD": -0.098, "FL1": -0.105,
   "BSA": -0.110, "ELC": -0.078, "MXL": -0.095, "MLS": -0.070, "PPT": -0.080,
-  "CPA": -0.095, "ARG": -0.070, "ERE": -0.080,
+  "CPA": -0.095, "ARG": -0.070,
+  "ERE": -0.080, "BL2": -0.085, "ITB": -0.080, "SWE": -0.080, "TUR": -0.085, "JPN": -0.075,
   "default": -0.100
 };
 
@@ -248,8 +285,8 @@ export const CORNER_HOME_BIAS_LEAGUE = { BSA: 1.66 };
 
 export const BZZOIRO_COUNTRY = {
   PL: 'England', ELC: 'England',
-  BL1: 'Germany',
-  SA: 'Italy',
+  BL1: 'Germany', BL2: 'Germany',
+  SA: 'Italy', ITB: 'Italy',
   PD: 'Spain',
   FL1: 'France',
   BSA: 'Brazil',
@@ -258,7 +295,10 @@ export const BZZOIRO_COUNTRY = {
   PPT: 'Portugal',
   ARG: 'Argentina',
   CPA: 'Colombia',
-  ERE: 'Netherlands'
+  ERE: 'Netherlands',
+  SWE: 'Sweden',
+  TUR: 'Turkey',
+  JPN: 'Japan'
 };
 
 // ============================================================================
@@ -346,7 +386,6 @@ export const CALIBRACION_POR_LIGA = {
   CPA: false,
   BL1: false,
   PPT: false,
-  // ERE (Eredivisie) queda con true por defecto hasta que el Walk-Forward diga lo contrario.
 };
 
 export function usaCalibracion(leagueKey) {
