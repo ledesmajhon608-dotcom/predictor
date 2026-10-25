@@ -1,6 +1,6 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
-// v12: LIMPIEZA FINAL. Solo quedan las 6 ligas aprobadas y rentables.
+// v13: Completados los 18 equipos reales de la 2. Bundesliga (BL2).
 // ============================================================================
 
 export const LIGAS = {
@@ -76,10 +76,28 @@ export const TEAM_STRENGTH_DB = {
     "Sporting CP": { "atk": 2.064, "def": 0.72 }, "Vitória SC": { "atk": 0.681, "def": 1.018 }
   },
   "BL2": {
-    "Hamburger SV": { "atk": 1.10, "def": 0.95 }, "Schalke 04": { "atk": 1.05, "def": 1.10 },
-    "Hertha BSC": { "atk": 1.08, "def": 1.02 }, "Fortuna Düsseldorf": { "atk": 1.05, "def": 0.98 },
-    "SC Paderborn": { "atk": 1.00, "def": 1.05 }, "Hannover 96": { "atk": 0.95, "def": 1.05 },
-    "Karlsruher SC": { "atk": 0.92, "def": 1.12 }, "Holstein Kiel": { "atk": 1.02, "def": 1.00 }
+    "Hertha BSC": { "atk": 1.15, "def": 0.85 },
+    "1. FC Nürnberg": { "atk": 1.10, "def": 0.90 },
+    "1. FC Kaiserslautern": { "atk": 1.05, "def": 0.95 },
+    "VfL Wolfsburg": { "atk": 1.25, "def": 0.85 },
+    "1. FC Magdeburg": { "atk": 1.10, "def": 1.00 },
+    "1. FC Heidenheim": { "atk": 1.15, "def": 0.90 },
+    "FC St. Pauli": { "atk": 1.05, "def": 0.95 },
+    "VfL Osnabrück": { "atk": 0.85, "def": 1.15 },
+    "Arminia Bielefeld": { "atk": 0.90, "def": 1.10 },
+    "Eintracht Braunschweig": { "atk": 0.85, "def": 1.15 },
+    "Energie Cottbus": { "atk": 0.80, "def": 1.20 },
+    "SpVgg Greuther Fürth": { "atk": 0.90, "def": 1.05 },
+    "Holstein Kiel": { "atk": 1.05, "def": 1.05 },
+    "VfL Bochum 1848": { "atk": 0.95, "def": 1.10 },
+    "SG Dynamo Dresden": { "atk": 0.90, "def": 1.10 },
+    "Hannover 96": { "atk": 1.00, "def": 1.00 },
+    "Karlsruher SC": { "atk": 1.00, "def": 1.05 },
+    "Darmstadt 98": { "atk": 0.95, "def": 1.05 },
+    "Hamburger SV": { "atk": 1.10, "def": 0.95 },
+    "Schalke 04": { "atk": 1.00, "def": 1.10 },
+    "Fortuna Düsseldorf": { "atk": 1.05, "def": 0.98 },
+    "SC Paderborn": { "atk": 1.00, "def": 1.05 }
   }
 };
 
@@ -93,7 +111,12 @@ export const TEAM_ALIASES = {
   'Santa Fe': 'Independiente Santa Fe', 'Medellin': 'Independiente Medellín',
   'Junior': 'Junior Barranquilla',
   'PSG': 'Paris Saint-Germain', 'Marseille': 'Olympique de Marseille', 'Lyon': 'Olympique Lyonnais',
-  'Sporting Lisbon': 'Sporting CP', 'Porto': 'FC Porto', 'Benfica Lisbon': 'Benfica'
+  'Sporting Lisbon': 'Sporting CP', 'Porto': 'FC Porto', 'Benfica Lisbon': 'Benfica',
+  'Nürnberg': '1. FC Nürnberg', 'Kaiserslautern': '1. FC Kaiserslautern', 'Magdeburg': '1. FC Magdeburg',
+  'Heidenheim': '1. FC Heidenheim', 'St. Pauli': 'FC St. Pauli', 'Osnabrück': 'VfL Osnabrück',
+  'Braunschweig': 'Eintracht Braunschweig', 'Cottbus': 'Energie Cottbus', 'Fürth': 'SpVgg Greuther Fürth',
+  'Bochum': 'VfL Bochum 1848', 'Dresden': 'SG Dynamo Dresden', 'Darmstadt': 'Darmstadt 98',
+  'Hamburg': 'Hamburger SV', 'Schalke': 'Schalke 04', 'Düsseldorf': 'Fortuna Düsseldorf', 'Paderborn': 'SC Paderborn'
 };
 
 export const HOME_ADVANTAGE = {
