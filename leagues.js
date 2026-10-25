@@ -1,11 +1,11 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
+// v9: Agregada Eredivisie (ERE) en modo de prueba (red).
 // v8: cierre de las 12 walk-forwards.
 //     - BL1 → red (ROI -19.9%, 207 apuestas).
 //     - PPT → mercados ["1X", "X2", "Over 3.5"] (Over 3.5 con edge real).
 //     - Notas actualizadas con datos out-of-sample.
 //     - CALIBRACION_POR_LIGA: MLS/BSA/CPA/BL1/PPT = false.
-// v6: BSA a rojo, HA=1.20, rho=-0.11. Filtro EV Over 1.5 a 1.10.
 // ============================================================================
 
 export const LIGAS = {
@@ -20,7 +20,8 @@ export const LIGAS = {
   "SA": { "name": "🇮🇹 Serie A", "goalsAvg": 2.65, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -44.6% global. Local -32%, Visitante -26%. HA cambió de 1.17 a 1.06." } },
   "BL1": { "name": "🇩🇪 Bundesliga", "goalsAvg": 3.00, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -19.9% ROI (207). Over 2.5 -11.6% y BTTS Sí -6.5% significativos peores. Calibración empeora (desactivada)." } },
   "ELC": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship (Inglaterra)", "goalsAvg": 2.65, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -30.9% ROI (248). 6 de 7 mercados peor significativos. Mejor mezcla 100% cuota." } },
-  "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -0.3% ROI (271) pero modelo no aporta (mezcla 100% cuota). Todos los mercados ≈ empate negativos." } }
+  "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -0.3% ROI (271) pero modelo no aporta (mezcla 100% cuota). Todos los mercados ≈ empate negativos." } },
+  "ERE": { "name": "🇳🇱 Eredivisie", "goalsAvg": 3.15, "cornAvg": 10.2, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en periodo de prueba. Falta correr Walk-Forward." } }
 };
 
 export const TEAM_STRENGTH_DB = {
@@ -175,6 +176,13 @@ export const TEAM_STRENGTH_DB = {
     "Independiente Medellín": { "atk": 1.323, "def": 0.87 }, "Independiente Santa Fe": { "atk": 1.329, "def": 0.747 },
     "Internacional de Bogotá": { "atk": 0.959, "def": 1.406 }, "Junior Barranquilla": { "atk": 1.183, "def": 0.96 },
     "Millonarios": { "atk": 1.161, "def": 0.706 }, "Once Caldas": { "atk": 0.914, "def": 1.035 }
+  },
+  "ERE": {
+    "Ajax": { "atk": 1.25, "def": 0.85 }, "PSV": { "atk": 1.35, "def": 0.80 },
+    "Feyenoord": { "atk": 1.28, "def": 0.88 }, "AZ Alkmaar": { "atk": 1.15, "def": 0.95 },
+    "Twente": { "atk": 1.10, "def": 0.98 }, "Utrecht": { "atk": 1.05, "def": 1.02 },
+    "Vitesse": { "atk": 0.90, "def": 1.15 }, "Heerenveen": { "atk": 0.92, "def": 1.10 },
+    "Sparta Rotterdam": { "atk": 0.85, "def": 1.18 }, "Go Ahead Eagles": { "atk": 0.88, "def": 1.12 }
   }
 };
 
@@ -210,18 +218,16 @@ export const TEAM_ALIASES = {
   'Cruz Azul CDMX': 'Cruz Azul', 'Tigres': 'Tigres UANL',
 };
 
-// Prior de HOME_ADVANTAGE (sincronizado con params.json — usado en calibración como prior).
-// Se sobrescribe con los valores calibrados del params.json al cargar.
 export const HOME_ADVANTAGE = {
   "PL": 1.17, "BL1": 1.32, "SA": 1.11, "PD": 1.38, "FL1": 1.19,
   "BSA": 1.20, "ELC": 1.18, "MXL": 1.34, "MLS": 1.26, "PPT": 1.22,
-  "CPA": 1.36, "ARG": 1.19
+  "CPA": 1.36, "ARG": 1.19, "ERE": 1.22
 };
 
 export const DIXON_COLES_RHO = {
   "PL": -0.065, "BL1": -0.085, "SA": -0.130, "PD": -0.098, "FL1": -0.105,
   "BSA": -0.110, "ELC": -0.078, "MXL": -0.095, "MLS": -0.070, "PPT": -0.080,
-  "CPA": -0.095, "ARG": -0.070,
+  "CPA": -0.095, "ARG": -0.070, "ERE": -0.080,
   "default": -0.100
 };
 
@@ -251,7 +257,8 @@ export const BZZOIRO_COUNTRY = {
   MLS: 'USA',
   PPT: 'Portugal',
   ARG: 'Argentina',
-  CPA: 'Colombia'
+  CPA: 'Colombia',
+  ERE: 'Netherlands'
 };
 
 // ============================================================================
@@ -321,6 +328,7 @@ export const UMBRALES_POR_LIGA = {
   MXL: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: true },
   MLS: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: false },
   CPA: { umbral1x2: 50, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
+  ERE: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: true },
   DEFAULT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: true },
 };
 
@@ -331,24 +339,6 @@ export function getUmbrales(leagueKey) {
 
 // ============================================================================
 // CALIBRACIÓN SELECTIVA POR LIGA
-// ----------------------------------------------------------------------------
-// Los 12 walk-forwards mostraron que la calibración MLE + shrink
-// (SHRINK_ALPHA=0.15) EMPEORA el Brier 1X2 en varias ligas. Estas banderas
-// permiten desactivarla por liga sin tocar calibrate.js.
-//
-// Datos (Brier 1X2 out-of-sample calibrado vs base, menor = mejor):
-//   MXL:  0.612 vs 0.618  → ✅ mejora  → true
-//   SA:   0.617 vs —      → ≈ neutro  → true
-//   FL1:  0.629 vs 0.627  → ≈ neutro  → true
-//   ARG:  0.652 vs 0.654  → ≈ neutro  → true
-//   PL:   0.647 vs 0.649  → ≈ neutro  → true
-//   PD:   0.609 vs 0.611  → ≈ neutro  → true
-//   ELC:  0.669 vs 0.667  → ≈ neutro  → true
-//   MLS:  0.647 vs 0.640  → ❌ empeora → false
-//   BSA:  0.639 vs 0.633  → ❌ empeora → false
-//   CPA:  0.592 vs 0.585  → ❌ empeora → false
-//   BL1:  0.607 vs 0.601  → ❌ empeora → false
-//   PPT:  0.578 vs 0.568  → ❌ empeora → false
 // ============================================================================
 export const CALIBRACION_POR_LIGA = {
   MLS: false,
@@ -356,6 +346,7 @@ export const CALIBRACION_POR_LIGA = {
   CPA: false,
   BL1: false,
   PPT: false,
+  // ERE (Eredivisie) queda con true por defecto hasta que el Walk-Forward diga lo contrario.
 };
 
 export function usaCalibracion(leagueKey) {
