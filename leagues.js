@@ -1,129 +1,18 @@
 // ============================================================================
 // CONFIGURACIÓN / DATOS DE LIGAS
-// v10: Agregadas 6 ligas en periodo de prueba (ERE, BL2, ITB, SWE, TUR, JPN).
-// v9: Agregada Eredivisie (ERE) en modo de prueba (red).
-// v8: cierre de las 12 walk-forwards.
+// v12: LIMPIEZA FINAL. Solo quedan las 6 ligas aprobadas y rentables.
 // ============================================================================
 
 export const LIGAS = {
-  "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "BTTS"], "nota": "Walk-forward: ROI +0.6% (417), modelo ≈ cuota. Calibración empeora (desactivada)." } },
-  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Walk-forward: +2.3% global, Visitante +5.3% significativo. Calibración empeora (desactivada)." } },
+  "MLS": { "name": "🇺🇸 MLS (EEUU)", "goalsAvg": 3.00, "cornAvg": 9.9, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "BTTS"], "nota": "Walk-forward: ROI +0.6% (417), modelo ≈ cuota. Calibración desactivada." } },
+  "CPA": { "name": "🇨🇴 Categoría Primera A", "goalsAvg": 2.35, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X2", "1X", "X2", "Over 1.5", "Over 2.5", "Over 3.5", "BTTS"], "nota": "Walk-forward: +2.3% global, Visitante +5.3% significativo. Calibración desactivada." } },
   "MXL": { "name": "🇲🇽 Liga MX", "goalsAvg": 2.70, "cornAvg": 9.6, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 0.5, "mercados": ["1X2", "1X", "X2", "Over 1.5"], "nota": "Walk-forward: ≈ empate. ÚNICA liga donde la calibración mejora (mantiene activa)." } },
   "FL1": { "name": "🇫🇷 Ligue 1", "goalsAvg": 2.70, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "green", "stake": 1, "mercados": ["1X", "X2", "Over 1.5", "Over 3.5"], "nota": "Walk-forward: ≈ empate en todos los mercados. Modelo sano." } },
-  "BSA": { "name": "🇧🇷 Brasileirão A", "goalsAvg": 2.45, "cornAvg": 10.3, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -21.1% ROI con 316 apuestas. Local gana -56%, BTTS Sí -50%. Calibración empeora (desactivada)." } },
-  "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X", "X2", "Over 3.5"], "nota": "Walk-forward: ROI +15.9% (318). Over 3.5 +7.6% significativo. Empate -5.6% roto. Calibración empeora (desactivada)." } },
-  "PL": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Premier League", "goalsAvg": 2.85, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -1.4% ROI (142). HA inestable (1.06-1.26). Ratings de leagues.js peores que calculados." } },
-  "PD": { "name": "🇪🇸 La Liga", "goalsAvg": 2.55, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -39.6% ROI (409 apuestas). Los 7 mercados peor significativos. La liga más eficiente: modelo no compite." } },
-  "SA": { "name": "🇮🇹 Serie A", "goalsAvg": 2.65, "cornAvg": 10.2, "cornR": 19, "markets": { "goles": false, "btts": false, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -44.6% global. Local -32%, Visitante -26%. HA cambió de 1.17 a 1.06." } },
-  "BL1": { "name": "🇩🇪 Bundesliga", "goalsAvg": 3.00, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -19.9% ROI (207). Over 2.5 -11.6% y BTTS Sí -6.5% significativos peores. Calibración empeora (desactivada)." } },
-  "ELC": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship (Inglaterra)", "goalsAvg": 2.65, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -30.9% ROI (248). 6 de 7 mercados peor significativos. Mejor mezcla 100% cuota." } },
-  "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -0.3% ROI (271) pero modelo no aporta (mezcla 100% cuota). Todos los mercados ≈ empate negativos." } },
-  
-  // --- LIGAS EN PRUEBA ---
-  "ERE": { "name": "🇳🇱 Eredivisie", "goalsAvg": 3.15, "cornAvg": 10.2, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Walk-forward: -6.1% ROI. Mejor mezcla 75% cuota. Over 2.5 y 3.5 peores que la cuota." } },
-  "BL2": { "name": "🇩🇪 2. Bundesliga", "goalsAvg": 3.10, "cornAvg": 10.2, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } },
-  "ITB": { "name": "🇮🇹 Serie B", "goalsAvg": 2.55, "cornAvg": 9.5, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } },
-  "SWE": { "name": "🇸🇪 Allsvenskan", "goalsAvg": 2.80, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } },
-  "TUR": { "name": "🇹🇷 Süper Lig", "goalsAvg": 2.85, "cornAvg": 9.8, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } },
-  "JPN": { "name": "🇯🇵 J1 League", "goalsAvg": 2.60, "cornAvg": 9.2, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en prueba. Falta Walk-Forward." } }
+  "PPT": { "name": "🇵🇹 Liga Portugal", "goalsAvg": 2.60, "cornAvg": 9.4, "cornR": 17, "markets": { "goles": true, "btts": true, "corn": false }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X", "X2", "Over 3.5"], "nota": "Walk-forward: ROI +15.9% (318). Over 3.5 +7.6% significativo. Empate -5.6% roto. Calibración desactivada." } },
+  "BL2": { "name": "🇩🇪 2. Bundesliga", "goalsAvg": 3.10, "cornAvg": 10.2, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X", "X2", "Under 2.5", "Under 3.5", "BTTS No", "Over 3.5"], "nota": "Walk-forward (200p): ROI +10.2% (99 apuestas). Modelo puro mejor que mezcla. Over 3.5 +8.7% vs cuota." } }
 };
 
 export const TEAM_STRENGTH_DB = {
-  "PL": {
-    "Arsenal": { "atk": 1.32, "def": 0.88 }, "Aston Villa": { "atk": 1.10, "def": 0.96 },
-    "Bournemouth": { "atk": 0.96, "def": 1.06 }, "Brentford": { "atk": 1.06, "def": 0.99 },
-    "Brighton & Hove Albion": { "atk": 1.08, "def": 0.98 }, "Chelsea": { "atk": 1.18, "def": 0.89 },
-    "Coventry City": { "atk": 0.80, "def": 1.18 }, "Crystal Palace": { "atk": 0.96, "def": 1.06 },
-    "Everton": { "atk": 0.94, "def": 1.08 }, "Fulham": { "atk": 1.04, "def": 1.02 },
-    "Hull City": { "atk": 0.78, "def": 1.22 }, "Ipswich Town": { "atk": 0.87, "def": 1.13 },
-    "Leeds United": { "atk": 0.90, "def": 1.11 }, "Liverpool FC": { "atk": 1.28, "def": 0.85 },
-    "Manchester City": { "atk": 1.35, "def": 0.82 }, "Manchester United": { "atk": 1.15, "def": 0.92 },
-    "Newcastle United": { "atk": 1.12, "def": 0.95 }, "Nottingham Forest": { "atk": 0.89, "def": 1.12 },
-    "Sunderland": { "atk": 0.92, "def": 1.10 }, "Tottenham Hotspur": { "atk": 1.22, "def": 0.91 }
-  },
-  "BL1": {
-    "1. FC Köln": { "atk": 0.85, "def": 1.16 }, "1. FC Union Berlin": { "atk": 0.91, "def": 1.12 },
-    "1. FSV Mainz 05": { "atk": 0.94, "def": 1.10 }, "Bayer 04 Leverkusen": { "atk": 1.15, "def": 0.96 },
-    "Borussia Dortmund": { "atk": 1.26, "def": 0.88 }, "Borussia M'gladbach": { "atk": 0.89, "def": 1.14 },
-    "Eintracht Frankfurt": { "atk": 1.02, "def": 1.04 }, "FC Augsburg": { "atk": 0.96, "def": 1.08 },
-    "FC Bayern München": { "atk": 1.38, "def": 0.80 }, "FC Schalke 04": { "atk": 0.80, "def": 1.22 },
-    "Hamburger SV": { "atk": 0.87, "def": 1.15 }, "RB Leipzig": { "atk": 1.20, "def": 0.92 },
-    "SC Freiburg": { "atk": 1.05, "def": 1.02 }, "SC Paderborn 07": { "atk": 0.90, "def": 1.10 },
-    "SV 07 Elversberg": { "atk": 0.82, "def": 1.18 }, "SV Werder Bremen": { "atk": 0.83, "def": 1.17 },
-    "TSG Hoffenheim": { "atk": 1.08, "def": 1.00 }, "VfB Stuttgart": { "atk": 1.18, "def": 0.94 }
-  },
-  "SA": {
-    "AC Milan": { "atk": 1.28, "def": 0.88 }, "AS Roma": { "atk": 1.15, "def": 0.94 },
-    "Atalanta": { "atk": 1.10, "def": 0.98 }, "Bologna": { "atk": 0.97, "def": 1.07 },
-    "Cagliari": { "atk": 0.84, "def": 1.15 }, "Como": { "atk": 0.90, "def": 1.12 },
-    "Fiorentina": { "atk": 1.12, "def": 0.96 }, "Frosinone": { "atk": 0.82, "def": 1.18 },
-    "Genoa": { "atk": 0.86, "def": 1.14 }, "Inter": { "atk": 1.32, "def": 0.86 },
-    "Juventus": { "atk": 1.22, "def": 0.90 }, "Lazio": { "atk": 1.18, "def": 0.92 },
-    "Lecce": { "atk": 0.82, "def": 1.16 }, "Monza": { "atk": 1.02, "def": 1.04 },
-    "Parma": { "atk": 0.80, "def": 1.17 }, "Sassuolo": { "atk": 0.78, "def": 1.18 },
-    "SSC Napoli": { "atk": 1.08, "def": 1.00 }, "Torino": { "atk": 0.99, "def": 1.06 },
-    "Udinese": { "atk": 0.92, "def": 1.11 }, "Venezia": { "atk": 0.76, "def": 1.20 }
-  },
-  "PD": {
-    "Athletic Club": { "atk": 1.08, "def": 0.99 }, "Atlético Madrid": { "atk": 1.20, "def": 0.92 },
-    "Celta Vigo": { "atk": 0.85, "def": 1.14 }, "Deportivo Alavés": { "atk": 0.83, "def": 1.15 },
-    "Deportivo de A Coruña": { "atk": 1.02, "def": 1.04 }, "Elche": { "atk": 0.80, "def": 1.18 },
-    "Espanyol": { "atk": 0.79, "def": 1.17 }, "FC Barcelona": { "atk": 1.32, "def": 0.86 },
-    "Getafe": { "atk": 0.94, "def": 1.08 }, "Levante UD": { "atk": 0.86, "def": 1.12 },
-    "Málaga CF": { "atk": 0.82, "def": 1.16 }, "Osasuna": { "atk": 1.02, "def": 1.03 },
-    "Rayo Vallecano": { "atk": 0.99, "def": 1.05 }, "Real Betis": { "atk": 1.05, "def": 1.01 },
-    "Real Madrid": { "atk": 1.35, "def": 0.84 }, "Real Racing Club": { "atk": 0.90, "def": 1.10 },
-    "Real Sociedad": { "atk": 1.15, "def": 0.95 }, "Sevilla": { "atk": 0.92, "def": 1.10 },
-    "Valencia": { "atk": 0.90, "def": 1.11 }, "Villarreal": { "atk": 1.12, "def": 0.97 }
-  },
-  "FL1": {
-    "Angers": { "atk": 0.80, "def": 1.18 }, "AS Monaco": { "atk": 1.22, "def": 0.90 },
-    "Auxerre": { "atk": 1.04, "def": 1.02 }, "Le Havre": { "atk": 0.83, "def": 1.16 },
-    "Le Mans": { "atk": 0.78, "def": 1.20 }, "Lille": { "atk": 1.15, "def": 0.94 },
-    "Lorient": { "atk": 0.77, "def": 1.19 }, "Nice": { "atk": 0.95, "def": 1.08 },
-    "Olympique de Marseille": { "atk": 1.12, "def": 0.96 }, "Olympique Lyonnais": { "atk": 1.18, "def": 0.92 },
-    "Paris FC": { "atk": 0.92, "def": 1.06 }, "Paris Saint-Germain": { "atk": 1.38, "def": 0.82 },
-    "RC Lens": { "atk": 1.08, "def": 0.99 }, "RC Strasbourg": { "atk": 0.92, "def": 1.10 },
-    "Stade Brestois": { "atk": 0.98, "def": 1.06 }, "Stade Rennais": { "atk": 1.01, "def": 1.04 },
-    "Toulouse": { "atk": 0.86, "def": 1.14 }, "Troyes": { "atk": 0.75, "def": 1.20 }
-  },
-  "BSA": {
-    "Athletico": { "atk": 1.02, "def": 0.98 }, "Atlético Mineiro": { "atk": 1.15, "def": 1.04 },
-    "Bahia": { "atk": 1.08, "def": 1.06 }, "Botafogo": { "atk": 1.25, "def": 0.88 },
-    "Chapecoense": { "atk": 0.88, "def": 1.12 }, "Corinthians": { "atk": 1.04, "def": 1.02 },
-    "Coritiba": { "atk": 0.94, "def": 1.05 }, "Cruzeiro": { "atk": 1.06, "def": 0.95 },
-    "Flamengo": { "atk": 1.30, "def": 0.92 }, "Fluminense": { "atk": 1.00, "def": 1.08 },
-    "Grêmio": { "atk": 1.05, "def": 1.10 }, "Internacional": { "atk": 1.12, "def": 0.90 },
-    "Mirassol": { "atk": 0.96, "def": 0.94 }, "Palmeiras": { "atk": 1.28, "def": 0.86 },
-    "Red Bull Bragantino": { "atk": 1.03, "def": 1.04 }, "Remo": { "atk": 0.85, "def": 1.08 },
-    "Santos": { "atk": 1.10, "def": 0.96 }, "São Paulo": { "atk": 1.14, "def": 0.93 },
-    "Vasco da Gama": { "atk": 1.01, "def": 1.14 }, "Vitória": { "atk": 0.97, "def": 1.15 }
-  },
-  "ELC": {
-    "Birmingham City": { "atk": 0.88, "def": 1.12 }, "Blackburn Rovers": { "atk": 0.93, "def": 1.13 },
-    "Bolton Wanderers": { "atk": 0.86, "def": 1.18 }, "Bristol City": { "atk": 0.90, "def": 1.15 },
-    "Burnley": { "atk": 1.12, "def": 0.94 }, "Cardiff City": { "atk": 0.87, "def": 1.17 },
-    "Charlton Athletic": { "atk": 0.84, "def": 1.19 }, "Derby County": { "atk": 0.66, "def": 1.30 },
-    "Lincoln City": { "atk": 0.80, "def": 1.22 }, "Middlesbrough": { "atk": 1.08, "def": 1.03 },
-    "Millwall": { "atk": 0.69, "def": 1.29 }, "Norwich City": { "atk": 1.20, "def": 0.92 },
-    "Portsmouth": { "atk": 0.72, "def": 1.27 }, "Preston North End": { "atk": 0.96, "def": 1.11 },
-    "Queens Park Rangers": { "atk": 0.83, "def": 1.21 }, "Sheffield United": { "atk": 1.18, "def": 0.94 },
-    "Southampton": { "atk": 0.85, "def": 1.14 }, "Stoke City": { "atk": 0.82, "def": 1.18 },
-    "Swansea City": { "atk": 0.84, "def": 1.19 }, "Watford": { "atk": 0.78, "def": 1.23 },
-    "West Bromwich Albion": { "atk": 1.02, "def": 1.07 }, "West Ham United": { "atk": 1.15, "def": 0.95 },
-    "Wolverhampton": { "atk": 0.95, "def": 1.09 }, "Wrexham": { "atk": 0.80, "def": 1.22 }
-  },
-  "MXL": {
-    "Atlante FC": { "atk": 0.84, "def": 1.14 }, "Atlas FC": { "atk": 0.98, "def": 1.06 },
-    "Atlético San Luis": { "atk": 0.90, "def": 1.11 }, "CD Guadalajara": { "atk": 1.08, "def": 0.99 },
-    "CD Toluca": { "atk": 1.20, "def": 0.93 }, "CF Monterrey": { "atk": 1.16, "def": 0.95 },
-    "CF Pachuca": { "atk": 1.04, "def": 1.02 }, "Club América": { "atk": 1.24, "def": 0.90 },
-    "Club León": { "atk": 1.02, "def": 1.03 }, "Club Necaxa": { "atk": 0.88, "def": 1.13 },
-    "Club Puebla": { "atk": 0.80, "def": 1.18 }, "Club Tijuana": { "atk": 0.96, "def": 1.08 },
-    "Cruz Azul": { "atk": 1.18, "def": 0.92 }, "FC Juárez": { "atk": 0.82, "def": 1.16 },
-    "Pumas UNAM": { "atk": 1.00, "def": 1.05 }, "Querétaro FC": { "atk": 0.78, "def": 1.20 },
-    "Santos Laguna": { "atk": 0.90, "def": 1.11 }, "Tigres UANL": { "atk": 1.22, "def": 0.91 }
-  },
   "MLS": {
     "Atlanta United": { "atk": 0.88, "def": 1.12 }, "Austin FC": { "atk": 0.94, "def": 1.06 },
     "CF Montréal": { "atk": 0.85, "def": 1.25 }, "Charlotte FC": { "atk": 1.15, "def": 0.90 },
@@ -141,34 +30,6 @@ export const TEAM_STRENGTH_DB = {
     "Sporting Kansas City": { "atk": 0.90, "def": 1.38 }, "St.Louis City": { "atk": 1.00, "def": 0.86 },
     "Toronto FC": { "atk": 0.97, "def": 1.11 }, "Vancouver Whitecaps": { "atk": 1.10, "def": 0.68 }
   },
-  "PPT": {
-    "Académico Viseu FC": { "atk": 0.755, "def": 1.213 }, "Benfica": { "atk": 2.252, "def": 0.573 },
-    "Casa Pia": { "atk": 0.34, "def": 1.216 }, "CD Nacional": { "atk": 0.833, "def": 1.059 },
-    "CF Estrela Amadora": { "atk": 1.163, "def": 1.372 }, "CS Marítimo": { "atk": 0.899, "def": 1.289 },
-    "Estoril Praia": { "atk": 0.651, "def": 1.174 }, "Famalicão": { "atk": 0.801, "def": 0.784 },
-    "FC Alverca": { "atk": 0.788, "def": 1.289 }, "FC Arouca": { "atk": 1.195, "def": 0.736 },
-    "FC Porto": { "atk": 1.519, "def": 0.424 }, "Gil Vicente": { "atk": 0.815, "def": 0.768 },
-    "Moreirense": { "atk": 0.594, "def": 1.465 }, "Rio Ave": { "atk": 0.482, "def": 1.48 },
-    "Santa Clara": { "atk": 1.151, "def": 0.726 }, "Sporting Braga": { "atk": 1.337, "def": 0.832 },
-    "Sporting CP": { "atk": 2.064, "def": 0.72 }, "Vitória SC": { "atk": 0.681, "def": 1.018 }
-  },
-  "ARG": {
-    "Aldosivi": { "atk": 0.85, "def": 1.30 }, "Argentinos Juniors": { "atk": 1.05, "def": 0.95 },
-    "Atlético Tucumán": { "atk": 1.00, "def": 1.05 }, "Banfield": { "atk": 0.90, "def": 1.10 },
-    "Barracas Central": { "atk": 0.85, "def": 1.15 }, "Boca Juniors": { "atk": 1.30, "def": 0.80 },
-    "CA Independiente": { "atk": 1.10, "def": 0.90 }, "CA Lanús": { "atk": 1.10, "def": 1.00 },
-    "CA Talleres": { "atk": 1.15, "def": 0.85 }, "Central Córdoba": { "atk": 0.90, "def": 1.10 },
-    "Club Atlético Belgrano": { "atk": 1.00, "def": 1.00 }, "Club Atlético Platense": { "atk": 0.90, "def": 1.05 },
-    "Club Atlético Unión de Santa Fe": { "atk": 0.95, "def": 1.00 }, "Defensa y Justicia": { "atk": 1.10, "def": 0.95 },
-    "Deportivo Riestra": { "atk": 0.80, "def": 1.20 }, "Estudiantes de La Plata": { "atk": 1.20, "def": 0.85 },
-    "Estudiantes de Río Cuarto": { "atk": 0.85, "def": 1.15 }, "Gimnasia y Esgrima": { "atk": 0.95, "def": 1.05 },
-    "Gimnasia y Esgrima Mendoza": { "atk": 0.90, "def": 1.10 }, "Huracán": { "atk": 1.05, "def": 0.90 },
-    "Independiente Rivadavia": { "atk": 0.85, "def": 1.20 }, "Instituto De Córdoba": { "atk": 0.95, "def": 1.05 },
-    "Newell's Old Boys": { "atk": 1.00, "def": 1.00 }, "Racing Club": { "atk": 1.35, "def": 0.80 },
-    "River Plate": { "atk": 1.40, "def": 0.75 }, "Rosario Central": { "atk": 1.05, "def": 0.95 },
-    "San Lorenzo": { "atk": 1.05, "def": 0.90 }, "Sarmiento": { "atk": 0.80, "def": 1.20 },
-    "Tigre": { "atk": 0.90, "def": 1.15 }, "Vélez Sarsfield": { "atk": 1.15, "def": 0.85 }
-  },
   "CPA": {
     "Alianza Valledupar FC": { "atk": 0.693, "def": 1.231 }, "América de Cali": { "atk": 1.211, "def": 0.607 },
     "Atlético Bucaramanga": { "atk": 1.194, "def": 0.92 }, "Atlético Nacional": { "atk": 1.432, "def": 0.777 },
@@ -181,90 +42,66 @@ export const TEAM_STRENGTH_DB = {
     "Internacional de Bogotá": { "atk": 0.959, "def": 1.406 }, "Junior Barranquilla": { "atk": 1.183, "def": 0.96 },
     "Millonarios": { "atk": 1.161, "def": 0.706 }, "Once Caldas": { "atk": 0.914, "def": 1.035 }
   },
-  // --- EQUIPOS BASE PARA LAS LIGAS EN PRUEBA ---
-  "ERE": {
-    "Ajax": { "atk": 1.25, "def": 0.85 }, "PSV": { "atk": 1.35, "def": 0.80 },
-    "Feyenoord": { "atk": 1.28, "def": 0.88 }, "AZ Alkmaar": { "atk": 1.15, "def": 0.95 },
-    "Twente": { "atk": 1.10, "def": 0.98 }, "Utrecht": { "atk": 1.05, "def": 1.02 },
-    "Vitesse": { "atk": 0.90, "def": 1.15 }, "Heerenveen": { "atk": 0.92, "def": 1.10 },
-    "Sparta Rotterdam": { "atk": 0.85, "def": 1.18 }, "Go Ahead Eagles": { "atk": 0.88, "def": 1.12 }
+  "MXL": {
+    "Atlante FC": { "atk": 0.84, "def": 1.14 }, "Atlas FC": { "atk": 0.98, "def": 1.06 },
+    "Atlético San Luis": { "atk": 0.90, "def": 1.11 }, "CD Guadalajara": { "atk": 1.08, "def": 0.99 },
+    "CD Toluca": { "atk": 1.20, "def": 0.93 }, "CF Monterrey": { "atk": 1.16, "def": 0.95 },
+    "CF Pachuca": { "atk": 1.04, "def": 1.02 }, "Club América": { "atk": 1.24, "def": 0.90 },
+    "Club León": { "atk": 1.02, "def": 1.03 }, "Club Necaxa": { "atk": 0.88, "def": 1.13 },
+    "Club Puebla": { "atk": 0.80, "def": 1.18 }, "Club Tijuana": { "atk": 0.96, "def": 1.08 },
+    "Cruz Azul": { "atk": 1.18, "def": 0.92 }, "FC Juárez": { "atk": 0.82, "def": 1.16 },
+    "Pumas UNAM": { "atk": 1.00, "def": 1.05 }, "Querétaro FC": { "atk": 0.78, "def": 1.20 },
+    "Santos Laguna": { "atk": 0.90, "def": 1.11 }, "Tigres UANL": { "atk": 1.22, "def": 0.91 }
+  },
+  "FL1": {
+    "Angers": { "atk": 0.80, "def": 1.18 }, "AS Monaco": { "atk": 1.22, "def": 0.90 },
+    "Auxerre": { "atk": 1.04, "def": 1.02 }, "Le Havre": { "atk": 0.83, "def": 1.16 },
+    "Le Mans": { "atk": 0.78, "def": 1.20 }, "Lille": { "atk": 1.15, "def": 0.94 },
+    "Lorient": { "atk": 0.77, "def": 1.19 }, "Nice": { "atk": 0.95, "def": 1.08 },
+    "Olympique de Marseille": { "atk": 1.12, "def": 0.96 }, "Olympique Lyonnais": { "atk": 1.18, "def": 0.92 },
+    "Paris FC": { "atk": 0.92, "def": 1.06 }, "Paris Saint-Germain": { "atk": 1.38, "def": 0.82 },
+    "RC Lens": { "atk": 1.08, "def": 0.99 }, "RC Strasbourg": { "atk": 0.92, "def": 1.10 },
+    "Stade Brestois": { "atk": 0.98, "def": 1.06 }, "Stade Rennais": { "atk": 1.01, "def": 1.04 },
+    "Toulouse": { "atk": 0.86, "def": 1.14 }, "Troyes": { "atk": 0.75, "def": 1.20 }
+  },
+  "PPT": {
+    "Académico Viseu FC": { "atk": 0.755, "def": 1.213 }, "Benfica": { "atk": 2.252, "def": 0.573 },
+    "Casa Pia": { "atk": 0.34, "def": 1.216 }, "CD Nacional": { "atk": 0.833, "def": 1.059 },
+    "CF Estrela Amadora": { "atk": 1.163, "def": 1.372 }, "CS Marítimo": { "atk": 0.899, "def": 1.289 },
+    "Estoril Praia": { "atk": 0.651, "def": 1.174 }, "Famalicão": { "atk": 0.801, "def": 0.784 },
+    "FC Alverca": { "atk": 0.788, "def": 1.289 }, "FC Arouca": { "atk": 1.195, "def": 0.736 },
+    "FC Porto": { "atk": 1.519, "def": 0.424 }, "Gil Vicente": { "atk": 0.815, "def": 0.768 },
+    "Moreirense": { "atk": 0.594, "def": 1.465 }, "Rio Ave": { "atk": 0.482, "def": 1.48 },
+    "Santa Clara": { "atk": 1.151, "def": 0.726 }, "Sporting Braga": { "atk": 1.337, "def": 0.832 },
+    "Sporting CP": { "atk": 2.064, "def": 0.72 }, "Vitória SC": { "atk": 0.681, "def": 1.018 }
   },
   "BL2": {
     "Hamburger SV": { "atk": 1.10, "def": 0.95 }, "Schalke 04": { "atk": 1.05, "def": 1.10 },
     "Hertha BSC": { "atk": 1.08, "def": 1.02 }, "Fortuna Düsseldorf": { "atk": 1.05, "def": 0.98 },
     "SC Paderborn": { "atk": 1.00, "def": 1.05 }, "Hannover 96": { "atk": 0.95, "def": 1.05 },
     "Karlsruher SC": { "atk": 0.92, "def": 1.12 }, "Holstein Kiel": { "atk": 1.02, "def": 1.00 }
-  },
-  "ITB": {
-    "Sampdoria": { "atk": 1.05, "def": 1.00 }, "Palermo": { "atk": 1.00, "def": 1.05 },
-    "Cremonese": { "atk": 1.10, "def": 0.92 }, "Parma": { "atk": 1.15, "def": 0.88 },
-    "Venezia": { "atk": 1.08, "def": 0.95 }, "Como": { "atk": 0.95, "def": 1.08 },
-    "Spezia": { "atk": 0.90, "def": 1.10 }, "Pisa": { "atk": 0.88, "def": 1.12 }
-  },
-  "SWE": {
-    "Malmö FF": { "atk": 1.25, "def": 0.82 }, "AIK": { "atk": 1.10, "def": 0.92 },
-    "Djurgården": { "atk": 1.15, "def": 0.90 }, "IFK Göteborg": { "atk": 1.05, "def": 1.05 },
-    "Hammarby": { "atk": 1.08, "def": 0.95 }, "Häcken": { "atk": 1.12, "def": 0.88 },
-    "Norrköping": { "atk": 0.92, "def": 1.10 }, "Elfsborg": { "atk": 1.00, "def": 1.02 }
-  },
-  "TUR": {
-    "Galatasaray": { "atk": 1.35, "def": 0.80 }, "Fenerbahçe": { "atk": 1.32, "def": 0.82 },
-    "Beşiktaş": { "atk": 1.20, "def": 0.90 }, "Trabzonspor": { "atk": 1.18, "def": 0.92 },
-    "Başakşehir": { "atk": 1.10, "def": 0.98 }, "Adana Demirspor": { "atk": 1.05, "def": 1.02 },
-    "Antalyaspor": { "atk": 0.95, "def": 1.05 }, "Konyaspor": { "atk": 0.92, "def": 1.08 }
-  },
-  "JPN": {
-    "Kawasaki Frontale": { "atk": 1.15, "def": 0.92 }, "Yokohama F. Marinos": { "atk": 1.20, "def": 0.90 },
-    "Vissel Kobe": { "atk": 1.22, "def": 0.88 }, "Urawa Reds": { "atk": 1.05, "def": 1.02 },
-    "Kashima Antlers": { "atk": 1.08, "def": 1.00 }, "Sanfrecce Hiroshima": { "atk": 1.10, "def": 0.95 },
-    "Cerezo Osaka": { "atk": 1.02, "def": 1.05 }, "FC Tokyo": { "atk": 0.98, "def": 1.02 }
   }
 };
 
 export const TEAM_ALIASES = {
-  'Barcelona': 'FC Barcelona', 'Real Madrid CF': 'Real Madrid',
-  'Man City': 'Manchester City', 'Man United': 'Manchester United',
-  'Manchester Utd': 'Manchester United', 'Spurs': 'Tottenham Hotspur',
-  'Tottenham': 'Tottenham Hotspur', 'Wolves': 'Wolverhampton',
-  'Newcastle': 'Newcastle United', 'Brighton': 'Brighton & Hove Albion',
-  'Nottm Forest': 'Nottingham Forest',
-  'Atletico Madrid': 'Atlético Madrid', 'Atletico de Madrid': 'Atlético Madrid',
-  'Athletic Bilbao': 'Athletic Club', 'Betis': 'Real Betis',
-  'Real Betis Balompié': 'Real Betis', 'Alaves': 'Deportivo Alavés',
-  'Milan': 'AC Milan', 'Inter Milan': 'Inter', 'Internazionale': 'Inter',
-  'Napoli': 'SSC Napoli', 'Roma': 'AS Roma',
-  'Bayern Munich': 'FC Bayern München', 'Bayern München': 'FC Bayern München',
-  'Borussia Dortmund BVB': 'Borussia Dortmund', 'Leverkusen': 'Bayer 04 Leverkusen',
-  'RB Leipzig Leipzig': 'RB Leipzig',
-  'PSG': 'Paris Saint-Germain', 'Marseille': 'Olympique de Marseille',
-  'Lyon': 'Olympique Lyonnais',
-  'Atletico Mineiro': 'Atlético Mineiro', 'Atletico MG': 'Atlético Mineiro',
-  'Bragantino': 'Red Bull Bragantino',
-  'Sporting Lisbon': 'Sporting CP', 'Porto': 'FC Porto', 'Benfica Lisbon': 'Benfica',
-  'Independiente': 'CA Independiente', 'Lanús': 'CA Lanús', 'Talleres': 'CA Talleres',
-  'River': 'River Plate', 'Boca': 'Boca Juniors', 'Vélez': 'Vélez Sarsfield',
-  'Atletico Nacional': 'Atlético Nacional', 'America de Cali': 'América de Cali',
-  'Santa Fe': 'Independiente Santa Fe', 'Medellin': 'Independiente Medellín',
-  'Junior': 'Junior Barranquilla',
   'Inter Miami': 'Inter Miami CF', 'LAFC': 'Los Angeles FC', 'LA Galaxy': 'LA Galaxy',
   'NYCFC': 'New York City FC', 'NY Red Bulls': 'New York Red Bulls',
   'Seattle Sounders': 'Seattle Sounders FC', 'Vancouver': 'Vancouver Whitecaps',
   'America': 'Club América', 'Chivas': 'CD Guadalajara',
   'Cruz Azul CDMX': 'Cruz Azul', 'Tigres': 'Tigres UANL',
+  'Atletico Nacional': 'Atlético Nacional', 'America de Cali': 'América de Cali',
+  'Santa Fe': 'Independiente Santa Fe', 'Medellin': 'Independiente Medellín',
+  'Junior': 'Junior Barranquilla',
+  'PSG': 'Paris Saint-Germain', 'Marseille': 'Olympique de Marseille', 'Lyon': 'Olympique Lyonnais',
+  'Sporting Lisbon': 'Sporting CP', 'Porto': 'FC Porto', 'Benfica Lisbon': 'Benfica'
 };
 
 export const HOME_ADVANTAGE = {
-  "PL": 1.17, "BL1": 1.32, "SA": 1.11, "PD": 1.38, "FL1": 1.19,
-  "BSA": 1.20, "ELC": 1.18, "MXL": 1.34, "MLS": 1.26, "PPT": 1.22,
-  "CPA": 1.36, "ARG": 1.19,
-  "ERE": 1.22, "BL2": 1.25, "ITB": 1.20, "SWE": 1.20, "TUR": 1.28, "JPN": 1.15
+  "MLS": 1.26, "CPA": 1.36, "MXL": 1.34, "FL1": 1.19, "PPT": 1.22, "BL2": 1.32
 };
 
 export const DIXON_COLES_RHO = {
-  "PL": -0.065, "BL1": -0.085, "SA": -0.130, "PD": -0.098, "FL1": -0.105,
-  "BSA": -0.110, "ELC": -0.078, "MXL": -0.095, "MLS": -0.070, "PPT": -0.080,
-  "CPA": -0.095, "ARG": -0.070,
-  "ERE": -0.080, "BL2": -0.085, "ITB": -0.080, "SWE": -0.080, "TUR": -0.085, "JPN": -0.075,
+  "MLS": -0.070, "CPA": -0.095, "MXL": -0.095, "FL1": -0.105, "PPT": -0.080, "BL2": -0.070,
   "default": -0.100
 };
 
@@ -284,21 +121,12 @@ export const CORNER_HOME_BIAS = 1.12;
 export const CORNER_HOME_BIAS_LEAGUE = { BSA: 1.66 };
 
 export const BZZOIRO_COUNTRY = {
-  PL: 'England', ELC: 'England',
-  BL1: 'Germany', BL2: 'Germany',
-  SA: 'Italy', ITB: 'Italy',
-  PD: 'Spain',
-  FL1: 'France',
-  BSA: 'Brazil',
-  MXL: 'Mexico',
   MLS: 'USA',
-  PPT: 'Portugal',
-  ARG: 'Argentina',
   CPA: 'Colombia',
-  ERE: 'Netherlands',
-  SWE: 'Sweden',
-  TUR: 'Turkey',
-  JPN: 'Japan'
+  MXL: 'Mexico',
+  FL1: 'France',
+  PPT: 'Portugal',
+  BL2: 'Germany'
 };
 
 // ============================================================================
@@ -356,19 +184,12 @@ export function getFiltroEV(mercado) {
 export const SHRINK_ALPHA = 0.15;
 
 export const UMBRALES_POR_LIGA = {
-  PL:  { umbral1x2: 50, umbralGoles: 75, umbralCorners: 75, umbralBtss: 70, umbralDC: 68, cornersVisitante: false },
-  PD:  { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: false },
-  SA:  { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: false },
-  BL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
-  FL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
-  ELC: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
-  PPT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
-  BSA: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: true },
-  ARG: { umbral1x2: 55, umbralGoles: 65, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
-  MXL: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: true },
   MLS: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: false },
   CPA: { umbral1x2: 50, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
-  ERE: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: true },
+  MXL: { umbral1x2: 50, umbralGoles: 65, umbralCorners: 75, umbralBtss: 65, umbralDC: 68, cornersVisitante: true },
+  FL1: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
+  PPT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
+  BL2: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: false },
   DEFAULT: { umbral1x2: 45, umbralGoles: 60, umbralCorners: 75, umbralBtss: 60, umbralDC: 68, cornersVisitante: true },
 };
 
@@ -382,10 +203,10 @@ export function getUmbrales(leagueKey) {
 // ============================================================================
 export const CALIBRACION_POR_LIGA = {
   MLS: false,
-  BSA: false,
   CPA: false,
-  BL1: false,
+  BL2: false,
   PPT: false,
+  // MXL y FL1 quedan con calibración activa (true por defecto)
 };
 
 export function usaCalibracion(leagueKey) {
