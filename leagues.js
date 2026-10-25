@@ -21,7 +21,7 @@ export const LIGAS = {
   "BL1": { "name": "🇩🇪 Bundesliga", "goalsAvg": 3.00, "cornAvg": 10.0, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -19.9% ROI (207). Over 2.5 -11.6% y BTTS Sí -6.5% significativos peores. Calibración empeora (desactivada)." } },
   "ELC": { "name": "🏴󠁧󠁢󠁥󠁮󠁧󠁿 Championship (Inglaterra)", "goalsAvg": 2.65, "cornAvg": 10.5, "cornR": 20, "markets": { "goles": false, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -30.9% ROI (248). 6 de 7 mercados peor significativos. Mejor mezcla 100% cuota." } },
   "ARG": { "name": "🇦🇷 Liga Profesional de Fútbol", "goalsAvg": 2.15, "cornAvg": 9.1, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Walk-forward: -0.3% ROI (271) pero modelo no aporta (mezcla 100% cuota). Todos los mercados ≈ empate negativos." } },
-  "ERE": { "name": "🇳🇱 Eredivisie", "goalsAvg": 3.15, "cornAvg": 10.2, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "red", "nota": "Liga en periodo de prueba. Falta correr Walk-Forward." } }
+  "ERE": { "name": "🇳🇱 Eredivisie", "goalsAvg": 3.15, "cornAvg": 10.2, "cornR": 18, "markets": { "goles": true, "btts": true, "corn": true }, "betting": { "status": "yellow", "stake": 0.5, "mercados": ["1X2", "1X", "X2", "Over 2.5"], "nota": "Liga en prueba. Backtest in-sample muestra +3.6% vs cuota en Local." } }
 };
 
 export const TEAM_STRENGTH_DB = {
