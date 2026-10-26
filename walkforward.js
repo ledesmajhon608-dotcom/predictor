@@ -1,7 +1,5 @@
 // walkforward.js
-// v6: estimarRatings delegado a ratings.js (una sola implementación de ratings).
-// v5: reescrito sin template literals anidados ni ?? dentro de strings.
-// Incluye 1X y X2 en el escaneo (walk-forward, sin cuota real).
+// v7: Agrega "Goles por Equipo" (Home/Away Over 0.5 y 1.5) al Walk-Forward.
 
 import {
   LIGAS, SHRINK_ALPHA, FILTRO_EV, HOME_ADVANTAGE, DIXON_COLES_RHO, DEFAULT_HOME_ADV, DEFAULT_RHO,
@@ -18,7 +16,6 @@ const W_LIST = [0, 0.25, 0.5, 0.75, 1];
 const SIGMA_HA = 0.15;
 const SIGMA_RHO = 0.06;
 
-// ---------- utilidades puras ----------
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 
 function devigar2(a, b) {
@@ -47,7 +44,6 @@ function zMedia(arr) {
 const media = (a) => meanSd(a).mean;
 const brier3 = (probsPct, idx) => probsPct.reduce((s, p, j) => s + (p / 100 - (j === idx ? 1 : 0)) ** 2, 0);
 
-// ---------- modelo fuera de muestra ----------
 export function predecir(leagueKey, hR, aR, { goalsAvg, homeAdv, rho }) {
   const { lambdaHome, lambdaAway } = calcLambdas(goalsAvg, hR, aR, homeAdv);
   const mk = calcGoalMarkets(lambdaHome, lambdaAway, leagueKey, rho);
@@ -65,12 +61,13 @@ export function predecir(leagueKey, hR, aR, { goalsAvg, homeAdv, rho }) {
     over25: plattCalibrate(mk.over25, 'goals25'),
     over35: plattCalibrate(mk.over35, 'goals35'),
     btts: plattCalibrate(mk.btts, 'btts'),
+    homeOver05: plattCalibrate(mk.homeOver05, 'goals15'),
+    homeOver15: plattCalibrate(mk.homeOver15, 'goals25'),
+    awayOver05: plattCalibrate(mk.awayOver05, 'goals15'),
+    awayOver15: plattCalibrate(mk.awayOver15, 'goals25'),
   };
 }
 
-// [MODIFICADO] La lógica de ratings vive en ratings.js → recalcularRatings.
-// Acá solo adaptamos la salida a un mapa { team: { atk, def } } con clamp
-// al rango válido, para no tocar el resto de walkforward.js.
 export function estimarRatings(partidos, {
   halflifeDias = 60, minMatches = 3, ahoraMs = Date.now(),
   homeAdv = 1.2, priorJuegos = 4, iteraciones = 30,
@@ -105,7 +102,6 @@ function ajustarHaRho(matches, goalsAvg, haPrior, rhoPrior) {
   return { ha: +mejor.ha.toFixed(3), rho: +mejor.rho.toFixed(3) };
 }
 
-// ---------- acumuladores ----------
 class BrierVsMercado {
   constructor(label) { this.label = label; this.bm = []; this.bk = []; this.d = []; }
   add(modeloPct, mercadoPct, hit) {
@@ -189,7 +185,7 @@ class MezclaAcc {
   }
 }
 
-function entradaMezcla(rp3, g, mk, p, idx, tg, bttsReal) {
+function entradaMezcla(rp3, g, mk, p, idx, tg, bttsReal, gl, gv) {
   const inv = (x) => (x == null ? null : 100 - x);
   return {
     p1x2: rp3, k1x2: mk.m3, idx,
@@ -215,7 +211,6 @@ function entradaMezcla(rp3, g, mk, p, idx, tg, bttsReal) {
   };
 }
 
-// ---------- motor walk-forward ----------
 export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 20, ventana = 200, onLog = null } = {}) {
   const log = (m) => { if (onLog) onLog(m); };
   const todos = [...partidosIn]
@@ -237,6 +232,10 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
     over25: new BrierVsMercado('Over 2.5 goles'),
     over35: new BrierVsMercado('Over 3.5 goles'),
     btts: new BrierVsMercado('Ambos marcan (Sí)'),
+    homeOver05: new BrierVsMercado('Local > 0.5 goles'),
+    homeOver15: new BrierVsMercado('Local > 1.5 goles'),
+    awayOver05: new BrierVsMercado('Visitante > 0.5 goles'),
+    awayOver15: new BrierVsMercado('Visitante > 1.5 goles'),
   };
   const escaneo = new Escaneo();
   const mezA = new MezclaAcc(), mezB = new MezclaAcc();
@@ -250,7 +249,6 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
     const train = todos.slice(Math.max(0, start - ventana), start);
     const test = todos.slice(start, start + step);
 
-    // Modo estático (con calibración entrenada con train)
     let cal = null, tasas = null;
     try {
       const r = await calibrarLigaMLE(leagueKey, train, { minPartidos: 20 });
@@ -259,7 +257,6 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
       log('⚠️ Bloque en ' + start + ': calibración falló (' + e.message + ').');
     }
 
-    // Modo fuera de muestra
     const ahoraMs = new Date(test[0].fecha).getTime();
     const mapa = estimarRatings(train, { ahoraMs, homeAdv: ha0 });
     const obsAvg = train.reduce((s, p) => s + p.goles_local + p.goles_visitante, 0) / train.length;
@@ -325,7 +322,17 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
       if (f35 != null) mk.over35.add(pc.over35, f35, tg > 3.5);
       if (fb != null) mk.btts.add(pc.btts, fb, bttsReal);
 
-      // Escaneo: incluye 1X y X2 (sin cuota → el filtro los ignora, pero quedan listos)
+      // NUEVO: Evaluación de goles por equipo
+      const fHome05 = devigar2(p.odds_home_over05, p.odds_home_under05);
+      const fHome15 = devigar2(p.odds_home_over15, p.odds_home_under15);
+      const fAway05 = devigar2(p.odds_away_over05, p.odds_away_under05);
+      const fAway15 = devigar2(p.odds_away_over15, p.odds_away_under15);
+
+      if (fHome05 != null) mk.homeOver05.add(pc.homeOver05, fHome05, gl > 0.5);
+      if (fHome15 != null) mk.homeOver15.add(pc.homeOver15, fHome15, gl > 1.5);
+      if (fAway05 != null) mk.awayOver05.add(pc.awayOver05, fAway05, gv > 0.5);
+      if (fAway15 != null) mk.awayOver15.add(pc.awayOver15, fAway15, gv > 1.5);
+
       const esLocalOEmpate = (resultado === 'local' || resultado === 'empate');
       const esEmpateOVisitante = (resultado === 'empate' || resultado === 'visitante');
       const lados = [
@@ -342,24 +349,23 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
         ['u35', 'Under 3.5 goles', 100 - pc.over35, p.odds_under35, tg < 3.5],
         ['bs', 'BTTS Sí', pc.btts, p.odds_btts_si, bttsReal],
         ['bn', 'BTTS No', 100 - pc.btts, p.odds_btts_no, !bttsReal],
+        ['h05', 'Local > 0.5 goles', pc.homeOver05, p.odds_home_over05, gl > 0.5],
+        ['h15', 'Local > 1.5 goles', pc.homeOver15, p.odds_home_over15, gl > 1.5],
+        ['a05', 'Visitante > 0.5 goles', pc.awayOver05, p.odds_away_over05, gv > 0.5],
+        ['a15', 'Visitante > 1.5 goles', pc.awayOver15, p.odds_away_over15, gv > 1.5],
       ];
       for (const [k, label, prob, cuota, hit] of lados) escaneo.add(k, label, prob, cuota, hit);
 
       const mkt = { m3, f15, f25, f35, fb };
-      mezA.add(entradaMezcla(arrCal, pc, mkt, p, idx, tg, bttsReal));
-      mezB.add(entradaMezcla(arrF, pF, mkt, p, idx, tg, bttsReal));
+      mezA.add(entradaMezcla(arrCal, pc, mkt, p, idx, tg, bttsReal, gl, gv));
+      mezB.add(entradaMezcla(arrF, pF, mkt, p, idx, tg, bttsReal, gl, gv));
     }
     await new Promise(r => setTimeout(r, 0));
   }
 
   return {
     leagueKey, nTotal: n, evaluados, saltados, warmup, step, ventana, bloques,
-    calibracionVsBase: {
-      n: b3Todos.cal.length,
-      cal: media(b3Todos.cal),
-      base: media(b3Todos.base),
-      z: zMedia(b3Todos.dCalBase),
-    },
+    calibracionVsBase: { n: b3Todos.cal.length, cal: media(b3Todos.cal), base: media(b3Todos.base), z: zMedia(b3Todos.dCalBase) },
     modeloVsMercado1x2: {
       n: b3Cuota.cal.length,
       cal: media(b3Cuota.cal),
@@ -368,19 +374,13 @@ export async function walkForward(leagueKey, partidosIn, { warmup = 40, step = 2
       zVsMkt: zMedia(b3Cuota.dMkt),
       mejoraVsMkt: b3Cuota.mkt.length ? (media(b3Cuota.mkt) - media(b3Cuota.cal)) / media(b3Cuota.mkt) * 100 : null,
     },
-    ratings: {
-      n: bEstAll.length,
-      estatico: media(bEstAll),
-      fuera: media(bFueraAll),
-      z: zMedia(dRatings),
-    },
+    ratings: { n: bEstAll.length, estatico: media(bEstAll), fuera: media(bFueraAll), z: zMedia(dRatings) },
     mezcla: { estatico: mezA.summary(), fuera: mezB.summary() },
     mercados: Object.values(mk).map(m => m.summary()).filter(s => s.n > 0),
     escaneo: escaneo.summary(),
   };
 }
 
-// ---------- lectura en texto ----------
 function mejorMezcla(filas) {
   const con = filas.filter(f => f.n1x2 > 0 && f.brier1x2 != null);
   if (!con.length) return null;
@@ -395,7 +395,6 @@ export function lecturaResultado(res) {
     else if (c.z < -Z_SIGNIFICATIVO) out.push('La calibración EMPEORA el 1X2 fuera de muestra: conviene usar los valores base.');
     else out.push('La calibración no se distingue de los valores base fuera de muestra.');
   }
-
   const mejores = res.mercados.filter(m => m.z != null && m.z > Z_SIGNIFICATIVO).map(m => m.label);
   const peores = res.mercados.filter(m => m.z != null && m.z < -Z_SIGNIFICATIVO).map(m => m.label);
   if (mejores.length) out.push('Mejor que la cuota (significativo): ' + mejores.join(', ') + '.');
@@ -431,7 +430,6 @@ export function lecturaResultado(res) {
   return out;
 }
 
-// ---------- interfaz (solo navegador) ----------
 if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
   const fileInput = document.getElementById('historial-file');
   const fileInfo = document.getElementById('file-info');
@@ -517,10 +515,8 @@ if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
     const m = res.modeloVsMercado1x2;
     const r = res.ratings;
 
-    // Lectura
     const lecturas = lecturaResultado(res).map(t => '<p style="margin:0 0 6px;font-size:.85rem;">• ' + t + '</p>').join('');
 
-    // Mercados
     const filasMk = res.mercados.map(s => {
       const mejoraTxt = s.mejora == null ? '—' : ((s.mejora >= 0 ? '+' : '') + f1(s.mejora) + '%');
       return '<div class="compare-row">' +
@@ -531,7 +527,6 @@ if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
       '</div>';
     }).join('');
 
-    // Escaneo
     const filasEs = res.escaneo.map(e => {
       const col = e.n >= ESCANEO_MIN_N && e.z != null && e.z > Z_SIGNIFICATIVO ? 'var(--green)'
         : e.roi > 0 ? 'var(--yellow)' : 'var(--red)';
@@ -545,7 +540,6 @@ if (typeof document !== 'undefined' && document.getElementById('wf-run')) {
       '</div>';
     }).join('');
 
-    // Bloques
     const filasBl = res.bloques.map((b, i) => {
       const fechaDesde = (b.testDesde || '').slice(0, 10);
       const haTxt = b.ha != null ? ('HA ' + b.ha.toFixed(2)) : 'base';
