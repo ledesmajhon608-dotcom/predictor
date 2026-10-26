@@ -1,16 +1,10 @@
-// ============================================================================
-// MODELO ESTADÍSTICO (Poisson, binomial negativa, Dixon-Coles, calibración Platt)
-// ----------------------------------------------------------------------------
-// v2: todos los mercados de goles (1X2, Over 1.5/2.5/3.5, BTTS) salen de la
-// MISMA grilla de marcadores Dixon-Coles, y rho se limita al rango válido para
-// los lambdas del partido (antes podía dar probabilidades negativas).
-// ============================================================================
+// stats.js
+// v3: Agrega cálculo de goles por equipo (Over 0.5 y 1.5 para local y visitante).
 
 import { PLATT_PARAMS, DIXON_COLES_RHO, DEFAULT_RHO } from './leagues.js';
 
 const MAX_GOLES = 12;
 
-// ========== FUNCIONES MATEMÁTICAS ==========
 export function plattCalibrate(raw, type) {
     const p = Math.max(0.001, Math.min(0.999, raw / 100));
     const logit = Math.log(p / (1 - p));
@@ -37,7 +31,6 @@ export function poissonOver(lambda, th) {
     return Math.min(98, Math.max(2, (1 - poissonProb(lambda, Math.floor(th))) * 100));
 }
 
-// log P(X = k) para Poisson (usado por la calibración por máxima verosimilitud)
 const LOG_FACT = [0];
 for (let i = 1; i <= 40; i++) LOG_FACT[i] = LOG_FACT[i - 1] + Math.log(i);
 export function poissonLogPmf(lambda, k) {
@@ -64,13 +57,10 @@ export function negBinOver(mu, th, r) {
     return Math.min(98, Math.max(2, (1 - cdf) * 100));
 }
 
-// ========== DIXON-COLES ==========
 function resolverRho(leagueKey, rhoOverride) {
     return rhoOverride ?? DIXON_COLES_RHO[leagueKey] ?? DIXON_COLES_RHO.default ?? DEFAULT_RHO;
 }
 
-// Rango de rho para el cual las 4 correcciones tau son positivas:
-//   -1/lH < rho, -1/lA < rho, rho < 1/(lH*lA), rho < 1
 export function rhoSeguro(lH, lA, rho) {
     const eps = 0.01;
     const lo = Math.max(-1 / Math.max(lH, 1e-6), -1 / Math.max(lA, 1e-6)) + eps;
@@ -88,7 +78,6 @@ export function dixonColesTau(x, y, lH, lA, rho) {
     return 1;
 }
 
-// Grilla de marcadores [h][a] normalizada (suma 1).
 export function scoreGrid(lH, lA, rho) {
     const pH = [], pA = [];
     for (let k = 0; k <= MAX_GOLES; k++) { pH.push(poissonExact(lH, k)); pA.push(poissonExact(lA, k)); }
@@ -110,18 +99,25 @@ export function scoreGrid(lH, lA, rho) {
 
 const clampPct = (v) => Math.min(98, Math.max(2, v * 100));
 
-// Todos los mercados de goles de una sola pasada (valores en %, SIN Platt).
 export function calcGoalMarkets(lH, lA, leagueKey, rhoOverride) {
     const rho = resolverRho(leagueKey, rhoOverride);
     const grid = scoreGrid(lH, lA, rho);
     let pH = 0, pD = 0, pA = 0, btts = 0;
     const totales = new Array(2 * MAX_GOLES + 1).fill(0);
+    
+    let home0 = 0, home1 = 0, away0 = 0, away1 = 0;
+
     for (let h = 0; h <= MAX_GOLES; h++) {
         for (let a = 0; a <= MAX_GOLES; a++) {
             const p = grid[h][a];
             if (h > a) pH += p; else if (h === a) pD += p; else pA += p;
             if (h > 0 && a > 0) btts += p;
             totales[h + a] += p;
+            
+            if (h === 0) home0 += p;
+            if (h === 1) home1 += p;
+            if (a === 0) away0 += p;
+            if (a === 1) away1 += p;
         }
     }
     const overLinea = (linea) => {
@@ -136,15 +132,17 @@ export function calcGoalMarkets(lH, lA, leagueKey, rhoOverride) {
         over35: overLinea(3.5),
         over45: overLinea(4.5),
         btts: clampPct(btts),
+        homeOver05: clampPct(1 - home0),
+        homeOver15: clampPct(1 - home0 - home1),
+        awayOver05: clampPct(1 - away0),
+        awayOver15: clampPct(1 - away0 - away1),
     };
 }
 
-// Funciones sueltas (compatibilidad) — usan la misma grilla.
 export function over15DC(lH, lA, leagueKey, rhoOverride) { return calcGoalMarkets(lH, lA, leagueKey, rhoOverride).over15; }
 export function calcBTTS(lH, lA, leagueKey, rhoOverride) { return calcGoalMarkets(lH, lA, leagueKey, rhoOverride).btts; }
 export function calcResultProbs(lH, lA, leagueKey, rhoOverride) { return calcGoalMarkets(lH, lA, leagueKey, rhoOverride).resultProbs; }
 
-// log-verosimilitud de un marcador observado (para calibrar HA y rho)
 export function logLikMarcador(h, a, lH, lA, rho) {
     const tau = (h <= 1 && a <= 1) ? dixonColesTau(h, a, lH, lA, rho) : 1;
     return poissonLogPmf(lH, h) + poissonLogPmf(lA, a) + Math.log(Math.max(tau, 1e-9));
