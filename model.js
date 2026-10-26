@@ -1,5 +1,5 @@
 // model.js
-// v3: usa calibracion.ratings y calibracion.cornerRatings; devuelve sinRating.
+// v4: Agrega goles por equipo (Home/Away Team Total Goals).
 
 import {
   LIGAS, TEAM_STRENGTH_DB, HOME_ADVANTAGE, CORNER_HOME_BIAS, CORNER_HOME_BIAS_LEAGUE,
@@ -61,7 +61,6 @@ export function getStaticRating(leagueKey, teamName) {
   return teams[teamName] || buscarEquipoEn(teams, teamName) || null;
 }
 
-// Prioriza ratings calibrados > vivos > estáticos. Devuelve sinRating si no hay nada.
 function getTeamRating(leagueKey, teamName, { dynamicRatings = null, calRatings = null } = {}) {
   const estatico = getStaticRating(leagueKey, teamName);
   const cal = buscarEquipoEn(calRatings, teamName);
@@ -205,6 +204,12 @@ export async function simulateMatch(leagueKey, homeTeam, awayTeam, {
     under35: 100 - stats.plattCalibrate(mk.over35, 'goals35'),
     btts: stats.plattCalibrate(mk.btts, 'btts'),
     bttsNo: 100 - stats.plattCalibrate(mk.btts, 'btts'),
+    
+    homeOver05: stats.plattCalibrate(mk.homeOver05, 'goals15'),
+    homeOver15: stats.plattCalibrate(mk.homeOver15, 'goals25'),
+    awayOver05: stats.plattCalibrate(mk.awayOver05, 'goals15'),
+    awayOver15: stats.plattCalibrate(mk.awayOver15, 'goals25'),
+
     cornerProbs,
     lambdas: { local: +lambdaHome.toFixed(3), visitante: +lambdaAway.toFixed(3) },
   };
