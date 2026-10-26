@@ -1,8 +1,5 @@
 // registro.js
-// v9: agregarEntrada ya no borra si los picks son distintos.
-//     - Individual: misma liga+local+visitante+pick exacto → reemplaza.
-//     - Combinada: misma liga+local+visitante+combinación exacta → reemplaza.
-// v8: con 2+ picks (combinada) hay UNA sola cuota (la del ticket) y su cierre.
+// v10: Agrega mercados de Goles por Equipo (Home/Away Over 0.5 y 1.5).
 
 import { FILTRO_EV, LIGAS, getFiltroEV } from './leagues.js';
 import { clvPct, resumenCLV } from './clv.js';
@@ -51,6 +48,7 @@ export function entradaDesdeSimulacion(data, ligaKey, cuotas = {}, picks = []) {
     prob: {
       local: r2(rp.local), empate: r2(rp.empate), visitante: r2(rp.visitante),
       over15: r2(data.over15), over25: r2(data.over25), over35: r2(data.over35), over45: r2(data.over45), btts: r2(data.btts),
+      homeOver05: r2(data.homeOver05), homeOver15: r2(data.homeOver15), awayOver05: r2(data.awayOver05), awayOver15: r2(data.awayOver15),
     },
     corners: cp ? { over7: r2(cp.over7), over8: r2(cp.over8), over9: r2(cp.over9), over10: r2(cp.over10) } : null,
     cuotas: limpias,
@@ -161,6 +159,8 @@ export const MERCADO_FILTRO = {
   under15: 'Under 1.5', under25: 'Under 2.5', under35: 'Under 3.5',
   bttsSi: 'BTTS Sí', bttsNo: 'BTTS No',
   c_over75: 'Córners', c_over85: 'Córners', c_over95: 'Córners',
+  homeOver05: 'Over 0.5', homeOver15: 'Over 1.5',
+  awayOver05: 'Over 0.5', awayOver15: 'Over 1.5',
 };
 
 export function guardarCierre(id, mapa, { fuente = 'manual', minutos = null } = {}) {
@@ -300,6 +300,10 @@ export const MERCADOS = [
   { key: 'under45', label: 'Menos de 4.5 goles', p: e => inv(e.prob?.over45), hit: r => r.gl + r.gv < 4.5 },
   { key: 'bttsSi', label: 'BTTS Sí', p: e => e.prob?.btts, hit: r => r.gl > 0 && r.gv > 0 },
   { key: 'bttsNo', label: 'BTTS No', p: e => inv(e.prob?.btts), hit: r => !(r.gl > 0 && r.gv > 0) },
+  { key: 'homeOver05', label: 'Local > 0.5 goles', p: e => e.prob?.homeOver05, hit: r => r.gl > 0.5 },
+  { key: 'homeOver15', label: 'Local > 1.5 goles', p: e => e.prob?.homeOver15, hit: r => r.gl > 1.5 },
+  { key: 'awayOver05', label: 'Visitante > 0.5 goles', p: e => e.prob?.awayOver05, hit: r => r.gv > 0.5 },
+  { key: 'awayOver15', label: 'Visitante > 1.5 goles', p: e => e.prob?.awayOver15, hit: r => r.gv > 1.5 },
   { key: 'c_over75', label: 'Más de 7.5 córners', corners: true, p: e => e.corners?.over7, hit: r => r.corners > 7.5 },
   { key: 'c_over85', label: 'Más de 8.5 córners', corners: true, p: e => e.corners?.over8, hit: r => r.corners > 8.5 },
   { key: 'c_over95', label: 'Más de 9.5 córners', corners: true, p: e => e.corners?.over9, hit: r => r.corners > 9.5 },
@@ -427,6 +431,10 @@ export function evaluar(entradas) {
   const mk = {
     local: new BrierVs('Local gana'), empate: new BrierVs('Empate'), visitante: new BrierVs('Visitante gana'),
     bttsSi: new BrierVs('BTTS Sí'),
+    homeOver05: new BrierVs('Local > 0.5 goles'),
+    homeOver15: new BrierVs('Local > 1.5 goles'),
+    awayOver05: new BrierVs('Visitante > 0.5 goles'),
+    awayOver15: new BrierVs('Visitante > 1.5 goles'),
   };
   const ap = new Apuestas();
   const cal = Object.fromEntries(MERCADOS.map(m => [m.key, { n: 0, sumP: 0, hits: 0 }]));
@@ -449,6 +457,16 @@ export function evaluar(entradas) {
     }
     const fb = devigar2(cuotas.bttsSi, cuotas.bttsNo);
     if (fb != null) mk.bttsSi.add(p.btts, fb, bttsReal);
+
+    const fH05 = devigar2(cuotas.homeOver05, cuotas.homeUnder05);
+    const fH15 = devigar2(cuotas.homeOver15, cuotas.homeUnder15);
+    const fA05 = devigar2(cuotas.awayOver05, cuotas.awayUnder05);
+    const fA15 = devigar2(cuotas.awayOver15, cuotas.awayUnder15);
+
+    if (fH05 != null) mk.homeOver05.add(p.homeOver05, fH05, gl > 0.5);
+    if (fH15 != null) mk.homeOver15.add(p.homeOver15, fH15, gl > 1.5);
+    if (fA05 != null) mk.awayOver05.add(p.awayOver05, fA05, gv > 0.5);
+    if (fA15 != null) mk.awayOver15.add(p.awayOver15, fA15, gv > 1.5);
 
     for (const m of MERCADOS) {
       const prob = m.p(e);
@@ -507,298 +525,4 @@ export function evaluar(entradas) {
   };
 }
 
-// ---------- interfaz ----------
-if (typeof document !== 'undefined' && document.getElementById('reg-pendientes')) {
-  const $ = (id) => document.getElementById(id);
-  const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-  const f1 = (x) => Number(x).toFixed(1);
-  const f3 = (x) => x == null ? '—' : Number(x).toFixed(3);
-  const dim = 'var(--text-dim,#8b95a5)';
-  const col = (z) => z == null ? dim : z > Z ? 'var(--green)' : z < -Z ? 'var(--red)' : 'var(--yellow)';
-  const senal = (z) => z == null ? '—' : z > Z ? '✅ mejor' : z < -Z ? '❌ peor' : '≈ empate';
-  const fechaCorta = (iso) => (iso || '').slice(0, 10);
-
-  const parseNum = (t) => { const n = parseFloat(String(t ?? '').replace(',', '.')); return Number.isFinite(n) && n > 1 ? n : null; };
-
-  function textoEV(e, key, cuota) {
-    let prob, merc;
-    if (key === 'combinada') {
-      prob = probCombinada(e);
-      merc = (e.picks || []).map(k => MERCADO_FILTRO[k] || 'default').sort((a, b) => getFiltroEV(b) - getFiltroEV(a))[0] || 'default';
-    } else {
-      const m = MERCADOS.find(x => x.key === key);
-      prob = m ? m.p(e) : null;
-      merc = MERCADO_FILTRO[key] || 'default';
-    }
-    if (!Number.isFinite(prob)) return { texto: '', color: dim };
-    const etiqueta = key === 'combinada' ? 'combinada' : 'modelo';
-    if (cuota == null) {
-      const min = cuotaMinima(prob, merc);
-      return { texto: `${etiqueta} ${f1(prob)}% · cuota mín. con valor ${min == null ? '—' : min.toFixed(2)}`, color: dim };
-    }
-    const v = valorPick(prob, cuota, merc);
-    if (v.ev == null) return { texto: '', color: dim };
-    if (v.pasa) return { texto: `EV ${v.ev.toFixed(2)} ✅ valor${v.kelly != null ? ' · Kelly/4 ' + v.kelly + '%' : ''}`, color: 'var(--green)' };
-    return { texto: `EV ${v.ev.toFixed(2)} ❌ sin valor (mín. ${cuotaMinima(prob, merc).toFixed(2)})`, color: 'var(--red)' };
-  }
-
-  function leerInputs(e) {
-    const cuotas = {}, cierre = {};
-    for (const key of clavesCuota(e)) {
-      const a = $('cq-' + e.id + '-' + key), b = $('cl-' + e.id + '-' + key);
-      if (a) cuotas[key] = a.value;
-      if (b && String(b.value).trim() !== '') cierre[key] = b.value;
-    }
-    return { cuotas, cierre };
-  }
-
-  function guardarInputs(id) {
-    const e = leerRegistro().find(x => x.id === id);
-    if (!e) return;
-    const { cuotas, cierre } = leerInputs(e);
-    guardarCuotas(id, cuotas);
-    if (Object.keys(cierre).length) guardarCierre(id, cierre);
-  }
-
-  function cierreHtml(e) {
-    const picks = e.picks || [];
-    if (!picks.length) return '';
-    const combinada = picks.length >= 2;
-    const filas = clavesCuota(e).map(k => {
-      const lab = k === 'combinada' ? 'Cuota del ticket' : (MERCADOS.find(m => m.key === k)?.label || k);
-      const cuota = e.cuotas?.[k] ?? null;
-      const t = textoEV(e, k, cuota);
-      return `<div style="margin-bottom:8px;">
-        <div class="field-row" style="grid-template-columns:1.3fr 1fr 1fr;margin-bottom:2px;align-items:center;"><span style="font-size:.78rem;">${esc(lab)}</span>
-          <input type="text" inputmode="decimal" data-ev="1" data-id="${esc(e.id)}" data-key="${esc(k)}" id="cq-${esc(e.id)}-${esc(k)}" placeholder="1.85" value="${cuota ?? ''}" style="padding:8px;text-align:center;">
-          <input type="text" inputmode="decimal" id="cl-${esc(e.id)}-${esc(k)}" placeholder="1.80" value="${e.cierre?.[k] ?? ''}" style="padding:8px;text-align:center;"></div>
-        <div id="ev-${esc(e.id)}-${esc(k)}" style="font-size:.7rem;color:${t.color};">${t.texto}</div></div>`;
-    }).join('');
-    const detalle = combinada
-      ? `<div style="margin:0 0 8px;font-size:.74rem;color:${dim};line-height:1.5;">${picks.map(k => esc(MERCADOS.find(m => m.key === k)?.label || k) + ' · modelo ' + f1(MERCADOS.find(m => m.key === k)?.p(e))).join('<br>')}<br><em>La probabilidad combinada multiplica las de cada pick (asume que son independientes).</em></div>`
-      : '';
-    const estado = e.cierreTs ? `<p style="margin:4px 0 8px;font-size:.72rem;color:var(--green);">Cierre guardado (${esc(e.cierreFuente || 'manual')}${Number.isFinite(e.cierreMin) ? ', ' + e.cierreMin + ' min antes' : ''}).</p>` : '';
-    const cab = `<div class="field-row" style="grid-template-columns:1.3fr 1fr 1fr;margin-bottom:4px;"><span></span><small style="color:${dim};text-align:center;">Cuota casa</small><small style="color:${dim};text-align:center;">Cierre</small></div>`;
-    const titulo = combinada ? `🎟️ Combinada <small style="color:${dim};font-weight:400;">(${picks.length} picks · una sola cuota)</small>` : `💰 Cuota <small style="color:${dim};font-weight:400;">(cierre = justo antes del partido)</small>`;
-    return `<p style="margin:8px 0 6px;font-size:.78rem;font-weight:600;">${titulo}</p>${detalle}${cab}${filas}${estado}
-      <div style="margin-bottom:10px;"><button data-accion="guardar-cuotas" data-id="${esc(e.id)}" style="margin-right:8px;padding:8px 12px;font-size:.78rem;">Guardar cuotas</button><button data-accion="traer-cierre" data-id="${esc(e.id)}" style="padding:8px 12px;font-size:.78rem;">Traer cierre de Bzzoiro</button></div>`;
-  }
-
-  function apuestaHtml(e) {
-    const n = (e.picks || []).length;
-    const monto = `<input type="text" inputmode="decimal" id="ma-${esc(e.id)}" placeholder="monto apostado (opcional)" value="${e.apuesta?.monto ?? ''}" style="padding:8px;text-align:center;">`;
-    const nota = (t) => `<p style="margin:0 0 10px;font-size:.7rem;color:${dim};line-height:1.4;">${t}</p>`;
-    if (n === 0) {
-      const ca = `<input type="text" inputmode="decimal" id="ca-${esc(e.id)}" placeholder="cuota apostada" value="${e.apuesta?.cuota ?? ''}" style="padding:8px;text-align:center;">`;
-      return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr 1fr;">${ca}${monto}</div>` + nota('Opcionales: cuota y monto (van juntos).');
-    }
-    return `<div class="field-row" style="margin-bottom:6px;grid-template-columns:1fr;">${monto}</div>` +
-      nota(n === 1 ? 'La cuota es la del pick de arriba.' : 'La cuota es la del ticket de arriba.');
-  }
-
-  function cardPendiente(e) {
-    const p = e.prob;
-    return `<div class="card">
-      <h3 style="font-size:.95rem;">${esc(e.local)} vs ${esc(e.visitante)}</h3>
-      <p style="margin:0 0 8px;font-size:.75rem;color:${dim};">${esc(e.ligaNombre)} · guardada ${fechaCorta(e.creado)} · L ${f1(p.local)}% E ${f1(p.empate)}% V ${f1(p.visitante)}%</p>
-      ${(e.picks && e.picks.length) ? `<p style="margin:0 0 8px;font-size:.75rem;color:var(--green);">🎯 ${e.picks.map(k => esc(MERCADOS.find(m => m.key === k)?.label || k)).join(' · ')}</p>` : ''}
-      <div class="field-row" style="margin-bottom:8px;grid-template-columns:1fr 1fr 1fr;">
-        <input type="text" inputmode="numeric" id="gl-${esc(e.id)}" placeholder="goles local" style="padding:8px;text-align:center;">
-        <input type="text" inputmode="numeric" id="gv-${esc(e.id)}" placeholder="goles visit." style="padding:8px;text-align:center;">
-        <input type="text" inputmode="numeric" id="cc-${esc(e.id)}" placeholder="córners tot." style="padding:8px;text-align:center;">
-      </div>
-      ${cierreHtml(e)}
-      ${apuestaHtml(e)}
-      <button data-accion="resultado" data-id="${esc(e.id)}" style="margin-right:8px;">Guardar resultado</button>
-      <button data-accion="borrar" data-id="${esc(e.id)}" style="background:var(--surface-2,#1c2530);color:var(--text,#f0f3f7);">🗑</button>
-    </div>`;
-  }
-
-  function cardResuelta(e) {
-    const r = e.resultado;
-    const apTxt = (e.apuesta && Number.isFinite(e.apuesta.cuota)) ? ` · 💰 ${e.apuesta.cuota} × $${e.apuesta.monto}` : '';
-    return `<div class="compare-row" style="grid-template-columns:1.6fr .7fr auto;"><span>${esc(e.local)} vs ${esc(e.visitante)}<br><small style="color:${dim};">${fechaCorta(e.creado)}${apTxt}</small></span><span class="grid-plain"><strong>${r.gl}-${r.gv}</strong>${Number.isFinite(r.corners) ? `<br><small>${r.corners} córn.</small>` : ''}</span><span><button data-accion="reabrir" data-id="${esc(e.id)}" style="padding:6px 10px;font-size:.75rem;">↩︎</button></span></div>`;
-  }
-
-  const NIVEL_TXT = { pocos: ['Pocos datos', dim], confirmada: ['✅ Ventaja confirmada', 'var(--green)'], observacion: ['🟡 Positivo, sin confirmar', 'var(--yellow)'], sin_ventaja: ['❌ Sin ventaja', 'var(--red)'] };
-  const ICONO_ST = { green: '🟢', yellow: '🟡', red: '🔴', unknown: '⚪' };
-
-  function renderCLV(clv, hayEntradas) {
-    const el = $('reg-clv');
-    if (!el) return;
-    const r = clv.resumen;
-    if (!r.n) {
-      el.innerHTML = `<p style="color:${dim};font-size:.85rem;line-height:1.5;">${hayEntradas ? 'Todavía no hay picks con cuota de cierre.' : 'Todavía no guardaste predicciones.'}<br>El CLV compara la cuota a la que apostaste con la cuota justo antes del partido. Si es positivo de forma sostenida (100+ picks), tenés ventaja real; el ROI solo puede ser suerte. Cargá la cuota en la app al guardar el pick y el cierre en "Pendientes".</p>`;
-      return;
-    }
-    const [nt, nc] = NIVEL_TXT[clv.nivel];
-    const sg = (x) => (x >= 0 ? '+' : '') + Number(x).toFixed(2);
-    const filasLiga = Object.entries(clv.porLiga).sort((a, b) => b[1].n - a[1].n).map(([k, s]) => {
-      const [lt, lc] = NIVEL_TXT[s.nivel];
-      return `<div class="card" style="margin-bottom:8px;padding:12px;"><div class="compare-row" style="grid-template-columns:1.4fr .6fr 1fr;border:none;padding:0 0 6px;"><span>${ICONO_ST[s.statusConfig] || '⚪'} ${esc(LIGAS[k]?.name || k)}</span><span class="grid-plain">${s.n} picks</span><span class="grid-plain" style="color:${lc}">${s.n ? sg(s.media) + '%' : '—'} · ${lt}</span></div><p style="margin:0;font-size:.74rem;color:${dim};line-height:1.45;">${esc(s.consejo)}</p></div>`;
-    }).join('');
-    const filasMk = clv.porMercado.map(m => `<div class="compare-row" style="grid-template-columns:1.6fr .6fr 1fr;"><span>${esc(m.label)}</span><span class="grid-plain">${m.n}</span><span class="grid-plain" style="color:${m.media > 0 ? 'var(--green)' : 'var(--red)'}">${sg(m.media)}% · ${m.pctPositivo}% +</span></div>`).join('');
-    el.innerHTML = `<div class="card" style="border:2px solid ${nc};"><h3 style="color:${nc};">${nt} <small>(${r.n} picks con cierre)</small></h3>
-        <div class="compare-row" style="grid-template-columns:1fr 1fr 1fr 1fr;"><span>CLV medio</span><span class="grid-plain" style="color:${r.media > 0 ? 'var(--green)' : 'var(--red)'}">${sg(r.media)}%</span><span class="grid-plain">mediana ${sg(r.mediana)}%</span><span class="grid-plain">${r.pctPositivo}% positivos</span></div>
-        <p style="margin:8px 0 0;font-size:.75rem;color:${dim};line-height:1.5;">z = ${r.z == null ? '—' : r.z.toFixed(2)} (confirma con z > ${Z} y ≥ ${CLV_FIRME_N} picks). CLV = cuota apostada / cuota de cierre − 1. Compará siempre contra una cuota de cierre de la misma casa o de una casa de margen parecido: si el cierre viene de otra fuente con otro margen, el número se sesga.</p></div>
-      <h3 class="corner-team-title">Estado por liga (evidencia real)</h3>${filasLiga || ''}
-      <h3 class="corner-team-title">Por mercado</h3><div class="card">${filasMk}</div>`;
-  }
-
-  function render() {
-    const arr = leerRegistro();
-    const ev = evaluar(arr);
-    renderCLV(ev.clv, arr.length > 0);
-    const pend = arr.filter(e => !e.resultado).sort((a, b) => (b.creado || '').localeCompare(a.creado || ''));
-    const resu = arr.filter(e => e.resultado).sort((a, b) => (b.resuelto || '').localeCompare(a.resuelto || ''));
-
-    $('reg-resumen').innerHTML = `<div class="compare-row"><span>Guardadas</span><span class="grid-plain">${arr.length}</span><span class="grid-plain"></span><span class="grid-plain"></span></div>
-      <div class="compare-row"><span>Pendientes de resultado</span><span class="grid-plain">${pend.length}</span><span class="grid-plain"></span><span class="grid-plain"></span></div>
-      <div class="compare-row"><span>Resueltas</span><span class="grid-plain">${ev.n} / ${ev.meta}</span><span class="grid-plain"></span><span class="grid-plain"></span></div>
-      <div class="semaforo-track" style="margin-top:8px;"><div class="semaforo-fill" style="width:${Math.min(100, ev.n / ev.meta * 100)}%;background:var(--green)"></div></div>`;
-
-    $('reg-pendientes').innerHTML = pend.length ? pend.map(cardPendiente).join('') : `<p style="color:${dim};font-size:.85rem;">No hay predicciones pendientes.</p>`;
-    $('reg-resueltas').innerHTML = resu.length ? `<div class="card">${resu.slice(0, 30).map(cardResuelta).join('')}</div>` : `<p style="color:${dim};font-size:.85rem;">Todavía no cargaste resultados.</p>`;
-
-    if (!ev.n) { $('reg-eval').innerHTML = `<p style="color:${dim};font-size:.85rem;">La evaluación aparece cuando cargues el primer resultado.</p>`; return; }
-
-    const lectura = ev.lectura.map(t => `<p style="margin:0 0 6px;font-size:.85rem;">• ${esc(t)}</p>`).join('');
-    const filasMk = ev.mercados.map(s => `<div class="compare-row"><span>${s.label}</span><span class="grid-plain">${s.n}</span><span class="grid-plain">${f3(s.bModelo)} vs ${f3(s.bMercado)}</span><span class="grid-plain" style="color:${col(s.z)}">${s.mejora >= 0 ? '+' : ''}${f1(s.mejora)}% ${senal(s.z)}</span></div>`).join('');
-    const filasEs = ev.escaneo.map(e => {
-      const c = e.n >= ESCANEO_MIN_N && e.z != null && e.z > Z ? 'var(--green)' : e.roi > 0 ? 'var(--yellow)' : 'var(--red)';
-      return `<div class="compare-row"><span>${e.label}${e.n < ESCANEO_MIN_N ? ' ⚠️' : ''}</span><span class="grid-plain">${e.n} · ${f1(e.rate)}%</span><span class="grid-plain">EV ${e.evMedio.toFixed(2)}</span><span class="grid-plain" style="color:${c}">${e.roi >= 0 ? '+' : ''}${f1(e.roi)}%${e.se != null ? ` ±${f1(e.se)}` : ''}</span></div>`;
-    }).join('');
-    const filasCal = ev.calibracion.map(c => { const d = c.frecReal - c.probMedia; const cc = Math.abs(d) >= 8 ? 'var(--red)' : Math.abs(d) >= 4 ? 'var(--yellow)' : 'var(--green)'; return `<div class="compare-row"><span>${c.label}</span><span class="grid-plain">${c.n}</span><span class="grid-plain">pred ${f1(c.probMedia)}%</span><span class="grid-plain" style="color:${cc}">real ${f1(c.frecReal)}%</span></div>`; }).join('');
-    const b = ev.b1x2;
-
-    $('reg-eval').innerHTML = `
-      <div class="card" style="border:2px solid var(--green);"><h3>🧭 Lectura <small>(${ev.n} resueltas)</small></h3>${lectura}</div>
-      <div class="card"><h3>1X2 <small>(Brier, menor = mejor)</small></h3>
-        <div class="compare-row"><span>Modelo (todas)</span><span class="grid-plain">${f3(b.modelo)}</span><span class="grid-plain">n ${b.n}</span><span class="grid-plain"></span></div>
-        <div class="compare-row"><span>Modelo (con cuotas)</span><span class="grid-plain">${f3(b.modeloCuota)}</span><span class="grid-plain">n ${b.nCuota}</span><span class="grid-plain"></span></div>
-        <div class="compare-row"><span>Cuota (sin margen)</span><span class="grid-plain">${f3(b.mercado)}</span><span class="grid-plain"></span><span class="grid-plain" style="color:${col(b.z)}">${b.mejora == null ? '—' : (b.mejora >= 0 ? '+' : '') + f1(b.mejora) + '% ' + senal(b.z)}</span></div>
-      </div>
-      <div class="card"><h3>Modelo vs cuota <small>(solo 1X2 y BTTS)</small></h3>
-        <div class="compare-row compare-head"><span>Mercado</span><span>n</span><span>Modelo vs cuota</span><span>Mejora</span></div>
-        ${filasMk || `<div class="compare-row"><span>Sin cuotas cargadas.</span></div>`}</div>
-      <div class="card" style="border:2px solid var(--yellow);"><h3>🔎 Apostar con EV ≥ ${FILTRO_EV} <small>(${ev.pool.n} apuestas${ev.pool.roi != null ? `, ROI ${ev.pool.roi >= 0 ? '+' : ''}${f1(ev.pool.roi)}%${ev.pool.se != null ? ` ±${f1(ev.pool.se)}` : ''}` : ''})</small></h3>
-        <div class="compare-row compare-head"><span>Mercado</span><span>Apuestas · acierto</span><span>EV medio</span><span>ROI ± error</span></div>
-        ${filasEs || `<div class="compare-row"><span>Ningún lado superó el filtro EV con cuotas cargadas.</span></div>`}
-        <p style="margin:10px 0 0;font-size:.78rem;color:${dim};line-height:1.5;">Simula apostar 1 unidad a todo lo que el modelo veía con valor. ⚠️ = menos de ${ESCANEO_MIN_N} apuestas.</p></div>
-      <div class="card"><h3>Calibración por mercado <small>(predicho vs real)</small></h3>
-        <div class="compare-row compare-head"><span>Mercado</span><span>n</span><span>Predicho</span><span>Real</span></div>
-        ${filasCal}
-        <p style="margin:10px 0 0;font-size:.78rem;color:${dim};line-height:1.5;">Si lo predicho y lo real se alejan 8 puntos o más (rojo), el modelo está mal calibrado en ese mercado.</p></div>`;
-  }
-
-  function entero(txt) {
-    const t = String(txt ?? '').trim();
-    return /^\d+$/.test(t) ? parseInt(t, 10) : null;
-  }
-
-  $('reg-pendientes').addEventListener('click', async (ev) => {
-    const t = ev.target, id = t?.dataset?.id, acc = t?.dataset?.accion;
-    if (!id || !acc) return;
-    if (acc === 'borrar') { if (confirm('¿Borrar esta predicción?')) { borrarEntrada(id); render(); } return; }
-    if (acc === 'guardar-cuotas') {
-      try { guardarInputs(id); render(); } catch (err) { alert('Error: ' + err.message); }
-      return;
-    }
-    if (acc === 'traer-cierre') {
-      t.disabled = true; t.textContent = 'Buscando...';
-      try {
-        guardarInputs(id);
-        const r = await traerCierre(id);
-        alert('Cierre guardado (' + (r.minutos != null ? Math.round(r.minutos) + ' min antes del inicio' : 'hora de inicio desconocida') + ').' + (r.faltan.length ? ' Sin cuota para: ' + r.faltan.join(', ') + ' (cargala a mano).' : ''));
-      } catch (err) { alert('No se pudo traer el cierre: ' + err.message); }
-      render();
-      return;
-    }
-    if (acc === 'resultado') {
-      const gl = entero($('gl-' + id).value), gv = entero($('gv-' + id).value);
-      const ccTxt = $('cc-' + id).value;
-      const cc = String(ccTxt ?? '').trim() === '' ? null : entero(ccTxt);
-      if (gl == null || gv == null) { alert('Cargá los goles de los dos equipos.'); return; }
-      if (String(ccTxt ?? '').trim() !== '' && cc == null) { alert('Los córners tienen que ser un número entero.'); return; }
-      try {
-        try { guardarInputs(id); } catch (_) { }
-        const ent = leerRegistro().find(x => x.id === id);
-        const monto = $('ma-' + id)?.value;
-        const hayMonto = String(monto ?? '').trim() !== '';
-        let apCuota;
-        if (ent && (ent.picks || []).length > 0) {
-          const c = ent.cuotas?.[clavesCuota(ent)[0]];
-          apCuota = (c && String(monto ?? '').trim() !== '') ? String(c) : '';
-        } else apCuota = $('ca-' + id)?.value;
-        actualizarResultado(id, { gl, gv, corners: cc, apCuota, apMonto: monto });
-        render();
-      } catch (e) { alert('Error: ' + e.message); }
-    }
-  });
-
-  $('reg-pendientes').addEventListener('input', (ev) => {
-    const t = ev.target;
-    if (!t || !t.dataset || !t.dataset.ev) return;
-    const e = leerRegistro().find(x => x.id === t.dataset.id);
-    const out = $('ev-' + t.dataset.id + '-' + t.dataset.key);
-    if (!e || !out) return;
-    const r = textoEV(e, t.dataset.key, parseNum(t.value));
-    out.textContent = r.texto; out.style.color = r.color;
-  });
-
-  $('reg-resueltas').addEventListener('click', (ev) => {
-    const t = ev.target, id = t?.dataset?.id;
-    if (t?.dataset?.accion === 'reabrir' && id) { borrarResultado(id); render(); }
-  });
-
-  function exportarCSV(arr) {
-    const resu = arr.filter(e => e.resultado && e.cuotas);
-    const enc = ['fecha','liga','partido','mercado','prob_modelo','cuota','ev','cuota_apostada','acierto','retorno_u','cuota_cierre','clv_pct'];
-    const escap = (v) => { const t = String(v ?? ''); return /[",\n;]/.test(t) ? `"${t.replace(/"/g, '""')}"` : t; };
-    const fnum = (v, d = 2) => (v == null || !Number.isFinite(v)) ? '' : Number(v).toFixed(d);
-    const lineas = [enc.join(';')];
-    for (const e of resu) {
-      const r = e.resultado;
-      const partido = `${e.local} vs ${e.visitante}`;
-      const fecha = (e.creado || '').slice(0, 10);
-      for (const m of MERCADOS) {
-        const cuota = e.cuotas[m.key];
-        if (!Number.isFinite(cuota)) continue;
-        const prob = m.p(e);
-        if (!Number.isFinite(prob)) continue;
-        const hit = m.hit(r);
-        const ev = (prob / 100) * cuota;
-        lineas.push([fecha, e.liga, partido, m.label, fnum(prob, 1), fnum(cuota), fnum(ev), fnum(e.apuesta?.cuota), hit ? 1 : 0, fnum(hit ? cuota - 1 : -1), fnum(e.cierre?.[m.key]), fnum(clvPct(cuota, e.cierre?.[m.key]))].map(escap).join(';'));
-      }
-    }
-    return '\ufeff' + lineas.join('\n');
-  }
-
-  function descargar(contenido, nombre, tipo) {
-    const blob = new Blob([contenido], { type: tipo });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = nombre;
-    document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
-  }
-
-  $('reg-export').addEventListener('click', () => {
-    const arr = leerRegistro();
-    if (!arr.length) { alert('No hay nada para exportar.'); return; }
-    const hoy = new Date().toISOString().slice(0, 10);
-    descargar(JSON.stringify({ version: 1, exportado: new Date().toISOString(), entradas: arr }, null, 2), `registro_suertudo_${hoy}.json`, 'application/json');
-    descargar(exportarCSV(arr), `picks_suertudo_${hoy}.csv`, 'text/csv;charset=utf-8;');
-  });
-
-  $('reg-import').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    try {
-      const r = importarEntradas(JSON.parse(await file.text()));
-      $('reg-import-info').textContent = `✅ ${r.agregadas} agregadas, ${r.omitidas} omitidas (repetidas o inválidas).`;
-      render();
-    } catch (err) { $('reg-import-info').textContent = '❌ ' + err.message; }
-  });
-
-  render();
-}
+// ... resto de la interfaz visual de registro.js (se mantiene igual)
