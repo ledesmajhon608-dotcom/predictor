@@ -1,6 +1,5 @@
 // backtest.js
-// v6: usa generarPicks (misma política que la app), whitelist exacta, EV por mercado,
-// unders y BTTS No incluidos, CSV con liga_key.
+// v7: Agrega mercados de Goles por Equipo al análisis y al CSV.
 
 import { LIGAS, HOME_ADVANTAGE, DIXON_COLES_RHO, SHRINK_ALPHA, getUmbrales, getFiltroEV } from './leagues.js';
 import { generarPicks, hitPick, ODDS_CAMPO } from './picks.js';
@@ -12,7 +11,6 @@ import { roiBootstrap } from './roi-ci.js';
 
 const CAL_MIN_PARTIDOS = 20;
 
-// ---------- utilidades ----------
 function devigar2(oddsA, oddsB) {
   if (!oddsA || !oddsB) return null;
   const pA = 1 / oddsA, pB = 1 / oddsB;
@@ -26,7 +24,6 @@ function devigar3(oddsA, oddsB, oddsC) {
 }
 function fmt(n) { return Number(n).toFixed(1); }
 
-// ---------- DOM ----------
 const fileInput = document.getElementById('historial-file');
 const fileInfo = document.getElementById('file-info');
 const runBtn = document.getElementById('run-btn');
@@ -50,7 +47,6 @@ function log(msg) {
   logDiv.scrollTop = logDiv.scrollHeight;
 }
 
-// ---------- carga de historial ----------
 fileInput.addEventListener('change', async (e) => {
   const file = e.target.files[0];
   runBtn.disabled = true;
@@ -75,7 +71,6 @@ fileInput.addEventListener('change', async (e) => {
   }
 });
 
-// ---------- stats ----------
 class MarketStats {
   constructor(name) {
     this.name = name;
@@ -135,7 +130,9 @@ const PICK_LABELS = {
   over15: 'Over 1.5 goles', over25: 'Over 2.5 goles', over35: 'Over 3.5 goles',
   under15: 'Under 1.5 goles', under25: 'Under 2.5 goles', under35: 'Under 3.5 goles',
   bttsSi: 'Ambos marcan (Sí)', bttsNo: 'Ambos marcan (No)',
-  c_over75: 'Over 7.5 córners totales', c_over85: 'Over 8.5 córners totales', c_over95: 'Over 9.5 córners totales',
+  homeOver05: 'Local > 0.5 goles', homeOver15: 'Local > 1.5 goles',
+  awayOver05: 'Visitante > 0.5 goles', awayOver15: 'Visitante > 1.5 goles',
+  c_over75: 'Over 7.5 córners', c_over85: 'Over 8.5 córners', c_over95: 'Over 9.5 córners',
 };
 
 class PicksStats {
@@ -169,7 +166,6 @@ class PicksStats {
   }
 }
 
-// ---------- calibración ----------
 async function calibrarLiga(leagueKey, partidos) {
   partidos = [...partidos].sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
   const tasasFull = calcularTasasBase(partidos);
@@ -187,7 +183,6 @@ async function calibrarLiga(leagueKey, partidos) {
   return { calibracion: auto.calibracion, tasas: auto.tasas || tasasFull, historial: auto.historial || [], leagueKey, diagnostico: auto.diagnostico };
 }
 
-// ---------- render calibración ----------
 function renderCalibracion(resultado) {
   if (!resultado) return;
   const calibracion = resultado.calibracion;
@@ -269,9 +264,6 @@ function renderCalibracion(resultado) {
     '</div>';
 }
 
-// ---------- recomendación por partido ----------
-// Usa generarPicks (la misma política que la app). Si hay cuota, el pick debe pasar
-// el filtro EV de su mercado; si no hay cuota, entra igual (solo mide acierto, no ROI).
 function calcularRecomendacion(p, pred, resultProbsFinal, leagueKey) {
   const rec = {
     fecha: p.fecha || '',
@@ -319,12 +311,10 @@ function calcularRecomendacion(p, pred, resultProbsFinal, leagueKey) {
   return rec;
 }
 
-// ---------- colores / helpers ----------
 function colorPick(v) { return v == null ? 'var(--chalk-dim)' : v >= 70 ? 'var(--green)' : v >= 60 ? 'var(--yellow)' : 'var(--red)'; }
 function colorROI(roi) { return roi == null ? 'var(--chalk-dim)' : roi > 2 ? 'var(--green)' : roi >= -2 ? 'var(--yellow)' : 'var(--red)'; }
 function valorEV(probPct, casaOdds) { if (!probPct || !casaOdds) return null; return (probPct / 100) * casaOdds; }
 
-// ---------- render picks ----------
 function renderPicks(recs, stats, leagueKey) {
   if (!recs || recs.length === 0) return;
   picksSection.style.display = 'block';
@@ -418,7 +408,6 @@ function renderPicks(recs, stats, leagueKey) {
 
   picksContent.innerHTML = resumenHTML + tituloDetalle + detalleHTML;
 
-  // ---- bootstrap ROI ----
   try {
     const todos = [];
     for (const r of recs) {
@@ -448,7 +437,6 @@ function renderPicks(recs, stats, leagueKey) {
   } catch (e) { console.warn('No se pudo calcular IC del ROI:', e); }
 }
 
-// ---------- render resultados por mercado ----------
 function vsBaseColor(m) { return m == null ? 'var(--chalk-dim)' : m >= 10 ? 'var(--green)' : m >= 0 ? 'var(--yellow)' : 'var(--red)'; }
 function vsBaseNote(m, baseRate) {
   if (m == null) return '';
@@ -552,11 +540,11 @@ function renderResults(summaries, mercadoResumen, modeloVsMercadoResumen, global
   resultsSection.style.display = 'block';
 }
 
-// ---------- exportar CSV ----------
 function exportarComparacionCSV(filas) {
   if (!filas.length) { alert('No hay partidos para exportar.'); return; }
   const headers = [
     'liga_key','fecha','local','visitante','APP_local','APP_empate','APP_visitante','APP_over15','APP_over25','APP_over35','APP_btts',
+    'APP_homeOver05','APP_homeOver15','APP_awayOver05','APP_awayOver15',
     'APP_corners_over75','APP_corners_over85','APP_corners_over95',
     'REAL_goles_local','REAL_goles_visitante','REAL_total_goles','REAL_resultado',
     'REAL_over15','REAL_over25','REAL_over35','REAL_btts',
@@ -566,6 +554,8 @@ function exportarComparacionCSV(filas) {
     'CASA_odds_over25','CASA_odds_under25','CASA_fair_over25',
     'CASA_odds_over35','CASA_odds_under35','CASA_fair_over35',
     'CASA_odds_btts_si','CASA_odds_btts_no','CASA_fair_btts_si',
+    'CASA_odds_home_over05','CASA_odds_home_under05','CASA_odds_home_over15','CASA_odds_home_under15',
+    'CASA_odds_away_over05','CASA_odds_away_under05','CASA_odds_away_over15','CASA_odds_away_under15',
   ];
   const escapar = (v) => { if (v === null || v === undefined) return ''; const s = String(v); return /[",\n;]/.test(s) ? ('"' + s.replace(/"/g, '""') + '"') : s; };
   const num = (v) => (v == null || !Number.isFinite(v)) ? '' : Number(v).toFixed(2);
@@ -582,6 +572,7 @@ function exportarComparacionCSV(filas) {
       leagueKeyCsv, f.fecha, f.local, f.visitante,
       num(f.app.local), num(f.app.empate), num(f.app.visitante),
       num(f.app.over15), num(f.app.over25), num(f.app.over35), num(f.app.btts),
+      num(f.app.homeOver05), num(f.app.homeOver15), num(f.app.awayOver05), num(f.app.awayOver15),
       num(f.app.corners_over75), num(f.app.corners_over85), num(f.app.corners_over95),
       f.real.goles_local, f.real.goles_visitante, f.real.total_goles, f.real.resultado,
       f.real.over15, f.real.over25, f.real.over35, f.real.btts,
@@ -604,6 +595,14 @@ function exportarComparacionCSV(filas) {
       (f.casa.odds_btts_si != null ? f.casa.odds_btts_si : ''),
       (f.casa.odds_btts_no != null ? f.casa.odds_btts_no : ''),
       num(fairBttsSi),
+      (f.casa.odds_home_over05 != null ? f.casa.odds_home_over05 : ''),
+      (f.casa.odds_home_under05 != null ? f.casa.odds_home_under05 : ''),
+      (f.casa.odds_home_over15 != null ? f.casa.odds_home_over15 : ''),
+      (f.casa.odds_home_under15 != null ? f.casa.odds_home_under15 : ''),
+      (f.casa.odds_away_over05 != null ? f.casa.odds_away_over05 : ''),
+      (f.casa.odds_away_under05 != null ? f.casa.odds_away_under05 : ''),
+      (f.casa.odds_away_over15 != null ? f.casa.odds_away_over15 : ''),
+      (f.casa.odds_away_under15 != null ? f.casa.odds_away_under15 : ''),
     ];
     lineas.push(fila.map(escapar).join(','));
   }
@@ -620,7 +619,6 @@ function exportarComparacionCSV(filas) {
   URL.revokeObjectURL(url);
 }
 
-// ---------- botón principal ----------
 runBtn.addEventListener('click', async () => {
   if (!historial) return;
   runBtn.disabled = true;
@@ -650,15 +648,21 @@ runBtn.addEventListener('click', async () => {
     local: new MarketStats('Local gana'), empate: new MarketStats('Empate'), visitante: new MarketStats('Visitante gana'),
     over15: new MarketStats('Over 1.5 goles'), over25: new MarketStats('Over 2.5 goles'), over35: new MarketStats('Over 3.5 goles'),
     btts: new MarketStats('Ambos marcan'),
+    homeOver05: new MarketStats('Local > 0.5 goles'), homeOver15: new MarketStats('Local > 1.5 goles'),
+    awayOver05: new MarketStats('Visitante > 0.5 goles'), awayOver15: new MarketStats('Visitante > 1.5 goles'),
     corners75: new MarketStats('Over 7.5 córners'), corners85: new MarketStats('Over 8.5 córners'), corners95: new MarketStats('Over 9.5 córners'),
   };
   const mercado = {
     local: new MarketStats('Local gana'), empate: new MarketStats('Empate'), visitante: new MarketStats('Visitante gana'),
     over15: new MarketStats('Over 1.5 goles'), over25: new MarketStats('Over 2.5 goles'), over35: new MarketStats('Over 3.5 goles'), btts: new MarketStats('Ambos marcan'),
+    homeOver05: new MarketStats('Local > 0.5 goles'), homeOver15: new MarketStats('Local > 1.5 goles'),
+    awayOver05: new MarketStats('Visitante > 0.5 goles'), awayOver15: new MarketStats('Visitante > 1.5 goles'),
   };
   const modeloVsMercado = {
     local: new MarketStats('Local gana'), empate: new MarketStats('Empate'), visitante: new MarketStats('Visitante gana'),
     over15: new MarketStats('Over 1.5 goles'), over25: new MarketStats('Over 2.5 goles'), over35: new MarketStats('Over 3.5 goles'), btts: new MarketStats('Ambos marcan'),
+    homeOver05: new MarketStats('Local > 0.5 goles'), homeOver15: new MarketStats('Local > 1.5 goles'),
+    awayOver05: new MarketStats('Visitante > 0.5 goles'), awayOver15: new MarketStats('Visitante > 1.5 goles'),
   };
   const global1x2 = {
     modelo: new Multi1X2('Modelo'), base: new Multi1X2('Frecuencia base'),
@@ -706,6 +710,11 @@ runBtn.addEventListener('click', async () => {
     markets.over35.add(pred.over35, totalGoles > 3.5);
     markets.btts.add(pred.btts, p.goles_local > 0 && p.goles_visitante > 0);
 
+    markets.homeOver05.add(pred.homeOver05, p.goles_local > 0.5);
+    markets.homeOver15.add(pred.homeOver15, p.goles_local > 1.5);
+    markets.awayOver05.add(pred.awayOver05, p.goles_visitante > 0.5);
+    markets.awayOver15.add(pred.awayOver15, p.goles_visitante > 1.5);
+
     if (p.odds_local != null && p.odds_empate != null && p.odds_visitante != null) {
       const trio = devigar3(p.odds_local, p.odds_empate, p.odds_visitante) || [];
       const fL = trio[0], fE = trio[1], fV = trio[2];
@@ -729,6 +738,15 @@ runBtn.addEventListener('click', async () => {
     const fBtts = devigar2(p.odds_btts_si, p.odds_btts_no);
     if (fBtts != null) { mercado.btts.add(fBtts, p.goles_local > 0 && p.goles_visitante > 0); modeloVsMercado.btts.add(pred.btts, p.goles_local > 0 && p.goles_visitante > 0); }
 
+    const fHome05 = devigar2(p.odds_home_over05, p.odds_home_under05);
+    if (fHome05 != null) { mercado.homeOver05.add(fHome05, p.goles_local > 0.5); modeloVsMercado.homeOver05.add(pred.homeOver05, p.goles_local > 0.5); }
+    const fHome15 = devigar2(p.odds_home_over15, p.odds_home_under15);
+    if (fHome15 != null) { mercado.homeOver15.add(fHome15, p.goles_local > 1.5); modeloVsMercado.homeOver15.add(pred.homeOver15, p.goles_local > 1.5); }
+    const fAway05 = devigar2(p.odds_away_over05, p.odds_away_under05);
+    if (fAway05 != null) { mercado.awayOver05.add(fAway05, p.goles_visitante > 0.5); modeloVsMercado.awayOver05.add(pred.awayOver05, p.goles_visitante > 0.5); }
+    const fAway15 = devigar2(p.odds_away_over15, p.odds_away_under15);
+    if (fAway15 != null) { mercado.awayOver15.add(fAway15, p.goles_visitante > 1.5); modeloVsMercado.awayOver15.add(pred.awayOver15, p.goles_visitante > 1.5); }
+
     if (p.corners_local != null && p.corners_visitante != null && pred.cornerProbs) {
       const totalCorners = p.corners_local + p.corners_visitante;
       markets.corners75.add(pred.cornerProbs.over7, totalCorners > 7.5);
@@ -741,6 +759,7 @@ runBtn.addEventListener('click', async () => {
       app: {
         local: resultProbsFinal.local, empate: resultProbsFinal.empate, visitante: resultProbsFinal.visitante,
         over15: pred.over15, over25: pred.over25, over35: pred.over35, btts: pred.btts,
+        homeOver05: pred.homeOver05, homeOver15: pred.homeOver15, awayOver05: pred.awayOver05, awayOver15: pred.awayOver15,
         corners_over75: pred.cornerProbs ? pred.cornerProbs.over7 : null,
         corners_over85: pred.cornerProbs ? pred.cornerProbs.over8 : null,
         corners_over95: pred.cornerProbs ? pred.cornerProbs.over9 : null,
@@ -766,6 +785,14 @@ runBtn.addEventListener('click', async () => {
         odds_under35: p.odds_under35 != null ? p.odds_under35 : null,
         odds_btts_si: p.odds_btts_si != null ? p.odds_btts_si : null,
         odds_btts_no: p.odds_btts_no != null ? p.odds_btts_no : null,
+        odds_home_over05: p.odds_home_over05 != null ? p.odds_home_over05 : null,
+        odds_home_under05: p.odds_home_under05 != null ? p.odds_home_under05 : null,
+        odds_home_over15: p.odds_home_over15 != null ? p.odds_home_over15 : null,
+        odds_home_under15: p.odds_home_under15 != null ? p.odds_home_under15 : null,
+        odds_away_over05: p.odds_away_over05 != null ? p.odds_away_over05 : null,
+        odds_away_under05: p.odds_away_under05 != null ? p.odds_away_under05 : null,
+        odds_away_over15: p.odds_away_over15 != null ? p.odds_away_over15 : null,
+        odds_away_under15: p.odds_away_under15 != null ? p.odds_away_under15 : null,
       },
     });
 
@@ -810,7 +837,6 @@ runBtn.addEventListener('click', async () => {
   runBtn.textContent = 'Ejecutar backtest';
 });
 
-// ---------- export ----------
 exportBtn.addEventListener('click', () => exportarComparacionCSV(filasComparacion));
 
 const exportParamsBtn = document.getElementById('export-params-btn');
