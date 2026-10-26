@@ -1,8 +1,6 @@
 // app.js
-// v11: Arreglo de sintaxis. El código estaba bien, pero se rompió al pegar. 
-// v10: Mejoras visuales (grid de mercados, badges, match header, dots).
-// v9: fix cosmético — mostrar HA/rho reales.
-// v8: respeta usaCalibracion(ligaKey).
+// v13: Modo manual restaurado (checkboxes en todas las tarjetas).
+//      Tarjeta nueva de "Goles por Equipo" agregada.
 
 import { LIGAS, usaCalibracion, HOME_ADVANTAGE, DIXON_COLES_RHO, DEFAULT_HOME_ADV, DEFAULT_RHO } from './leagues.js';
 import { simulateMatch, getTeamsForLeague } from './model.js';
@@ -305,17 +303,24 @@ document.addEventListener('DOMContentLoaded', () => {
     const under35 = data.under35 != null ? data.under35 : (data.over35 != null ? 100 - data.over35 : null);
     const bttsNo = data.bttsNo != null ? data.bttsNo : (data.btts != null ? 100 - data.btts : null);
 
-    const golesCard = '<div class="card"><h3>Goles</h3>' +
+    const golesCard = '<div class="card"><h3>Goles Totales</h3>' +
         fila('Over 1.5', data.over15, 'over15') + fila('Over 2.5', data.over25, 'over25') + fila('Over 3.5', data.over35, 'over35') +
         (under15 != null ? fila('Under 1.5', under15, 'under15') : '') +
         (under25 != null ? fila('Under 2.5', under25, 'under25') : '') +
         (under35 != null ? fila('Under 3.5', under35, 'under35') : '') + '</div>';
 
+    const golesEquiposCard = '<div class="card"><h3>Goles por Equipo</h3>' +
+        fila(data.homeTeam + ' > 0.5', data.homeOver05, 'homeOver05') + 
+        fila(data.homeTeam + ' > 1.5', data.homeOver15, 'homeOver15') + 
+        fila(data.awayTeam + ' > 0.5', data.awayOver05, 'awayOver05') + 
+        fila(data.awayTeam + ' > 1.5', data.awayOver15, 'awayOver15') + '</div>';
+
     const cornersCard = data.cornerProbs
-      ? '<div class="card"><h3>Córneres</h3>' + fila('Over 7.5', data.cornerProbs.over7, 'c_over75') + fila('Over 8.5', data.cornerProbs.over8, 'c_over85') + fila('Over 9.5', data.cornerProbs.over9, 'c_over95') + '</div>'
+      ? '<div class="card"><h3>Córners Totales</h3>' + fila('Over 7.5', data.cornerProbs.over7, 'c_over75') + fila('Over 8.5', data.cornerProbs.over8, 'c_over85') + fila('Over 9.5', data.cornerProbs.over9, 'c_over95') + '</div>'
       : '';
 
-    const marketsGrid = '<div class="markets-grid">' + golesCard + cornersCard + '</div>';
+    const marketsGrid = '<div class="markets-grid">' + golesCard + golesEquiposCard + '</div>';
+    const cornersGrid = '<div class="markets-grid">' + cornersCard + '<div></div></div>';
 
     predictionsContent.innerHTML =
       avisoCalib +
@@ -327,6 +332,7 @@ document.addEventListener('DOMContentLoaded', () => {
       '<div class="card"><h3>Doble oportunidad <small>(menos varianza)</small></h3>' +
         fila('1X — Local o Empate', dc1X, 'dc1X') + fila('X2 — Empate o Visitante', dcX2, 'dcX2') + '</div>' +
       marketsGrid +
+      cornersGrid +
       '<div class="card"><h3>Ambos marcan (BTTS)</h3>' + fila('Sí', data.btts, 'bttsSi') + (bttsNo != null ? fila('No', bttsNo, 'bttsNo') : '') + '</div>' +
       renderMLCard(ultimo.base.bzzoiroML);
     resultsDiv.style.display = 'block';
